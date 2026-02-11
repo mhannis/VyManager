@@ -7,7 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, RefreshCw, AlertCircle, Search, Cable, Pencil, Trash2, Network } from "lucide-react";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { ethernetService } from "@/lib/api/ethernet";
+import { showService } from "@/lib/api/show";
+import type { InterfacePhysical } from "@/lib/api/show";
 import type { EthernetInterface, EthernetCapabilities, VIFConfig } from "@/lib/api/types/ethernet";
 import { ComprehensiveEthernetModal } from "@/components/network/ComprehensiveEthernetModal";
 import { ComprehensiveVLANModal } from "@/components/network/ComprehensiveVLANModal";
@@ -21,8 +24,18 @@ interface VLANWithParent extends VIFConfig {
   fullName: string;
 }
 
+const normalizeLinkDetail = (value?: string | null): string | undefined => {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  const lower = trimmed.toLowerCase();
+  if (lower.includes("unknown")) return undefined;
+  if (lower.includes("(255)")) return undefined;
+  return trimmed;
+};
+
 export default function InterfacesPage() {
   const [interfaces, setInterfaces] = useState<EthernetInterface[]>([]);
+  const [physicalByInterface, setPhysicalByInterface] = useState<Record<string, InterfacePhysical>>({});
   const [capabilities, setCapabilities] = useState<EthernetCapabilities | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,12 +56,18 @@ export default function InterfacesPage() {
     try {
       setError(null);
       setRefreshing(true);
-      const [configData, capabilitiesData] = await Promise.all([
+      const [configData, capabilitiesData, physicalData] = await Promise.all([
         ethernetService.getConfig(),
         ethernetService.getCapabilities(),
+        showService.getInterfacePhysical().catch(() => ({ interfaces: [], total: 0 })),
       ]);
       setInterfaces(configData.interfaces);
       setCapabilities(capabilitiesData);
+      const physicalMap = physicalData.interfaces.reduce<Record<string, InterfacePhysical>>((acc, item) => {
+        acc[item.interface] = item;
+        return acc;
+      }, {});
+      setPhysicalByInterface(physicalMap);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load interface data");
     } finally {
@@ -243,18 +262,23 @@ export default function InterfacesPage() {
               </Button>
             </div>
 
-            <Button
-              onClick={() => {
-                if (typeFilter === "vlan") {
-                  setIsCreateVLANModalOpen(true);
-                } else {
-                  setIsCreateInterfaceModalOpen(true);
-                }
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create {typeFilter === "vlan" ? "VLAN" : "Interface"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline">
+                <Link href="/network/setup-wizard">Setup Wizard</Link>
+              </Button>
+              <Button
+                onClick={() => {
+                  if (typeFilter === "vlan") {
+                    setIsCreateVLANModalOpen(true);
+                  } else {
+                    setIsCreateInterfaceModalOpen(true);
+                  }
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create {typeFilter === "vlan" ? "VLAN" : "Interface"}
+              </Button>
+            </div>
           </div>
         )}
 
@@ -270,6 +294,10 @@ export default function InterfacesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredInterfaces.map((iface) => {
                     const vlanCount = (iface.vif?.length || 0) + (iface.vif_s?.length || 0);
+                    const physical = physicalByInterface[iface.name];
+                    const linkUp = physical?.link_up;
+                    const linkSpeed = linkUp === true ? normalizeLinkDetail(physical?.speed) : undefined;
+                    const linkDuplex = linkUp === true ? normalizeLinkDetail(physical?.duplex) : undefined;
                     return (
                       <Card key={iface.name} className="border-border hover:border-primary/50 transition-colors group">
                         <CardContent className="p-4">
@@ -313,6 +341,39 @@ export default function InterfacesPage() {
                             {iface.description && (
                               <div className="text-muted-foreground truncate">
                                 {iface.description}
+                              </div>
+                            )}
+
+                            <div className="flex flex-wrap gap-2">
+                              <Badge
+                                variant="outline"
+                                className={
+                                  linkUp === true
+                                    ? "bg-green-500/10 text-green-500 border-green-500/20 text-xs"
+                                    : linkUp === false
+                                      ? "bg-red-500/10 text-red-500 border-red-500/20 text-xs"
+                                      : "bg-muted text-muted-foreground border-border text-xs"
+                                }
+                              >
+                                {linkUp === true ? "Link Up" : linkUp === false ? "Link Down" : "Link Unknown"}
+                              </Badge>
+
+                              {linkSpeed && (
+                                <Badge variant="outline" className="text-xs">
+                                  {linkSpeed}
+                                </Badge>
+                              )}
+
+                              {linkDuplex && (
+                                <Badge variant="outline" className="text-xs">
+                                  {linkDuplex}
+                                </Badge>
+                              )}
+                            </div>
+
+                            {(physical?.nic_model || physical?.driver) && (
+                              <div className="text-xs text-muted-foreground truncate" title={physical?.nic_model || physical?.driver || ""}>
+                                NIC: {physical?.nic_model || physical?.driver}
                               </div>
                             )}
 

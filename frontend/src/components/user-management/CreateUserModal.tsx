@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, AlertCircle } from "lucide-react";
 import { userManagementService, SiteRole } from "@/lib/api/user-management";
+import { normalizeAuthIdentifier } from "@/lib/auth-identifier";
 
 interface CreateUserModalProps {
   open: boolean;
@@ -28,14 +29,14 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserMod
 
   // Form fields
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [siteRole, setSiteRole] = useState<SiteRole>(SiteRole.VIEWER);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const resetForm = () => {
     setName("");
-    setEmail("");
+    setIdentifier("");
     setSiteRole(SiteRole.VIEWER);
     setPassword("");
     setConfirmPassword("");
@@ -52,8 +53,8 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserMod
     setError(null);
 
     // Validation
-    if (!email.trim()) {
-      setError("Email is required");
+    if (!identifier.trim()) {
+      setError("Username or email is required");
       return;
     }
 
@@ -70,17 +71,20 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserMod
     setLoading(true);
 
     try {
+      const normalizedIdentifier = normalizeAuthIdentifier(identifier);
+
       await userManagementService.createUser({
         name: name.trim() || null,
-        email: email.trim(),
+        email: normalizedIdentifier.email,
         password,
         site_role: siteRole,
       });
 
       handleClose();
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to create user");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to create user";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -119,17 +123,17 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserMod
             />
           </div>
 
-          {/* Email (required) */}
+          {/* Username/Email (required) */}
           <div className="space-y-2">
-            <Label htmlFor="email">
-              Email <span className="text-destructive">*</span>
+            <Label htmlFor="identifier">
+              Username or Email <span className="text-destructive">*</span>
             </Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="john@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="identifier"
+              type="text"
+              placeholder="john or john@example.com"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               disabled={loading}
               required
             />

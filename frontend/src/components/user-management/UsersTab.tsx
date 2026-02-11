@@ -30,6 +30,7 @@ import {
   Shield,
 } from "lucide-react";
 import { userManagementService, UserListItem } from "@/lib/api/user-management";
+import { authIdentifierFromEmail } from "@/lib/auth-identifier";
 import { CreateUserModal } from "./CreateUserModal";
 import { EditUserModal } from "./EditUserModal";
 import { DeleteUserModal } from "./DeleteUserModal";
@@ -63,6 +64,7 @@ export function UsersTab() {
         users.filter(
           (user) =>
             user.name?.toLowerCase().includes(query) ||
+            authIdentifierFromEmail(user.email).toLowerCase().includes(query) ||
             user.email.toLowerCase().includes(query) ||
             user.site_role.toLowerCase().includes(query)
         )
@@ -77,8 +79,9 @@ export function UsersTab() {
       const data = await userManagementService.listUsers();
       setUsers(data);
       setFilteredUsers(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load users");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load users";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -176,7 +179,7 @@ export function UsersTab() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
+                  <TableHead>Login</TableHead>
                   <TableHead className="text-center">Instance Access</TableHead>
                   <TableHead>Site Role</TableHead>
                   <TableHead className="w-[80px]"></TableHead>
@@ -205,7 +208,9 @@ export function UsersTab() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-muted-foreground">{user.email}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {authIdentifierFromEmail(user.email)}
+                      </span>
                     </TableCell>
                     <TableCell className="text-center">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent text-accent-foreground text-xs font-medium">

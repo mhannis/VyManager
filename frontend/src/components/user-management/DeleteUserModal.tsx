@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, AlertCircle, AlertTriangle } from "lucide-react";
 import { userManagementService, UserListItem } from "@/lib/api/user-management";
+import { authIdentifierFromEmail } from "@/lib/auth-identifier";
 
 interface DeleteUserModalProps {
   open: boolean;
@@ -37,8 +38,9 @@ export function DeleteUserModal({ open, onOpenChange, user, onSuccess }: DeleteU
       await userManagementService.deleteUser(user.id);
       handleClose();
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to delete user");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to delete user";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -80,8 +82,8 @@ export function DeleteUserModal({ open, onOpenChange, user, onSuccess }: DeleteU
               </span>
             </div>
             <div className="flex items-start justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Email:</span>
-              <span className="text-sm text-foreground">{user.email}</span>
+              <span className="text-sm font-medium text-muted-foreground">Login:</span>
+              <span className="text-sm text-foreground">{authIdentifierFromEmail(user.email)}</span>
             </div>
           </div>
 

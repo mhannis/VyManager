@@ -65,6 +65,7 @@ import {
   Radio,
   Power,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
   userManagementService,
   UserListItem,
@@ -74,6 +75,7 @@ import {
   FeaturePermission,
 } from "@/lib/api/user-management";
 import { sessionService, Site } from "@/lib/api/session";
+import { authIdentifierFromEmail } from "@/lib/auth-identifier";
 
 interface ManageUserAccessPanelProps {
   open: boolean;
@@ -90,7 +92,7 @@ interface InstanceWithSite {
 }
 
 // Feature icons mapping
-const FEATURE_ICONS: Record<FeatureGroup, any> = {
+const FEATURE_ICONS: Record<FeatureGroup, LucideIcon> = {
   [FeatureGroup.FIREWALL]: Shield,
   [FeatureGroup.NAT]: Network,
   [FeatureGroup.DHCP]: Wifi,
@@ -206,7 +208,7 @@ const FEATURE_NAMES: Record<FeatureGroup, string> = {
 };
 
 // Role badge styles
-const ROLE_STYLES: Record<InstanceRole, { bg: string; text: string; icon: any }> = {
+const ROLE_STYLES: Record<InstanceRole, { bg: string; text: string; icon: LucideIcon }> = {
   [InstanceRole.ADMIN]: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-400", icon: Shield },
   [InstanceRole.OPERATOR]: { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-400", icon: Edit3 },
   [InstanceRole.VIEWER]: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-700 dark:text-gray-400", icon: Eye },
@@ -214,7 +216,7 @@ const ROLE_STYLES: Record<InstanceRole, { bg: string; text: string; icon: any }>
 
 // Helper function to initialize all features with default permissions
 const getDefaultFeaturePermissions = (): Record<FeatureGroup, { canEdit: boolean; canView: boolean }> => {
-  const permissions: any = {};
+  const permissions = {} as Record<FeatureGroup, { canEdit: boolean; canView: boolean }>;
   for (const feature of Object.values(FeatureGroup)) {
     permissions[feature] = { canEdit: false, canView: false };
   }
@@ -409,8 +411,9 @@ export function ManageUserAccessPanel({
         }
       }
       setInstances(allInstances);
-    } catch (err: any) {
-      setError(err.message || "Failed to load data");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load data";
+      setError(errorMessage);
     } finally {
       setDataLoading(false);
     }
@@ -617,8 +620,9 @@ export function ManageUserAccessPanel({
       setDeletingAssignment(null);
       await loadData();
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to remove assignment");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to remove assignment";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -665,8 +669,9 @@ export function ManageUserAccessPanel({
       resetEditForm();
       await loadData();
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to update assignment");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update assignment";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -714,8 +719,9 @@ export function ManageUserAccessPanel({
       resetGrantForm();
       await loadData();
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to assign user");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to assign user";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -766,7 +772,9 @@ export function ManageUserAccessPanel({
                   <UserCircle className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <div className="text-lg font-semibold">{user.name || user.email}</div>
+                  <div className="text-lg font-semibold">
+                    {user.name || authIdentifierFromEmail(user.email)}
+                  </div>
                   <div className="text-sm text-muted-foreground font-normal">Manage Access</div>
                 </div>
               </SheetTitle>
@@ -805,7 +813,7 @@ export function ManageUserAccessPanel({
                     <Lock className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
                     <p className="text-sm font-medium text-foreground mb-1">No Instance Access</p>
                     <p className="text-xs text-muted-foreground">
-                      Click "Grant Access" to get started
+                      Click &quot;Grant Access&quot; to get started
                     </p>
                   </div>
                 ) : (
@@ -921,7 +929,7 @@ export function ManageUserAccessPanel({
           <DialogHeader>
             <DialogTitle>Grant Access</DialogTitle>
             <DialogDescription>
-              Assign {user.name || user.email} to one or more instances
+              Assign {user.name || authIdentifierFromEmail(user.email)} to one or more instances
             </DialogDescription>
           </DialogHeader>
 

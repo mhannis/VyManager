@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { signIn, signUp, signOut } from "@/lib/auth-client";
+import { signIn, signOut } from "@/lib/auth-client";
+import { normalizeAuthIdentifier } from "@/lib/auth-identifier";
 import { Shield, Loader2, AlertCircle } from "lucide-react";
-import { apiClient } from "@/lib/api/client";
 import { sessionService, AuthSessionInfo } from "@/lib/api/session";
 import { ActiveSessionWarningModal } from "@/components/auth/ActiveSessionWarningModal";
 
@@ -66,7 +66,7 @@ export default function LoginPage() {
     }
   }, []);
   const [formData, setFormData] = useState({
-    email: "",
+    identifier: "",
     password: "",
     rememberMe: false,
   });
@@ -81,9 +81,11 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      const normalizedIdentifier = normalizeAuthIdentifier(formData.identifier);
+
       // Sign in
       const result = await signIn.email({
-        email: formData.email,
+        email: normalizedIdentifier.email,
         password: formData.password,
       });
 
@@ -207,18 +209,18 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label
-                htmlFor="email"
+                htmlFor="identifier"
                 className="text-sm font-medium text-foreground"
               >
-                Email
+                Username or Email
               </Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="admin@vymanager.local"
-                value={formData.email}
+                id="identifier"
+                type="text"
+                placeholder="admin or admin@example.com"
+                value={formData.identifier}
                 onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
+                  setFormData({ ...formData, identifier: e.target.value })
                 }
                 required
                 className="h-11 bg-background/50 border-border/50 focus:border-primary transition-colors"

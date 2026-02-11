@@ -15,7 +15,7 @@ import {
   ChevronRight,
   ChevronDown,
 } from "lucide-react";
-import { showService, InterfaceCounter } from "@/lib/api/show";
+import { showService, InterfaceCounter, InterfacePhysical } from "@/lib/api/show";
 import { interfacesService } from "@/lib/api/interfaces";
 import { getInterfaceType, formatBytes, formatNumber } from "@/lib/utils";
 import {
@@ -48,6 +48,11 @@ import { ethernetService } from "@/lib/api/ethernet";
 interface InterfaceWithType extends InterfaceCounter {
   type: string;
   description?: string;
+  nic_model?: string;
+  speed?: string;
+  duplex?: string;
+  link_up?: boolean | null;
+  link_status?: string;
   vifs?: InterfaceWithType[]; // Store child VIFs
   isVif?: boolean;
   parentInterface?: string;
@@ -103,6 +108,15 @@ const parseInterfaceName = (name: string) => {
     vlanId,
     isVif: !!vlanId && !isNaN(parseInt(vlanId)),
   };
+};
+
+const normalizeLinkDetail = (value?: string | null): string | undefined => {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  const lower = trimmed.toLowerCase();
+  if (lower.includes("unknown")) return undefined;
+  if (lower.includes("(255)")) return undefined;
+  return trimmed;
 };
 
 interface InterfaceRowProps {
@@ -203,6 +217,27 @@ const InterfaceRow = ({
           ) : (
             <span className="italic text-muted-foreground">—</span>
           )}
+        </TableCell>
+        <TableCell>
+          <div className="flex flex-col gap-1">
+            <Badge
+              variant="outline"
+              className={`w-fit text-xs ${
+                iface.link_up === true
+                  ? "bg-green-500/10 text-green-500 border-green-500/20"
+                  : iface.link_up === false
+                    ? "bg-red-500/10 text-red-500 border-red-500/20"
+                    : "bg-muted text-muted-foreground border-border"
+              }`}
+            >
+              {iface.link_up === true ? "Up" : iface.link_up === false ? "Down" : "Unknown"}
+            </Badge>
+            {(iface.speed || iface.duplex) && (
+              <div className="text-xs text-muted-foreground">
+                {[iface.speed, iface.duplex].filter(Boolean).join(" / ")}
+              </div>
+            )}
+          </div>
         </TableCell>
         <TableCell className="text-right">
           <div className="space-y-1">
@@ -355,10 +390,17 @@ export function InterfaceStatisticsCard({
   const loadData = async () => {
     try {
       setError(null);
-      const data = await showService.getInterfaceCounters();
+      const [data, config, physicalResponse] = await Promise.all([
+        showService.getInterfaceCounters(),
+        ethernetService.getConfig(),
+        showService
+          .getInterfacePhysical()
+          .catch(() => ({ interfaces: [], total: 0 })),
+      ]);
 
-      // Fetch config once before processing interfaces
-      const config = await ethernetService.getConfig();
+      const physicalByInterface = new Map<string, InterfacePhysical>(
+        physicalResponse.interfaces.map((item) => [item.interface, item])
+      );
 
       // First, process all interfaces with their types and descriptions
       const allInterfaces = data.interfaces.map((iface) => {
@@ -387,10 +429,28 @@ export function InterfaceStatisticsCard({
           description = vif?.description ?? undefined;
         }
 
+        const physical = isVif && parentName
+          ? physicalByInterface.get(parentName)
+          : physicalByInterface.get(iface.interface);
+        const linkState =
+          physical?.link_up === true
+            ? "up"
+            : physical?.link_up === false
+              ? "down"
+              : "unknown";
+        const speed = physical?.link_up === true ? normalizeLinkDetail(physical?.speed) : undefined;
+        const duplex = physical?.link_up === true ? normalizeLinkDetail(physical?.duplex) : undefined;
+        const linkStatus = [linkState, speed, duplex].filter(Boolean).join(" ");
+
         return {
           ...iface,
           type: getInterfaceType(iface.interface),
           description,
+          nic_model: physical?.nic_model || undefined,
+          speed,
+          duplex,
+          link_up: physical?.link_up,
+          link_status: linkStatus,
           isVif,
           parentInterface: isVif ? parentName : undefined,
         };

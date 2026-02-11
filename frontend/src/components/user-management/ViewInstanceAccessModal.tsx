@@ -44,7 +44,9 @@ import {
   Route,
   Power,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { userManagementService, FeatureGroup, InstanceUserListItem } from "@/lib/api/user-management";
+import { authIdentifierFromEmail } from "@/lib/auth-identifier";
 
 interface ViewInstanceAccessModalProps {
   open: boolean;
@@ -57,14 +59,14 @@ interface ViewInstanceAccessModalProps {
 }
 
 // Role badge styles
-const ROLE_STYLES: Record<string, { bg: string; text: string; icon: any }> = {
+const ROLE_STYLES: Record<string, { bg: string; text: string; icon: LucideIcon }> = {
   ADMIN: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-400", icon: Shield },
   OPERATOR: { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-400", icon: Edit3 },
   VIEWER: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-700 dark:text-gray-400", icon: Eye },
 };
 
 // Feature icons mapping
-const FEATURE_ICONS: Record<FeatureGroup, any> = {
+const FEATURE_ICONS: Record<FeatureGroup, LucideIcon> = {
   [FeatureGroup.FIREWALL]: Shield,
   [FeatureGroup.NAT]: Network,
   [FeatureGroup.DHCP]: Wifi,
@@ -209,6 +211,7 @@ export function ViewInstanceAccessModal({
         users.filter(
           (user) =>
             user.user_name?.toLowerCase().includes(query) ||
+            authIdentifierFromEmail(user.user_email).toLowerCase().includes(query) ||
             user.user_email.toLowerCase().includes(query) ||
             user.role.toLowerCase().includes(query)
         )
@@ -224,8 +227,9 @@ export function ViewInstanceAccessModal({
       const data = await userManagementService.getInstanceUsers(instance.id);
       setUsers(data);
       setFilteredUsers(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load instance users");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load instance users";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -348,7 +352,7 @@ export function ViewInstanceAccessModal({
                             {/* Avatar */}
                             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                               <span className="text-sm font-medium text-primary">
-                                {user.user_name?.charAt(0).toUpperCase() || user.user_email.charAt(0).toUpperCase()}
+                                {user.user_name?.charAt(0).toUpperCase() || authIdentifierFromEmail(user.user_email).charAt(0).toUpperCase()}
                               </span>
                             </div>
 
@@ -358,7 +362,7 @@ export function ViewInstanceAccessModal({
                                 {user.user_name || "Unnamed User"}
                               </div>
                               <div className="text-xs text-muted-foreground truncate">
-                                {user.user_email}
+                                {authIdentifierFromEmail(user.user_email)}
                               </div>
                             </div>
 

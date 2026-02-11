@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, AlertCircle } from "lucide-react";
 import { userManagementService, UserListItem, SiteRole } from "@/lib/api/user-management";
+import { authIdentifierFromEmail, normalizeAuthIdentifier } from "@/lib/auth-identifier";
 
 interface EditUserModalProps {
   open: boolean;
@@ -29,7 +30,7 @@ export function EditUserModal({ open, onOpenChange, user, onSuccess }: EditUserM
 
   // Form fields
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [siteRole, setSiteRole] = useState<SiteRole>(SiteRole.VIEWER);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -37,7 +38,7 @@ export function EditUserModal({ open, onOpenChange, user, onSuccess }: EditUserM
   useEffect(() => {
     if (open) {
       setName(user.name || "");
-      setEmail(user.email);
+      setIdentifier(authIdentifierFromEmail(user.email));
       setSiteRole(user.site_role);
       setPassword("");
       setConfirmPassword("");
@@ -47,7 +48,7 @@ export function EditUserModal({ open, onOpenChange, user, onSuccess }: EditUserM
 
   const resetForm = () => {
     setName("");
-    setEmail("");
+    setIdentifier("");
     setSiteRole(SiteRole.VIEWER);
     setPassword("");
     setConfirmPassword("");
@@ -77,17 +78,20 @@ export function EditUserModal({ open, onOpenChange, user, onSuccess }: EditUserM
     setLoading(true);
 
     try {
+      const normalizedIdentifier = normalizeAuthIdentifier(identifier);
+
       await userManagementService.updateUser(user.id, {
         name: name.trim() || null,
-        email: email.trim() || undefined,
+        email: normalizedIdentifier.email,
         password: password || undefined,
         site_role: siteRole,
       });
 
       handleClose();
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to update user");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update user";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -126,15 +130,15 @@ export function EditUserModal({ open, onOpenChange, user, onSuccess }: EditUserM
             />
           </div>
 
-          {/* Email */}
+          {/* Username/Email */}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="identifier">Username or Email</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="john@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="identifier"
+              type="text"
+              placeholder="john or john@example.com"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               disabled={loading}
             />
           </div>

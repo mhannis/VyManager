@@ -145,6 +145,11 @@ export default function Home() {
     } catch (err: any) {
       // Extract error message for logging
       const errorMessage = err?.message || err?.error || err?.detail || "Unknown error";
+      // Expected when user has not connected to an instance yet
+      if (String(errorMessage).includes("No active instance")) {
+        setCards([]);
+        return;
+      }
       console.error("Failed to load dashboard layout:", errorMessage);
     }
   };
@@ -183,9 +188,15 @@ export default function Home() {
         return;
       }
 
-      const sessionLoaded = await loadSession();
-      // Always try to load dashboard - the API will return empty if no layout exists
-      await loadDashboard();
+      await loadSession();
+
+      // Only load dashboard layout when an active instance exists
+      const currentSession = useSessionStore.getState().activeSession;
+      if (currentSession) {
+        await loadDashboard();
+      } else {
+        setCards([]);
+      }
       setIsChecking(false);
     };
 

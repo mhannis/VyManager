@@ -50,7 +50,25 @@ db_pool: Optional[asyncpg.Pool] = None
 cleanup_task: Optional[asyncio.Task] = None
 
 # Configuration
-SESSION_INACTIVITY_TIMEOUT = int(os.getenv("SESSION_INACTIVITY_TIMEOUT", "30"))  # Minutes
+# Backward-compatible global timeout (legacy). If explicit timeouts are not set,
+# this value is used as fallback.
+LEGACY_SESSION_INACTIVITY_TIMEOUT = int(os.getenv("SESSION_INACTIVITY_TIMEOUT", "480"))  # Minutes
+
+# Separate inactivity timeouts:
+# - AUTH_SESSION_INACTIVITY_TIMEOUT: login session timeout
+# - ACTIVE_INSTANCE_INACTIVITY_TIMEOUT: connected VyOS instance timeout
+AUTH_SESSION_INACTIVITY_TIMEOUT = int(
+    os.getenv(
+        "AUTH_SESSION_INACTIVITY_TIMEOUT",
+        str(LEGACY_SESSION_INACTIVITY_TIMEOUT),
+    )
+)  # Minutes
+ACTIVE_INSTANCE_INACTIVITY_TIMEOUT = int(
+    os.getenv(
+        "ACTIVE_INSTANCE_INACTIVITY_TIMEOUT",
+        str(LEGACY_SESSION_INACTIVITY_TIMEOUT),
+    )
+)  # Minutes
 CLEANUP_INTERVAL = int(os.getenv("SESSION_CLEANUP_INTERVAL", "5"))  # Minutes
 
 
@@ -63,11 +81,16 @@ async def cleanup_inactive_sessions():
     2. Authentication sessions (sessions table)
 
     Runs periodically and removes sessions that have been inactive
-    for longer than SESSION_INACTIVITY_TIMEOUT minutes.
+    beyond configured inactivity windows.
     """
     global db_pool
 
-    print(f"\n🧹 Session cleanup task started (timeout: {SESSION_INACTIVITY_TIMEOUT}min, interval: {CLEANUP_INTERVAL}min)")
+    print(
+        f"\n🧹 Session cleanup task started "
+        f"(auth timeout: {AUTH_SESSION_INACTIVITY_TIMEOUT}min, "
+        f"instance timeout: {ACTIVE_INSTANCE_INACTIVITY_TIMEOUT}min, "
+        f"interval: {CLEANUP_INTERVAL}min)"
+    )
 
     while True:
         try:
@@ -76,7 +99,8 @@ async def cleanup_inactive_sessions():
             if not db_pool:
                 continue
 
-            cutoff_time = datetime.utcnow() - timedelta(minutes=SESSION_INACTIVITY_TIMEOUT)
+            auth_cutoff_time = datetime.utcnow() - timedelta(minutes=AUTH_SESSION_INACTIVITY_TIMEOUT)
+            instance_cutoff_time = datetime.utcnow() - timedelta(minutes=ACTIVE_INSTANCE_INACTIVITY_TIMEOUT)
 
             async with db_pool.acquire() as conn:
                 # 1. Clean up inactive VyOS instance sessions
@@ -86,7 +110,7 @@ async def cleanup_inactive_sessions():
                     WHERE "lastActivityAt" < $1
                     RETURNING "userId", "instanceId", "lastActivityAt"
                     """,
-                    cutoff_time
+                    instance_cutoff_time
                 )
 
                 if vyos_sessions:
@@ -102,7 +126,7 @@ async def cleanup_inactive_sessions():
                     WHERE "lastActivityAt" < $1
                     RETURNING "userId", token, "lastActivityAt"
                     """,
-                    cutoff_time
+                    auth_cutoff_time
                 )
 
                 if auth_sessions:

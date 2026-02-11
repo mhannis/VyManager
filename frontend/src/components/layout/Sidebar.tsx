@@ -77,6 +77,11 @@ const navigation: NavItem[] = [
     icon: Network,
     children: [
       {
+        title: "Setup Wizard",
+        href: "/network/setup-wizard",
+        requiredPermission: FeatureGroup.INTERFACES
+      },
+      {
         title: "DHCP",
         href: "/network/dhcp",
         requiredPermission: FeatureGroup.DHCP

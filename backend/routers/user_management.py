@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Dict, Optional, Any
 from datetime import datetime
+import os
 import asyncpg
 import httpx
 
@@ -322,29 +323,65 @@ async def create_user(request: Request, body: CreateUserRequest):
     if body.site_role not in ["ADMIN", "VIEWER"]:
         raise HTTPException(status_code=400, detail="site_role must be ADMIN or VIEWER")
 
-    # Call Better Auth's internal user creation endpoint
-    frontend_url = "http://frontend:3000"
-    create_user_url = f"{frontend_url}/api/internal/create-user"
+    # Call Better Auth's internal user creation endpoint.
+    # Try local-first plus Docker service fallback so it works in both setups.
+    frontend_candidates = []
+    env_frontend = os.getenv("INTERNAL_FRONTEND_URL")
+    if env_frontend:
+        frontend_candidates.append(env_frontend.rstrip("/"))
+    frontend_candidates.extend([
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "http://frontend:3000",
+    ])
+
+    # De-duplicate while preserving order
+    seen = set()
+    frontend_urls = []
+    for url in frontend_candidates:
+        if url not in seen:
+            seen.add(url)
+            frontend_urls.append(url)
 
     async with httpx.AsyncClient(timeout=10.0, follow_redirects=False) as client:
         try:
-            response = await client.post(
-                create_user_url,
-                json={
-                    "email": body.email,
-                    "password": body.password,
-                    "name": body.name,
-                },
-                headers={"Content-Type": "application/json"},
-            )
+            user_id = None
+            last_request_error: Optional[str] = None
 
-            if response.status_code != 200:
-                error_data = response.json() if "application/json" in response.headers.get("content-type", "") else {}
-                error_message = error_data.get("error", response.text or "Failed to create user")
-                raise HTTPException(status_code=response.status_code, detail=error_message)
+            for frontend_url in frontend_urls:
+                create_user_url = f"{frontend_url}/api/internal/create-user"
+                try:
+                    response = await client.post(
+                        create_user_url,
+                        json={
+                            "email": body.email,
+                            "password": body.password,
+                            "name": body.name,
+                        },
+                        headers={"Content-Type": "application/json"},
+                    )
+                except httpx.RequestError as e:
+                    last_request_error = f"{frontend_url}: {str(e)}"
+                    continue
 
-            result = response.json()
-            user_id = result["user"]["id"]
+                if response.status_code != 200:
+                    error_data = (
+                        response.json()
+                        if "application/json" in response.headers.get("content-type", "")
+                        else {}
+                    )
+                    error_message = error_data.get("error", response.text or "Failed to create user")
+                    raise HTTPException(status_code=response.status_code, detail=error_message)
+
+                result = response.json()
+                user_id = result["user"]["id"]
+                break
+
+            if user_id is None:
+                detail = "Failed to connect to user creation service"
+                if last_request_error:
+                    detail = f"{detail}: {last_request_error}"
+                raise HTTPException(status_code=500, detail=detail)
 
         except httpx.RequestError as e:
             raise HTTPException(
@@ -424,14 +461,14 @@ async def update_user(request: Request, user_id: str, body: UpdateUserRequest):
             param_count += 1
 
         if body.email is not None:
-            # Check if new email already exists
+            # Check if new login identifier already exists
             email_exists = await conn.fetchval(
                 "SELECT id FROM users WHERE email = $1 AND id != $2",
                 body.email,
                 user_id
             )
             if email_exists:
-                raise HTTPException(status_code=400, detail="Email already exists")
+                raise HTTPException(status_code=400, detail="Login identifier already exists")
 
             updates.append(f'email = ${param_count}')
             params.append(body.email)

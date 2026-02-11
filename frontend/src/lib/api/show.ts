@@ -21,6 +21,23 @@ export interface InterfaceCountersResponse {
   total: number;
 }
 
+export interface InterfacePhysical {
+  interface: string;
+  nic_model?: string | null;
+  driver?: string | null;
+  firmware_version?: string | null;
+  bus_info?: string | null;
+  speed?: string | null;
+  duplex?: string | null;
+  auto_negotiation?: string | null;
+  link_up?: boolean | null;
+}
+
+export interface InterfacePhysicalResponse {
+  interfaces: InterfacePhysical[];
+  total: number;
+}
+
 export interface InterfaceName {
   name: string;
   type: string;
@@ -41,6 +58,13 @@ class ShowService {
    */
   async getInterfaceCounters(): Promise<InterfaceCountersResponse> {
     return apiClient.get<InterfaceCountersResponse>("/vyos/show/interface-counters");
+  }
+
+  /**
+   * Get interface physical details (NIC model/driver/link/speed)
+   */
+  async getInterfacePhysical(): Promise<InterfacePhysicalResponse> {
+    return apiClient.get<InterfacePhysicalResponse>("/vyos/show/interface-physical");
   }
 
   /**

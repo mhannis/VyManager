@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, AlertCircle, CheckCircle2, Building2, Server, User } from "lucide-react";
 import { signUp, signIn } from "@/lib/auth-client";
+import { normalizeAuthIdentifier } from "@/lib/auth-identifier";
 import { sessionService } from "@/lib/api/session";
 
 export default function OnboardingPage() {
@@ -68,7 +69,7 @@ export default function OnboardingPage() {
   // Step 1: Admin Account
   const [adminData, setAdminData] = useState({
     name: "",
-    email: "",
+    identifier: "",
     password: "",
     confirmPassword: "",
   });
@@ -106,8 +107,16 @@ export default function OnboardingPage() {
       return;
     }
 
-    if (!adminData.name.trim() || !adminData.email.trim()) {
-      setError("Name and email are required");
+    if (!adminData.name.trim() || !adminData.identifier.trim()) {
+      setError("Name and username/email are required");
+      return;
+    }
+
+    try {
+      normalizeAuthIdentifier(adminData.identifier);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Invalid username or email";
+      setError(message);
       return;
     }
 
@@ -143,6 +152,8 @@ export default function OnboardingPage() {
     setIsSubmitting(true); // Prevent going back once submission starts
 
     try {
+      const normalizedIdentifier = normalizeAuthIdentifier(adminData.identifier);
+
       // SECURITY: Re-check onboarding status before creating account
       // Prevents race condition if someone else completed onboarding while form was open
       console.log("[Onboarding] Validating onboarding is still needed...");
@@ -164,7 +175,7 @@ export default function OnboardingPage() {
       // Step 1: Create admin account
       console.log("[Onboarding] Step 1/3: Creating admin account...");
       const signUpResult = await signUp.email({
-        email: adminData.email,
+        email: normalizedIdentifier.email,
         password: adminData.password,
         name: adminData.name,
       });
@@ -180,7 +191,7 @@ export default function OnboardingPage() {
       // Step 1.5: Sign in the newly created user to establish session
       console.log("[Onboarding] Signing in...");
       const signInResult = await signIn.email({
-        email: adminData.email,
+        email: normalizedIdentifier.email,
         password: adminData.password,
       });
 
@@ -220,7 +231,7 @@ export default function OnboardingPage() {
 
       // Step 3: Create instance
       console.log("[Onboarding] Step 3/3: Creating VyOS instance...");
-      const createdInstance = await sessionService.createInstance({
+      await sessionService.createInstance({
         site_id: createdSite.id,
         name: instanceData.name,
         description: instanceData.description || undefined,
@@ -242,9 +253,10 @@ export default function OnboardingPage() {
       // Setup complete! Redirect to sites page
       router.push("/sites");
       router.refresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[Onboarding] Error:", err);
-      setError(err.message || "Failed to complete setup. Please try again.");
+      const errorMessage = err instanceof Error ? err.message : "Failed to complete setup. Please try again.";
+      setError(errorMessage);
       setIsSubmitting(false); // Allow user to go back and fix issues
     } finally {
       setLoading(false);
@@ -281,7 +293,7 @@ export default function OnboardingPage() {
           </div>
           <CardTitle className="text-3xl">Welcome to VyManager</CardTitle>
           <CardDescription>
-            Let's set up your VyOS management system
+            Let&apos;s set up your VyOS management system
           </CardDescription>
         </CardHeader>
 
@@ -319,7 +331,7 @@ export default function OnboardingPage() {
               <div className="text-center mb-6">
                 <h3 className="text-xl font-semibold mb-2">Step 1: Create Admin Account</h3>
                 <p className="text-sm text-muted-foreground">
-                  You'll be the owner with full access to everything
+                  You&apos;ll be the owner with full access to everything
                 </p>
               </div>
 
@@ -335,13 +347,13 @@ export default function OnboardingPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="identifier">Username or Email</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={adminData.email}
-                  onChange={(e) => setAdminData({ ...adminData, email: e.target.value })}
-                  placeholder="admin@example.com"
+                  id="identifier"
+                  type="text"
+                  value={adminData.identifier}
+                  onChange={(e) => setAdminData({ ...adminData, identifier: e.target.value })}
+                  placeholder="admin or admin@example.com"
                   required
                 />
               </div>

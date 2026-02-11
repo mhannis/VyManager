@@ -31,7 +31,6 @@ class SessionMiddleware(BaseHTTPMiddleware):
     POLLING_ENDPOINTS = {
         "/vyos/config/diff",
         "/vyos/config/snapshots",
-        "/session/current",
         "/vyos/power/status",
     }
 

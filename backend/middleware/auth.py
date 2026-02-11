@@ -40,7 +40,6 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
     POLLING_ENDPOINTS = {
         "/vyos/config/diff",
         "/vyos/config/snapshots",
-        "/session/current",
         "/vyos/power/status",  # Polls for scheduled reboot/poweroff status
     }
 
