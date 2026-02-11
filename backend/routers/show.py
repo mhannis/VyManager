@@ -11,6 +11,8 @@ from typing import List, Optional, Dict, Any
 import re
 
 from session_vyos_service import get_session_vyos_service
+from fastapi_permissions import require_write_permission
+from rbac_permissions import FeatureGroup
 
 router = APIRouter(prefix="/vyos/show", tags=["show"])
 
@@ -56,6 +58,21 @@ class InterfacePhysicalResponse(BaseModel):
     """Response containing interface physical/operational details."""
     interfaces: List[InterfacePhysical]
     total: int
+
+
+class InterfaceBlinkRequest(BaseModel):
+    """Request model for interface LED identify/blink."""
+    interface: str
+    duration_seconds: int = 5
+
+
+class InterfaceBlinkResponse(BaseModel):
+    """Response for interface LED identify/blink action."""
+    success: bool
+    interface: str
+    duration_seconds: int
+    method: str
+    output: Optional[str] = None
 
 
 # ========================================================================
@@ -419,6 +436,128 @@ async def get_all_interfaces(request: Request):
         return AllInterfacesResponse(
             interfaces=interfaces,
             total=len(interfaces)
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========================================================================
+# Endpoint: Interface Blink / Identify
+# ========================================================================
+
+
+@router.post("/interface-blink", response_model=InterfaceBlinkResponse)
+async def blink_interface_led(request: Request, body: InterfaceBlinkRequest):
+    """
+    Trigger interface locator LED identify/blink on supported NICs.
+
+    This uses VyOS operational commands and is best-effort:
+    - Some hardware/drivers do not support identify.
+    - Command availability may vary across VyOS versions/platforms.
+    """
+    await require_write_permission(request, FeatureGroup.INTERFACES)
+
+    interface_name = body.interface.strip()
+    if not interface_name:
+        raise HTTPException(status_code=400, detail="Interface name is required")
+
+    duration = max(1, min(int(body.duration_seconds), 30))
+
+    try:
+        service = get_session_vyos_service(request)
+
+        # Validate interface exists in ethernet config
+        full_config = service.get_full_config(refresh=False)
+        ethernet_config = full_config.get("interfaces", {}).get("ethernet", {})
+        if not isinstance(ethernet_config, dict) or interface_name not in ethernet_config:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Ethernet interface '{interface_name}' was not found",
+            )
+
+        # Try a few command variants for compatibility across VyOS versions.
+        attempts = [
+            (
+                "show interfaces ethernet <iface> physical identify <seconds>",
+                lambda: service.device.show(
+                    path=[
+                        "interfaces",
+                        "ethernet",
+                        interface_name,
+                        "physical",
+                        "identify",
+                        str(duration),
+                    ]
+                ),
+            ),
+            (
+                "show interfaces ethernet <iface> identify <seconds>",
+                lambda: service.device.show(
+                    path=[
+                        "interfaces",
+                        "ethernet",
+                        interface_name,
+                        "identify",
+                        str(duration),
+                    ]
+                ),
+            ),
+            (
+                "generate interfaces ethernet <iface> physical identify <seconds>",
+                lambda: service.device.generate(
+                    path=[
+                        "interfaces",
+                        "ethernet",
+                        interface_name,
+                        "physical",
+                        "identify",
+                        str(duration),
+                    ]
+                ),
+            ),
+            (
+                "generate interfaces ethernet <iface> identify <seconds>",
+                lambda: service.device.generate(
+                    path=[
+                        "interfaces",
+                        "ethernet",
+                        interface_name,
+                        "identify",
+                        str(duration),
+                    ]
+                ),
+            ),
+        ]
+
+        errors: List[str] = []
+        for method_name, method_call in attempts:
+            try:
+                response = method_call()
+                if response.status == 200:
+                    output = extract_show_output(response.result)
+                    return InterfaceBlinkResponse(
+                        success=True,
+                        interface=interface_name,
+                        duration_seconds=duration,
+                        method=method_name,
+                        output=output or None,
+                    )
+                errors.append(
+                    f"{method_name}: status={response.status}, error={response.error or 'unknown'}"
+                )
+            except Exception as command_error:
+                errors.append(f"{method_name}: {str(command_error)}")
+
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Interface blink/identify is not supported by this device or interface",
+                "interface": interface_name,
+                "attempts": errors,
+            },
         )
 
     except HTTPException:

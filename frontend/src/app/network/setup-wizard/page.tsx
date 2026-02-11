@@ -44,6 +44,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  LocateFixed,
   Loader2,
   Shield,
   WandSparkles,
@@ -368,6 +369,9 @@ export default function NetworkSetupWizardPage() {
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applySuccess, setApplySuccess] = useState<string | null>(null);
   const [applyLog, setApplyLog] = useState<string[]>([]);
+  const [blinkingInterface, setBlinkingInterface] = useState<string | null>(null);
+  const [blinkStatus, setBlinkStatus] = useState<string | null>(null);
+  const [blinkError, setBlinkError] = useState<string | null>(null);
 
   const initializedDefaultsRef = useRef(false);
 
@@ -539,6 +543,27 @@ export default function NetworkSetupWizardPage() {
   const goToPreviousStep = () => {
     setValidationError(null);
     setStep((previous) => Math.max(previous - 1, 1) as WizardStep);
+  };
+
+  const triggerBlink = async (interfaceName: string) => {
+    if (!interfaceName) return;
+
+    setBlinkError(null);
+    setBlinkStatus(null);
+    setBlinkingInterface(interfaceName);
+    try {
+      const result = await showService.blinkInterface(interfaceName, 5);
+      const methodInfo = result.method ? ` (${result.method})` : "";
+      setBlinkStatus(`Blink triggered on ${interfaceName} for ${result.duration_seconds}s${methodInfo}`);
+    } catch (error) {
+      setBlinkError(
+        error instanceof Error
+          ? error.message
+          : `Failed to trigger blink on ${interfaceName}`
+      );
+    } finally {
+      setBlinkingInterface(null);
+    }
   };
 
   const applyInterfaceConfiguration = async () => {
@@ -1057,6 +1082,20 @@ export default function NetworkSetupWizardPage() {
                             })}
                           </SelectContent>
                         </Select>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={!wanInterface || !!blinkingInterface}
+                          onClick={() => triggerBlink(wanInterface)}
+                        >
+                          {blinkingInterface === wanInterface ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <LocateFixed className="h-4 w-4" />
+                          )}
+                          Blink Selected WAN
+                        </Button>
                       </div>
 
                       <div className="space-y-2">
@@ -1079,8 +1118,33 @@ export default function NetworkSetupWizardPage() {
                             })}
                           </SelectContent>
                         </Select>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={!lanInterface || !!blinkingInterface}
+                          onClick={() => triggerBlink(lanInterface)}
+                        >
+                          {blinkingInterface === lanInterface ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <LocateFixed className="h-4 w-4" />
+                          )}
+                          Blink Selected LAN
+                        </Button>
                       </div>
                     </div>
+
+                    {blinkStatus && (
+                      <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300">
+                        {blinkStatus}
+                      </div>
+                    )}
+                    {blinkError && (
+                      <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                        {blinkError}
+                      </div>
+                    )}
 
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="rounded-lg border border-border p-3">

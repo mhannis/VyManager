@@ -40,17 +40,34 @@ Branch: `dev`
   - Optional baseline firewall defaults
   - Optional outbound NAT masquerade rule
 
+### 4) Interface LED Blink / Identify from Setup Wizard
+- Added backend endpoint: `POST /vyos/show/interface-blink`
+  - File: `backend/routers/show.py`
+  - Permission-gated with `INTERFACES` write permission
+  - Validates ethernet interface exists
+  - Attempts multiple VyOS command path variants for compatibility
+- Added frontend API helper:
+  - File: `frontend/src/lib/api/show.ts`
+  - Method: `showService.blinkInterface(interfaceName, durationSeconds)`
+- Added step-1 wizard controls:
+  - File: `frontend/src/app/network/setup-wizard/page.tsx`
+  - Buttons: `Blink Selected WAN` / `Blink Selected LAN`
+  - Inline success/error status messages
+
 ## Current Request In Progress
-User requested interface LED identify/blink capability in Setup Wizard step 1 so physical port can be confirmed.
+End-to-end validation of blink behavior on live hardware/driver combinations.
 
 Status:
-- Not implemented yet.
-- Research done: no existing blink endpoint currently in backend.
-- Next step is to add a backend endpoint in `backend/routers/show.py` that triggers interface identify (e.g. via `ethtool --identify` on VyOS), then expose it in `frontend/src/lib/api/show.ts` and add a "Blink" button in step 1 of the wizard.
+- Implemented in backend + frontend.
+- Not all NICs/drivers support identify/locator operations; unsupported devices return structured error from API.
 
 ## Known Notes / Caveats
 - Repo has many pre-existing lint issues unrelated to current wizard work.
 - Targeted type-check for current wizard path succeeded (`tsc --noEmit --project tsconfig.json`).
+- Targeted checks for blink changes passed:
+  - `python3 -m py_compile backend/routers/show.py`
+  - `npx tsc --noEmit --project tsconfig.json`
+  - `npx eslint src/app/network/setup-wizard/page.tsx src/lib/api/show.ts`
 - Sidebar file has an existing lint rule issue (`react-hooks/set-state-in-effect`) that predates this handoff workflow.
 
 ## Files Touching Recent Feature Work
@@ -82,10 +99,5 @@ Status:
 ## Resume Instructions For Next Agent
 1. Read this file first.
 2. Verify running services (`tmux ls`, ports 3000/8000).
-3. Continue with interface LED blink feature:
-   - Add backend API endpoint (permission-gated) to trigger identify on chosen interface.
-   - Add frontend API method in `showService`.
-   - Add wizard step-1 button for selected WAN/LAN interface.
-   - Add success/error toast/inline status.
-4. Re-test wizard and blink behavior against live VyOS instance.
-
+3. Re-test wizard and blink behavior against live VyOS instance.
+4. If identify fails on specific hardware, add a driver/platform-specific fallback command path in `backend/routers/show.py`.

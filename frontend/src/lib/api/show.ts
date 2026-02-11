@@ -48,6 +48,14 @@ export interface AllInterfacesResponse {
   total: number;
 }
 
+export interface InterfaceBlinkResponse {
+  success: boolean;
+  interface: string;
+  duration_seconds: number;
+  method: string;
+  output?: string | null;
+}
+
 // ============================================================================
 // API Service
 // ============================================================================
@@ -73,6 +81,19 @@ class ShowService {
    */
   async getAllInterfaces(): Promise<AllInterfacesResponse> {
     return apiClient.get<AllInterfacesResponse>("/vyos/show/all-interfaces");
+  }
+
+  /**
+   * Trigger interface identify/blink LED for a short duration.
+   */
+  async blinkInterface(
+    interfaceName: string,
+    durationSeconds: number = 5
+  ): Promise<InterfaceBlinkResponse> {
+    return apiClient.post<InterfaceBlinkResponse>("/vyos/show/interface-blink", {
+      interface: interfaceName,
+      duration_seconds: durationSeconds,
+    });
   }
 }
 
