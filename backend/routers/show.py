@@ -381,6 +381,40 @@ def _parse_dhcp_lease_ipv4_addresses(output: str) -> List[str]:
         if _is_valid_ipv4_cidr(ipv4):
             _append_unique(found, seen, ipv4)
 
+    # Multi-line formats, including:
+    # interface  : eth0
+    # ip address : 10.1.1.50
+    # subnet mask: 255.255.255.0
+    #
+    # and also the common `show dhcp client lease` format:
+    # Interface    eth0
+    # IP address   192.168.10.242                [Active]
+    # Subnet Mask  255.255.255.0
+    pending_ip: Optional[str] = None
+    for raw_line in cleaned_output.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        ip_match = re.search(
+            r"\b(?:ip\s+address|address)\b\s*(?:[:=]\s*|\s+)((?:\d{1,3}\.){3}\d{1,3})\b",
+            line,
+            re.IGNORECASE,
+        )
+        if ip_match:
+            pending_ip = ip_match.group(1)
+
+        mask_match = re.search(
+            r"\b(?:subnet\s+mask|subnet-mask|netmask|mask)\b\s*(?:[:=]\s*|\s+)((?:\d{1,3}\.){3}\d{1,3})\b",
+            line,
+            re.IGNORECASE,
+        )
+        if pending_ip and mask_match:
+            cidr = _ipv4_with_netmask_to_cidr(pending_ip, mask_match.group(1))
+            if cidr and _is_valid_ipv4_cidr(cidr):
+                _append_unique(found, seen, cidr)
+            pending_ip = None
+
     return found
 
 
@@ -392,9 +426,13 @@ def _collect_dhcp_lease_output_for_interface(service: Any, interface_name: str) 
         ("show", ["dhcp", "client", "leases", "interface", interface_name]),
         ("show", ["dhcp", "client", "leases", interface_name]),
         ("show", ["dhcp", "client", "lease", interface_name]),
+        ("show", ["dhcp", "client", "lease"]),
+        ("show", ["dhcp", "client", "leases"]),
         ("show", ["interfaces", "ethernet", interface_name, "dhcp"]),
         ("generate", ["dhcp", "client", "leases", "interface", interface_name]),
         ("generate", ["dhcp", "client", "leases", interface_name]),
+        ("generate", ["dhcp", "client", "lease"]),
+        ("generate", ["dhcp", "client", "leases"]),
     ]
 
     best_output = ""
@@ -411,7 +449,7 @@ def _collect_dhcp_lease_output_for_interface(service: Any, interface_name: str) 
 
         score = len(
             re.findall(
-                r"fixed-address|subnet-mask|(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}",
+                r"fixed-address|subnet-mask|subnet\s+mask|\bip\s+address\b|\b(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?\b",
                 output,
                 re.IGNORECASE,
             )
