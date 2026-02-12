@@ -608,3 +608,31 @@ Branch: `dev`
     - grid class: `gap-y-[22px]` (slightly tighter than previous 24px)
 - Validation:
   - `cd frontend && npm run build` -> success
+
+## Update (2026-02-12) - DHCP Runtime IP Display (Interface Overview)
+
+### 38) User-Reported Problem
+- Dashboard -> Interface Overview card showed `Address assigned by DHCP` instead of actual `IP/netmask` for `eth0`.
+
+### 39) Root Cause
+- Backend process was still running an older build where `GET /vyos/show/interface-runtime-addresses` did not exist (returned `404 Not Found`).
+- Frontend already handled endpoint failures gracefully, so it fell back to the placeholder text.
+
+### 40) Fix / Verification
+- Restarted backend (`vm-api`) so the runtime-address route became available.
+- Verified endpoint with auth cookie:
+  - `GET /vyos/show/interface-runtime-addresses` now returns `eth0` IPv4 `192.168.10.242/24`.
+
+### 41) Hardening (Parser Improvement)
+- File: `backend/routers/show.py`
+- `_parse_dhcp_lease_ipv4_addresses()` now parses the common VyOS output from `show dhcp client lease`, e.g.:
+  - `IP address   192.168.10.242 [Active]`
+  - `Subnet Mask  255.255.255.0`
+- This makes the DHCP lease fallback reliable even when interface show output omits runtime IPv4.
+
+### 42) Repo Hygiene
+- Added `.runlogs/` to `.gitignore` (local log files should not be tracked).
+
+### 43) Runtime Note
+- `vm-api` is running in tmux again.
+- `vm-ui` tmux session is currently not running; frontend was restarted directly via `npm run start` on port `3000`.
