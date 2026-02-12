@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePermissions } from "@/hooks/usePermissions";
+import { ethernetService } from "@/lib/api/ethernet";
 import { FeatureGroup } from "@/lib/api/user-management";
 import {
   containersService,
@@ -27,6 +28,7 @@ import {
   type ContainerVolumeMapping,
   type ContainersOverviewResponse,
 } from "@/lib/api/containers";
+import type { EthernetInterface } from "@/lib/api/types/ethernet";
 import {
   AlertCircle,
   ExternalLink,
@@ -63,6 +65,36 @@ interface ContainerDraft {
   volumes: ContainerVolumeMapping[];
 }
 
+interface ParsedIPv4Cidr {
+  ip: string;
+  prefix: number;
+  ipInt: number;
+  networkInt: number;
+  broadcastInt: number;
+}
+
+interface LanSegmentHint {
+  id: string;
+  interfaceName: string;
+  interfaceDescription: string | null;
+  interfaceIp: string;
+  subnetCidr: string;
+  parsed: ParsedIPv4Cidr;
+}
+
+interface ContainerTemplateContext {
+  timezone: string;
+}
+
+interface ContainerTemplateDefinition {
+  id: string;
+  name: string;
+  description: string;
+  docsUrl: string;
+  lanHint: string;
+  buildDraft: (context: ContainerTemplateContext) => ContainerDraft;
+}
+
 const EMPTY_DRAFT: ContainerDraft = {
   name: "",
   image: "",
@@ -80,6 +112,148 @@ const EMPTY_DRAFT: ContainerDraft = {
   ports: [],
   volumes: [],
 };
+
+function parseIPv4(ip: string): number | null {
+  const parts = ip.trim().split(".");
+  if (parts.length !== 4) return null;
+
+  const numbers = parts.map((part) => Number(part));
+  if (numbers.some((value) => !Number.isInteger(value) || value < 0 || value > 255)) {
+    return null;
+  }
+
+  return (
+    ((numbers[0] << 24) >>> 0) +
+    ((numbers[1] << 16) >>> 0) +
+    ((numbers[2] << 8) >>> 0) +
+    (numbers[3] >>> 0)
+  ) >>> 0;
+}
+
+function formatIPv4(value: number): string {
+  return [
+    (value >>> 24) & 255,
+    (value >>> 16) & 255,
+    (value >>> 8) & 255,
+    value & 255,
+  ].join(".");
+}
+
+function parseIPv4Cidr(cidr: string): ParsedIPv4Cidr | null {
+  const trimmed = cidr.trim();
+  const [ip, prefixRaw] = trimmed.split("/");
+  if (!ip || !prefixRaw) return null;
+
+  const prefix = Number(prefixRaw);
+  if (!Number.isInteger(prefix) || prefix < 0 || prefix > 32) return null;
+
+  const ipInt = parseIPv4(ip);
+  if (ipInt === null) return null;
+
+  const mask = prefix === 0 ? 0 : ((0xffffffff << (32 - prefix)) >>> 0);
+  const networkInt = (ipInt & mask) >>> 0;
+  const broadcastInt = (networkInt | (~mask >>> 0)) >>> 0;
+
+  return { ip, prefix, ipInt, networkInt, broadcastInt };
+}
+
+function isPrivateIPv4(ipInt: number): boolean {
+  const first = (ipInt >>> 24) & 255;
+  const second = (ipInt >>> 16) & 255;
+  return (
+    first === 10 ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168)
+  );
+}
+
+function isIpInSubnet(ip: string, subnet: ParsedIPv4Cidr): boolean {
+  const ipInt = parseIPv4(ip);
+  if (ipInt === null) return false;
+
+  const mask =
+    subnet.prefix === 0 ? 0 : ((0xffffffff << (32 - subnet.prefix)) >>> 0);
+  return ((ipInt & mask) >>> 0) === subnet.networkInt;
+}
+
+function isUsableHostAddress(ipInt: number, subnet: ParsedIPv4Cidr): boolean {
+  if (subnet.prefix >= 31) return true;
+  return ipInt > subnet.networkInt && ipInt < subnet.broadcastInt;
+}
+
+function getUsableHostRange(subnet: ParsedIPv4Cidr): string {
+  if (subnet.prefix >= 31) {
+    return `${formatIPv4(subnet.networkInt)} - ${formatIPv4(subnet.broadcastInt)}`;
+  }
+  return `${formatIPv4(subnet.networkInt + 1)} - ${formatIPv4(subnet.broadcastInt - 1)}`;
+}
+
+function detectLanSegments(interfaces: EthernetInterface[]): LanSegmentHint[] {
+  const segments: LanSegmentHint[] = [];
+  const seen = new Set<string>();
+
+  for (const iface of interfaces) {
+    for (const address of iface.addresses) {
+      if (!address || address === "dhcp") continue;
+      const parsed = parseIPv4Cidr(address);
+      if (!parsed || !isPrivateIPv4(parsed.ipInt)) continue;
+
+      const subnetCidr = `${formatIPv4(parsed.networkInt)}/${parsed.prefix}`;
+      const key = `${iface.name}:${subnetCidr}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      segments.push({
+        id: key,
+        interfaceName: iface.name,
+        interfaceDescription: iface.description ?? null,
+        interfaceIp: parsed.ip,
+        subnetCidr,
+        parsed,
+      });
+    }
+  }
+
+  return segments.sort((left, right) => {
+    const iface = left.interfaceName.localeCompare(right.interfaceName);
+    if (iface !== 0) return iface;
+    return left.subnetCidr.localeCompare(right.subnetCidr);
+  });
+}
+
+function suggestServiceIp(segment: LanSegmentHint | null): string {
+  if (!segment) return "";
+
+  const subnet = segment.parsed;
+  if (subnet.prefix >= 31) return "";
+
+  const firstHost = subnet.networkInt + 1;
+  const lastHost = subnet.broadcastInt - 1;
+  if (firstHost > lastHost) return "";
+
+  let candidate = subnet.networkInt + 10;
+  if (candidate < firstHost || candidate > lastHost) {
+    candidate = firstHost;
+  }
+
+  if (candidate === subnet.ipInt && candidate + 1 <= lastHost) {
+    candidate += 1;
+  } else if (candidate === subnet.ipInt && candidate - 1 >= firstHost) {
+    candidate -= 1;
+  }
+
+  if (candidate === subnet.ipInt) return "";
+  return formatIPv4(candidate);
+}
+
+function detectBrowserTimezone(): string {
+  try {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return timeZone && timeZone.trim() ? timeZone.trim() : "UTC";
+  } catch {
+    return "UTC";
+  }
+}
 
 function normalizeDraftToPayload(draft: ContainerDraft): ContainerUpsertRequest {
   return {
@@ -192,51 +366,261 @@ function getValidationError(draft: ContainerDraft): string | null {
   return null;
 }
 
-function loadPiHoleTemplate(): ContainerDraft {
-  return {
-    name: "pihole",
-    image: "pihole/pihole:latest",
-    description: "Pi-hole DNS and ad-blocking container",
-    entrypoint: "",
-    command: "",
-    arguments: "",
-    host_name: "pihole",
-    restart: "on-failure",
-    enabled: true,
-    allow_host_networks: true,
-    network: "",
-    network_address: "",
-    environment: [
-      { key: "TZ", value: "UTC" },
-      { key: "WEBPASSWORD", value: "changeme" },
-      { key: "DNSMASQ_LISTENING", value: "all" },
-    ],
-    ports: [
-      { name: "dns-tcp", source: 53, destination: 53, protocol: "tcp" },
-      { name: "dns-udp", source: 53, destination: 53, protocol: "udp" },
-      { name: "web", source: 8080, destination: 80, protocol: "tcp" },
-    ],
-    volumes: [
-      { name: "etc-pihole", source: "/config/pihole/etc-pihole", destination: "/etc/pihole", mode: "rw" },
-      {
-        name: "etc-dnsmasq",
-        source: "/config/pihole/etc-dnsmasq.d",
-        destination: "/etc/dnsmasq.d",
-        mode: "rw",
-      },
-    ],
-  };
-}
+const CONTAINER_TEMPLATES: ContainerTemplateDefinition[] = [
+  {
+    id: "pihole",
+    name: "Pi-hole",
+    description: "DNS sinkhole and web UI for ad/tracker blocking.",
+    docsUrl: "https://docs.pi-hole.net/docker/",
+    lanHint:
+      "Use a dedicated LAN IP if clients should query Pi-hole directly on port 53.",
+    buildDraft: ({ timezone }) => ({
+      name: "pihole",
+      image: "pihole/pihole:latest",
+      description: "Pi-hole DNS and ad-blocking service",
+      entrypoint: "",
+      command: "",
+      arguments: "",
+      host_name: "pihole",
+      restart: "always",
+      enabled: true,
+      allow_host_networks: false,
+      network: "",
+      network_address: "",
+      environment: [
+        { key: "TZ", value: timezone },
+        { key: "WEBPASSWORD", value: "changeme" },
+        { key: "DNSMASQ_LISTENING", value: "all" },
+      ],
+      ports: [
+        { name: "dns-tcp", source: 53, destination: 53, protocol: "tcp" },
+        { name: "dns-udp", source: 53, destination: 53, protocol: "udp" },
+        { name: "web", source: 8081, destination: 80, protocol: "tcp" },
+      ],
+      volumes: [
+        {
+          name: "etc-pihole",
+          source: "/config/containers/pihole/etc-pihole",
+          destination: "/etc/pihole",
+          mode: "rw",
+        },
+        {
+          name: "etc-dnsmasq",
+          source: "/config/containers/pihole/etc-dnsmasq.d",
+          destination: "/etc/dnsmasq.d",
+          mode: "rw",
+        },
+      ],
+    }),
+  },
+  {
+    id: "adguard-home",
+    name: "AdGuard Home",
+    description: "DNS filtering and parental-control resolver.",
+    docsUrl: "https://github.com/AdguardTeam/AdGuardHome/wiki/Docker",
+    lanHint:
+      "Like Pi-hole, AdGuard is best with a LAN-facing DNS address and free port 53.",
+    buildDraft: ({ timezone }) => ({
+      name: "adguard-home",
+      image: "adguard/adguardhome:latest",
+      description: "AdGuard Home DNS filtering service",
+      entrypoint: "",
+      command: "",
+      arguments: "",
+      host_name: "adguard-home",
+      restart: "always",
+      enabled: true,
+      allow_host_networks: false,
+      network: "",
+      network_address: "",
+      environment: [{ key: "TZ", value: timezone }],
+      ports: [
+        { name: "dns-tcp", source: 53, destination: 53, protocol: "tcp" },
+        { name: "dns-udp", source: 53, destination: 53, protocol: "udp" },
+        { name: "setup", source: 3000, destination: 3000, protocol: "tcp" },
+      ],
+      volumes: [
+        {
+          name: "adguard-work",
+          source: "/config/containers/adguard/work",
+          destination: "/opt/adguardhome/work",
+          mode: "rw",
+        },
+        {
+          name: "adguard-conf",
+          source: "/config/containers/adguard/conf",
+          destination: "/opt/adguardhome/conf",
+          mode: "rw",
+        },
+      ],
+    }),
+  },
+  {
+    id: "uptime-kuma",
+    name: "Uptime Kuma",
+    description: "Self-hosted service and endpoint monitoring dashboard.",
+    docsUrl: "https://uptime.kuma.pet/",
+    lanHint: "Good fit for LAN-only visibility and alerting.",
+    buildDraft: () => ({
+      name: "uptime-kuma",
+      image: "louislam/uptime-kuma:1",
+      description: "Uptime Kuma monitoring dashboard",
+      entrypoint: "",
+      command: "",
+      arguments: "",
+      host_name: "uptime-kuma",
+      restart: "always",
+      enabled: true,
+      allow_host_networks: false,
+      network: "",
+      network_address: "",
+      environment: [],
+      ports: [{ name: "web", source: 3001, destination: 3001, protocol: "tcp" }],
+      volumes: [
+        {
+          name: "kuma-data",
+          source: "/config/containers/uptime-kuma/data",
+          destination: "/app/data",
+          mode: "rw",
+        },
+      ],
+    }),
+  },
+  {
+    id: "nginx-proxy-manager",
+    name: "Nginx Proxy Manager",
+    description: "Reverse proxy and Let's Encrypt certificate manager.",
+    docsUrl: "https://nginxproxymanager.com/guide/",
+    lanHint:
+      "Plan WAN/LAN firewall and port-forwarding before exposing this externally.",
+    buildDraft: () => ({
+      name: "nginx-proxy-manager",
+      image: "jc21/nginx-proxy-manager:latest",
+      description: "Nginx Proxy Manager reverse proxy",
+      entrypoint: "",
+      command: "",
+      arguments: "",
+      host_name: "nginx-proxy-manager",
+      restart: "always",
+      enabled: true,
+      allow_host_networks: false,
+      network: "",
+      network_address: "",
+      environment: [],
+      ports: [
+        { name: "http", source: 80, destination: 80, protocol: "tcp" },
+        { name: "https", source: 443, destination: 443, protocol: "tcp" },
+        { name: "admin", source: 81, destination: 81, protocol: "tcp" },
+      ],
+      volumes: [
+        {
+          name: "npm-data",
+          source: "/config/containers/npm/data",
+          destination: "/data",
+          mode: "rw",
+        },
+        {
+          name: "npm-letsencrypt",
+          source: "/config/containers/npm/letsencrypt",
+          destination: "/etc/letsencrypt",
+          mode: "rw",
+        },
+      ],
+    }),
+  },
+  {
+    id: "portainer",
+    name: "Portainer CE",
+    description: "Container lifecycle management dashboard.",
+    docsUrl: "https://docs.portainer.io/start/install-ce/server/docker/linux",
+    lanHint:
+      "Use this to operate containers after initial bootstrap from VyManager.",
+    buildDraft: () => ({
+      name: "portainer",
+      image: "portainer/portainer-ce:latest",
+      description: "Portainer container management UI",
+      entrypoint: "",
+      command: "",
+      arguments: "",
+      host_name: "portainer",
+      restart: "always",
+      enabled: true,
+      allow_host_networks: false,
+      network: "",
+      network_address: "",
+      environment: [],
+      ports: [
+        { name: "https", source: 9443, destination: 9443, protocol: "tcp" },
+        { name: "legacy-http", source: 9000, destination: 9000, protocol: "tcp" },
+      ],
+      volumes: [
+        {
+          name: "portainer-data",
+          source: "/config/containers/portainer/data",
+          destination: "/data",
+          mode: "rw",
+        },
+        {
+          name: "podman-socket",
+          source: "/run/podman/podman.sock",
+          destination: "/var/run/docker.sock",
+          mode: "rw",
+        },
+      ],
+    }),
+  },
+  {
+    id: "home-assistant",
+    name: "Home Assistant",
+    description: "Home automation core service.",
+    docsUrl: "https://www.home-assistant.io/installation/linux#install-home-assistant-container",
+    lanHint:
+      "Host networking is enabled by default for local discovery integrations.",
+    buildDraft: ({ timezone }) => ({
+      name: "home-assistant",
+      image: "ghcr.io/home-assistant/home-assistant:stable",
+      description: "Home Assistant core",
+      entrypoint: "",
+      command: "",
+      arguments: "",
+      host_name: "home-assistant",
+      restart: "always",
+      enabled: true,
+      allow_host_networks: true,
+      network: "",
+      network_address: "",
+      environment: [{ key: "TZ", value: timezone }],
+      ports: [],
+      volumes: [
+        {
+          name: "ha-config",
+          source: "/config/containers/home-assistant/config",
+          destination: "/config",
+          mode: "rw",
+        },
+      ],
+    }),
+  },
+];
 
 export default function SystemContainersPage() {
   const { canWrite } = usePermissions();
   const canEditSystem = canWrite(FeatureGroup.SYSTEM);
 
+  const localTimezone = useMemo(() => detectBrowserTimezone(), []);
   const [overview, setOverview] = useState<ContainersOverviewResponse | null>(null);
   const [draft, setDraft] = useState<ContainerDraft>({ ...EMPTY_DRAFT });
   const [selectedContainerName, setSelectedContainerName] = useState<string | null>(null);
   const [logsContainerName, setLogsContainerName] = useState<string | null>(null);
   const [logsText, setLogsText] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
+    CONTAINER_TEMPLATES[0]?.id ?? "pihole"
+  );
+  const [lanSegments, setLanSegments] = useState<LanSegmentHint[]>([]);
+  const [selectedLanSegmentId, setSelectedLanSegmentId] = useState<string>("");
+  const [serviceLanIp, setServiceLanIp] = useState("");
+  const [loadingLanSegments, setLoadingLanSegments] = useState(false);
+  const [lanSegmentsError, setLanSegmentsError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -246,10 +630,37 @@ export default function SystemContainersPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const selectedTemplate = useMemo(() => {
+    return CONTAINER_TEMPLATES.find((template) => template.id === selectedTemplateId) ?? CONTAINER_TEMPLATES[0];
+  }, [selectedTemplateId]);
+
   const selectedContainer = useMemo(() => {
     if (!overview || !selectedContainerName) return null;
     return overview.containers.find((container) => container.name === selectedContainerName) ?? null;
   }, [overview, selectedContainerName]);
+
+  const selectedLanSegment = useMemo(() => {
+    if (!selectedLanSegmentId) return null;
+    return lanSegments.find((segment) => segment.id === selectedLanSegmentId) ?? null;
+  }, [lanSegments, selectedLanSegmentId]);
+
+  const lanIpValidationIssue = useMemo(() => {
+    if (!selectedLanSegment || !serviceLanIp.trim()) return null;
+
+    const ipText = serviceLanIp.trim();
+    const ipInt = parseIPv4(ipText);
+    if (ipInt === null) return "Service IP must be a valid IPv4 address.";
+    if (!isIpInSubnet(ipText, selectedLanSegment.parsed)) {
+      return "Service IP must stay inside the selected LAN subnet.";
+    }
+    if (!isUsableHostAddress(ipInt, selectedLanSegment.parsed)) {
+      return "Service IP must be a usable host in the selected LAN subnet.";
+    }
+    if (ipInt === selectedLanSegment.parsed.ipInt) {
+      return "Service IP matches the selected interface address. Pick another host IP.";
+    }
+    return null;
+  }, [selectedLanSegment, serviceLanIp]);
 
   const loadOverview = useCallback(async (refresh: boolean = true) => {
     setLoading(true);
@@ -264,9 +675,48 @@ export default function SystemContainersPage() {
     }
   }, []);
 
+  const loadLanSegments = useCallback(async () => {
+    setLoadingLanSegments(true);
+    setLanSegmentsError(null);
+    try {
+      const response = await ethernetService.getConfig();
+      const detected = detectLanSegments(response.interfaces ?? []);
+      setLanSegments(detected);
+      setSelectedLanSegmentId((previous) => {
+        if (previous && detected.some((segment) => segment.id === previous)) {
+          return previous;
+        }
+        return detected[0]?.id ?? "";
+      });
+    } catch (err) {
+      setLanSegments([]);
+      setSelectedLanSegmentId("");
+      setLanSegmentsError(err instanceof Error ? err.message : "Failed to load LAN interface data.");
+    } finally {
+      setLoadingLanSegments(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadOverview(true);
-  }, [loadOverview]);
+    loadLanSegments();
+  }, [loadLanSegments, loadOverview]);
+
+  useEffect(() => {
+    if (!selectedLanSegment) {
+      setServiceLanIp("");
+      return;
+    }
+
+    const suggested = suggestServiceIp(selectedLanSegment);
+    setServiceLanIp((previous) => {
+      const trimmed = previous.trim();
+      if (trimmed && isIpInSubnet(trimmed, selectedLanSegment.parsed)) {
+        return trimmed;
+      }
+      return suggested;
+    });
+  }, [selectedLanSegment]);
 
   const resetDraft = () => {
     setSelectedContainerName(null);
@@ -282,8 +732,8 @@ export default function SystemContainersPage() {
     setError(null);
   };
 
-  const saveContainer = async () => {
-    const validationError = getValidationError(draft);
+  const saveContainer = async (candidateDraft: ContainerDraft = draft) => {
+    const validationError = getValidationError(candidateDraft);
     if (validationError) {
       setError(validationError);
       setSuccess(null);
@@ -294,16 +744,51 @@ export default function SystemContainersPage() {
     setError(null);
     setSuccess(null);
     try {
-      const name = draft.name.trim();
-      await containersService.upsertContainer(name, normalizeDraftToPayload(draft));
+      const name = candidateDraft.name.trim();
+      await containersService.upsertContainer(name, normalizeDraftToPayload(candidateDraft));
       await loadOverview(true);
       setSelectedContainerName(name);
+      setDraft(candidateDraft);
       setSuccess(`Container ${name} saved.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save container.");
     } finally {
       setSaving(false);
     }
+  };
+
+  const applyTemplate = async (installImmediately: boolean) => {
+    if (!selectedTemplate) return;
+
+    const nextDraft = selectedTemplate.buildDraft({ timezone: localTimezone });
+    setSelectedContainerName(null);
+    setDraft(nextDraft);
+    setError(null);
+
+    if (!installImmediately) {
+      const helperNote =
+        selectedLanSegment && serviceLanIp.trim()
+          ? ` LAN helper suggestion: ${serviceLanIp.trim()} on ${selectedLanSegment.subnetCidr}.`
+          : "";
+      setSuccess(`${selectedTemplate.name} template loaded.${helperNote}`);
+      return;
+    }
+
+    if (!canEditSystem) {
+      setSuccess(null);
+      setError("You currently have read-only access for System features.");
+      return;
+    }
+
+    await saveContainer(nextDraft);
+  };
+
+  const applyLanHelperIp = () => {
+    const value = serviceLanIp.trim();
+    if (!value || lanIpValidationIssue) return;
+    setDraft((previous) => ({ ...previous, network_address: value }));
+    setError(null);
+    setSuccess(`Network address set to ${value}.`);
   };
 
   const runAction = async (name: string, action: "start" | "stop" | "restart") => {
@@ -413,13 +898,16 @@ export default function SystemContainersPage() {
             )}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => loadOverview(true)} disabled={loading || saving}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                loadOverview(true);
+                loadLanSegments();
+              }}
+              disabled={loading || saving || loadingLanSegments}
+            >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
               Refresh
-            </Button>
-            <Button variant="outline" onClick={() => setDraft(loadPiHoleTemplate())} disabled={saving}>
-              <WandSparkles className="h-4 w-4 mr-2" />
-              Pi-hole Template
             </Button>
             <Button variant="outline" onClick={resetDraft} disabled={saving}>
               <Plus className="h-4 w-4 mr-2" />
@@ -606,6 +1094,163 @@ export default function SystemContainersPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="rounded-md border bg-muted/20 p-4 space-y-4">
+                <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-end">
+                  <div className="space-y-2">
+                    <Label>Template Catalog</Label>
+                    <Select
+                      value={selectedTemplateId}
+                      onValueChange={setSelectedTemplateId}
+                      disabled={saving}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONTAINER_TEMPLATES.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button variant="outline" onClick={() => applyTemplate(false)} disabled={saving}>
+                    <WandSparkles className="h-4 w-4 mr-2" />
+                    Populate
+                  </Button>
+                  <Button
+                    onClick={() => applyTemplate(true)}
+                    disabled={!canEditSystem || saving}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Populate + Install
+                  </Button>
+                </div>
+
+                {selectedTemplate && (
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    <p>{selectedTemplate.description}</p>
+                    <p>{selectedTemplate.lanHint}</p>
+                    <a
+                      href={selectedTemplate.docsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Template documentation
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-md border p-4 space-y-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <Label>LAN Planning Helper</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Pick a LAN subnet to validate service IP planning and quickly copy a network address.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadLanSegments}
+                    disabled={saving || loadingLanSegments}
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4 mr-2 ${loadingLanSegments ? "animate-spin" : ""}`}
+                    />
+                    Rescan LAN
+                  </Button>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Detected LAN Segment</Label>
+                    <Select
+                      value={selectedLanSegmentId || "none"}
+                      onValueChange={(value) => setSelectedLanSegmentId(value === "none" ? "" : value)}
+                      disabled={saving || loadingLanSegments}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a segment" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {lanSegments.map((segment) => (
+                          <SelectItem key={segment.id} value={segment.id}>
+                            {segment.interfaceName} - {segment.subnetCidr}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Service IP Suggestion</Label>
+                    <Input
+                      value={serviceLanIp}
+                      onChange={(event) => setServiceLanIp(event.target.value)}
+                      placeholder="192.168.1.10"
+                      disabled={saving || !selectedLanSegment}
+                    />
+                  </div>
+                </div>
+
+                {selectedLanSegment ? (
+                  <div className="space-y-1 text-xs">
+                    <p className="text-muted-foreground">
+                      Interface address:{" "}
+                      <span className="font-mono">{selectedLanSegment.interfaceIp}</span> on{" "}
+                      <span className="font-mono">{selectedLanSegment.subnetCidr}</span>
+                    </p>
+                    <p className="text-muted-foreground">
+                      Usable host range:{" "}
+                      <span className="font-mono">{getUsableHostRange(selectedLanSegment.parsed)}</span>
+                    </p>
+                    {selectedLanSegment.interfaceDescription && (
+                      <p className="text-muted-foreground">{selectedLanSegment.interfaceDescription}</p>
+                    )}
+                    {serviceLanIp.trim() && (
+                      <p className={lanIpValidationIssue ? "text-destructive" : "text-green-700"}>
+                        {lanIpValidationIssue ?? "Service IP is valid for this LAN segment."}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    No private static LAN subnet selected. You can still configure containers manually.
+                  </p>
+                )}
+
+                {lanSegmentsError && (
+                  <p className="text-xs text-destructive">{lanSegmentsError}</p>
+                )}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={applyLanHelperIp}
+                    disabled={
+                      saving ||
+                      !draft.network.trim() ||
+                      !serviceLanIp.trim() ||
+                      Boolean(lanIpValidationIssue)
+                    }
+                  >
+                    Use Service IP as Network Address
+                  </Button>
+                  {!draft.network.trim() && (
+                    <span className="text-xs text-muted-foreground">
+                      Set Network Name first to use Network Address.
+                    </span>
+                  )}
+                </div>
+              </div>
+
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Name</Label>
@@ -961,7 +1606,7 @@ export default function SystemContainersPage() {
               )}
 
               <div className="flex flex-wrap gap-2">
-                <Button onClick={saveContainer} disabled={!canEditSystem || saving}>
+                <Button onClick={() => saveContainer()} disabled={!canEditSystem || saving}>
                   <Save className="h-4 w-4 mr-2" />
                   {saving ? "Saving..." : "Save Container"}
                 </Button>

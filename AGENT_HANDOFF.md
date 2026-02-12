@@ -129,6 +129,26 @@ Branch: `dev`
   - File: `frontend/src/components/layout/Sidebar.tsx`
   - Added `System -> Containers` entry.
 
+### 7) Container Template Catalog + LAN Planning Helper
+- Enhanced container create/edit UX:
+  - File: `frontend/src/app/system/containers/page.tsx`
+  - Added template catalog with `Populate` and `Populate + Install` actions.
+  - Added common presets:
+    - Pi-hole
+    - AdGuard Home
+    - Uptime Kuma
+    - Nginx Proxy Manager
+    - Portainer CE
+    - Home Assistant
+  - Added LAN planning helper:
+    - Pulls Ethernet config via `ethernetService.getConfig()`
+    - Detects private IPv4 LAN subnets from configured interfaces
+    - Supports subnet selection + suggested service IP
+    - Validates service IP is usable and inside selected subnet
+    - One-click copy of helper IP into container `network_address` (when `network` is set)
+  - Updated refresh behavior to refresh both container overview and LAN helper data.
+  - Save path now supports internal draft override for one-click template install.
+
 ## Known Notes / Caveats
 - Frontend build warning remains about multiple lockfiles at repo root and `frontend/`; build still succeeds.
 - Better Auth warns that current `BETTER_AUTH_SECRET` value is weak/short for production.
@@ -183,3 +203,10 @@ Branch: `dev`
    - generated service URL links
 5. If container restart/log command variants fail on a target image, inspect backend logs (`tmux capture-pane -pt vm-api:0.0`) and adjust command fallback order in `backend/routers/containers.py`.
 6. For unsupported hardware identify LED cases (e.g., some SFP+), inspect logs and add/adjust fallback command paths in `backend/routers/show.py` if needed.
+7. Re-test template flows on `System -> Containers`:
+   - `Populate` and `Populate + Install` for Pi-hole and one non-DNS template.
+   - LAN helper subnet detection, service-IP validation, and `Use Service IP as Network Address` behavior.
+8. Frontend validation run for this change set:
+   - `npx tsc --noEmit --pretty false`
+   - `npx eslint src/app/system/containers/page.tsx`
+   - `npm run -s build`
