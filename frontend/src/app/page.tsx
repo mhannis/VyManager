@@ -33,6 +33,118 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
+const GRID_COLUMNS = 3;
+const MAX_GRID_SCAN_ROWS = 200;
+
+function getCardSpan(card: DashboardCard): number {
+  if (!card.span || card.span < 1) return 1;
+  if (card.span > GRID_COLUMNS) return GRID_COLUMNS;
+  return Math.floor(card.span);
+}
+
+function buildStartColumnOrder(preferredColumn: number, span: number): number[] {
+  const maxStartColumn = GRID_COLUMNS - span;
+  const clampedPreferred = Math.max(0, Math.min(preferredColumn, maxStartColumn));
+  const ordered = [clampedPreferred];
+
+  for (let column = 0; column <= maxStartColumn; column++) {
+    if (column !== clampedPreferred) {
+      ordered.push(column);
+    }
+  }
+
+  return ordered;
+}
+
+function canPlaceAt(
+  occupancy: Map<number, Set<number>>,
+  row: number,
+  startColumn: number,
+  span: number
+): boolean {
+  const occupiedColumns = occupancy.get(row);
+  if (!occupiedColumns) return true;
+
+  const endColumn = startColumn + span - 1;
+  for (let column = startColumn; column <= endColumn; column++) {
+    if (occupiedColumns.has(column)) return false;
+  }
+  return true;
+}
+
+function markOccupied(
+  occupancy: Map<number, Set<number>>,
+  row: number,
+  startColumn: number,
+  span: number
+): void {
+  if (!occupancy.has(row)) {
+    occupancy.set(row, new Set());
+  }
+
+  const rowSet = occupancy.get(row)!;
+  const endColumn = startColumn + span - 1;
+  for (let column = startColumn; column <= endColumn; column++) {
+    rowSet.add(column);
+  }
+}
+
+function compactCards(cards: DashboardCard[]): DashboardCard[] {
+  const occupancy: Map<number, Set<number>> = new Map();
+  const cardsInPlacementOrder = [...cards].sort((left, right) => {
+    if (left.position !== right.position) return left.position - right.position;
+    if (left.column !== right.column) return left.column - right.column;
+    return left.id.localeCompare(right.id);
+  });
+
+  const placementById = new Map<
+    string,
+    { column: number; position: number; span: number }
+  >();
+
+  for (const card of cardsInPlacementOrder) {
+    const span = getCardSpan(card);
+    const startColumns = buildStartColumnOrder(card.column, span);
+
+    let placed = false;
+    for (let row = 0; row < MAX_GRID_SCAN_ROWS && !placed; row++) {
+      for (const startColumn of startColumns) {
+        if (!canPlaceAt(occupancy, row, startColumn, span)) {
+          continue;
+        }
+
+        markOccupied(occupancy, row, startColumn, span);
+        placementById.set(card.id, {
+          column: startColumn,
+          position: row,
+          span,
+        });
+        placed = true;
+        break;
+      }
+    }
+
+    if (!placed) {
+      placementById.set(card.id, {
+        column: 0,
+        position: cardsInPlacementOrder.length,
+        span,
+      });
+    }
+  }
+
+  return cards.map((card) => {
+    const placement = placementById.get(card.id);
+    if (!placement) return { ...card, span: getCardSpan(card) };
+    return {
+      ...card,
+      column: placement.column,
+      position: placement.position,
+      span: placement.span,
+    };
+  });
+}
+
 // Sortable card wrapper component
 function SortableCard({ card, children }: { card: DashboardCard; children: React.ReactNode }) {
   const {
@@ -141,7 +253,7 @@ export default function Home() {
           }
           return card;
         });
-        setCards(cardsWithSpan);
+        setCards(compactCards(cardsWithSpan));
       } else {
         setCards([]);
       }
@@ -348,76 +460,30 @@ export default function Home() {
       defaultSpan = 2;
     }
 
-    // New cards always start at column 0
-    const targetColumn = 0;
-
-    // Build occupancy map from existing cards
-    const rowOccupancy: Map<number, Set<number>> = new Map();
-    for (const card of cards) {
-      const span = card.span || 1;
-      const startCol = card.column;
-      const endCol = Math.min(startCol + span - 1, 2);
-
-      if (!rowOccupancy.has(card.position)) {
-        rowOccupancy.set(card.position, new Set());
-      }
-
-      for (let col = startCol; col <= endCol; col++) {
-        rowOccupancy.get(card.position)!.add(col);
-      }
-    }
-
-    // Find first available row where this card can fit
-    let targetPosition = 0;
-    const endCol = targetColumn + defaultSpan - 1;
-
-    while (targetPosition < 100) {
-      const occupied = rowOccupancy.get(targetPosition);
-      if (!occupied) {
-        // Row is completely empty
-        break;
-      }
-
-      // Check if columns needed for this card are free
-      let allFree = true;
-      for (let col = targetColumn; col <= endCol; col++) {
-        if (occupied.has(col)) {
-          allFree = false;
-          break;
-        }
-      }
-
-      if (allFree) {
-        break;
-      }
-
-      targetPosition++;
-    }
-
     const newCard: DashboardCard = {
       id: `card-${Date.now()}`,
       type: cardType,
-      column: targetColumn,
-      position: targetPosition,
+      column: 0,
+      position: 0,
       span: defaultSpan,
     };
 
-    setCards([...cards, newCard]);
+    setCards(compactCards([...cards, newCard]));
     setHasUnsavedChanges(true);
   };
 
   const handleRemoveCard = (cardId: string) => {
-    setCards(cards.filter((c) => c.id !== cardId));
+    setCards(compactCards(cards.filter((c) => c.id !== cardId)));
     setHasUnsavedChanges(true);
   };
 
   const handleCardSpanChange = (cardId: string, newSpan: number) => {
-    setCards(cards.map((c) => {
+    setCards(compactCards(cards.map((c) => {
       if (c.id === cardId) {
         return { ...c, span: newSpan };
       }
       return c;
-    }));
+    })));
     setHasUnsavedChanges(true);
   };
 

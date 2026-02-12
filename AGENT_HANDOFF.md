@@ -78,6 +78,10 @@ Branch: `dev`
     - `frontend/src/app/api/session/set-first-user-admin/route.ts`
     - `frontend/src/app/api/user-management/[...path]/route.ts`
     - `frontend/src/lib/api/client.ts`
+- Additional dashboard layout improvement:
+  - `frontend/src/app/page.tsx`
+  - Added card compaction/packing logic so cards auto-fill open grid space on load/add/remove/resize.
+  - New cards can now land in adjacent free columns instead of leaving persistent horizontal gaps.
 
 ### 1) Auth/session/user management hardening
 - Session timeout / middleware behavior adjusted in backend.
