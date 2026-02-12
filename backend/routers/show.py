@@ -302,6 +302,20 @@ def _append_unique(items: List[str], seen: set, value: str) -> None:
         items.append(value)
 
 
+def _interface_has_dhcp_address_config(interface_config: Any) -> bool:
+    if not isinstance(interface_config, dict):
+        return False
+
+    addresses = interface_config.get("address")
+    if isinstance(addresses, str):
+        return addresses.strip().lower() == "dhcp"
+    if isinstance(addresses, list):
+        return any(str(entry).strip().lower() == "dhcp" for entry in addresses)
+    if isinstance(addresses, dict):
+        return any(str(entry).strip().lower() == "dhcp" for entry in addresses.keys())
+    return False
+
+
 def _ipv4_with_netmask_to_cidr(ipv4: str, netmask: str) -> Optional[str]:
     try:
         octets = [int(part) for part in ipv4.split(".")]
@@ -320,6 +334,93 @@ def _ipv4_with_netmask_to_cidr(ipv4: str, netmask: str) -> Optional[str]:
         return f"{ipv4}/{prefix}"
     except Exception:
         return None
+
+
+def _parse_dhcp_lease_ipv4_addresses(output: str) -> List[str]:
+    """
+    Parse DHCP lease output and return best-effort IPv4 CIDRs.
+    """
+    if not output or not isinstance(output, str):
+        return []
+
+    cleaned_output = re.sub(r"\x1B\[[0-?]*[ -/]*[@-~]", "", output)
+    found: List[str] = []
+    seen = set()
+
+    # Format: fixed-address 192.168.1.100; + option subnet-mask 255.255.255.0;
+    fixed_addresses = re.findall(r"\bfixed-address\s+((?:\d{1,3}\.){3}\d{1,3})\s*;", cleaned_output, re.IGNORECASE)
+    masks = re.findall(r"\bsubnet-mask\s+((?:\d{1,3}\.){3}\d{1,3})\s*;", cleaned_output, re.IGNORECASE)
+
+    if fixed_addresses:
+        if masks:
+            default_mask = masks[0]
+            for index, ip in enumerate(fixed_addresses):
+                mask = masks[index] if index < len(masks) else default_mask
+                cidr = _ipv4_with_netmask_to_cidr(ip, mask)
+                if cidr and _is_valid_ipv4_cidr(cidr):
+                    _append_unique(found, seen, cidr)
+        else:
+            for ip in fixed_addresses:
+                fallback_cidr = f"{ip}/32"
+                if _is_valid_ipv4_cidr(fallback_cidr):
+                    _append_unique(found, seen, fallback_cidr)
+
+    # Format: address/netmask from human-readable status text.
+    line_matches = re.finditer(
+        r"\baddress[:\s]+((?:\d{1,3}\.){3}\d{1,3})\b[^\n\r]*?\b(?:netmask|mask)[:\s]+((?:\d{1,3}\.){3}\d{1,3})\b",
+        cleaned_output,
+        re.IGNORECASE,
+    )
+    for match in line_matches:
+        cidr = _ipv4_with_netmask_to_cidr(match.group(1), match.group(2))
+        if cidr and _is_valid_ipv4_cidr(cidr):
+            _append_unique(found, seen, cidr)
+
+    # CIDR fallback in lease output.
+    for ipv4 in re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}\b", cleaned_output):
+        if _is_valid_ipv4_cidr(ipv4):
+            _append_unique(found, seen, ipv4)
+
+    return found
+
+
+def _collect_dhcp_lease_output_for_interface(service: Any, interface_name: str) -> str:
+    """
+    Try several command variants for DHCP lease details for an interface.
+    """
+    candidates = [
+        ("show", ["dhcp", "client", "leases", "interface", interface_name]),
+        ("show", ["dhcp", "client", "leases", interface_name]),
+        ("show", ["dhcp", "client", "lease", interface_name]),
+        ("show", ["interfaces", "ethernet", interface_name, "dhcp"]),
+        ("generate", ["dhcp", "client", "leases", "interface", interface_name]),
+        ("generate", ["dhcp", "client", "leases", interface_name]),
+    ]
+
+    best_output = ""
+    best_score = 0
+
+    for method, path in candidates:
+        response = service.device.generate(path=path) if method == "generate" else service.device.show(path=path)
+        if response.status != 200:
+            continue
+
+        output = extract_show_output(response.result)
+        if not output:
+            continue
+
+        score = len(
+            re.findall(
+                r"fixed-address|subnet-mask|(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}",
+                output,
+                re.IGNORECASE,
+            )
+        )
+        if score >= best_score:
+            best_score = score
+            best_output = output
+
+    return best_output
 
 
 def parse_interface_runtime_addresses(interface_name: str, output: str) -> InterfaceRuntimeAddress:
@@ -800,6 +901,9 @@ async def get_interface_runtime_addresses(request: Request):
         interface_names = sorted(ethernet_config.keys())
         runtime_interfaces: List[InterfaceRuntimeAddress] = []
         summary_by_name: Dict[str, InterfaceRuntimeAddress] = {}
+        dhcp_enabled_interfaces = {
+            name for name, cfg in ethernet_config.items() if _interface_has_dhcp_address_config(cfg)
+        }
 
         # Summary output can expose runtime DHCP addresses in a single call.
         best_summary_output = ""
@@ -862,6 +966,14 @@ async def get_interface_runtime_addresses(request: Request):
                     _append_unique(merged.ipv4_addresses, merged_seen_ipv4, ipv4)
                 for ipv6 in summary_entry.ipv6_addresses:
                     _append_unique(merged.ipv6_addresses, merged_seen_ipv6, ipv6)
+
+            # Fallback: DHCP lease output (useful when interfaces show output omits runtime IPv4).
+            if interface_name in dhcp_enabled_interfaces and not merged.ipv4_addresses:
+                lease_output = _collect_dhcp_lease_output_for_interface(service, interface_name)
+                lease_addresses = _parse_dhcp_lease_ipv4_addresses(lease_output)
+                merged_seen_ipv4 = set(merged.ipv4_addresses)
+                for lease_address in lease_addresses:
+                    _append_unique(merged.ipv4_addresses, merged_seen_ipv4, lease_address)
 
             runtime_interfaces.append(merged)
 
