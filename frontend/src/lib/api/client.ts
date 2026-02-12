@@ -11,6 +11,18 @@ const API_BASE_URL = typeof window !== 'undefined'
 
 import { ApiError } from "../types/api";
 
+class ApiClientError extends Error implements ApiError {
+  status?: number;
+  details?: unknown;
+
+  constructor(message: string, status?: number, details?: unknown) {
+    super(message);
+    this.name = "ApiClientError";
+    this.status = status;
+    this.details = details;
+  }
+}
+
 export class ApiClient {
   private baseUrl: string;
   private inFlightGetRequests: Map<string, Promise<unknown>>;
@@ -74,13 +86,7 @@ export class ApiClient {
           errorMessage = "Failed to connect";
         }
 
-        const error: ApiError = {
-          message: errorMessage,
-          status: response.status,
-          details: errorDetails,
-        };
-
-        throw error;
+        throw new ApiClientError(errorMessage, response.status, errorDetails);
       }
 
       // Parse JSON response
@@ -91,26 +97,21 @@ export class ApiClient {
       } catch {
         // If response is not valid JSON, throw error
         if (responseText.includes("<!DOCTYPE")) {
-          throw {
-            message: "Server returned an HTML page instead of JSON",
-            status: response.status,
-          } as ApiError;
+          throw new ApiClientError("Server returned an HTML page instead of JSON", response.status);
         }
 
-        throw {
-          message: "Server returned non-JSON response",
-          status: response.status,
-        } as ApiError;
+        throw new ApiClientError("Server returned non-JSON response", response.status);
       }
     } catch (error) {
-      if ((error as ApiError).status) {
+      if (error instanceof ApiClientError) {
         throw error;
       }
 
-      throw {
-        message: error instanceof Error ? error.message : "Network error occurred",
-        details: error,
-      } as ApiError;
+      throw new ApiClientError(
+        error instanceof Error ? error.message : "Network error occurred",
+        undefined,
+        error
+      );
     }
   }
 
