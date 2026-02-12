@@ -277,6 +277,48 @@ def parse_interface_runtime_addresses(interface_name: str, output: str) -> Inter
     seen_ipv6 = set()
 
     if output and isinstance(output, str):
+        # Strip ANSI escape sequences if present in CLI output.
+        cleaned_output = re.sub(r"\x1B\[[0-?]*[ -/]*[@-~]", "", output)
+
+        def _is_valid_ipv4_cidr(candidate: str) -> bool:
+            try:
+                ip, prefix_text = candidate.split("/", 1)
+                octets = [int(part) for part in ip.split(".")]
+                prefix = int(prefix_text)
+                if len(octets) != 4:
+                    return False
+                if any(octet < 0 or octet > 255 for octet in octets):
+                    return False
+                if prefix < 0 or prefix > 32:
+                    return False
+                return True
+            except Exception:
+                return False
+
+        def _is_valid_ipv6_cidr(candidate: str) -> bool:
+            try:
+                ip, prefix_text = candidate.split("/", 1)
+                prefix = int(prefix_text)
+                if ":" not in ip:
+                    return False
+                if prefix < 0 or prefix > 128:
+                    return False
+                return True
+            except Exception:
+                return False
+
+        # First pass: capture CIDRs in any common format (summary/detail views).
+        for ipv4 in re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}\b", cleaned_output):
+            if ipv4 not in seen_ipv4 and _is_valid_ipv4_cidr(ipv4):
+                seen_ipv4.add(ipv4)
+                ipv4_addresses.append(ipv4)
+
+        for ipv6 in re.findall(r"\b[0-9A-Fa-f:]+/\d{1,3}\b", cleaned_output):
+            if ipv6 not in seen_ipv6 and _is_valid_ipv6_cidr(ipv6):
+                seen_ipv6.add(ipv6)
+                ipv6_addresses.append(ipv6)
+
+        # Second pass: preserve existing inet/inet6 parsing for edge formatting.
         for raw_line in output.splitlines():
             line = raw_line.strip()
             if not line:
