@@ -60,24 +60,45 @@ Branch: `dev`
   - Inline success/error status messages
   - Improved error parsing so UI shows backend detail (including first failed attempt), not only generic fallback text.
 
-## Current Request In Progress
-User requested immediate blink UX (no long spinner) after command trigger.
-
-Status:
-- Backend now queues blink asynchronously and responds immediately.
-- Backend command path mismatch remains fixed (no-duration `identify` attempted first).
-- Services restarted and API restored with DB env.
-- Awaiting user re-test on live hardware.
+### 5) New System Dashboard Cards + NTP Service Management
+- Backend system API expanded:
+  - File: `backend/routers/system.py`
+  - New endpoints:
+    - `GET /vyos/system/dashboard-summary`
+    - `GET /vyos/system/disk-status`
+    - `GET /vyos/system/ntp-status`
+    - `GET /vyos/system/ntp-config`
+    - `PUT /vyos/system/ntp-config`
+  - Added parsers for:
+    - System version/uptime/cpu/memory outputs
+    - Storage status output
+    - NTP tracking/activity/sources outputs
+    - NTP service config extraction and update diffing
+  - All new endpoints permission-gated with `FeatureGroup.SYSTEM` read/write checks.
+- Frontend API client expanded:
+  - File: `frontend/src/lib/api/system.ts`
+  - Added typed models + methods for dashboard summary, disk status, NTP status, and NTP config update.
+- New dashboard cards:
+  - `frontend/src/components/dashboard/SystemInformationCard.tsx`
+  - `frontend/src/components/dashboard/NtpStatusCard.tsx`
+  - `frontend/src/components/dashboard/DiskUsageCard.tsx`
+  - Integrated via:
+    - `frontend/src/components/dashboard/AddCardModal.tsx`
+    - `frontend/src/app/page.tsx`
+- New NTP configuration UI page:
+  - File: `frontend/src/app/system/services/page.tsx`
+  - Supports enabling/disabling NTP, server options, allow-client networks, listen addresses, save/apply.
+  - Includes runtime NTP status section.
+- Sidebar updates:
+  - File: `frontend/src/components/layout/Sidebar.tsx`
+  - Added system submenu entries for Services/Logs/Users with SYSTEM permission gating.
+  - Refactored submenu open-state logic to avoid `setState` inside an effect (lint-safe).
 
 ## Known Notes / Caveats
-- Repo has many pre-existing lint issues unrelated to current wizard work.
-- Targeted type-check for current wizard path succeeded (`tsc --noEmit --project tsconfig.json`).
-- Targeted checks for blink changes passed:
-  - `python3 -m py_compile backend/routers/show.py`
-  - `npx tsc --noEmit --project tsconfig.json`
-  - `npx eslint src/app/network/setup-wizard/page.tsx src/lib/api/show.ts`
-- Sidebar file has an existing lint rule issue (`react-hooks/set-state-in-effect`) that predates this handoff workflow.
+- Frontend build warning remains about multiple lockfiles at repo root and `frontend/`; build still succeeds.
+- Better Auth warns that current `BETTER_AUTH_SECRET` value is weak/short for production.
 - If backend is restarted manually without `DATABASE_URL`, frontend API calls degrade to `503` auth/session failures.
+- Existing backend tests require `PYTHONPATH=.` from `backend/` to import `app.py` correctly.
 
 ## Files Touching Recent Feature Work
 - Backend:
@@ -86,15 +107,21 @@ Status:
   - `backend/middleware/auth.py`
   - `backend/middleware/session.py`
   - `backend/routers/show.py`
+  - `backend/routers/system.py`
   - `backend/routers/user_management.py`
 - Frontend:
+  - `frontend/src/app/system/services/page.tsx`
   - `frontend/src/app/api/internal/create-user/route.ts`
   - `frontend/src/app/login/page.tsx`
   - `frontend/src/app/network/interfaces/page.tsx`
   - `frontend/src/app/network/setup-wizard/page.tsx`
   - `frontend/src/app/onboarding/page.tsx`
   - `frontend/src/app/page.tsx`
+  - `frontend/src/components/dashboard/AddCardModal.tsx`
+  - `frontend/src/components/dashboard/DiskUsageCard.tsx`
   - `frontend/src/components/dashboard/InterfaceStatisticsCard.tsx`
+  - `frontend/src/components/dashboard/NtpStatusCard.tsx`
+  - `frontend/src/components/dashboard/SystemInformationCard.tsx`
   - `frontend/src/components/layout/Sidebar.tsx`
   - `frontend/src/components/user-management/CreateUserModal.tsx`
   - `frontend/src/components/user-management/DeleteUserModal.tsx`
@@ -103,10 +130,12 @@ Status:
   - `frontend/src/components/user-management/UsersTab.tsx`
   - `frontend/src/components/user-management/ViewInstanceAccessModal.tsx`
   - `frontend/src/lib/api/show.ts`
+  - `frontend/src/lib/api/system.ts`
   - `frontend/src/lib/auth-identifier.ts`
 
 ## Resume Instructions For Next Agent
 1. Read this file first.
 2. Verify running services (`tmux ls`, ports 3000/8000).
-3. Re-test wizard and blink behavior against live VyOS instance.
-4. For unsupported hardware (e.g., some SFP+), check backend logs (`tmux capture-pane -pt vm-api:0.0`) and add driver/platform-specific fallback command path in `backend/routers/show.py` if desired.
+3. Re-test dashboard cards (`System Information`, `NTP Status`, `Disk Usage`) and System Services NTP configuration against live VyOS.
+4. If NTP apply fails on a target image, inspect backend logs (`tmux capture-pane -pt vm-api:0.0`) and validate exact VyOS command tree/options for that version.
+5. For unsupported hardware identify LED cases (e.g., some SFP+), inspect logs and add/adjust fallback command paths in `backend/routers/show.py` if needed.

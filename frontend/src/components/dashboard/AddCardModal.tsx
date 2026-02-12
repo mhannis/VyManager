@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Network, Plus } from "lucide-react";
+import { Network, Plus, Server, Clock3, HardDrive } from "lucide-react";
 
 interface AvailableCard {
   type: string;
@@ -20,6 +20,24 @@ interface AvailableCard {
 }
 
 const AVAILABLE_CARDS: AvailableCard[] = [
+  {
+    type: "system-information",
+    name: "System Information",
+    description: "Overview of hostname, version, CPU, memory, and uptime",
+    icon: Server,
+  },
+  {
+    type: "ntp-status",
+    name: "NTP Status",
+    description: "Track synchronization, NTP sources, and timing health",
+    icon: Clock3,
+  },
+  {
+    type: "disk-usage",
+    name: "Disk Usage",
+    description: "Monitor persistent storage usage and free space",
+    icon: HardDrive,
+  },
   {
     type: "interface-statistics",
     name: "Interface Statistics",

@@ -10,10 +10,14 @@ import { useSession } from "@/lib/auth-client";
 import { useSessionStore } from "@/store/session-store";
 import { dashboardService, DashboardCard, DashboardLayout } from "@/lib/api/dashboard";
 import { InterfaceStatisticsCard } from "@/components/dashboard/InterfaceStatisticsCard";
+import { SystemInformationCard } from "@/components/dashboard/SystemInformationCard";
+import { NtpStatusCard } from "@/components/dashboard/NtpStatusCard";
+import { DiskUsageCard } from "@/components/dashboard/DiskUsageCard";
 import { AddCardModal } from "@/components/dashboard/AddCardModal";
 import {
   DndContext,
   DragEndEvent,
+  DragStartEvent,
   DragOverlay,
   closestCorners,
   PointerSensor,
@@ -65,12 +69,10 @@ function SortableCard({ card, children }: { card: DashboardCard; children: React
 function DroppableColumnOverlay({
   columnId,
   editMode,
-  hasCards,
   isDragging,
 }: {
   columnId: string;
   editMode: boolean;
-  hasCards: boolean;
   isDragging: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: columnId });
@@ -104,7 +106,7 @@ export default function Home() {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
   const { data: session, isPending } = useSession();
-  const { activeSession, loadSession } = useSessionStore();
+  const { loadSession } = useSessionStore();
 
   // Dashboard state
   const [cards, setCards] = useState<DashboardCard[]>([]);
@@ -142,9 +144,13 @@ export default function Home() {
       } else {
         setCards([]);
       }
-    } catch (err: any) {
-      // Extract error message for logging
-      const errorMessage = err?.message || err?.error || err?.detail || "Unknown error";
+    } catch (err: unknown) {
+      const errorCandidate = err as { message?: string; error?: string; detail?: string } | null;
+      const errorMessage =
+        errorCandidate?.message ||
+        errorCandidate?.error ||
+        errorCandidate?.detail ||
+        "Unknown error";
       // Expected when user has not connected to an instance yet
       if (String(errorMessage).includes("No active instance")) {
         setCards([]);
@@ -212,8 +218,8 @@ export default function Home() {
   }
 
   // Handler functions
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id);
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(String(event.active.id));
   };
 
   const handleDragCancel = () => {
@@ -442,6 +448,12 @@ export default function Home() {
     };
 
     switch (card.type) {
+      case "system-information":
+        return <SystemInformationCard {...baseProps} />;
+      case "ntp-status":
+        return <NtpStatusCard {...baseProps} />;
+      case "disk-usage":
+        return <DiskUsageCard {...baseProps} />;
       case "interface-statistics":
         return <InterfaceStatisticsCard {...baseProps} />;
       default:
@@ -625,19 +637,16 @@ export default function Home() {
                   <DroppableColumnOverlay
                     columnId="column-0"
                     editMode={editMode}
-                    hasCards={cards.some(c => c.column === 0)}
                     isDragging={!!activeId}
                   />
                   <DroppableColumnOverlay
                     columnId="column-1"
                     editMode={editMode}
-                    hasCards={cards.some(c => c.column === 1)}
                     isDragging={!!activeId}
                   />
                   <DroppableColumnOverlay
                     columnId="column-2"
                     editMode={editMode}
-                    hasCards={cards.some(c => c.column === 2)}
                     isDragging={!!activeId}
                   />
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -204,7 +204,23 @@ const navigation: NavItem[] = [
   {
     title: "System",
     icon: Server,
-    children: [],
+    children: [
+      {
+        title: "Services",
+        href: "/system/services",
+        requiredPermission: FeatureGroup.SYSTEM
+      },
+      {
+        title: "Logs",
+        href: "/system/logs",
+        requiredPermission: FeatureGroup.SYSTEM
+      },
+      {
+        title: "Users",
+        href: "/system/users",
+        requiredPermission: FeatureGroup.SYSTEM
+      },
+    ],
   },
   {
     title: "Settings",
@@ -216,7 +232,7 @@ const navigation: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [openItems, setOpenItems] = useState<string[]>([]);
+  const [openOverrides, setOpenOverrides] = useState<Record<string, boolean>>({});
   const { data: session } = useSession();
   const { activeSession, loadSession, disconnectFromInstance } = useSessionStore();
   const { canRead } = usePermissions();
@@ -240,8 +256,7 @@ export function Sidebar() {
     router.push("/login");
   };
 
-  // Initialize and update openItems based on current pathname
-  useEffect(() => {
+  const activeParents = useMemo(() => {
     const activeParents: string[] = [];
     navigation.forEach((item) => {
       if (item.children) {
@@ -251,15 +266,20 @@ export function Sidebar() {
         }
       }
     });
-    setOpenItems(activeParents);
+    return activeParents;
   }, [pathname]);
 
+  const isItemOpen = (title: string) =>
+    openOverrides[title] ?? activeParents.includes(title);
+
   const toggleItem = (title: string) => {
-    setOpenItems((prev) =>
-      prev.includes(title)
-        ? prev.filter((item) => item !== title)
-        : [...prev, title]
-    );
+    setOpenOverrides((prev) => {
+      const current = prev[title] ?? activeParents.includes(title);
+      return {
+        ...prev,
+        [title]: !current,
+      };
+    });
   };
 
   /**
@@ -419,7 +439,7 @@ export function Sidebar() {
               item.children?.some(child => pathname === child.href);
 
             if (item.children) {
-              const isOpen = openItems.includes(item.title);
+              const isOpen = isItemOpen(item.title);
               return (
                 <Collapsible
                   key={item.title}
