@@ -267,6 +267,41 @@ def parse_interface_physical_details(
     return details
 
 
+def _is_valid_ipv4_cidr(candidate: str) -> bool:
+    try:
+        ip, prefix_text = candidate.split("/", 1)
+        octets = [int(part) for part in ip.split(".")]
+        prefix = int(prefix_text)
+        if len(octets) != 4:
+            return False
+        if any(octet < 0 or octet > 255 for octet in octets):
+            return False
+        if prefix < 0 or prefix > 32:
+            return False
+        return True
+    except Exception:
+        return False
+
+
+def _is_valid_ipv6_cidr(candidate: str) -> bool:
+    try:
+        ip, prefix_text = candidate.split("/", 1)
+        prefix = int(prefix_text)
+        if ":" not in ip:
+            return False
+        if prefix < 0 or prefix > 128:
+            return False
+        return True
+    except Exception:
+        return False
+
+
+def _append_unique(items: List[str], seen: set, value: str) -> None:
+    if value not in seen:
+        seen.add(value)
+        items.append(value)
+
+
 def parse_interface_runtime_addresses(interface_name: str, output: str) -> InterfaceRuntimeAddress:
     """
     Parse `show interfaces ethernet <iface>` output and extract runtime addresses.
@@ -280,43 +315,14 @@ def parse_interface_runtime_addresses(interface_name: str, output: str) -> Inter
         # Strip ANSI escape sequences if present in CLI output.
         cleaned_output = re.sub(r"\x1B\[[0-?]*[ -/]*[@-~]", "", output)
 
-        def _is_valid_ipv4_cidr(candidate: str) -> bool:
-            try:
-                ip, prefix_text = candidate.split("/", 1)
-                octets = [int(part) for part in ip.split(".")]
-                prefix = int(prefix_text)
-                if len(octets) != 4:
-                    return False
-                if any(octet < 0 or octet > 255 for octet in octets):
-                    return False
-                if prefix < 0 or prefix > 32:
-                    return False
-                return True
-            except Exception:
-                return False
-
-        def _is_valid_ipv6_cidr(candidate: str) -> bool:
-            try:
-                ip, prefix_text = candidate.split("/", 1)
-                prefix = int(prefix_text)
-                if ":" not in ip:
-                    return False
-                if prefix < 0 or prefix > 128:
-                    return False
-                return True
-            except Exception:
-                return False
-
         # First pass: capture CIDRs in any common format (summary/detail views).
         for ipv4 in re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}\b", cleaned_output):
-            if ipv4 not in seen_ipv4 and _is_valid_ipv4_cidr(ipv4):
-                seen_ipv4.add(ipv4)
-                ipv4_addresses.append(ipv4)
+            if _is_valid_ipv4_cidr(ipv4):
+                _append_unique(ipv4_addresses, seen_ipv4, ipv4)
 
         for ipv6 in re.findall(r"\b[0-9A-Fa-f:]+/\d{1,3}\b", cleaned_output):
-            if ipv6 not in seen_ipv6 and _is_valid_ipv6_cidr(ipv6):
-                seen_ipv6.add(ipv6)
-                ipv6_addresses.append(ipv6)
+            if _is_valid_ipv6_cidr(ipv6):
+                _append_unique(ipv6_addresses, seen_ipv6, ipv6)
 
         # Second pass: preserve existing inet/inet6 parsing for edge formatting.
         for raw_line in output.splitlines():
@@ -325,20 +331,61 @@ def parse_interface_runtime_addresses(interface_name: str, output: str) -> Inter
                 continue
 
             for ipv4 in re.findall(r"\binet\s+(\d{1,3}(?:\.\d{1,3}){3}/\d{1,2})\b", line):
-                if ipv4 not in seen_ipv4:
-                    seen_ipv4.add(ipv4)
-                    ipv4_addresses.append(ipv4)
+                if _is_valid_ipv4_cidr(ipv4):
+                    _append_unique(ipv4_addresses, seen_ipv4, ipv4)
 
             for ipv6 in re.findall(r"\binet6\s+([0-9a-fA-F:]+/\d{1,3})\b", line):
-                if ipv6 not in seen_ipv6:
-                    seen_ipv6.add(ipv6)
-                    ipv6_addresses.append(ipv6)
+                if _is_valid_ipv6_cidr(ipv6):
+                    _append_unique(ipv6_addresses, seen_ipv6, ipv6)
 
     return InterfaceRuntimeAddress(
         interface=interface_name,
         ipv4_addresses=ipv4_addresses,
         ipv6_addresses=ipv6_addresses,
     )
+
+
+def parse_interface_summary_addresses(output: str) -> Dict[str, InterfaceRuntimeAddress]:
+    """
+    Parse `show interfaces`/`show interfaces summary` style output for runtime addresses.
+    """
+    mapping: Dict[str, InterfaceRuntimeAddress] = {}
+    if not output or not isinstance(output, str):
+        return mapping
+
+    cleaned_output = re.sub(r"\x1B\[[0-?]*[ -/]*[@-~]", "", output)
+
+    for raw_line in cleaned_output.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        match = re.match(r"^([A-Za-z][A-Za-z0-9._:-]*)\b", line)
+        if not match:
+            continue
+
+        interface_name = match.group(1)
+        lowered_name = interface_name.lower()
+        if lowered_name in {"interface", "interfaces"} or interface_name.startswith("-"):
+            continue
+
+        entry = mapping.get(interface_name)
+        if entry is None:
+            entry = InterfaceRuntimeAddress(interface=interface_name, ipv4_addresses=[], ipv6_addresses=[])
+            mapping[interface_name] = entry
+
+        seen_ipv4 = set(entry.ipv4_addresses)
+        seen_ipv6 = set(entry.ipv6_addresses)
+
+        for ipv4 in re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}\b", line):
+            if _is_valid_ipv4_cidr(ipv4):
+                _append_unique(entry.ipv4_addresses, seen_ipv4, ipv4)
+
+        for ipv6 in re.findall(r"\b[0-9A-Fa-f:]+/\d{1,3}\b", line):
+            if _is_valid_ipv6_cidr(ipv6):
+                _append_unique(entry.ipv6_addresses, seen_ipv6, ipv6)
+
+    return mapping
 
 
 def _build_interface_blink_attempts(device: Any, interface_name: str, duration: int) -> List[BlinkAttempt]:
@@ -712,6 +759,27 @@ async def get_interface_runtime_addresses(request: Request):
 
         interface_names = sorted(ethernet_config.keys())
         runtime_interfaces: List[InterfaceRuntimeAddress] = []
+        summary_by_name: Dict[str, InterfaceRuntimeAddress] = {}
+
+        # Summary output can expose runtime DHCP addresses in a single call.
+        best_summary_output = ""
+        best_summary_score = 0
+        for summary_path in (["interfaces"], ["interfaces", "summary"]):
+            summary_response = service.device.show(path=summary_path)
+            if summary_response.status != 200:
+                continue
+
+            summary_output = extract_show_output(summary_response.result)
+            if not summary_output:
+                continue
+
+            score = len(re.findall(r"(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}|[0-9A-Fa-f:]+/\d{1,3}", summary_output))
+            if score >= best_summary_score:
+                best_summary_score = score
+                best_summary_output = summary_output
+
+        if best_summary_output:
+            summary_by_name = parse_interface_summary_addresses(best_summary_output)
 
         for interface_name in interface_names:
             output = ""
@@ -728,7 +796,17 @@ async def get_interface_runtime_addresses(request: Request):
                     output = candidate_output
                     break
 
-            runtime_interfaces.append(parse_interface_runtime_addresses(interface_name, output))
+            merged = parse_interface_runtime_addresses(interface_name, output)
+            summary_entry = summary_by_name.get(interface_name)
+            if summary_entry:
+                merged_seen_ipv4 = set(merged.ipv4_addresses)
+                merged_seen_ipv6 = set(merged.ipv6_addresses)
+                for ipv4 in summary_entry.ipv4_addresses:
+                    _append_unique(merged.ipv4_addresses, merged_seen_ipv4, ipv4)
+                for ipv6 in summary_entry.ipv6_addresses:
+                    _append_unique(merged.ipv6_addresses, merged_seen_ipv6, ipv6)
+
+            runtime_interfaces.append(merged)
 
         return InterfaceRuntimeAddressesResponse(
             interfaces=runtime_interfaces,
