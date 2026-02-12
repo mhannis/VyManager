@@ -11,6 +11,7 @@ from typing import List, Optional, Dict, Any, Callable, Tuple
 import logging
 import re
 import threading
+from starlette.concurrency import run_in_threadpool
 
 from session_vyos_service import get_session_vyos_service
 from fastapi_permissions import require_write_permission
@@ -418,6 +419,58 @@ def _parse_dhcp_lease_ipv4_addresses(output: str) -> List[str]:
     return found
 
 
+def _parse_dhcp_client_leases_by_interface(output: str) -> Dict[str, List[str]]:
+    """
+    Parse `show dhcp client lease(s)` output and return interface -> IPv4 CIDRs mapping.
+
+    The CLI output commonly looks like:
+      Interface    eth0
+      IP address   192.168.10.242                [Active]
+      Subnet Mask  255.255.255.0
+
+    It can also include multiple interface blocks in a single response.
+    """
+    mapping: Dict[str, List[str]] = {}
+    if not output or not isinstance(output, str):
+        return mapping
+
+    cleaned_output = re.sub(r"\x1B\[[0-?]*[ -/]*[@-~]", "", output)
+
+    blocks: Dict[str, List[str]] = {}
+    current_iface: Optional[str] = None
+    current_lines: List[str] = []
+
+    for raw_line in cleaned_output.splitlines():
+        line = raw_line.rstrip("\r")
+        stripped = line.strip()
+        if not stripped:
+            continue
+
+        iface_match = re.match(
+            r"(?i)^\s*interface\s*(?:[:=]\s*|\s+)\s*([A-Za-z0-9._:-]+)\b",
+            stripped,
+        )
+        if iface_match:
+            if current_iface and current_lines:
+                blocks[current_iface] = current_lines
+            current_iface = iface_match.group(1)
+            current_lines = [line]
+            continue
+
+        if current_iface is not None:
+            current_lines.append(line)
+
+    if current_iface and current_lines:
+        blocks[current_iface] = current_lines
+
+    for iface, lines in blocks.items():
+        addresses = _parse_dhcp_lease_ipv4_addresses("\n".join(lines))
+        if addresses:
+            mapping[iface] = addresses
+
+    return mapping
+
+
 def _collect_dhcp_lease_output_for_interface(service: Any, interface_name: str) -> str:
     """
     Try several command variants for DHCP lease details for an interface.
@@ -743,7 +796,7 @@ async def get_interface_counters(request: Request):
         service = get_session_vyos_service(request)
 
         # Execute 'show interface counters' command
-        response = service.device.show(path=["interfaces", "counters"])
+        response = await run_in_threadpool(service.device.show, path=["interfaces", "counters"])
 
         if response.status != 200:
             raise HTTPException(
@@ -788,7 +841,7 @@ async def get_interface_physical(request: Request):
     try:
         service = get_session_vyos_service(request)
 
-        full_config = service.get_full_config(refresh=False)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=False)
         ethernet_config = full_config.get("interfaces", {}).get("ethernet", {})
 
         if not isinstance(ethernet_config, dict):
@@ -799,7 +852,7 @@ async def get_interface_physical(request: Request):
         # Build a PCI bus-id -> model map (best effort)
         nic_models_by_bus: Dict[str, str] = {}
         for hardware_path in (["hardware", "pci"], ["hardware"]):
-            hardware_response = service.device.show(path=hardware_path)
+            hardware_response = await run_in_threadpool(service.device.show, path=hardware_path)
             if hardware_response.status != 200:
                 continue
             hardware_output = extract_show_output(hardware_response.result)
@@ -815,7 +868,7 @@ async def get_interface_physical(request: Request):
                 ["interfaces", "ethernet", interface_name, "physical"],
                 ["interfaces", "ethernet", interface_name],
             ):
-                response = service.device.show(path=show_path)
+                response = await run_in_threadpool(service.device.show, path=show_path)
                 if response.status == 200:
                     output = extract_show_output(response.result)
                     if output:
@@ -871,7 +924,7 @@ async def get_all_interfaces(request: Request):
         service = get_session_vyos_service(request)
 
         # Get full config to extract all interfaces
-        full_config = service.get_full_config(refresh=False)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=False)
         interfaces_config = full_config.get("interfaces", {})
 
         interfaces = []
@@ -930,90 +983,61 @@ async def get_interface_runtime_addresses(request: Request):
     """
     try:
         service = get_session_vyos_service(request)
-        full_config = service.get_full_config(refresh=False)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=False)
         ethernet_config = full_config.get("interfaces", {}).get("ethernet", {})
 
         if not isinstance(ethernet_config, dict):
             return InterfaceRuntimeAddressesResponse(interfaces=[], total=0)
 
         interface_names = sorted(ethernet_config.keys())
-        runtime_interfaces: List[InterfaceRuntimeAddress] = []
-        summary_by_name: Dict[str, InterfaceRuntimeAddress] = {}
         dhcp_enabled_interfaces = {
             name for name, cfg in ethernet_config.items() if _interface_has_dhcp_address_config(cfg)
         }
 
-        # Summary output can expose runtime DHCP addresses in a single call.
-        best_summary_output = ""
-        best_summary_score = 0
-        for summary_path in (["interfaces"], ["interfaces", "summary"], ["interfaces", "brief"]):
-            summary_response = service.device.show(path=summary_path)
-            if summary_response.status != 200:
-                continue
-
+        # Prefer a single summary call (fastest), then fall back if needed.
+        summary_output = ""
+        summary_response = await run_in_threadpool(service.device.show, path=["interfaces"])
+        if summary_response.status == 200:
             summary_output = extract_show_output(summary_response.result)
-            if not summary_output:
-                continue
+        if not summary_output:
+            fallback_response = await run_in_threadpool(service.device.show, path=["interfaces", "summary"])
+            if fallback_response.status == 200:
+                summary_output = extract_show_output(fallback_response.result)
 
-            score = len(re.findall(r"(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}|[0-9A-Fa-f:]+/\d{1,3}", summary_output))
-            if score >= best_summary_score:
-                best_summary_score = score
-                best_summary_output = summary_output
+        summary_by_name = parse_interface_summary_addresses(summary_output) if summary_output else {}
 
-        if best_summary_output:
-            summary_by_name = parse_interface_summary_addresses(best_summary_output)
+        runtime_interfaces: List[InterfaceRuntimeAddress] = []
+        missing_dhcp: List[str] = []
 
         for interface_name in interface_names:
-            output = ""
-            best_output = ""
-            best_output_score = 0
-            for show_path in (
-                ["interfaces", "ethernet", interface_name],
-                ["interfaces", "ethernet", interface_name, "address"],
-                ["interfaces", interface_name],
-                ["interfaces", interface_name, "address"],
-            ):
-                response = service.device.show(path=show_path)
-                if response.status != 200:
-                    continue
-
-                candidate_output = extract_show_output(response.result)
-                if not candidate_output:
-                    continue
-
-                score = len(
-                    re.findall(
-                        r"(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}|[0-9A-Fa-f:]+/\d{1,3}|netmask\s+(?:\d{1,3}\.){3}\d{1,3}",
-                        candidate_output,
-                        re.IGNORECASE,
-                    )
-                )
-                if score >= best_output_score:
-                    best_output_score = score
-                    best_output = candidate_output
-
-            if best_output:
-                output = best_output
-
-            merged = parse_interface_runtime_addresses(interface_name, output)
             summary_entry = summary_by_name.get(interface_name)
-            if summary_entry:
-                merged_seen_ipv4 = set(merged.ipv4_addresses)
-                merged_seen_ipv6 = set(merged.ipv6_addresses)
-                for ipv4 in summary_entry.ipv4_addresses:
-                    _append_unique(merged.ipv4_addresses, merged_seen_ipv4, ipv4)
-                for ipv6 in summary_entry.ipv6_addresses:
-                    _append_unique(merged.ipv6_addresses, merged_seen_ipv6, ipv6)
+            ipv4_addresses = list(summary_entry.ipv4_addresses) if summary_entry else []
+            ipv6_addresses = list(summary_entry.ipv6_addresses) if summary_entry else []
 
-            # Fallback: DHCP lease output (useful when interfaces show output omits runtime IPv4).
-            if interface_name in dhcp_enabled_interfaces and not merged.ipv4_addresses:
-                lease_output = _collect_dhcp_lease_output_for_interface(service, interface_name)
-                lease_addresses = _parse_dhcp_lease_ipv4_addresses(lease_output)
-                merged_seen_ipv4 = set(merged.ipv4_addresses)
-                for lease_address in lease_addresses:
-                    _append_unique(merged.ipv4_addresses, merged_seen_ipv4, lease_address)
+            if interface_name in dhcp_enabled_interfaces and not ipv4_addresses:
+                missing_dhcp.append(interface_name)
 
-            runtime_interfaces.append(merged)
+            runtime_interfaces.append(
+                InterfaceRuntimeAddress(
+                    interface=interface_name,
+                    ipv4_addresses=ipv4_addresses,
+                    ipv6_addresses=ipv6_addresses,
+                )
+            )
+
+        # Fallback: DHCP client lease output (single call) for DHCP interfaces still missing runtime IPv4.
+        if missing_dhcp:
+            lease_response = await run_in_threadpool(service.device.show, path=["dhcp", "client", "leases"])
+            if lease_response.status == 200:
+                lease_output = extract_show_output(lease_response.result)
+                leases_by_iface = _parse_dhcp_client_leases_by_interface(lease_output)
+
+                for entry in runtime_interfaces:
+                    if entry.interface not in missing_dhcp or entry.ipv4_addresses:
+                        continue
+                    seen_ipv4 = set(entry.ipv4_addresses)
+                    for lease_address in leases_by_iface.get(entry.interface, []):
+                        _append_unique(entry.ipv4_addresses, seen_ipv4, lease_address)
 
         return InterfaceRuntimeAddressesResponse(
             interfaces=runtime_interfaces,

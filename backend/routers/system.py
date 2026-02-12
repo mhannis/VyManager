@@ -12,6 +12,7 @@ from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List, Tuple, Literal
 from datetime import datetime, timezone
+import asyncio
 import re
 
 from session_vyos_service import get_session_vyos_service
@@ -907,29 +908,29 @@ async def get_dashboard_summary(request: Request, refresh: bool = False) -> Syst
 
     try:
         service = get_session_vyos_service(request)
-        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        config_result, version_response, uptime_response, cpu_response, memory_response = await asyncio.gather(
+            run_in_threadpool(service.get_full_config, refresh=refresh),
+            run_in_threadpool(service.device.show, path=["version"]),
+            run_in_threadpool(service.device.show, path=["system", "uptime"]),
+            run_in_threadpool(service.device.show, path=["system", "cpu"]),
+            run_in_threadpool(service.device.show, path=["system", "memory"]),
+            return_exceptions=True,
+        )
+
+        full_config = config_result if isinstance(config_result, dict) else {}
         hostname = full_config.get("system", {}).get("host-name")
 
-        version_output = ""
-        uptime_output = ""
-        cpu_output = ""
-        memory_output = ""
+        def _show_output(response: Any) -> str:
+            if isinstance(response, Exception) or response is None:
+                return ""
+            if getattr(response, "status", None) == 200:
+                return _extract_show_output(getattr(response, "result", "")) or ""
+            return ""
 
-        version_response = await run_in_threadpool(service.device.show, path=["version"])
-        if version_response.status == 200:
-            version_output = _extract_show_output(version_response.result)
-
-        uptime_response = await run_in_threadpool(service.device.show, path=["system", "uptime"])
-        if uptime_response.status == 200:
-            uptime_output = _extract_show_output(uptime_response.result)
-
-        cpu_response = await run_in_threadpool(service.device.show, path=["system", "cpu"])
-        if cpu_response.status == 200:
-            cpu_output = _extract_show_output(cpu_response.result)
-
-        memory_response = await run_in_threadpool(service.device.show, path=["system", "memory"])
-        if memory_response.status == 200:
-            memory_output = _extract_show_output(memory_response.result)
+        version_output = _show_output(version_response)
+        uptime_output = _show_output(uptime_response)
+        cpu_output = _show_output(cpu_response)
+        memory_output = _show_output(memory_response)
 
         summary = SystemDashboardSummary(hostname=hostname)
 
@@ -1000,16 +1001,20 @@ async def get_ntp_status(request: Request, refresh: bool = False) -> NtpStatusRe
         activity_output = ""
         sources_output = ""
 
-        tracking_response = await run_in_threadpool(service.device.show, path=["ntp", "system"])
-        if tracking_response.status == 200:
+        tracking_response, activity_response, sources_response = await asyncio.gather(
+            run_in_threadpool(service.device.show, path=["ntp", "system"]),
+            run_in_threadpool(service.device.show, path=["ntp", "activity"]),
+            run_in_threadpool(service.device.show, path=["ntp", "sources"]),
+            return_exceptions=True,
+        )
+
+        if not isinstance(tracking_response, Exception) and tracking_response.status == 200:
             tracking_output = _extract_show_output(tracking_response.result)
 
-        activity_response = await run_in_threadpool(service.device.show, path=["ntp", "activity"])
-        if activity_response.status == 200:
+        if not isinstance(activity_response, Exception) and activity_response.status == 200:
             activity_output = _extract_show_output(activity_response.result)
 
-        sources_response = await run_in_threadpool(service.device.show, path=["ntp", "sources"])
-        if sources_response.status == 200:
+        if not isinstance(sources_response, Exception) and sources_response.status == 200:
             sources_output = _extract_show_output(sources_response.result)
 
         tracking = _parse_ntp_tracking_output(tracking_output) if tracking_output else {}

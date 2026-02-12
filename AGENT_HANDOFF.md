@@ -636,3 +636,33 @@ Branch: `dev`
 ### 43) Runtime Note
 - `vm-api` is running in tmux again.
 - `vm-ui` tmux session is currently not running; frontend was restarted directly via `npm run start` on port `3000`.
+
+## Update (2026-02-12) - Dashboard Load Performance (API Latency)
+
+### 44) User-Reported Problem
+- Dashboard page felt very slow to load/populate.
+
+### 45) Root Cause
+- Several `/vyos/show/*` endpoints were `async` but executed blocking HTTP calls to the VyOS REST API without `run_in_threadpool()`.
+- This blocked the event loop and caused head-of-line blocking: concurrent dashboard API requests waited behind slow ones.
+- `GET /vyos/show/interface-runtime-addresses` was also doing many per-interface show calls (O(N) requests), amplifying latency.
+
+### 46) Fixes
+- File: `backend/routers/show.py`
+  - Wrapped all `service.device.show()` calls used by dashboard endpoints in `run_in_threadpool()`.
+  - Reworked `GET /vyos/show/interface-runtime-addresses` to:
+    - prefer `show interfaces` summary parse (single call)
+    - optionally use one `show dhcp client leases` call for DHCP fallback
+    - removed per-interface show probing that caused 10s+ loads on multi-NIC systems.
+- File: `backend/routers/system.py`
+  - Added `asyncio.gather(..., return_exceptions=True)` to run independent show commands in parallel:
+    - `GET /vyos/system/dashboard-summary`
+    - `GET /vyos/system/ntp-status`
+
+### 47) Timing Verification (local)
+- After restart, endpoint timings improved to:
+  - `/vyos/system/dashboard-summary`: ~`0.76s`
+  - `/vyos/system/ntp-status`: ~`1.41s`
+  - `/vyos/show/interface-counters`: ~`1.35s`
+  - `/vyos/show/interface-runtime-addresses`: ~`1.69s`
+  - `/vyos/show/interface-physical`: ~`2.19s`
