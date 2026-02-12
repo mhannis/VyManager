@@ -16,7 +16,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { showService, InterfaceCounter, InterfacePhysical } from "@/lib/api/show";
-import { interfacesService } from "@/lib/api/interfaces";
 import { getInterfaceType, formatBytes, formatNumber } from "@/lib/utils";
 import {
   Table,
@@ -28,6 +27,7 @@ import {
 } from "@/components/ui/table";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -97,7 +97,7 @@ interface InterfaceStatisticsCardProps {
   config?: {
     interfaces?: string[];
   };
-  onConfigChange?: (config: any) => void;
+  onConfigChange?: (config: { interfaces?: string[] }) => void;
 }
 
 // Helper function to parse interface names
@@ -315,6 +315,9 @@ export function InterfaceStatisticsCard({
     new Set()
   );
 
+  const selectedInterfaces = Array.isArray(config.interfaces) ? config.interfaces : [];
+  const customInterfaceFilterEnabled = selectedInterfaces.length > 0;
+
   const handleSort = (column: string) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -350,6 +353,42 @@ export function InterfaceStatisticsCard({
 
   // Calculate max values for bar chart scaling - only include parent interfaces
   const parentInterfaces = interfaces.filter((iface) => !iface.isVif);
+  const availableInterfaces = [...new Set(parentInterfaces.map((iface) => iface.interface))].sort(
+    (left, right) => left.localeCompare(right)
+  );
+
+  const updateInterfaceSelection = (names: string[]) => {
+    if (!onConfigChange) return;
+    const next = [...new Set(names.filter((name) => availableInterfaces.includes(name)))].sort();
+
+    // Empty list means "all interfaces" mode.
+    if (next.length === 0 || next.length === availableInterfaces.length) {
+      onConfigChange({ ...(config || {}), interfaces: [] });
+      return;
+    }
+    onConfigChange({ ...(config || {}), interfaces: next });
+  };
+
+  const toggleInterfaceSelection = (interfaceName: string, checked: boolean) => {
+    if (!onConfigChange) return;
+
+    if (!customInterfaceFilterEnabled) {
+      // Switch from "all" mode to an explicit subset when an item is unchecked.
+      if (!checked) {
+        updateInterfaceSelection(availableInterfaces.filter((name) => name !== interfaceName));
+      }
+      return;
+    }
+
+    const current = new Set(selectedInterfaces);
+    if (checked) {
+      current.add(interfaceName);
+    } else {
+      current.delete(interfaceName);
+    }
+    updateInterfaceSelection(Array.from(current));
+  };
+
   const maxRxBytes = Math.max(
     ...parentInterfaces.map((iface) => iface.rx_bytes),
     1
@@ -536,6 +575,13 @@ export function InterfaceStatisticsCard({
   // Filter and sort interfaces
   const filteredAndSortedInterfaces = interfaces
     .filter((iface) => {
+      const inCustomSelection =
+        !customInterfaceFilterEnabled ||
+        selectedInterfaces.includes(iface.interface) ||
+        (iface.vifs || []).some((vif) => selectedInterfaces.includes(vif.interface));
+
+      if (!inCustomSelection) return false;
+
       // Check if interface matches filter
       const interfaceMatches = iface.interface
         .toLowerCase()
@@ -570,7 +616,7 @@ export function InterfaceStatisticsCard({
     });
 
   // Prepare pie chart data - include all interfaces (parent and VIFs)
-  const allInterfacesForPie = interfaces.flatMap((iface) => [
+  const allInterfacesForPie = filteredAndSortedInterfaces.flatMap((iface) => [
     iface,
     ...(iface.vifs || []),
   ]);
@@ -634,6 +680,36 @@ export function InterfaceStatisticsCard({
                     {span === 3 && <span className="ml-2 text-primary">✓</span>}
                   </div>
                 </DropdownMenuItem>
+                {onConfigChange && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Interfaces</DropdownMenuLabel>
+                    <DropdownMenuCheckboxItem
+                      checked={!customInterfaceFilterEnabled}
+                      onCheckedChange={(checked) => {
+                        if (checked === true) {
+                          updateInterfaceSelection([]);
+                        }
+                      }}
+                    >
+                      All Interfaces
+                    </DropdownMenuCheckboxItem>
+                    {availableInterfaces.map((interfaceName) => (
+                      <DropdownMenuCheckboxItem
+                        key={interfaceName}
+                        checked={
+                          !customInterfaceFilterEnabled ||
+                          selectedInterfaces.includes(interfaceName)
+                        }
+                        onCheckedChange={(checked) =>
+                          toggleInterfaceSelection(interfaceName, checked === true)
+                        }
+                      >
+                        {interfaceName}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}

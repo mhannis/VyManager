@@ -294,3 +294,98 @@ Branch: `dev`
    - `npm run lint` returns warnings only (0 errors).
    - Current warning count: `309`.
    - If/when desired, tighten rules incrementally per feature area instead of globally.
+
+## Update (2026-02-12) - VPN/IPsec + Zones + Logs/Local Users + Dashboard Perf/Customization
+
+### 10) Backend: New/Expanded APIs
+- Added and wired IPsec backend router:
+  - File: `backend/routers/ipsec.py`
+  - File: `backend/app.py`
+  - Endpoints:
+    - `GET /vyos/vpn/ipsec/config`
+    - `GET /vyos/vpn/ipsec/peers`
+    - `GET /vyos/vpn/ipsec/status`
+- Added new firewall zones backend router:
+  - File: `backend/routers/firewall/zones.py`
+  - File: `backend/app.py`
+  - Endpoints:
+    - `GET /vyos/firewall/zones/config`
+    - `GET /vyos/firewall/zones/policies`
+    - `PUT /vyos/firewall/zones/zone/{zone_name}` (replace semantics for interfaces/from-policies)
+    - `DELETE /vyos/firewall/zones/zone/{zone_name}`
+    - `DELETE /vyos/firewall/zones/zone/{zone_name}/from/{from_zone}`
+- Expanded system router with logs and local users:
+  - File: `backend/routers/system.py`
+  - Endpoints:
+    - `GET /vyos/system/logs`
+    - `GET /vyos/system/local-users`
+    - `POST /vyos/system/local-users`
+    - `PUT /vyos/system/local-users/{username}`
+    - `DELETE /vyos/system/local-users/{username}`
+  - Local user parser now includes both `public_key_names` and full `public_keys` content for editable UX.
+- Permission map additions:
+  - File: `backend/fastapi_permissions.py`
+  - Added mappings for:
+    - `/vyos/firewall/zones`
+    - `/vyos/vpn/ipsec`
+
+### 11) Frontend: Placeholder Pages Replaced
+- IPsec page implemented:
+  - File: `frontend/src/app/vpn/ipsec/page.tsx`
+  - Shows peer table, runtime status, IKE/ESP group summaries.
+- Firewall zones page implemented:
+  - File: `frontend/src/app/firewall/zones/page.tsx`
+  - Includes create/edit/delete zone workflows and policy table with remove action.
+- System logs page implemented:
+  - File: `frontend/src/app/system/logs/page.tsx`
+  - Includes line-count selector, text search filter, auto-refresh, and structured log table.
+- System users page implemented (local VyOS users):
+  - File: `frontend/src/app/system/users/page.tsx`
+  - Includes create/update/delete local user workflows and inventory table.
+
+### 12) Frontend API Client Updates
+- File: `frontend/src/lib/api/ipsec.ts`
+  - Corrected endpoints to `/vyos/...`
+  - Added `getStatus()`.
+- File: `frontend/src/lib/api/zones.ts`
+  - Corrected endpoints to `/vyos/...`
+  - Added zone write methods (`upsertZone`, `deleteZone`, `deleteFromPolicy`).
+- File: `frontend/src/lib/api/system.ts`
+  - Added logs + local user types and methods.
+
+### 13) Dashboard Performance + Customization
+- Added in-flight GET request dedupe and short TTL read cache:
+  - File: `frontend/src/lib/api/client.ts`
+  - Effect: fewer duplicate concurrent API calls (notably dashboard cards requesting same endpoints at load).
+- Dashboard card config persistence wiring:
+  - File: `frontend/src/app/page.tsx`
+  - Added `handleCardConfigChange` and passes `onConfigChange` into cards.
+- Interface Statistics card customization:
+  - File: `frontend/src/components/dashboard/InterfaceStatisticsCard.tsx`
+  - New per-card setting to choose specific interfaces to display (or all).
+  - Selection persisted in dashboard card `config`.
+- NTP Status card customization:
+  - File: `frontend/src/components/dashboard/NtpStatusCard.tsx`
+  - New per-card settings:
+    - show/hide sources table
+    - source row limit (3/6/10/20)
+  - Selection persisted in dashboard card `config`.
+- Interface Overview card detail enhancement:
+  - File: `frontend/src/components/dashboard/InterfaceOverviewCard.tsx`
+  - Added addressing mode display (`DHCP`/`Static`/`Mixed`/`Unconfigured`).
+  - Added static IP presentation with netmask formatting.
+
+### 14) Validation Run
+- Backend:
+  - `PYTHONPATH=. ./.venv/bin/pytest -q` -> `1 passed`
+- Frontend:
+  - `npm run build` -> success
+  - `npm run lint` -> warnings only (no errors)
+
+### 15) Remaining Follow-ups
+- Verify live VyOS command compatibility for:
+  - `/vyos/system/logs` command fallback (`show log tail`, `show log`).
+  - local user key updates in environments with differing key stanza formats.
+- UI polish/UX follow-up candidates:
+  - add form-level validation hints on zones/users pages (current behavior relies mostly on backend validation errors).
+  - optionally expose additional card customization on System Information and Disk cards.

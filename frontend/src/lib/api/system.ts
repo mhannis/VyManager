@@ -111,6 +111,72 @@ export interface NtpConfig {
   listen_addresses: string[];
 }
 
+export interface SystemLogEntry {
+  raw: string;
+  timestamp?: string | null;
+  host?: string | null;
+  process?: string | null;
+  severity?: string | null;
+  message?: string | null;
+}
+
+export interface SystemLogsResponse {
+  available: boolean;
+  source_command?: string | null;
+  total_lines: number;
+  returned_lines: number;
+  entries: SystemLogEntry[];
+  raw_output?: string | null;
+}
+
+export interface LocalUserAuthState {
+  has_plaintext_password: boolean;
+  has_encrypted_password: boolean;
+  has_public_keys: boolean;
+}
+
+export interface LocalUserSummary {
+  username: string;
+  full_name?: string | null;
+  level?: string | null;
+  disabled: boolean;
+  auth: LocalUserAuthState;
+  public_key_names: string[];
+  public_keys: string[];
+}
+
+export interface LocalUsersResponse {
+  users: LocalUserSummary[];
+  total: number;
+}
+
+export type LocalUserPasswordType = "plaintext" | "encrypted";
+
+export interface LocalUserCreateRequest {
+  username: string;
+  full_name?: string | null;
+  level?: string | null;
+  password?: string | null;
+  password_type?: LocalUserPasswordType;
+  ssh_public_keys: string[];
+  disabled?: boolean;
+}
+
+export interface LocalUserUpdateRequest {
+  full_name?: string | null;
+  level?: string | null;
+  password?: string | null;
+  password_type?: LocalUserPasswordType;
+  ssh_public_keys?: string[] | null;
+  disabled?: boolean | null;
+}
+
+export interface LocalUserOperationResponse {
+  success: boolean;
+  username: string;
+  message: string;
+}
+
 // ============================================================================
 // API Service
 // ============================================================================
@@ -171,6 +237,47 @@ class SystemService {
    */
   async updateNtpConfig(config: NtpConfig): Promise<NtpConfig> {
     return apiClient.put<NtpConfig>("/vyos/system/ntp-config", config);
+  }
+
+  /**
+   * Get system logs from VyOS.
+   */
+  async getLogs(lines: number = 200, contains?: string): Promise<SystemLogsResponse> {
+    const query: Record<string, string> = { lines: String(lines) };
+    if (contains && contains.trim()) {
+      query.contains = contains.trim();
+    }
+    return apiClient.get<SystemLogsResponse>("/vyos/system/logs", query);
+  }
+
+  /**
+   * Get local VyOS users.
+   */
+  async getLocalUsers(refresh: boolean = false): Promise<LocalUsersResponse> {
+    return apiClient.get<LocalUsersResponse>("/vyos/system/local-users", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  /**
+   * Create a local VyOS user.
+   */
+  async createLocalUser(payload: LocalUserCreateRequest): Promise<LocalUserSummary> {
+    return apiClient.post<LocalUserSummary>("/vyos/system/local-users", payload);
+  }
+
+  /**
+   * Update a local VyOS user.
+   */
+  async updateLocalUser(username: string, payload: LocalUserUpdateRequest): Promise<LocalUserSummary> {
+    return apiClient.put<LocalUserSummary>(`/vyos/system/local-users/${encodeURIComponent(username)}`, payload);
+  }
+
+  /**
+   * Delete a local VyOS user.
+   */
+  async deleteLocalUser(username: string): Promise<LocalUserOperationResponse> {
+    return apiClient.delete<LocalUserOperationResponse>(`/vyos/system/local-users/${encodeURIComponent(username)}`);
   }
 }
 

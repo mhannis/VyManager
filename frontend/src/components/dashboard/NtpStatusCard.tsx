@@ -13,9 +13,12 @@ import {
 import { systemService, type NtpStatus } from "@/lib/api/system";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -32,6 +35,11 @@ interface NtpStatusCardProps {
   onRemove?: () => void;
   span?: number;
   onSpanChange?: (newSpan: number) => void;
+  config?: {
+    source_limit?: number;
+    show_source_table?: boolean;
+  };
+  onConfigChange?: (config: { source_limit?: number; show_source_table?: boolean }) => void;
 }
 
 function displayOrDash(value?: string | number | null): string {
@@ -39,7 +47,13 @@ function displayOrDash(value?: string | number | null): string {
   return String(value);
 }
 
-export function NtpStatusCard({ onRemove, span = 1, onSpanChange }: NtpStatusCardProps) {
+export function NtpStatusCard({
+  onRemove,
+  span = 1,
+  onSpanChange,
+  config = {},
+  onConfigChange,
+}: NtpStatusCardProps) {
   const [status, setStatus] = useState<NtpStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +78,13 @@ export function NtpStatusCard({ onRemove, span = 1, onSpanChange }: NtpStatusCar
     const interval = setInterval(loadData, 15000);
     return () => clearInterval(interval);
   }, [autoRefresh]);
+
+  const sourceLimit = (() => {
+    const value = Number(config.source_limit);
+    if (!Number.isFinite(value)) return 6;
+    return Math.max(1, Math.min(Math.floor(value), 20));
+  })();
+  const showSourceTable = config.show_source_table !== false;
 
   return (
     <Card>
@@ -109,6 +130,32 @@ export function NtpStatusCard({ onRemove, span = 1, onSpanChange }: NtpStatusCar
                     {span === 3 && <span className="ml-2 text-primary">✓</span>}
                   </div>
                 </DropdownMenuItem>
+                {onConfigChange && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Content</DropdownMenuLabel>
+                    <DropdownMenuCheckboxItem
+                      checked={showSourceTable}
+                      onCheckedChange={(checked) =>
+                        onConfigChange({ ...(config || {}), show_source_table: checked === true })
+                      }
+                    >
+                      Show Source Table
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">Source Rows</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup
+                      value={String(sourceLimit)}
+                      onValueChange={(value) =>
+                        onConfigChange({ ...(config || {}), source_limit: Number(value) })
+                      }
+                    >
+                      <DropdownMenuRadioItem value="3">3 rows</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="6">6 rows</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="10">10 rows</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="20">20 rows</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -191,35 +238,37 @@ export function NtpStatusCard({ onRemove, span = 1, onSpanChange }: NtpStatusCar
                   <Badge variant="secondary">Unknown: {displayOrDash(status.sources_unknown)}</Badge>
                 </div>
 
-                <div>
-                  <p className="text-sm font-medium mb-2">Sources</p>
-                  {status.sources.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No source table data returned.</p>
-                  ) : (
-                    <div className="border rounded-md overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Source</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Stratum</TableHead>
-                            <TableHead className="text-right">Reach</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {status.sources.slice(0, 6).map((source, index) => (
-                            <TableRow key={`${source.source}-${index}`}>
-                              <TableCell className="font-mono text-xs">{displayOrDash(source.source)}</TableCell>
-                              <TableCell>{`${source.mode ?? ""}${source.state ?? ""}`.trim() || "-"}</TableCell>
-                              <TableCell className="text-right">{displayOrDash(source.stratum)}</TableCell>
-                              <TableCell className="text-right">{displayOrDash(source.reach)}</TableCell>
+                {showSourceTable && (
+                  <div>
+                    <p className="text-sm font-medium mb-2">Sources</p>
+                    {status.sources.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No source table data returned.</p>
+                    ) : (
+                      <div className="border rounded-md overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Source</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="text-right">Stratum</TableHead>
+                              <TableHead className="text-right">Reach</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </div>
+                          </TableHeader>
+                          <TableBody>
+                            {status.sources.slice(0, sourceLimit).map((source, index) => (
+                              <TableRow key={`${source.source}-${index}`}>
+                                <TableCell className="font-mono text-xs">{displayOrDash(source.source)}</TableCell>
+                                <TableCell>{`${source.mode ?? ""}${source.state ?? ""}`.trim() || "-"}</TableCell>
+                                <TableCell className="text-right">{displayOrDash(source.stratum)}</TableCell>
+                                <TableCell className="text-right">{displayOrDash(source.reach)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>

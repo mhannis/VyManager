@@ -29,19 +29,60 @@ export interface ZonePolicyEntry {
   default_action?: string | null; // Default action
 }
 
+export interface ZonePolicyUpdate {
+  from_zone: string;
+  firewall_ruleset: string;
+}
+
+export interface ZoneUpsertRequest {
+  description?: string | null;
+  default_action?: string | null;
+  interfaces: string[];
+  from_policies: ZonePolicyUpdate[];
+}
+
+export interface ZoneOperationResponse {
+  success: boolean;
+  zone: string;
+  message: string;
+}
+
 class ZonesService {
   /**
    * Get complete zone-based firewall configuration
    */
   async getConfig(): Promise<ZonesConfig> {
-    return apiClient.get<ZonesConfig>("/firewall/zones/config");
+    return apiClient.get<ZonesConfig>("/vyos/firewall/zones/config");
   }
 
   /**
    * Get all zone-to-zone policies as a flat list
    */
   async getPolicies(): Promise<ZonePolicyEntry[]> {
-    return apiClient.get<ZonePolicyEntry[]>("/firewall/zones/policies");
+    return apiClient.get<ZonePolicyEntry[]>("/vyos/firewall/zones/policies");
+  }
+
+  /**
+   * Create or update a zone
+   */
+  async upsertZone(zoneName: string, request: ZoneUpsertRequest): Promise<ZoneOperationResponse> {
+    return apiClient.put<ZoneOperationResponse>(`/vyos/firewall/zones/zone/${encodeURIComponent(zoneName)}`, request);
+  }
+
+  /**
+   * Delete a zone
+   */
+  async deleteZone(zoneName: string): Promise<ZoneOperationResponse> {
+    return apiClient.delete<ZoneOperationResponse>(`/vyos/firewall/zones/zone/${encodeURIComponent(zoneName)}`);
+  }
+
+  /**
+   * Remove one from-zone policy mapping from a zone
+   */
+  async deleteFromPolicy(zoneName: string, fromZone: string): Promise<ZoneOperationResponse> {
+    return apiClient.delete<ZoneOperationResponse>(
+      `/vyos/firewall/zones/zone/${encodeURIComponent(zoneName)}/from/${encodeURIComponent(fromZone)}`
+    );
   }
 }
 

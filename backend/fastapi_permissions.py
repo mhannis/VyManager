@@ -190,6 +190,7 @@ async def get_user_feature_permissions(request: Request) -> dict:
 # Maps VyOS router prefixes to feature groups
 ROUTER_FEATURE_MAP = {
     "/vyos/firewall": FeatureGroup.FIREWALL,
+    "/vyos/firewall/zones": FeatureGroup.FIREWALL_ZONES,
     "/vyos/nat": FeatureGroup.NAT,
     "/vyos/dhcp": FeatureGroup.DHCP,
     "/vyos/interfaces": FeatureGroup.INTERFACES,
@@ -205,6 +206,7 @@ ROUTER_FEATURE_MAP = {
     "/vyos/local-route": FeatureGroup.ROUTING_POLICIES,
     "/vyos/system": FeatureGroup.SYSTEM,
     "/vyos/containers": FeatureGroup.SYSTEM,
+    "/vyos/vpn/ipsec": FeatureGroup.IPSEC,
     "/vyos/config": FeatureGroup.CONFIGURATION,
     "/vyos/power": FeatureGroup.SYSTEM,
     "/dashboard": FeatureGroup.DASHBOARD,

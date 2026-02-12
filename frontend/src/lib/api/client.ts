@@ -13,9 +13,15 @@ import { ApiError } from "../types/api";
 
 export class ApiClient {
   private baseUrl: string;
+  private inFlightGetRequests: Map<string, Promise<unknown>>;
+  private recentGetCache: Map<string, { expiresAt: number; data: unknown }>;
+  private readonly getCacheTtlMs: number;
 
   constructor(baseUrl: string = API_BASE_URL) {
     this.baseUrl = baseUrl;
+    this.inFlightGetRequests = new Map();
+    this.recentGetCache = new Map();
+    this.getCacheTtlMs = 1500;
   }
 
   private async request<T>(
@@ -114,32 +120,69 @@ export class ApiClient {
       const queryString = new URLSearchParams(params).toString();
       url = `${endpoint}?${queryString}`;
     }
-    return this.request<T>(url, { method: "GET" });
+
+    const cacheKey = url;
+    const now = Date.now();
+    const cached = this.recentGetCache.get(cacheKey);
+    if (cached && cached.expiresAt > now) {
+      return cached.data as T;
+    }
+    if (cached) {
+      this.recentGetCache.delete(cacheKey);
+    }
+
+    const inFlight = this.inFlightGetRequests.get(cacheKey);
+    if (inFlight) {
+      return inFlight as Promise<T>;
+    }
+
+    const requestPromise = this.request<T>(url, { method: "GET" })
+      .then((result) => {
+        this.recentGetCache.set(cacheKey, {
+          expiresAt: Date.now() + this.getCacheTtlMs,
+          data: result,
+        });
+        return result;
+      })
+      .finally(() => {
+        this.inFlightGetRequests.delete(cacheKey);
+      });
+
+    this.inFlightGetRequests.set(cacheKey, requestPromise as Promise<unknown>);
+    return requestPromise;
   }
 
   async post<T>(endpoint: string, data?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
+    const result = await this.request<T>(endpoint, {
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     });
+    this.recentGetCache.clear();
+    return result;
   }
 
   async put<T>(endpoint: string, data?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
+    const result = await this.request<T>(endpoint, {
       method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
     });
+    this.recentGetCache.clear();
+    return result;
   }
 
   async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: "DELETE" });
+    const result = await this.request<T>(endpoint, { method: "DELETE" });
+    this.recentGetCache.clear();
+    return result;
   }
 
   async patch<T>(endpoint: string, data?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
+    const result = await this.request<T>(endpoint, {
       method: "PATCH",
       body: data ? JSON.stringify(data) : undefined,
     });
+    this.recentGetCache.clear();
+    return result;
   }
 }
 

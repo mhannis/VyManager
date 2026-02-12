@@ -9,7 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any, List, Tuple, Literal
 import re
 
 from session_vyos_service import get_session_vyos_service
@@ -58,6 +58,10 @@ def _parse_key_value_lines(output: str) -> Dict[str, str]:
         if key:
             values[key] = value
     return values
+
+
+def _as_dict(value: Any) -> Dict[str, Any]:
+    return value if isinstance(value, dict) else {}
 
 
 def _safe_int(value: Any) -> Optional[int]:
@@ -368,6 +372,10 @@ def _normalize_unique_strings(values: List[str]) -> List[str]:
     return result
 
 
+RE_LOCAL_USERNAME = re.compile(r"^[A-Za-z_][A-Za-z0-9._-]{0,31}$")
+RE_LOCAL_LEVEL = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
+
+
 # ========================================================================
 # Pydantic Models
 # ========================================================================
@@ -495,6 +503,70 @@ class NtpServiceConfigRequest(BaseModel):
     listen_addresses: List[str] = Field(default_factory=list)
 
 
+class SystemLogEntry(BaseModel):
+    raw: str
+    timestamp: Optional[str] = None
+    host: Optional[str] = None
+    process: Optional[str] = None
+    severity: Optional[str] = None
+    message: Optional[str] = None
+
+
+class SystemLogsResponse(BaseModel):
+    available: bool = False
+    source_command: Optional[str] = None
+    total_lines: int = 0
+    returned_lines: int = 0
+    entries: List[SystemLogEntry] = Field(default_factory=list)
+    raw_output: Optional[str] = None
+
+
+class LocalUserAuthState(BaseModel):
+    has_plaintext_password: bool = False
+    has_encrypted_password: bool = False
+    has_public_keys: bool = False
+
+
+class LocalUserSummary(BaseModel):
+    username: str
+    full_name: Optional[str] = None
+    level: Optional[str] = None
+    disabled: bool = False
+    auth: LocalUserAuthState = Field(default_factory=LocalUserAuthState)
+    public_key_names: List[str] = Field(default_factory=list)
+    public_keys: List[str] = Field(default_factory=list)
+
+
+class LocalUsersResponse(BaseModel):
+    users: List[LocalUserSummary] = Field(default_factory=list)
+    total: int = 0
+
+
+class LocalUserCreateRequest(BaseModel):
+    username: str
+    full_name: Optional[str] = None
+    level: Optional[str] = None
+    password: Optional[str] = None
+    password_type: Literal["plaintext", "encrypted"] = "plaintext"
+    ssh_public_keys: List[str] = Field(default_factory=list)
+    disabled: bool = False
+
+
+class LocalUserUpdateRequest(BaseModel):
+    full_name: Optional[str] = None
+    level: Optional[str] = None
+    password: Optional[str] = None
+    password_type: Literal["plaintext", "encrypted"] = "plaintext"
+    ssh_public_keys: Optional[List[str]] = None
+    disabled: Optional[bool] = None
+
+
+class LocalUserOperationResponse(BaseModel):
+    success: bool
+    username: str
+    message: str
+
+
 def _parse_ntp_service_config(full_config: Dict[str, Any]) -> NtpServiceConfigResponse:
     service_config = full_config.get("service", {})
     ntp_config = service_config.get("ntp")
@@ -529,6 +601,136 @@ def _parse_ntp_service_config(full_config: Dict[str, Any]) -> NtpServiceConfigRe
         allow_clients=allow_clients,
         listen_addresses=listen_addresses,
     )
+
+
+def _normalize_local_username_or_400(username: str, field_name: str = "username") -> str:
+    clean = username.strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail=f"{field_name} is required")
+    if not RE_LOCAL_USERNAME.match(clean):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid {field_name} '{clean}'. Use letters, numbers, dot, underscore, dash.",
+        )
+    return clean
+
+
+def _normalize_local_level_or_400(level: str) -> str:
+    clean = level.strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail="level cannot be empty")
+    if not RE_LOCAL_LEVEL.match(clean):
+        raise HTTPException(status_code=400, detail=f"Invalid level '{clean}'")
+    return clean
+
+
+def _extract_local_users_raw(full_config: Dict[str, Any]) -> Dict[str, Any]:
+    system_root = _as_dict(full_config.get("system"))
+    login_root = _as_dict(system_root.get("login"))
+    return _as_dict(login_root.get("user"))
+
+
+def _parse_local_users(full_config: Dict[str, Any]) -> List[LocalUserSummary]:
+    users_root = _extract_local_users_raw(full_config)
+    parsed_users: List[LocalUserSummary] = []
+
+    for username, user_data in sorted(users_root.items(), key=lambda item: str(item[0])):
+        name = str(username).strip()
+        if not name:
+            continue
+
+        data = _as_dict(user_data)
+        auth = _as_dict(data.get("authentication"))
+        public_keys = _as_dict(auth.get("public-keys"))
+        parsed_public_keys: List[str] = []
+        for key_entry in public_keys.values():
+            key_data = _as_dict(key_entry)
+            key_value = key_data.get("key")
+            if isinstance(key_value, str) and key_value.strip():
+                parsed_public_keys.append(key_value.strip())
+
+        parsed_users.append(
+            LocalUserSummary(
+                username=name,
+                full_name=data.get("full-name"),
+                level=data.get("level"),
+                disabled="disable" in data,
+                auth=LocalUserAuthState(
+                    has_plaintext_password=bool(_as_dict(auth).get("plaintext-password")),
+                    has_encrypted_password=bool(_as_dict(auth).get("encrypted-password")),
+                    has_public_keys=bool(public_keys),
+                ),
+                public_key_names=sorted(
+                    [str(key).strip() for key in public_keys.keys() if str(key).strip()]
+                ),
+                public_keys=parsed_public_keys,
+            )
+        )
+
+    return parsed_users
+
+
+def _find_local_user(users: List[LocalUserSummary], username: str) -> Optional[LocalUserSummary]:
+    for user in users:
+        if user.username == username:
+            return user
+    return None
+
+
+def _infer_log_severity(line: str) -> Optional[str]:
+    lowered = line.lower()
+    if "emerg" in lowered:
+        return "emerg"
+    if "alert" in lowered:
+        return "alert"
+    if "critical" in lowered or "crit" in lowered:
+        return "crit"
+    if "error" in lowered or " err " in lowered:
+        return "err"
+    if "warning" in lowered or " warn" in lowered:
+        return "warning"
+    if "notice" in lowered:
+        return "notice"
+    if "info" in lowered:
+        return "info"
+    if "debug" in lowered:
+        return "debug"
+    return None
+
+
+def _parse_log_line(raw_line: str) -> SystemLogEntry:
+    line = raw_line.rstrip()
+    if not line:
+        return SystemLogEntry(raw=raw_line)
+
+    iso_match = re.match(r"^(\d{4}-\d{2}-\d{2}[T ][^\s]+)\s+(\S+)\s+([^:]+):\s*(.*)$", line)
+    if iso_match:
+        message = iso_match.group(4).strip()
+        return SystemLogEntry(
+            raw=raw_line,
+            timestamp=iso_match.group(1),
+            host=iso_match.group(2),
+            process=iso_match.group(3).strip(),
+            severity=_infer_log_severity(message or line),
+            message=message or None,
+        )
+
+    syslog_match = re.match(
+        r"^([A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+)\s+(\S+)\s+([^:]+):\s*(.*)$",
+        line,
+    )
+    if syslog_match:
+        message = syslog_match.group(4).strip()
+        return SystemLogEntry(
+            raw=raw_line,
+            timestamp=syslog_match.group(1),
+            host=syslog_match.group(2),
+            process=syslog_match.group(3).strip(),
+            severity=_infer_log_severity(message or line),
+            message=message or None,
+        )
+
+    return SystemLogEntry(raw=raw_line, severity=_infer_log_severity(line), message=line)
 
 
 # ========================================================================
@@ -947,3 +1149,419 @@ async def update_ntp_config(request: Request, body: NtpServiceConfigRequest) -> 
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating NTP configuration: {str(e)}")
+
+
+@router.get("/logs", response_model=SystemLogsResponse)
+async def get_system_logs(
+    request: Request,
+    lines: int = 200,
+    contains: Optional[str] = None,
+) -> SystemLogsResponse:
+    """Get recent system log entries from the active VyOS instance."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        max_lines = max(1, min(lines, 2000))
+        filter_text = (contains or "").strip().lower()
+        service = get_session_vyos_service(request)
+
+        attempts: List[Tuple[str, List[str]]] = [
+            ("show log tail", ["log", "tail"]),
+            ("show log", ["log"]),
+            ("show system logs", ["system", "logs"]),
+        ]
+
+        selected_command: Optional[str] = None
+        raw_output = ""
+
+        for command_label, command_path in attempts:
+            response = await run_in_threadpool(service.device.show, path=command_path)
+            if response.status != 200:
+                continue
+            output = _extract_show_output(response.result).strip()
+            if not output:
+                continue
+            selected_command = command_label
+            raw_output = output
+            break
+
+        if not raw_output:
+            return SystemLogsResponse(
+                available=False,
+                source_command=selected_command,
+                total_lines=0,
+                returned_lines=0,
+                entries=[],
+                raw_output=None,
+            )
+
+        raw_lines = [line for line in raw_output.splitlines() if line.strip()]
+
+        if filter_text:
+            raw_lines = [line for line in raw_lines if filter_text in line.lower()]
+
+        if len(raw_lines) > max_lines:
+            raw_lines = raw_lines[-max_lines:]
+
+        entries = [_parse_log_line(line) for line in raw_lines]
+
+        return SystemLogsResponse(
+            available=True,
+            source_command=selected_command,
+            total_lines=len(raw_output.splitlines()),
+            returned_lines=len(entries),
+            entries=entries,
+            raw_output="\n".join(raw_lines) if raw_lines else None,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving system logs: {str(exc)}")
+
+
+@router.get("/local-users", response_model=LocalUsersResponse)
+async def get_local_users(request: Request, refresh: bool = False) -> LocalUsersResponse:
+    """Get local VyOS login users from config (`system login user`)."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        users = _parse_local_users(full_config)
+        return LocalUsersResponse(users=users, total=len(users))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving local users: {str(exc)}")
+
+
+@router.post("/local-users", response_model=LocalUserSummary)
+async def create_local_user(request: Request, body: LocalUserCreateRequest) -> LocalUserSummary:
+    """Create a local VyOS login user."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    username = _normalize_local_username_or_400(body.username)
+    full_name = (body.full_name or "").strip()
+    level = (body.level or "").strip()
+    password = (body.password or "").strip()
+    public_keys = [entry.strip() for entry in body.ssh_public_keys if entry and entry.strip()]
+
+    if level:
+        level = _normalize_local_level_or_400(level)
+
+    if not password and not public_keys:
+        raise HTTPException(status_code=400, detail="Provide at least a password or one SSH public key")
+
+    # De-duplicate SSH keys while preserving order.
+    deduped_keys: List[str] = []
+    seen_keys = set()
+    for key in public_keys:
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        deduped_keys.append(key)
+
+    try:
+        service = get_session_vyos_service(request)
+        current_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        current_users = _extract_local_users_raw(current_config)
+        if username in current_users:
+            raise HTTPException(status_code=409, detail=f"Local user '{username}' already exists")
+
+        operations: List[Dict[str, Any]] = [
+            {"op": "set", "path": ["system", "login", "user", username]},
+        ]
+
+        if full_name:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["system", "login", "user", username, "full-name", full_name],
+                }
+            )
+
+        if level:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["system", "login", "user", username, "level", level],
+                }
+            )
+
+        if password:
+            password_key = "plaintext-password" if body.password_type == "plaintext" else "encrypted-password"
+            operations.append(
+                {
+                    "op": "set",
+                    "path": [
+                        "system",
+                        "login",
+                        "user",
+                        username,
+                        "authentication",
+                        password_key,
+                        password,
+                    ],
+                }
+            )
+
+        for index, ssh_key in enumerate(deduped_keys, start=1):
+            operations.append(
+                {
+                    "op": "set",
+                    "path": [
+                        "system",
+                        "login",
+                        "user",
+                        username,
+                        "authentication",
+                        "public-keys",
+                        f"key-{index}",
+                        "key",
+                        ssh_key,
+                    ],
+                }
+            )
+
+        if body.disabled:
+            operations.append(
+                {"op": "set", "path": ["system", "login", "user", username, "disable"]}
+            )
+
+        response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+        if response.status != 200:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to create user: {response.error or 'Unknown VyOS error'}",
+            )
+
+        updated_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        parsed_users = _parse_local_users(updated_config)
+        created_user = _find_local_user(parsed_users, username)
+        if not created_user:
+            raise HTTPException(status_code=500, detail="User creation completed but user could not be read back")
+        return created_user
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error creating local user: {str(exc)}")
+
+
+@router.put("/local-users/{username}", response_model=LocalUserSummary)
+async def update_local_user(
+    request: Request,
+    username: str,
+    body: LocalUserUpdateRequest,
+) -> LocalUserSummary:
+    """Update an existing local VyOS login user."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    user_name = _normalize_local_username_or_400(username, field_name="username")
+
+    try:
+        service = get_session_vyos_service(request)
+        current_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        current_users = _extract_local_users_raw(current_config)
+        current_user = _as_dict(current_users.get(user_name))
+        if not current_user:
+            raise HTTPException(status_code=404, detail=f"Local user '{user_name}' not found")
+
+        current_auth = _as_dict(current_user.get("authentication"))
+        operations: List[Dict[str, Any]] = []
+
+        if body.full_name is not None:
+            full_name = body.full_name.strip()
+            if full_name:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["system", "login", "user", user_name, "full-name", full_name],
+                    }
+                )
+            else:
+                operations.append(
+                    {
+                        "op": "delete",
+                        "path": ["system", "login", "user", user_name, "full-name"],
+                    }
+                )
+
+        if body.level is not None:
+            level = body.level.strip()
+            if level:
+                level = _normalize_local_level_or_400(level)
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["system", "login", "user", user_name, "level", level],
+                    }
+                )
+            else:
+                operations.append(
+                    {"op": "delete", "path": ["system", "login", "user", user_name, "level"]}
+                )
+
+        if body.password is not None:
+            password_value = body.password.strip()
+            if password_value:
+                selected_key = "plaintext-password" if body.password_type == "plaintext" else "encrypted-password"
+                other_key = "encrypted-password" if selected_key == "plaintext-password" else "plaintext-password"
+
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            user_name,
+                            "authentication",
+                            selected_key,
+                            password_value,
+                        ],
+                    }
+                )
+
+                if current_auth.get(other_key):
+                    operations.append(
+                        {
+                            "op": "delete",
+                            "path": [
+                                "system",
+                                "login",
+                                "user",
+                                user_name,
+                                "authentication",
+                                other_key,
+                            ],
+                        }
+                    )
+            else:
+                operations.extend(
+                    [
+                        {
+                            "op": "delete",
+                            "path": [
+                                "system",
+                                "login",
+                                "user",
+                                user_name,
+                                "authentication",
+                                "plaintext-password",
+                            ],
+                        },
+                        {
+                            "op": "delete",
+                            "path": [
+                                "system",
+                                "login",
+                                "user",
+                                user_name,
+                                "authentication",
+                                "encrypted-password",
+                            ],
+                        },
+                    ]
+                )
+
+        if body.ssh_public_keys is not None:
+            keys = [entry.strip() for entry in body.ssh_public_keys if entry and entry.strip()]
+            deduped_keys: List[str] = []
+            seen_keys = set()
+            for key in keys:
+                if key in seen_keys:
+                    continue
+                seen_keys.add(key)
+                deduped_keys.append(key)
+
+            operations.append(
+                {
+                    "op": "delete",
+                    "path": [
+                        "system",
+                        "login",
+                        "user",
+                        user_name,
+                        "authentication",
+                        "public-keys",
+                    ],
+                }
+            )
+
+            for index, ssh_key in enumerate(deduped_keys, start=1):
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            user_name,
+                            "authentication",
+                            "public-keys",
+                            f"key-{index}",
+                            "key",
+                            ssh_key,
+                        ],
+                    }
+                )
+
+        if body.disabled is not None:
+            if body.disabled:
+                operations.append(
+                    {"op": "set", "path": ["system", "login", "user", user_name, "disable"]}
+                )
+            else:
+                operations.append(
+                    {"op": "delete", "path": ["system", "login", "user", user_name, "disable"]}
+                )
+
+        if operations:
+            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            if response.status != 200:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to update local user: {response.error or 'Unknown VyOS error'}",
+                )
+
+        updated_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        parsed_users = _parse_local_users(updated_config)
+        updated_user = _find_local_user(parsed_users, user_name)
+        if not updated_user:
+            raise HTTPException(status_code=500, detail="User update completed but user could not be read back")
+        return updated_user
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating local user: {str(exc)}")
+
+
+@router.delete("/local-users/{username}", response_model=LocalUserOperationResponse)
+async def delete_local_user(request: Request, username: str) -> LocalUserOperationResponse:
+    """Delete a local VyOS login user."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    user_name = _normalize_local_username_or_400(username, field_name="username")
+
+    try:
+        service = get_session_vyos_service(request)
+        response = await run_in_threadpool(
+            service.device.configure_multiple_op,
+            op_path=[{"op": "delete", "path": ["system", "login", "user", user_name]}],
+        )
+        if response.status != 200:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to delete local user: {response.error or 'Unknown VyOS error'}",
+            )
+
+        await run_in_threadpool(service.get_full_config, refresh=True)
+        return LocalUserOperationResponse(
+            success=True,
+            username=user_name,
+            message=f"Local user '{user_name}' deleted",
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error deleting local user: {str(exc)}")

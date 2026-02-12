@@ -21,6 +21,7 @@ from routers.firewall import ipv4 as firewall_ipv4
 from routers.firewall import ipv6 as firewall_ipv6
 from routers.firewall import bridge as firewall_bridge
 from routers.firewall import flowtables as firewall_flowtables
+from routers.firewall import zones as firewall_zones
 from routers.nat import nat
 from routers.dhcp import dhcp
 from routers.static_routes import static_routes
@@ -45,6 +46,7 @@ from routers import show as show_router
 from routers import dashboard as dashboard_router
 from routers import user_management as user_management_router
 from routers import containers as containers_router
+from routers import ipsec as ipsec_router
 
 # Global variables
 db_pool: Optional[asyncpg.Pool] = None
@@ -262,6 +264,7 @@ app.include_router(firewall_ipv4.router)
 app.include_router(firewall_ipv6.router)
 app.include_router(firewall_bridge.router)
 app.include_router(firewall_flowtables.router)
+app.include_router(firewall_zones.router)
 app.include_router(nat.router)
 app.include_router(dhcp.router)
 app.include_router(static_routes.router)
@@ -276,6 +279,7 @@ app.include_router(extcommunity_list.router)
 app.include_router(large_community_list.router)
 app.include_router(firewall_global_options.router)
 app.include_router(wireguard.router)
+app.include_router(ipsec_router.router)
 app.include_router(babel.router)
 app.include_router(bfd.router)
 app.include_router(bgp.router)

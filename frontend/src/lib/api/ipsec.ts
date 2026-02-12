@@ -88,19 +88,34 @@ export interface PeerSummary {
   vti_interface?: string | null;
 }
 
+export interface IPsecStatus {
+  available: boolean;
+  established_count: number;
+  connecting_count: number;
+  down_count: number;
+  raw_output?: string | null;
+}
+
 class IPsecService {
   /**
    * Get complete IPsec VPN configuration
    */
   async getConfig(): Promise<IPsecConfig> {
-    return apiClient.get<IPsecConfig>("/vpn/ipsec/config");
+    return apiClient.get<IPsecConfig>("/vyos/vpn/ipsec/config");
   }
 
   /**
    * Get all IPsec site-to-site peers as a flat list
    */
   async getPeers(): Promise<PeerSummary[]> {
-    return apiClient.get<PeerSummary[]>("/vpn/ipsec/peers");
+    return apiClient.get<PeerSummary[]>("/vyos/vpn/ipsec/peers");
+  }
+
+  /**
+   * Get runtime IPsec status summary
+   */
+  async getStatus(): Promise<IPsecStatus> {
+    return apiClient.get<IPsecStatus>("/vyos/vpn/ipsec/status");
   }
 }
 

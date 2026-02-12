@@ -487,6 +487,17 @@ export default function Home() {
     setHasUnsavedChanges(true);
   };
 
+  const handleCardConfigChange = (cardId: string, config: Record<string, unknown>) => {
+    setCards((previousCards) => previousCards.map((card) => {
+      if (card.id !== cardId) return card;
+      return {
+        ...card,
+        config,
+      };
+    }));
+    setHasUnsavedChanges(true);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -512,6 +523,7 @@ export default function Home() {
       onRemove: editMode ? () => handleRemoveCard(card.id) : undefined,
       span: card.span || 1,
       onSpanChange: editMode ? (newSpan: number) => handleCardSpanChange(card.id, newSpan) : undefined,
+      onConfigChange: (config: Record<string, unknown>) => handleCardConfigChange(card.id, config),
     };
 
     switch (card.type) {

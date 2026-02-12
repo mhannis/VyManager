@@ -34,6 +34,8 @@ interface InterfaceRow {
   role: "WAN" | "LAN" | null;
   description: string | null;
   addresses: string[];
+  addressingMode: "DHCP" | "Static" | "Mixed" | "Unconfigured";
+  addressDetails: string[];
   nicModel: string | null;
   driver: string | null;
   linkUp: boolean | null;
@@ -88,17 +90,58 @@ function interfaceRoleMap(interfaces: EthernetInterface[]): Map<string, "WAN" | 
   return roleMap;
 }
 
-function summarizeAddresses(addresses: string[]): string {
-  if (addresses.length === 0) return "-";
-
-  if (addresses.includes("dhcp")) {
-    return "DHCP";
+function prefixToNetmask(prefix: number): string | null {
+  if (!Number.isInteger(prefix) || prefix < 0 || prefix > 32) {
+    return null;
   }
 
-  const filtered = addresses.filter((address) => address && address !== "dhcp");
-  if (filtered.length === 0) return "-";
-  if (filtered.length <= 2) return filtered.join(", ");
-  return `${filtered[0]}, ${filtered[1]} (+${filtered.length - 2} more)`;
+  const octets: number[] = [];
+  for (let index = 0; index < 4; index++) {
+    const remainingBits = Math.max(Math.min(prefix - index * 8, 8), 0);
+    const value = remainingBits === 0 ? 0 : (0xff << (8 - remainingBits)) & 0xff;
+    octets.push(value);
+  }
+  return octets.join(".");
+}
+
+function formatAddressWithMask(address: string): string {
+  const trimmed = address.trim();
+  if (!trimmed || trimmed.toLowerCase() === "dhcp") return trimmed;
+
+  const [ip, prefixText] = trimmed.split("/");
+  if (!ip || !prefixText) return trimmed;
+
+  const prefix = Number(prefixText);
+  if (ip.includes(":")) {
+    return `${ip}/${prefixText}`;
+  }
+
+  const netmask = prefixToNetmask(prefix);
+  if (!netmask) return trimmed;
+  return `${ip} (${netmask})`;
+}
+
+function summarizeAddressing(addresses: string[]): {
+  mode: "DHCP" | "Static" | "Mixed" | "Unconfigured";
+  details: string[];
+} {
+  const cleaned = addresses.map((address) => address.trim()).filter((address) => address.length > 0);
+  const hasDhcp = cleaned.some((address) => address.toLowerCase() === "dhcp");
+  const staticAddresses = cleaned.filter((address) => address.toLowerCase() !== "dhcp");
+
+  let mode: "DHCP" | "Static" | "Mixed" | "Unconfigured" = "Unconfigured";
+  if (hasDhcp && staticAddresses.length > 0) mode = "Mixed";
+  else if (hasDhcp) mode = "DHCP";
+  else if (staticAddresses.length > 0) mode = "Static";
+
+  const details = staticAddresses.map(formatAddressWithMask);
+  if (mode === "DHCP" && details.length === 0) {
+    details.push("Address assigned by DHCP");
+  } else if (details.length === 0) {
+    details.push("No IP configured");
+  }
+
+  return { mode, details };
 }
 
 export function InterfaceOverviewCard({
@@ -128,11 +171,14 @@ export function InterfaceOverviewCard({
       const mapped = ethernetConfig.interfaces
         .map((iface) => {
           const physical = physicalByName.get(iface.name);
+          const addressing = summarizeAddressing(iface.addresses ?? []);
           return {
             name: iface.name,
             role: roleMap.get(iface.name) ?? null,
             description: iface.description ?? null,
             addresses: iface.addresses ?? [],
+            addressingMode: addressing.mode,
+            addressDetails: addressing.details,
             nicModel: physical?.nic_model ?? null,
             driver: physical?.driver ?? null,
             linkUp: physical?.link_up ?? null,
@@ -281,7 +327,21 @@ export function InterfaceOverviewCard({
                       {row.description && (
                         <p className="text-xs text-muted-foreground truncate">{row.description}</p>
                       )}
-                      <p className="text-xs text-muted-foreground">Address: {summarizeAddresses(row.addresses)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Addressing: {row.addressingMode}
+                      </p>
+                      <div className="space-y-1">
+                        {row.addressDetails.slice(0, 2).map((addressLine, index) => (
+                          <p key={`${row.name}-${index}`} className="text-xs text-muted-foreground font-mono">
+                            {addressLine}
+                          </p>
+                        ))}
+                        {row.addressDetails.length > 2 && (
+                          <p className="text-xs text-muted-foreground">
+                            +{row.addressDetails.length - 2} additional addresses
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="text-xs text-muted-foreground text-right space-y-1">
