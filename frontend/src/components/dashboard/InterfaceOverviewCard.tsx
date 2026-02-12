@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ethernetService } from "@/lib/api/ethernet";
-import { showService, type InterfacePhysical } from "@/lib/api/show";
+import { showService, type InterfacePhysical, type InterfaceRuntimeAddress } from "@/lib/api/show";
 import type { EthernetInterface } from "@/lib/api/types/ethernet";
 import {
   Link2,
@@ -126,20 +126,34 @@ function formatAddressWithMask(address: string): string {
   return `${ip} (${netmask})`;
 }
 
-function summarizeAddressing(addresses: string[]): {
+function summarizeAddressing(addresses: string[], runtimeIpv4Addresses: string[] = []): {
   mode: "DHCP" | "Static" | "Mixed" | "Unconfigured";
   details: string[];
 } {
   const cleaned = addresses.map((address) => address.trim()).filter((address) => address.length > 0);
   const hasDhcp = cleaned.some((address) => address.toLowerCase() === "dhcp");
   const staticAddresses = cleaned.filter((address) => address.toLowerCase() !== "dhcp");
+  const runtimeIpv4 = runtimeIpv4Addresses
+    .map((address) => address.trim())
+    .filter((address) => address.length > 0);
 
   let mode: "DHCP" | "Static" | "Mixed" | "Unconfigured" = "Unconfigured";
   if (hasDhcp && staticAddresses.length > 0) mode = "Mixed";
   else if (hasDhcp) mode = "DHCP";
   else if (staticAddresses.length > 0) mode = "Static";
 
-  const details = staticAddresses.map(formatAddressWithMask);
+  const staticDetails = staticAddresses.map(formatAddressWithMask);
+  const runtimeDetails = runtimeIpv4.map(formatAddressWithMask);
+  const details = [...staticDetails];
+
+  if (mode === "DHCP" || mode === "Mixed") {
+    for (const runtimeAddress of runtimeDetails) {
+      if (!details.includes(runtimeAddress)) {
+        details.push(runtimeAddress);
+      }
+    }
+  }
+
   if (mode === "DHCP" && details.length === 0) {
     details.push("Address assigned by DHCP");
   } else if (details.length === 0) {
@@ -203,9 +217,10 @@ export function InterfaceOverviewCard({
   const loadData = async () => {
     try {
       setError(null);
-      const [ethernetConfig, physicalResponse] = await Promise.all([
+      const [ethernetConfig, physicalResponse, runtimeResponse] = await Promise.all([
         ethernetService.getConfig(),
         showService.getInterfacePhysical(),
+        showService.getInterfaceRuntimeAddresses(),
       ]);
 
       const roleMap = interfaceRoleMap(ethernetConfig.interfaces);
@@ -213,11 +228,19 @@ export function InterfaceOverviewCard({
       for (const detail of physicalResponse.interfaces) {
         physicalByName.set(detail.interface, detail);
       }
+      const runtimeByName = new Map<string, InterfaceRuntimeAddress>();
+      for (const detail of runtimeResponse.interfaces) {
+        runtimeByName.set(detail.interface, detail);
+      }
 
       const mapped = ethernetConfig.interfaces
         .map((iface) => {
           const physical = physicalByName.get(iface.name);
-          const addressing = summarizeAddressing(iface.addresses ?? []);
+          const runtimeDetail = runtimeByName.get(iface.name);
+          const addressing = summarizeAddressing(
+            iface.addresses ?? [],
+            runtimeDetail?.ipv4_addresses ?? []
+          );
           return {
             name: iface.name,
             role: roleMap.get(iface.name) ?? null,

@@ -64,6 +64,19 @@ class InterfacePhysicalResponse(BaseModel):
     total: int
 
 
+class InterfaceRuntimeAddress(BaseModel):
+    """Runtime interface address details from operational show output."""
+    interface: str
+    ipv4_addresses: List[str]
+    ipv6_addresses: List[str]
+
+
+class InterfaceRuntimeAddressesResponse(BaseModel):
+    """Response containing runtime interface addresses."""
+    interfaces: List[InterfaceRuntimeAddress]
+    total: int
+
+
 class InterfaceBlinkRequest(BaseModel):
     """Request model for interface LED identify/blink."""
     interface: str
@@ -252,6 +265,38 @@ def parse_interface_physical_details(
         details.nic_model = nic_models_by_bus[normalized_bus]
 
     return details
+
+
+def parse_interface_runtime_addresses(interface_name: str, output: str) -> InterfaceRuntimeAddress:
+    """
+    Parse `show interfaces ethernet <iface>` output and extract runtime addresses.
+    """
+    ipv4_addresses: List[str] = []
+    ipv6_addresses: List[str] = []
+    seen_ipv4 = set()
+    seen_ipv6 = set()
+
+    if output and isinstance(output, str):
+        for raw_line in output.splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+
+            for ipv4 in re.findall(r"\binet\s+(\d{1,3}(?:\.\d{1,3}){3}/\d{1,2})\b", line):
+                if ipv4 not in seen_ipv4:
+                    seen_ipv4.add(ipv4)
+                    ipv4_addresses.append(ipv4)
+
+            for ipv6 in re.findall(r"\binet6\s+([0-9a-fA-F:]+/\d{1,3})\b", line):
+                if ipv6 not in seen_ipv6:
+                    seen_ipv6.add(ipv6)
+                    ipv6_addresses.append(ipv6)
+
+    return InterfaceRuntimeAddress(
+        interface=interface_name,
+        ipv4_addresses=ipv4_addresses,
+        ipv6_addresses=ipv6_addresses,
+    )
 
 
 def _build_interface_blink_attempts(device: Any, interface_name: str, duration: int) -> List[BlinkAttempt]:
@@ -604,6 +649,49 @@ async def get_all_interfaces(request: Request):
             total=len(interfaces)
         )
 
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/interface-runtime-addresses", response_model=InterfaceRuntimeAddressesResponse)
+async def get_interface_runtime_addresses(request: Request):
+    """
+    Get runtime interface addresses (including DHCP-assigned addresses).
+    """
+    try:
+        service = get_session_vyos_service(request)
+        full_config = service.get_full_config(refresh=False)
+        ethernet_config = full_config.get("interfaces", {}).get("ethernet", {})
+
+        if not isinstance(ethernet_config, dict):
+            return InterfaceRuntimeAddressesResponse(interfaces=[], total=0)
+
+        interface_names = sorted(ethernet_config.keys())
+        runtime_interfaces: List[InterfaceRuntimeAddress] = []
+
+        for interface_name in interface_names:
+            output = ""
+            for show_path in (
+                ["interfaces", "ethernet", interface_name],
+                ["interfaces", interface_name],
+            ):
+                response = service.device.show(path=show_path)
+                if response.status != 200:
+                    continue
+
+                candidate_output = extract_show_output(response.result)
+                if candidate_output:
+                    output = candidate_output
+                    break
+
+            runtime_interfaces.append(parse_interface_runtime_addresses(interface_name, output))
+
+        return InterfaceRuntimeAddressesResponse(
+            interfaces=runtime_interfaces,
+            total=len(runtime_interfaces),
+        )
     except HTTPException:
         raise
     except Exception as e:

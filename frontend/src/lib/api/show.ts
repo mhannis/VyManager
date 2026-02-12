@@ -38,6 +38,17 @@ export interface InterfacePhysicalResponse {
   total: number;
 }
 
+export interface InterfaceRuntimeAddress {
+  interface: string;
+  ipv4_addresses: string[];
+  ipv6_addresses: string[];
+}
+
+export interface InterfaceRuntimeAddressesResponse {
+  interfaces: InterfaceRuntimeAddress[];
+  total: number;
+}
+
 export interface InterfaceName {
   name: string;
   type: string;
@@ -73,6 +84,13 @@ class ShowService {
    */
   async getInterfacePhysical(): Promise<InterfacePhysicalResponse> {
     return apiClient.get<InterfacePhysicalResponse>("/vyos/show/interface-physical");
+  }
+
+  /**
+   * Get runtime interface addresses (including DHCP-assigned addresses)
+   */
+  async getInterfaceRuntimeAddresses(): Promise<InterfaceRuntimeAddressesResponse> {
+    return apiClient.get<InterfaceRuntimeAddressesResponse>("/vyos/show/interface-runtime-addresses");
   }
 
   /**
