@@ -35,8 +35,8 @@ import { CSS } from "@dnd-kit/utilities";
 
 const GRID_COLUMNS = 3;
 const MAX_GRID_SCAN_ROWS = 200;
-const MASONRY_ROW_HEIGHT_PX = 8;
-const DASHBOARD_GRID_GAP_PX = 22;
+const MASONRY_ROW_HEIGHT_PX = 1;
+const DASHBOARD_GRID_GAP_PX = 10;
 
 function getCardSpan(card: DashboardCard): number {
   if (!card.span || card.span < 1) return 1;
@@ -237,7 +237,7 @@ function DashboardMasonryItem({
     const height = element.getBoundingClientRect().height;
     const computedSpan = Math.max(
       1,
-      Math.ceil((height + DASHBOARD_GRID_GAP_PX) / (MASONRY_ROW_HEIGHT_PX + DASHBOARD_GRID_GAP_PX))
+      Math.ceil((height + DASHBOARD_GRID_GAP_PX) / MASONRY_ROW_HEIGHT_PX)
     );
 
     setRowSpan((previous) => (previous === computedSpan ? previous : computedSpan));
@@ -723,7 +723,7 @@ export default function Home() {
             {/* Wrapper for grid and overlays */}
             <div className="relative">
               {/* Main masonry grid */}
-              <div className="grid grid-cols-3 gap-x-6 gap-y-[22px] auto-rows-[8px] grid-flow-row-dense relative z-0">
+              <div className="grid grid-cols-3 gap-x-6 gap-y-0 auto-rows-[1px] grid-flow-row-dense relative z-0">
                 <SortableContext
                   items={orderedCards.map((c) => c.id)}
                   strategy={verticalListSortingStrategy}
