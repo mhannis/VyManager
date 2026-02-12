@@ -72,7 +72,12 @@ Branch: `dev`
 - Validation snapshot after this batch:
   - `npx tsc --noEmit --pretty false` => pass
   - `npm run -s build` => pass
-  - `npm run -s lint` => `0 errors`, `315 warnings` (down from 519 earlier baseline)
+  - `npm run -s lint` => `0 errors`, `309 warnings` (down from 519 earlier baseline)
+  - Includes cleanup in:
+    - `frontend/src/app/api/session/[...path]/route.ts`
+    - `frontend/src/app/api/session/set-first-user-admin/route.ts`
+    - `frontend/src/app/api/user-management/[...path]/route.ts`
+    - `frontend/src/lib/api/client.ts`
 
 ### 1) Auth/session/user management hardening
 - Session timeout / middleware behavior adjusted in backend.
@@ -283,5 +288,5 @@ Branch: `dev`
    - `npm run -s build`
 9. Current lint baseline:
    - `npm run lint` returns warnings only (0 errors).
-   - Current warning count: `315`.
+   - Current warning count: `309`.
    - If/when desired, tighten rules incrementally per feature area instead of globally.

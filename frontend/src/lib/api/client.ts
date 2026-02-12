@@ -9,7 +9,7 @@ const API_BASE_URL = typeof window !== 'undefined'
   ? '/api'
   : (process.env.BACKEND_URL || "http://backend:8000");
 
-import { VyOSResponse, ApiError } from "../types/api";
+import { ApiError } from "../types/api";
 
 export class ApiClient {
   private baseUrl: string;

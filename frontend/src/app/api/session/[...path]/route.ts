@@ -81,7 +81,7 @@ async function proxyRequest(
       if (contentType && contentType.includes("multipart/form-data")) {
         // For file uploads, pass the FormData directly
         const formData = await request.formData();
-        body = formData as any;
+        body = formData;
         // Don't set Content-Type header - let fetch set it with boundary
       } else {
         // For JSON requests
@@ -129,7 +129,7 @@ async function proxyRequest(
       const data = JSON.parse(responseText);
       // Return the response with the same status code
       return NextResponse.json(data, { status: response.status });
-    } catch (parseError) {
+    } catch {
       return NextResponse.json(
         {
           error: "Backend returned invalid JSON",
