@@ -36,7 +36,7 @@ import { CSS } from "@dnd-kit/utilities";
 const GRID_COLUMNS = 3;
 const MAX_GRID_SCAN_ROWS = 200;
 const MASONRY_ROW_HEIGHT_PX = 8;
-const DASHBOARD_GRID_GAP_PX = 20;
+const DASHBOARD_GRID_GAP_PX = 22;
 
 function getCardSpan(card: DashboardCard): number {
   if (!card.span || card.span < 1) return 1;
@@ -169,7 +169,7 @@ function SortableCard({ card, children }: { card: DashboardCard; children: React
     <div
       ref={setNodeRef}
       style={style}
-      className={`h-full ${isDragging ? "cursor-grabbing" : "cursor-grab"} ${
+      className={`${isDragging ? "cursor-grabbing" : "cursor-grab"} ${
         isOver ? "ring-2 ring-primary ring-offset-2" : ""
       }`}
       {...attributes}
@@ -261,15 +261,12 @@ function DashboardMasonryItem({
 
   return (
     <div
-      className="h-full"
       style={{
         gridColumn: `${startColumn} / span ${span}`,
         gridRowEnd: `span ${rowSpan}`,
       }}
     >
-      <div ref={contentRef} className="h-full">
-        {children}
-      </div>
+      <div ref={contentRef}>{children}</div>
     </div>
   );
 }
@@ -726,7 +723,7 @@ export default function Home() {
             {/* Wrapper for grid and overlays */}
             <div className="relative">
               {/* Main masonry grid */}
-              <div className="grid grid-cols-3 gap-x-6 gap-y-5 auto-rows-[8px] grid-flow-row-dense relative z-0">
+              <div className="grid grid-cols-3 gap-x-6 gap-y-[22px] auto-rows-[8px] grid-flow-row-dense relative z-0">
                 <SortableContext
                   items={orderedCards.map((c) => c.id)}
                   strategy={verticalListSortingStrategy}
@@ -735,10 +732,10 @@ export default function Home() {
                   {orderedCards.map((card) => {
                     const cardElement = editMode ? (
                       <SortableCard card={card}>
-                        <div className="h-full [&>*]:h-full">{renderCard(card)}</div>
+                        {renderCard(card)}
                       </SortableCard>
                     ) : (
-                      <div className="h-full [&>*]:h-full">{renderCard(card)}</div>
+                      <div>{renderCard(card)}</div>
                     );
 
                     return (

@@ -597,3 +597,14 @@ Branch: `dev`
   - made masonry wrappers and card wrappers `h-full` so cards fill allocated grid area and avoid transparent dead space.
 - Validation:
   - `cd frontend && npm run build` -> success
+
+### 37) Follow-up Fix (Overlap Regression + Conservative Tightening)
+- File: `frontend/src/app/page.tsx`
+- User feedback: previous tightening caused overlapping/incorrect layout.
+- Fix:
+  - reverted `h-full` masonry wrapper changes that distorted height measurement.
+  - kept dense masonry behavior, but applied only conservative vertical tightening:
+    - `DASHBOARD_GRID_GAP_PX = 22`
+    - grid class: `gap-y-[22px]` (slightly tighter than previous 24px)
+- Validation:
+  - `cd frontend && npm run build` -> success
