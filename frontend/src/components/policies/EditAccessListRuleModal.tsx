@@ -197,7 +197,7 @@ export function EditAccessListRuleModal({
     setError(null);
 
     try {
-      let updatedRule: any = {
+      const updatedRule: any = {
         action,
         description: ruleDescription || null,
       };
