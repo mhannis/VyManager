@@ -575,3 +575,25 @@ Branch: `dev`
   - replaced `useMemo` with a plain sorted constant (non-hook), removing hook-order variance.
 - Validation:
   - `cd frontend && npm run build` -> success
+
+### 35) Follow-up Fix (Remaining Dashboard Gaps)
+- File: `frontend/src/app/page.tsx`
+- Issue: residual vertical holes (notably column 3) after initial masonry conversion.
+- Fix:
+  - enabled dense grid auto-placement on dashboard masonry container:
+    - added `grid-flow-row-dense`
+  - this allows later cards to backfill earlier holes created by row-span placement.
+- Validation:
+  - `cd frontend && npm run build` -> success
+
+### 36) Follow-up Tuning (Card Gap Tightening)
+- File: `frontend/src/app/page.tsx`
+- User feedback: gap between some stacked cards still looked larger than intended.
+- Tuning applied:
+  - reduced masonry row-gap constant used for span calculation:
+    - `DASHBOARD_GRID_GAP_PX: 24 -> 20`
+  - changed dashboard grid classes to split horizontal/vertical gaps:
+    - `gap-x-6 gap-y-5` (keeps horizontal spacing, slightly tighter vertical spacing)
+  - made masonry wrappers and card wrappers `h-full` so cards fill allocated grid area and avoid transparent dead space.
+- Validation:
+  - `cd frontend && npm run build` -> success
