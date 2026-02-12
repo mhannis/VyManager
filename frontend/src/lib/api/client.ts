@@ -23,6 +23,16 @@ class ApiClientError extends Error implements ApiError {
   }
 }
 
+function resolveGetCacheTtlMs(): number {
+  const rawValue = process.env.NEXT_PUBLIC_API_GET_CACHE_TTL_MS;
+  const parsed = rawValue ? Number.parseInt(rawValue, 10) : NaN;
+  if (Number.isFinite(parsed) && parsed >= 0) {
+    return parsed;
+  }
+  // Default slightly higher to absorb bursty page-load duplicate reads.
+  return 4000;
+}
+
 export class ApiClient {
   private baseUrl: string;
   private inFlightGetRequests: Map<string, Promise<unknown>>;
@@ -33,7 +43,7 @@ export class ApiClient {
     this.baseUrl = baseUrl;
     this.inFlightGetRequests = new Map();
     this.recentGetCache = new Map();
-    this.getCacheTtlMs = 1500;
+    this.getCacheTtlMs = resolveGetCacheTtlMs();
   }
 
   private async request<T>(

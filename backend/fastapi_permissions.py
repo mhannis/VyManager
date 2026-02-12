@@ -57,25 +57,30 @@ async def require_permission(
     if await is_super_admin(db_pool, user["id"]):
         return
 
-    # Get user's active instance
-    async with db_pool.acquire() as conn:
-        result = await conn.fetchrow(
-            """
-            SELECT "instanceId"
-            FROM active_sessions
-            WHERE "userId" = $1
-            LIMIT 1
-            """,
-            user["id"]
-        )
+    # Reuse resolved instance from SessionMiddleware when available
+    instance = getattr(request.state, "instance", None)
+    instance_id = instance.get("id") if isinstance(instance, dict) else None
 
-        if not result:
-            raise HTTPException(
-                status_code=404,
-                detail="No active VyOS instance. Please connect to an instance first."
+    # Fallback to DB lookup for routes that might bypass SessionMiddleware context
+    if not instance_id:
+        async with db_pool.acquire() as conn:
+            result = await conn.fetchrow(
+                """
+                SELECT "instanceId"
+                FROM active_sessions
+                WHERE "userId" = $1
+                LIMIT 1
+                """,
+                user["id"]
             )
 
-        instance_id = result["instanceId"]
+            if not result:
+                raise HTTPException(
+                    status_code=404,
+                    detail="No active VyOS instance. Please connect to an instance first."
+                )
+
+            instance_id = result["instanceId"]
 
     # Check permission
     has_permission = await check_permission(
@@ -153,25 +158,30 @@ async def get_user_feature_permissions(request: Request) -> dict:
 
     db_pool: asyncpg.Pool = request.app.state.db_pool
 
-    # Get user's active instance
-    async with db_pool.acquire() as conn:
-        result = await conn.fetchrow(
-            """
-            SELECT "instanceId"
-            FROM active_sessions
-            WHERE "userId" = $1
-            LIMIT 1
-            """,
-            user["id"]
-        )
+    # Reuse resolved instance from SessionMiddleware when available
+    instance = getattr(request.state, "instance", None)
+    instance_id = instance.get("id") if isinstance(instance, dict) else None
 
-        if not result:
-            raise HTTPException(
-                status_code=404,
-                detail="No active VyOS instance"
+    # Fallback to DB lookup for routes that might bypass SessionMiddleware context
+    if not instance_id:
+        async with db_pool.acquire() as conn:
+            result = await conn.fetchrow(
+                """
+                SELECT "instanceId"
+                FROM active_sessions
+                WHERE "userId" = $1
+                LIMIT 1
+                """,
+                user["id"]
             )
 
-        instance_id = result["instanceId"]
+            if not result:
+                raise HTTPException(
+                    status_code=404,
+                    detail="No active VyOS instance"
+                )
+
+            instance_id = result["instanceId"]
 
     # Get all permissions
     permissions = await get_user_permissions(db_pool, user["id"], instance_id)

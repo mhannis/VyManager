@@ -42,6 +42,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         "/vyos/config/snapshots",
         "/vyos/power/status",  # Polls for scheduled reboot/poweroff status
     }
+    ACTIVITY_UPDATE_INTERVAL_SECONDS = int(os.getenv("AUTH_ACTIVITY_UPDATE_INTERVAL_SECONDS", "30"))
 
     def __init__(self, app):
         super().__init__(app)
@@ -96,8 +97,6 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             token_parts = token_to_use.split('.')
             token_id = token_parts[0] if len(token_parts) > 0 else token_to_use
 
-            print("[AuthMiddleware] Validating session token")
-
             # Validate session in database
             db_pool = self.get_db_pool(request)
             async with db_pool.acquire() as conn:
@@ -110,11 +109,6 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                     """,
                     token_id
                 )
-
-                if session:
-                    print("[AuthMiddleware] ✓ Session found")
-                else:
-                    print("[AuthMiddleware] ✗ Session not found")
 
                 if not session:
                     return JSONResponse(
@@ -142,12 +136,14 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                         UPDATE sessions
                         SET "lastActivityAt" = NOW()
                         WHERE token = $1
+                          AND (
+                            "lastActivityAt" IS NULL
+                            OR "lastActivityAt" < NOW() - ($2::int * INTERVAL '1 second')
+                          )
                         """,
-                        token_id
+                        token_id,
+                        self.ACTIVITY_UPDATE_INTERVAL_SECONDS,
                     )
-                    print("[AuthMiddleware] ✓ Activity timestamp updated (user action)")
-                else:
-                    print("[AuthMiddleware] ✓ Activity timestamp not updated (polling)")
 
                 # Attach user information to request state
                 request.state.user_id = session["userId"]

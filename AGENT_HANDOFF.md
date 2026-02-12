@@ -485,3 +485,41 @@ Branch: `dev`
 ### 25) Validation Commands
 - Backend: `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q` -> pass
 - Frontend: `cd frontend && npm run build` -> success
+
+## Update (2026-02-12) - Performance Improvements (Page Load + Populate)
+
+### 26) Optimizations Implemented
+- Reduced redundant per-request DB lookups in permission checks:
+  - File: `backend/fastapi_permissions.py`
+  - `require_permission()` and `get_user_feature_permissions()` now reuse `request.state.instance.id` from `SessionMiddleware` when present.
+  - Falls back to DB lookup only if middleware context is unavailable.
+
+- Reduced write amplification from activity tracking:
+  - File: `backend/middleware/auth.py`
+    - Removed per-request debug prints.
+    - Session `lastActivityAt` updates are now throttled with:
+      - env: `AUTH_ACTIVITY_UPDATE_INTERVAL_SECONDS` (default `30`)
+  - File: `backend/middleware/session.py`
+    - Active session `lastActivityAt` updates are now throttled with:
+      - env: `ACTIVE_SESSION_UPDATE_INTERVAL_SECONDS` (default `30`)
+
+- Reduced DB round trips in session resolution middleware:
+  - File: `backend/middleware/session.py`
+  - Replaced prior two-query role/session branching with one unified query that supports:
+    - site-level `ADMIN` bypass behavior
+    - instance-role enforcement for non-admin users
+
+- Improved frontend GET cache window for bursty page loads/navigation:
+  - File: `frontend/src/lib/api/client.ts`
+  - Added configurable TTL:
+    - env: `NEXT_PUBLIC_API_GET_CACHE_TTL_MS`
+    - default raised from `1500ms` to `4000ms`
+  - Keeps request dedupe behavior and still clears cache on all mutations.
+
+### 27) Validation + Spot Timing
+- Backend tests: `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q` -> pass
+- Frontend build: `cd frontend && npm run build` -> success
+- Live timing sanity checks after restart:
+  - `GET /vyos/system/info`: first call (cold) ~`0.58s`, subsequent calls ~`0.004s`
+  - `GET /user-management/my-permissions`: ~`0.006s`
+  - `GET /vyos/firewall/zones/config`: ~`0.005s`

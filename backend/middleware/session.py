@@ -11,6 +11,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 import asyncpg
 from typing import Optional
+import os
 
 
 class SessionMiddleware(BaseHTTPMiddleware):
@@ -33,6 +34,7 @@ class SessionMiddleware(BaseHTTPMiddleware):
         "/vyos/config/snapshots",
         "/vyos/power/status",
     }
+    ACTIVITY_UPDATE_INTERVAL_SECONDS = int(os.getenv("ACTIVE_SESSION_UPDATE_INTERVAL_SECONDS", "30"))
 
     def __init__(self, app):
         super().__init__(app)
@@ -80,70 +82,45 @@ class SessionMiddleware(BaseHTTPMiddleware):
             current_session_token = cookie_token.split(".")[0] if cookie_token else None
 
             async with db_pool.acquire() as conn:
-                # First check if user is site-level ADMIN
-                user_site_role = await conn.fetchval(
+                # Single-query lookup for active session + instance + site + role.
+                # Site ADMIN users are granted ADMIN access without requiring an explicit instance role row.
+                session = await conn.fetchrow(
                     """
-                    SELECT role FROM users WHERE id = $1
+                    SELECT
+                        a."instanceId" as instance_id,
+                        a."sessionToken" as session_token,
+                        i.name as instance_name,
+                        i.host,
+                        i.port,
+                        i.username,
+                        i.password,
+                        i."apiKey" as api_key,
+                        i."isActive" as is_active,
+                        i."siteId" as site_id,
+                        i."vyosVersion" as vyos_version,
+                        i.protocol,
+                        i."verifySsl" as verify_ssl,
+                        s.name as site_name,
+                        CASE
+                            WHEN u.role = 'ADMIN' THEN 'ADMIN'
+                            ELSE uir.role
+                        END as user_role
+                    FROM users u
+                    JOIN active_sessions a ON a."userId" = u.id
+                    JOIN instances i ON a."instanceId" = i.id
+                    JOIN sites s ON i."siteId" = s.id
+                    LEFT JOIN user_instance_roles uir
+                        ON i.id = uir."instanceId"
+                       AND uir."userId" = u.id
+                    WHERE u.id = $1
+                      AND (
+                        u.role = 'ADMIN'
+                        OR uir.id IS NOT NULL
+                      )
+                    LIMIT 1
                     """,
-                    user_id
+                    user_id,
                 )
-
-                # Look up active session with instance and site details
-                # Site ADMINs don't need user_instance_roles entries - they get ADMIN role automatically
-                if user_site_role == "ADMIN":
-                    session = await conn.fetchrow(
-                        """
-                        SELECT
-                            a."instanceId" as instance_id,
-                            a."sessionToken" as session_token,
-                            i.name as instance_name,
-                            i.host,
-                            i.port,
-                            i.username,
-                            i.password,
-                            i."apiKey" as api_key,
-                            i."isActive" as is_active,
-                            i."siteId" as site_id,
-                            i."vyosVersion" as vyos_version,
-                            i.protocol,
-                            i."verifySsl" as verify_ssl,
-                            s.name as site_name,
-                            'ADMIN' as user_role
-                        FROM active_sessions a
-                        JOIN instances i ON a."instanceId" = i.id
-                        JOIN sites s ON i."siteId" = s.id
-                        WHERE a."userId" = $1
-                        """,
-                        user_id,
-                    )
-                else:
-                    # Regular users need explicit instance-level role assignment
-                    session = await conn.fetchrow(
-                        """
-                        SELECT
-                            a."instanceId" as instance_id,
-                            a."sessionToken" as session_token,
-                            i.name as instance_name,
-                            i.host,
-                            i.port,
-                            i.username,
-                            i.password,
-                            i."apiKey" as api_key,
-                            i."isActive" as is_active,
-                            i."siteId" as site_id,
-                            i."vyosVersion" as vyos_version,
-                            i.protocol,
-                            i."verifySsl" as verify_ssl,
-                            s.name as site_name,
-                            uir.role as user_role
-                        FROM active_sessions a
-                        JOIN instances i ON a."instanceId" = i.id
-                        JOIN sites s ON i."siteId" = s.id
-                        JOIN user_instance_roles uir ON i.id = uir."instanceId" AND uir."userId" = $1
-                        WHERE a."userId" = $1
-                        """,
-                        user_id,
-                    )
 
                 # Check if active session exists but belongs to a different auth session
                 # This means the user logged in from a different device
@@ -173,8 +150,13 @@ class SessionMiddleware(BaseHTTPMiddleware):
                                 UPDATE active_sessions
                                 SET "lastActivityAt" = NOW()
                                 WHERE "userId" = $1
+                                  AND (
+                                    "lastActivityAt" IS NULL
+                                    OR "lastActivityAt" < NOW() - ($2::int * INTERVAL '1 second')
+                                  )
                                 """,
                                 user_id,
+                                self.ACTIVITY_UPDATE_INTERVAL_SECONDS,
                             )
 
                 if session:
