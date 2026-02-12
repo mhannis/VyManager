@@ -658,6 +658,11 @@ Branch: `dev`
   - Added `asyncio.gather(..., return_exceptions=True)` to run independent show commands in parallel:
     - `GET /vyos/system/dashboard-summary`
     - `GET /vyos/system/ntp-status`
+- Additional event-loop deblocking:
+  - File: `backend/routers/dhcp/dhcp.py` (`GET /vyos/dhcp/leases`)
+  - File: `backend/routers/power.py` (`GET /vyos/power/status`)
+  - File: `backend/routers/wireguard/wireguard.py` (keygen + status endpoints)
+  - Wrapped blocking `service.device.show()`/`generate()` calls in `run_in_threadpool()`.
 
 ### 47) Timing Verification (local)
 - After restart, endpoint timings improved to:

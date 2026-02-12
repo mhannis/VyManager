@@ -520,7 +520,7 @@ async def get_power_status(request: Request):
             # Get VyOS timezone for proper time conversion
             vyos_timezone = await get_vyos_timezone(service)
 
-            response = service.device.show(path=["reboot"])
+            response = await run_in_threadpool(service.device.show, path=["reboot"])
 
             if response.status != 200:
                 raise Exception(f"VyOS command failed: {response.error}")

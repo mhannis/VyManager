@@ -549,7 +549,7 @@ async def get_dhcp_leases(request: Request):
 
         # Use the show command to get DHCP leases
         # This returns tabular data that we need to parse
-        response = service.device.show(path=["dhcp", "server", "leases"])
+        response = await run_in_threadpool(service.device.show, path=["dhcp", "server", "leases"])
 
         if response.status != 200 or not response.result:
             return DHCPLeasesResponse(leases=[], total=0)
