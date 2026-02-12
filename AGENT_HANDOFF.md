@@ -523,3 +523,23 @@ Branch: `dev`
   - `GET /vyos/system/info`: first call (cold) ~`0.58s`, subsequent calls ~`0.004s`
   - `GET /user-management/my-permissions`: ~`0.006s`
   - `GET /vyos/firewall/zones/config`: ~`0.005s`
+
+## Update (2026-02-12) - Dashboard Interface Card Filtering
+
+### 28) Interface Overview Card Settings
+- File: `frontend/src/components/dashboard/InterfaceOverviewCard.tsx`
+- Added per-card interface selection config (same pattern as Interface Statistics):
+  - New card `config.interfaces` support.
+  - Settings menu now includes `Interfaces` section with:
+    - `All Interfaces`
+    - checkbox entries for each discovered interface.
+  - Empty selection is treated as "all interfaces" mode.
+  - Card content and summary badges (`Up/Down/Unknown`) now respect selected interface subset.
+
+### 29) Interface Statistics Card
+- Existing interface selection behavior remains in place.
+- Interface Overview now matches the same selection/persistence pattern used by Interface Statistics.
+
+### 30) Validation
+- Frontend build:
+  - `cd frontend && npm run build` -> success

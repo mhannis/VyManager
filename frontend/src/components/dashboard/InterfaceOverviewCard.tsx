@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -27,6 +28,10 @@ interface InterfaceOverviewCardProps {
   onRemove?: () => void;
   span?: number;
   onSpanChange?: (newSpan: number) => void;
+  config?: {
+    interfaces?: string[];
+  };
+  onConfigChange?: (config: { interfaces?: string[] }) => void;
 }
 
 interface InterfaceRow {
@@ -148,11 +153,52 @@ export function InterfaceOverviewCard({
   onRemove,
   span = 2,
   onSpanChange,
+  config = {},
+  onConfigChange,
 }: InterfaceOverviewCardProps) {
   const [rows, setRows] = useState<InterfaceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const selectedInterfaces = Array.isArray(config.interfaces) ? config.interfaces : [];
+  const customInterfaceFilterEnabled = selectedInterfaces.length > 0;
+
+  const availableInterfaces = useMemo(
+    () => [...new Set(rows.map((row) => row.name))].sort((left, right) => left.localeCompare(right)),
+    [rows]
+  );
+
+  const updateInterfaceSelection = (names: string[]) => {
+    if (!onConfigChange) return;
+    const next = [...new Set(names.filter((name) => availableInterfaces.includes(name)))].sort();
+
+    // Empty list means "all interfaces" mode.
+    if (next.length === 0 || next.length === availableInterfaces.length) {
+      onConfigChange({ ...(config || {}), interfaces: [] });
+      return;
+    }
+    onConfigChange({ ...(config || {}), interfaces: next });
+  };
+
+  const toggleInterfaceSelection = (interfaceName: string, checked: boolean) => {
+    if (!onConfigChange) return;
+
+    if (!customInterfaceFilterEnabled) {
+      // Switch from "all" mode to an explicit subset when an item is unchecked.
+      if (!checked) {
+        updateInterfaceSelection(availableInterfaces.filter((name) => name !== interfaceName));
+      }
+      return;
+    }
+
+    const current = new Set(selectedInterfaces);
+    if (checked) {
+      current.add(interfaceName);
+    } else {
+      current.delete(interfaceName);
+    }
+    updateInterfaceSelection(Array.from(current));
+  };
 
   const loadData = async () => {
     try {
@@ -213,19 +259,24 @@ export function InterfaceOverviewCard({
     return () => clearInterval(interval);
   }, [autoRefresh]);
 
+  const filteredRows = useMemo(() => {
+    if (!customInterfaceFilterEnabled) return rows;
+    return rows.filter((row) => selectedInterfaces.includes(row.name));
+  }, [rows, selectedInterfaces, customInterfaceFilterEnabled]);
+
   const summary = useMemo(() => {
     let up = 0;
     let down = 0;
     let unknown = 0;
 
-    for (const row of rows) {
+    for (const row of filteredRows) {
       if (row.linkUp === true) up += 1;
       else if (row.linkUp === false) down += 1;
       else unknown += 1;
     }
 
     return { up, down, unknown };
-  }, [rows]);
+  }, [filteredRows]);
 
   return (
     <Card>
@@ -247,7 +298,7 @@ export function InterfaceOverviewCard({
             <RefreshCw className="h-4 w-4 mr-1" />
             Refresh
           </Button>
-          {onSpanChange && (
+          {(onSpanChange || onConfigChange) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
@@ -255,26 +306,60 @@ export function InterfaceOverviewCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Card Width</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onSpanChange(1)}>
-                  <div className="flex items-center justify-between w-full">
-                    <span>Small (1 column)</span>
-                    {span === 1 && <span className="ml-2 text-primary">✓</span>}
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onSpanChange(2)}>
-                  <div className="flex items-center justify-between w-full">
-                    <span>Medium (2 columns)</span>
-                    {span === 2 && <span className="ml-2 text-primary">✓</span>}
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onSpanChange(3)}>
-                  <div className="flex items-center justify-between w-full">
-                    <span>Large (3 columns)</span>
-                    {span === 3 && <span className="ml-2 text-primary">✓</span>}
-                  </div>
-                </DropdownMenuItem>
+                {onSpanChange && (
+                  <>
+                    <DropdownMenuLabel>Card Width</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => onSpanChange(1)}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>Small (1 column)</span>
+                        {span === 1 && <span className="ml-2 text-primary">✓</span>}
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onSpanChange(2)}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>Medium (2 columns)</span>
+                        {span === 2 && <span className="ml-2 text-primary">✓</span>}
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onSpanChange(3)}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>Large (3 columns)</span>
+                        {span === 3 && <span className="ml-2 text-primary">✓</span>}
+                      </div>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {onConfigChange && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Interfaces</DropdownMenuLabel>
+                    <DropdownMenuCheckboxItem
+                      checked={!customInterfaceFilterEnabled}
+                      onCheckedChange={(checked) => {
+                        if (checked === true) {
+                          updateInterfaceSelection([]);
+                        }
+                      }}
+                    >
+                      All Interfaces
+                    </DropdownMenuCheckboxItem>
+                    {availableInterfaces.map((interfaceName) => (
+                      <DropdownMenuCheckboxItem
+                        key={interfaceName}
+                        checked={
+                          !customInterfaceFilterEnabled ||
+                          selectedInterfaces.includes(interfaceName)
+                        }
+                        onCheckedChange={(checked) =>
+                          toggleInterfaceSelection(interfaceName, checked === true)
+                        }
+                      >
+                        {interfaceName}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -291,7 +376,7 @@ export function InterfaceOverviewCard({
           <div className="text-sm text-destructive">{error}</div>
         ) : loading ? (
           <div className="text-center text-muted-foreground py-6">Loading...</div>
-        ) : rows.length === 0 ? (
+        ) : filteredRows.length === 0 ? (
           <div className="text-sm text-muted-foreground">No interfaces available.</div>
         ) : (
           <div className="space-y-4">
@@ -302,7 +387,7 @@ export function InterfaceOverviewCard({
             </div>
 
             <div className="space-y-2">
-              {rows.map((row) => (
+              {filteredRows.map((row) => (
                 <div key={row.name} className="rounded-lg border p-3">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="space-y-1 min-w-0">
