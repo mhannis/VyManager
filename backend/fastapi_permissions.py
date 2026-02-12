@@ -204,6 +204,7 @@ ROUTER_FEATURE_MAP = {
     "/vyos/prefix-list": FeatureGroup.ROUTING_POLICIES,
     "/vyos/local-route": FeatureGroup.ROUTING_POLICIES,
     "/vyos/system": FeatureGroup.SYSTEM,
+    "/vyos/containers": FeatureGroup.SYSTEM,
     "/vyos/config": FeatureGroup.CONFIGURATION,
     "/vyos/power": FeatureGroup.SYSTEM,
     "/dashboard": FeatureGroup.DASHBOARD,

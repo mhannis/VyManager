@@ -94,6 +94,41 @@ Branch: `dev`
   - Added system submenu entries for Services/Logs/Users with SYSTEM permission gating.
   - Refactored submenu open-state logic to avoid `setState` inside an effect (lint-safe).
 
+### 6) New Container Management (VyOS Container / Podman)
+- Backend container API added:
+  - File: `backend/routers/containers.py`
+  - Endpoints:
+    - `GET /vyos/containers/overview`
+    - `PUT /vyos/containers/{container_name}`
+    - `DELETE /vyos/containers/{container_name}`
+    - `POST /vyos/containers/{container_name}/action` (`start` / `stop` / `restart`)
+    - `GET /vyos/containers/{container_name}/logs`
+  - Behavior:
+    - Parses configured containers from `container name ...` config tree (image/env/ports/volumes/restart/network).
+    - Builds launch links from published TCP ports using connected instance host.
+    - Implements restart with op-command attempts first, then safe fallback (`disable` toggle) when unsupported.
+    - Logs endpoint tries multiple VyOS log command variants for compatibility.
+    - Permission-gated with `FeatureGroup.SYSTEM` read/write checks.
+- Backend wiring updates:
+  - File: `backend/app.py`:
+    - Included `containers` router.
+  - File: `backend/fastapi_permissions.py`:
+    - Added `/vyos/containers` route prefix mapping to `FeatureGroup.SYSTEM`.
+- Frontend container UI added:
+  - File: `frontend/src/app/system/containers/page.tsx`
+  - Features:
+    - Container list with status badges, quick start/stop/restart/delete controls.
+    - Direct web links for exposed container services.
+    - Log viewer panel.
+    - Full create/edit form for image, restart policy, networking, env vars, ports, volumes.
+    - Pi-hole starter template.
+- Frontend API client:
+  - File: `frontend/src/lib/api/containers.ts`
+  - Typed API bindings for overview/config/actions/logs.
+- Sidebar updates:
+  - File: `frontend/src/components/layout/Sidebar.tsx`
+  - Added `System -> Containers` entry.
+
 ## Known Notes / Caveats
 - Frontend build warning remains about multiple lockfiles at repo root and `frontend/`; build still succeeds.
 - Better Auth warns that current `BETTER_AUTH_SECRET` value is weak/short for production.
@@ -108,8 +143,11 @@ Branch: `dev`
   - `backend/middleware/session.py`
   - `backend/routers/show.py`
   - `backend/routers/system.py`
+  - `backend/routers/containers.py`
   - `backend/routers/user_management.py`
+  - `backend/fastapi_permissions.py`
 - Frontend:
+  - `frontend/src/app/system/containers/page.tsx`
   - `frontend/src/app/system/services/page.tsx`
   - `frontend/src/app/api/internal/create-user/route.ts`
   - `frontend/src/app/login/page.tsx`
@@ -130,6 +168,7 @@ Branch: `dev`
   - `frontend/src/components/user-management/UsersTab.tsx`
   - `frontend/src/components/user-management/ViewInstanceAccessModal.tsx`
   - `frontend/src/lib/api/show.ts`
+  - `frontend/src/lib/api/containers.ts`
   - `frontend/src/lib/api/system.ts`
   - `frontend/src/lib/auth-identifier.ts`
 
@@ -137,5 +176,10 @@ Branch: `dev`
 1. Read this file first.
 2. Verify running services (`tmux ls`, ports 3000/8000).
 3. Re-test dashboard cards (`System Information`, `NTP Status`, `Disk Usage`) and System Services NTP configuration against live VyOS.
-4. If NTP apply fails on a target image, inspect backend logs (`tmux capture-pane -pt vm-api:0.0`) and validate exact VyOS command tree/options for that version.
-5. For unsupported hardware identify LED cases (e.g., some SFP+), inspect logs and add/adjust fallback command paths in `backend/routers/show.py` if needed.
+4. Re-test System Containers page end-to-end:
+   - create/update container
+   - start/stop/restart actions
+   - logs retrieval
+   - generated service URL links
+5. If container restart/log command variants fail on a target image, inspect backend logs (`tmux capture-pane -pt vm-api:0.0`) and adjust command fallback order in `backend/routers/containers.py`.
+6. For unsupported hardware identify LED cases (e.g., some SFP+), inspect logs and add/adjust fallback command paths in `backend/routers/show.py` if needed.
