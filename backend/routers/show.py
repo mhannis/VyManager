@@ -302,6 +302,26 @@ def _append_unique(items: List[str], seen: set, value: str) -> None:
         items.append(value)
 
 
+def _ipv4_with_netmask_to_cidr(ipv4: str, netmask: str) -> Optional[str]:
+    try:
+        octets = [int(part) for part in ipv4.split(".")]
+        mask_octets = [int(part) for part in netmask.split(".")]
+        if len(octets) != 4 or len(mask_octets) != 4:
+            return None
+        if any(part < 0 or part > 255 for part in octets):
+            return None
+        if any(part < 0 or part > 255 for part in mask_octets):
+            return None
+
+        bits = "".join(f"{part:08b}" for part in mask_octets)
+        if "01" in bits:
+            return None
+        prefix = bits.count("1")
+        return f"{ipv4}/{prefix}"
+    except Exception:
+        return None
+
+
 def parse_interface_runtime_addresses(interface_name: str, output: str) -> InterfaceRuntimeAddress:
     """
     Parse `show interfaces ethernet <iface>` output and extract runtime addresses.
@@ -319,6 +339,16 @@ def parse_interface_runtime_addresses(interface_name: str, output: str) -> Inter
         for ipv4 in re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}\b", cleaned_output):
             if _is_valid_ipv4_cidr(ipv4):
                 _append_unique(ipv4_addresses, seen_ipv4, ipv4)
+
+        # Also parse `IP + netmask` formats and convert them to CIDR.
+        for match in re.finditer(
+            r"\b((?:\d{1,3}\.){3}\d{1,3})\b[^\\n\\r]*?\bnetmask\s+((?:\d{1,3}\.){3}\d{1,3})\b",
+            cleaned_output,
+            re.IGNORECASE,
+        ):
+            cidr = _ipv4_with_netmask_to_cidr(match.group(1), match.group(2))
+            if cidr and _is_valid_ipv4_cidr(cidr):
+                _append_unique(ipv4_addresses, seen_ipv4, cidr)
 
         for ipv6 in re.findall(r"\b[0-9A-Fa-f:]+/\d{1,3}\b", cleaned_output):
             if _is_valid_ipv6_cidr(ipv6):
@@ -380,6 +410,16 @@ def parse_interface_summary_addresses(output: str) -> Dict[str, InterfaceRuntime
         for ipv4 in re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}\b", line):
             if _is_valid_ipv4_cidr(ipv4):
                 _append_unique(entry.ipv4_addresses, seen_ipv4, ipv4)
+
+        netmask_match = re.search(
+            r"\b((?:\d{1,3}\.){3}\d{1,3})\b[^\\n\\r]*?\bnetmask\s+((?:\d{1,3}\.){3}\d{1,3})\b",
+            line,
+            re.IGNORECASE,
+        )
+        if netmask_match:
+            cidr = _ipv4_with_netmask_to_cidr(netmask_match.group(1), netmask_match.group(2))
+            if cidr and _is_valid_ipv4_cidr(cidr):
+                _append_unique(entry.ipv4_addresses, seen_ipv4, cidr)
 
         for ipv6 in re.findall(r"\b[0-9A-Fa-f:]+/\d{1,3}\b", line):
             if _is_valid_ipv6_cidr(ipv6):
@@ -764,7 +804,7 @@ async def get_interface_runtime_addresses(request: Request):
         # Summary output can expose runtime DHCP addresses in a single call.
         best_summary_output = ""
         best_summary_score = 0
-        for summary_path in (["interfaces"], ["interfaces", "summary"]):
+        for summary_path in (["interfaces"], ["interfaces", "summary"], ["interfaces", "brief"]):
             summary_response = service.device.show(path=summary_path)
             if summary_response.status != 200:
                 continue
@@ -783,18 +823,35 @@ async def get_interface_runtime_addresses(request: Request):
 
         for interface_name in interface_names:
             output = ""
+            best_output = ""
+            best_output_score = 0
             for show_path in (
                 ["interfaces", "ethernet", interface_name],
+                ["interfaces", "ethernet", interface_name, "address"],
                 ["interfaces", interface_name],
+                ["interfaces", interface_name, "address"],
             ):
                 response = service.device.show(path=show_path)
                 if response.status != 200:
                     continue
 
                 candidate_output = extract_show_output(response.result)
-                if candidate_output:
-                    output = candidate_output
-                    break
+                if not candidate_output:
+                    continue
+
+                score = len(
+                    re.findall(
+                        r"(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}|[0-9A-Fa-f:]+/\d{1,3}|netmask\s+(?:\d{1,3}\.){3}\d{1,3}",
+                        candidate_output,
+                        re.IGNORECASE,
+                    )
+                )
+                if score >= best_output_score:
+                    best_output_score = score
+                    best_output = candidate_output
+
+            if best_output:
+                output = best_output
 
             merged = parse_interface_runtime_addresses(interface_name, output)
             summary_entry = summary_by_name.get(interface_name)
