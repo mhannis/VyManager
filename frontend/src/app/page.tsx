@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, Save, Edit3, X } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -598,15 +598,11 @@ export default function Home() {
     }
   };
 
-  const orderedCards = useMemo(
-    () =>
-      [...cards].sort((left, right) => {
-        if (left.position !== right.position) return left.position - right.position;
-        if (left.column !== right.column) return left.column - right.column;
-        return left.id.localeCompare(right.id);
-      }),
-    [cards]
-  );
+  const orderedCards = [...cards].sort((left, right) => {
+    if (left.position !== right.position) return left.position - right.position;
+    if (left.column !== right.column) return left.column - right.column;
+    return left.id.localeCompare(right.id);
+  });
 
   return (
     <AppLayout>

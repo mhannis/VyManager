@@ -565,3 +565,13 @@ Branch: `dev`
 ### 33) Validation
 - Frontend build:
   - `cd frontend && npm run build` -> success
+
+### 34) Follow-up Fix (Hook Order Regression)
+- File: `frontend/src/app/page.tsx`
+- Issue: React hook-order runtime error in `Home`:
+  - `Rendered more hooks than during the previous render`
+  - caused by `useMemo` for `orderedCards` being defined after a conditional early return path.
+- Fix:
+  - replaced `useMemo` with a plain sorted constant (non-hook), removing hook-order variance.
+- Validation:
+  - `cd frontend && npm run build` -> success
