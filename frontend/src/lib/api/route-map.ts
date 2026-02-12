@@ -173,14 +173,14 @@ class RouteMapService {
   /**
    * Refresh the cached configuration
    */
-  async refreshConfig(): Promise<any> {
+  async refreshConfig(): Promise<unknown> {
     return apiClient.post("/vyos/config/refresh");
   }
 
   /**
    * Execute batch operations
    */
-  async batchConfigure(request: RouteMapBatchRequest): Promise<any> {
+  async batchConfigure(request: RouteMapBatchRequest): Promise<unknown> {
     const result = await apiClient.post("/vyos/route-map/batch", request);
     await this.refreshConfig();
     return result;
@@ -189,7 +189,7 @@ class RouteMapService {
   /**
    * Delete an entire route-map
    */
-  async deleteRouteMap(name: string): Promise<any> {
+  async deleteRouteMap(name: string): Promise<unknown> {
     const operations: RouteMapBatchOperation[] = [];
     operations.push({ op: "delete_route_map" });
 
@@ -203,7 +203,7 @@ class RouteMapService {
   /**
    * Delete a specific rule from a route-map and renumber remaining rules to close gaps
    */
-  async deleteRule(name: string, ruleNumber: number): Promise<any> {
+  async deleteRule(name: string, ruleNumber: number): Promise<unknown> {
     // Get current configuration
     const config = await this.getConfig(true);
     const routeMap = config.route_maps.find(rm => rm.name === name);
@@ -263,7 +263,7 @@ class RouteMapService {
   /**
    * Helper: Create a new route-map with a rule
    */
-  async createRouteMap(name: string, description: string | null, rule: Partial<RouteMapRule>): Promise<any> {
+  async createRouteMap(name: string, description: string | null, rule: Partial<RouteMapRule>): Promise<unknown> {
     const operations: RouteMapBatchOperation[] = [];
 
     // Create route-map
@@ -331,7 +331,7 @@ class RouteMapService {
     description: string | null,
     rule?: Partial<RouteMapRule>,
     ruleNumber?: number
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: RouteMapBatchOperation[] = [];
 
     // Update description
@@ -419,7 +419,7 @@ class RouteMapService {
   /**
    * Helper: Add a new rule to existing route-map
    */
-  async addRule(name: string, rule: Partial<RouteMapRule>): Promise<any> {
+  async addRule(name: string, rule: Partial<RouteMapRule>): Promise<unknown> {
     const operations: RouteMapBatchOperation[] = [];
 
     // Create rule
@@ -467,7 +467,7 @@ class RouteMapService {
   /**
    * Update an existing rule
    */
-  async updateRule(name: string, ruleNumber: number, rule: Partial<RouteMapRule>): Promise<any> {
+  async updateRule(name: string, ruleNumber: number, rule: Partial<RouteMapRule>): Promise<unknown> {
     const operations: RouteMapBatchOperation[] = [];
 
     // Delete all existing match and set operations first
@@ -694,7 +694,7 @@ class RouteMapService {
   /**
    * Reorder route-map rules
    */
-  async reorderRules(routeMapName: string, rules: Array<{ old_number: number; new_number: number; rule_data: RouteMapRule }>): Promise<any> {
+  async reorderRules(routeMapName: string, rules: Array<{ old_number: number; new_number: number; rule_data: RouteMapRule }>): Promise<unknown> {
     const result = await apiClient.post("/vyos/route-map/reorder", {
       route_map_name: routeMapName,
       rules: rules,

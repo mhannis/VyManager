@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,10 +19,22 @@ import {
   Pencil,
   GripVertical,
 } from "lucide-react";
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { extcommunityListService, ExtCommunityList, ExtCommunityListCapabilities } from "@/lib/api/extcommunity-list";
+import {
+  extcommunityListService,
+  type ExtCommunityList,
+  type ExtCommunityListCapabilities,
+  type ExtCommunityListRule,
+} from "@/lib/api/extcommunity-list";
 import { CreateExtCommunityListModal } from "@/components/policies/CreateExtCommunityListModal";
 import { EditExtCommunityListModal } from "@/components/policies/EditExtCommunityListModal";
 import { DeleteExtCommunityListModal } from "@/components/policies/DeleteExtCommunityListModal";
@@ -74,7 +86,13 @@ function getRegexTypeInfo(regex: string | null | undefined): { type: string; lab
 }
 
 // Sortable row component
-function ExtCommunityListRuleRow({ rule, onEdit, onDelete }: any) {
+interface ExtCommunityListRuleRowProps {
+  rule: ExtCommunityListRule;
+  onEdit: (rule: ExtCommunityListRule) => void;
+  onDelete: (rule: ExtCommunityListRule) => void;
+}
+
+function ExtCommunityListRuleRow({ rule, onEdit, onDelete }: ExtCommunityListRuleRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rule.rule_number,
   });
@@ -152,13 +170,11 @@ export default function BGPExtCommunityPage() {
   const [showCreateRuleModal, setShowCreateRuleModal] = useState(false);
   const [showEditRuleModal, setShowEditRuleModal] = useState(false);
   const [showDeleteRuleModal, setShowDeleteRuleModal] = useState(false);
-  const [selectedRule, setSelectedRule] = useState<any>(null);
+  const [selectedRule, setSelectedRule] = useState<ExtCommunityListRule | null>(null);
 
   // Drag and drop states
-  const [reorderedRules, setReorderedRules] = useState<any[]>([]);
-  const [originalRules, setOriginalRules] = useState<any[]>([]);
+  const [reorderedRules, setReorderedRules] = useState<ExtCommunityListRule[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
-  const [activeId, setActiveId] = useState<number | null>(null);
   const [savingReorder, setSavingReorder] = useState(false);
 
   // Drag and drop sensors
@@ -170,7 +186,7 @@ export default function BGPExtCommunityPage() {
     })
   );
 
-  const fetchData = async (refresh: boolean = false) => {
+  const fetchData = useCallback(async (refresh: boolean = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -184,7 +200,6 @@ export default function BGPExtCommunityPage() {
       // Reset reorder state
       setHasChanges(false);
       setReorderedRules([]);
-      setOriginalRules([]);
 
       // Auto-select first extcommunity list if none selected
       if (!selectedExtCommunityList) {
@@ -198,11 +213,11 @@ export default function BGPExtCommunityPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedExtCommunityList]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const selectedExtCommunityListData = extcommunityLists.find((cl) => cl.name === selectedExtCommunityList);
 
@@ -233,13 +248,8 @@ export default function BGPExtCommunityPage() {
   });
 
   // Drag and drop handlers
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id);
-  };
-
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveId(null);
 
     if (!over || active.id === over.id) return;
 
@@ -248,11 +258,6 @@ export default function BGPExtCommunityPage() {
 
     if (oldIndex !== newIndex) {
       const newOrder = arrayMove(currentRules, oldIndex, newIndex);
-
-      // Initialize states on first reorder
-      if (!hasChanges) {
-        setOriginalRules([...currentRules]);
-      }
 
       setReorderedRules(newOrder);
       setHasChanges(true);
@@ -278,7 +283,6 @@ export default function BGPExtCommunityPage() {
 
       setHasChanges(false);
       setReorderedRules([]);
-      setOriginalRules([]);
       await fetchData(true);
     } catch (err) {
       console.error("Failed to save rule order:", err);
@@ -291,7 +295,6 @@ export default function BGPExtCommunityPage() {
   const handleCancelReorder = () => {
     setReorderedRules([]);
     setHasChanges(false);
-    setOriginalRules([]);
   };
 
   const handleExtCommunityListSelect = (name: string) => {
@@ -299,7 +302,6 @@ export default function BGPExtCommunityPage() {
     if (hasChanges) {
       setHasChanges(false);
       setReorderedRules([]);
-      setOriginalRules([]);
     }
     setSelectedExtCommunityList(name);
     setRuleSearchQuery("");
@@ -319,12 +321,12 @@ export default function BGPExtCommunityPage() {
     fetchData(true);
   };
 
-  const handleEditRule = (rule: any) => {
+  const handleEditRule = (rule: ExtCommunityListRule) => {
     setSelectedRule(rule);
     setShowEditRuleModal(true);
   };
 
-  const handleDeleteRule = (rule: any) => {
+  const handleDeleteRule = (rule: ExtCommunityListRule) => {
     setSelectedRule(rule);
     setShowDeleteRuleModal(true);
   };
@@ -560,7 +562,6 @@ export default function BGPExtCommunityPage() {
                       <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
-                        onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
                       >
                         <Table>

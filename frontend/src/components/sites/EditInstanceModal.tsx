@@ -22,7 +22,12 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle, Loader2, Server } from "lucide-react";
-import { sessionService, Instance, Site } from "@/lib/api/session";
+import {
+  sessionService,
+  Instance,
+  Site,
+  type InstanceUpdateRequest,
+} from "@/lib/api/session";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface EditInstanceModalProps {
@@ -109,7 +114,7 @@ export function EditInstanceModal({
     setError(null);
 
     try {
-      const updateData: any = {
+      const updateData: InstanceUpdateRequest = {
         name: name.trim(),
         description: description.trim() || null,
         host: host.trim(),
@@ -134,8 +139,8 @@ export function EditInstanceModal({
 
       handleClose();
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to update instance");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update instance");
     } finally {
       setLoading(false);
     }
@@ -144,7 +149,6 @@ export function EditInstanceModal({
   if (!instance) return null;
 
   const canMoveSite = sites.length > 1;
-  const currentSite = sites.find((s) => s.id === instance.site_id);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

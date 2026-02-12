@@ -187,14 +187,14 @@ class RouteService {
   /**
    * Refresh the cached configuration
    */
-  async refreshConfig(): Promise<any> {
+  async refreshConfig(): Promise<unknown> {
     return apiClient.post("/vyos/config/refresh");
   }
 
   /**
    * Execute batch operations
    */
-  async batchConfigure(request: RouteBatchRequest): Promise<any> {
+  async batchConfigure(request: RouteBatchRequest): Promise<unknown> {
     const result = await apiClient.post("/vyos/route/batch", request);
     await this.refreshConfig();
     return result;
@@ -212,7 +212,7 @@ class RouteService {
     name: string,
     description?: string,
     defaultLog?: boolean
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: RouteBatchOperation[] = [];
     
     operations.push({ op: "create_policy" });
@@ -240,7 +240,7 @@ class RouteService {
     name: string,
     description?: string,
     defaultLog?: boolean
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: RouteBatchOperation[] = [];
     
     if (description !== undefined) {
@@ -265,7 +265,7 @@ class RouteService {
   /**
    * Delete a policy
    */
-  async deletePolicy(policyType: string, name: string): Promise<any> {
+  async deletePolicy(policyType: string, name: string): Promise<unknown> {
     const operations: RouteBatchOperation[] = [
       { op: "delete_policy" }
     ];
@@ -295,7 +295,7 @@ class RouteService {
       match?: Partial<MatchConditions>;
       set?: Partial<SetActions>;
     }
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: RouteBatchOperation[] = [];
 
     // Create rule
@@ -344,7 +344,7 @@ class RouteService {
       match?: Partial<MatchConditions>;
       set?: Partial<SetActions>;
     }
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: RouteBatchOperation[] = [];
 
     // Delete existing match and set (clean slate approach)
@@ -399,7 +399,7 @@ class RouteService {
     policyType: string,
     policyName: string,
     ruleNumber: number
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: RouteBatchOperation[] = [
       { op: "delete_rule" }
     ];
@@ -498,7 +498,7 @@ class RouteService {
     policyType: string,
     policyName: string,
     newOrder: number[]
-  ): Promise<any> {
+  ): Promise<unknown> {
     return apiClient.post("/vyos/route/reorder", {
       policy_type: policyType,
       policy_name: policyName,
@@ -518,7 +518,7 @@ class RouteService {
     policyName: string,
     interfaceType: string,
     interfaceName: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     // For VLAN interfaces (e.g., eth1.7), we need to send in the format
     // that the backend can parse correctly (just the interface name)
     const operations: RouteBatchOperation[] = [
@@ -540,7 +540,7 @@ class RouteService {
     policyName: string,
     interfaceType: string,
     interfaceName: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     // For VLAN interfaces (e.g., eth1.7), we need to send in the format
     // that the backend can parse correctly (just the interface name)
     const operations: RouteBatchOperation[] = [

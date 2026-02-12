@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,10 +19,22 @@ import {
   Pencil,
   GripVertical,
 } from "lucide-react";
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { largeCommunityListService, LargeCommunityList, LargeCommunityListCapabilities } from "@/lib/api/large-community-list";
+import {
+  largeCommunityListService,
+  type LargeCommunityList,
+  type LargeCommunityListCapabilities,
+  type LargeCommunityListRule,
+} from "@/lib/api/large-community-list";
 import { CreateLargeCommunityListModal } from "@/components/policies/CreateLargeCommunityListModal";
 import { EditLargeCommunityListModal } from "@/components/policies/EditLargeCommunityListModal";
 import { DeleteLargeCommunityListModal } from "@/components/policies/DeleteLargeCommunityListModal";
@@ -34,7 +46,13 @@ import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 // Sortable row component
-function LargeCommunityListRuleRow({ rule, onEdit, onDelete }: any) {
+interface LargeCommunityListRuleRowProps {
+  rule: LargeCommunityListRule;
+  onEdit: (rule: LargeCommunityListRule) => void;
+  onDelete: (rule: LargeCommunityListRule) => void;
+}
+
+function LargeCommunityListRuleRow({ rule, onEdit, onDelete }: LargeCommunityListRuleRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rule.rule_number,
   });
@@ -104,13 +122,11 @@ export default function BGPLargeCommunityPage() {
   const [showCreateRuleModal, setShowCreateRuleModal] = useState(false);
   const [showEditRuleModal, setShowEditRuleModal] = useState(false);
   const [showDeleteRuleModal, setShowDeleteRuleModal] = useState(false);
-  const [selectedRule, setSelectedRule] = useState<any>(null);
+  const [selectedRule, setSelectedRule] = useState<LargeCommunityListRule | null>(null);
 
   // Drag and drop states
-  const [reorderedRules, setReorderedRules] = useState<any[]>([]);
-  const [originalRules, setOriginalRules] = useState<any[]>([]);
+  const [reorderedRules, setReorderedRules] = useState<LargeCommunityListRule[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
-  const [activeId, setActiveId] = useState<number | null>(null);
   const [savingReorder, setSavingReorder] = useState(false);
 
   // Drag and drop sensors
@@ -122,7 +138,7 @@ export default function BGPLargeCommunityPage() {
     })
   );
 
-  const fetchData = async (refresh: boolean = false) => {
+  const fetchData = useCallback(async (refresh: boolean = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -136,7 +152,6 @@ export default function BGPLargeCommunityPage() {
       // Reset reorder state
       setHasChanges(false);
       setReorderedRules([]);
-      setOriginalRules([]);
 
       // Auto-select first large community list if none selected
       if (!selectedLargeCommunityList) {
@@ -150,11 +165,11 @@ export default function BGPLargeCommunityPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedLargeCommunityList]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const selectedLargeCommunityListData = largeCommunityLists.find((cl) => cl.name === selectedLargeCommunityList);
 
@@ -185,13 +200,8 @@ export default function BGPLargeCommunityPage() {
   });
 
   // Drag and drop handlers
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id);
-  };
-
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveId(null);
 
     if (!over || active.id === over.id) return;
 
@@ -200,11 +210,6 @@ export default function BGPLargeCommunityPage() {
 
     if (oldIndex !== newIndex) {
       const newOrder = arrayMove(currentRules, oldIndex, newIndex);
-
-      // Initialize states on first reorder
-      if (!hasChanges) {
-        setOriginalRules([...currentRules]);
-      }
 
       setReorderedRules(newOrder);
       setHasChanges(true);
@@ -230,7 +235,6 @@ export default function BGPLargeCommunityPage() {
 
       setHasChanges(false);
       setReorderedRules([]);
-      setOriginalRules([]);
       await fetchData(true);
     } catch (err) {
       console.error("Failed to save rule order:", err);
@@ -243,7 +247,6 @@ export default function BGPLargeCommunityPage() {
   const handleCancelReorder = () => {
     setReorderedRules([]);
     setHasChanges(false);
-    setOriginalRules([]);
   };
 
   const handleLargeCommunityListSelect = (name: string) => {
@@ -251,7 +254,6 @@ export default function BGPLargeCommunityPage() {
     if (hasChanges) {
       setHasChanges(false);
       setReorderedRules([]);
-      setOriginalRules([]);
     }
     setSelectedLargeCommunityList(name);
     setRuleSearchQuery("");
@@ -271,12 +273,12 @@ export default function BGPLargeCommunityPage() {
     fetchData(true);
   };
 
-  const handleEditRule = (rule: any) => {
+  const handleEditRule = (rule: LargeCommunityListRule) => {
     setSelectedRule(rule);
     setShowEditRuleModal(true);
   };
 
-  const handleDeleteRule = (rule: any) => {
+  const handleDeleteRule = (rule: LargeCommunityListRule) => {
     setSelectedRule(rule);
     setShowDeleteRuleModal(true);
   };
@@ -512,7 +514,6 @@ export default function BGPLargeCommunityPage() {
                       <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
-                        onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
                       >
                         <Table>

@@ -6,11 +6,12 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import type { PolicyRouteRule } from "@/lib/api/route";
 
 interface RouteRuleRowProps {
-  rule: any;
-  onEdit: (rule: any) => void;
-  onDelete: (rule: any) => void;
+  rule: PolicyRouteRule;
+  onEdit: (rule: PolicyRouteRule) => void;
+  onDelete: (rule: PolicyRouteRule) => void;
 }
 
 export function RouteRuleRow({ rule, onEdit, onDelete }: RouteRuleRowProps) {

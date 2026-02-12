@@ -20,6 +20,15 @@ interface EditAccessListRuleModalProps {
   listType: "ipv4" | "ipv6";
 }
 
+type EndpointType = "any" | "host" | "network";
+
+function normalizeEndpointType(value: string | null | undefined): EndpointType {
+  if (value === "host" || value === "network") {
+    return value;
+  }
+  return "any";
+}
+
 export function EditAccessListRuleModal({
   open,
   onOpenChange,
@@ -35,7 +44,6 @@ export function EditAccessListRuleModal({
   const [action, setAction] = useState<"permit" | "deny">("permit");
   const [ruleDescription, setRuleDescription] = useState("");
   const [sourceType, setSourceType] = useState<"any" | "host" | "network">("any");
-  const [sourceNetworkFormat, setSourceNetworkFormat] = useState<"network" | "inverse-mask">("network");
   const [sourceAddress, setSourceAddress] = useState("");
   const [sourceMask, setSourceMask] = useState("");
   // IPv6 specific fields
@@ -43,7 +51,6 @@ export function EditAccessListRuleModal({
   const [sourceExactMatch, setSourceExactMatch] = useState(false);
   const [sourceNetwork, setSourceNetwork] = useState("");
   const [destinationType, setDestinationType] = useState<"any" | "host" | "network">("any");
-  const [destinationNetworkFormat, setDestinationNetworkFormat] = useState<"network" | "inverse-mask">("network");
   const [destinationAddress, setDestinationAddress] = useState("");
   const [destinationMask, setDestinationMask] = useState("");
 
@@ -57,10 +64,8 @@ export function EditAccessListRuleModal({
         // IPv4 source mapping
         if (rule.source_type === "inverse-mask") {
           setSourceType("network");
-          setSourceNetworkFormat("inverse-mask");
         } else {
-          setSourceType((rule.source_type as any) || "any");
-          setSourceNetworkFormat("network");
+          setSourceType(normalizeEndpointType(rule.source_type));
         }
         setSourceAddress(rule.source_address || "");
         setSourceMask(rule.source_mask || "");
@@ -68,10 +73,8 @@ export function EditAccessListRuleModal({
         // IPv4 destination mapping
         if (rule.destination_type === "inverse-mask") {
           setDestinationType("network");
-          setDestinationNetworkFormat("inverse-mask");
         } else {
-          setDestinationType((rule.destination_type as any) || "any");
-          setDestinationNetworkFormat("network");
+          setDestinationType(normalizeEndpointType(rule.destination_type));
         }
         setDestinationAddress(rule.destination_address || "");
         setDestinationMask(rule.destination_mask || "");
@@ -110,13 +113,13 @@ export function EditAccessListRuleModal({
     if (sourceNetwork.trim() && sourceExactMatch) {
       setSourceExactMatch(false);
     }
-  }, [sourceNetwork]);
+  }, [sourceExactMatch, sourceNetwork]);
 
   useEffect(() => {
     if (sourceExactMatch && sourceNetwork.trim()) {
       setSourceNetwork("");
     }
-  }, [sourceExactMatch]);
+  }, [sourceExactMatch, sourceNetwork]);
 
   const resetForm = () => {
     setAction("permit");
@@ -197,7 +200,7 @@ export function EditAccessListRuleModal({
     setError(null);
 
     try {
-      const updatedRule: any = {
+      const updatedRule: Partial<AccessListRule> & { action: "permit" | "deny" } = {
         action,
         description: ruleDescription || null,
       };
@@ -242,16 +245,28 @@ export function EditAccessListRuleModal({
       );
       handleClose();
       onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Update rule error:", err);
       let errorMsg = "Failed to update rule";
-      if (err.details?.detail) {
-        if (Array.isArray(err.details.detail)) {
-          errorMsg = err.details.detail.map((e: any) => `${e.loc?.join('.')}: ${e.msg}`).join(", ");
+      const detail = (err as { details?: { detail?: unknown } })?.details?.detail;
+      if (detail) {
+        if (Array.isArray(detail)) {
+          errorMsg = detail
+            .map((entry) => {
+              if (typeof entry === "object" && entry !== null) {
+                const loc = (entry as { loc?: unknown }).loc;
+                const msg = (entry as { msg?: unknown }).msg;
+                const locText = Array.isArray(loc) ? loc.join(".") : "";
+                const msgText = typeof msg === "string" ? msg : "Validation error";
+                return locText ? `${locText}: ${msgText}` : msgText;
+              }
+              return "Validation error";
+            })
+            .join(", ");
         } else {
-          errorMsg = err.details.detail;
+          errorMsg = String(detail);
         }
-      } else if (err.message) {
+      } else if (err instanceof Error && err.message) {
         errorMsg = err.message;
       }
       setError(errorMsg);
@@ -312,7 +327,11 @@ export function EditAccessListRuleModal({
             {listType === "ipv4" ? (
               /* IPv4 Source - Radio Buttons */
               <>
-                <RadioGroup value={sourceType} onValueChange={(v: any) => setSourceType(v)} disabled={loading}>
+                <RadioGroup
+                  value={sourceType}
+                  onValueChange={(v: EndpointType) => setSourceType(v)}
+                  disabled={loading}
+                >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="any" id="source-any" />
                     <Label htmlFor="source-any" className="font-normal cursor-pointer">Any</Label>
@@ -413,7 +432,11 @@ export function EditAccessListRuleModal({
           {listType === "ipv4" && (
             <div className="space-y-3 border rounded-lg p-4">
               <Label>Destination</Label>
-            <RadioGroup value={destinationType} onValueChange={(v: any) => setDestinationType(v)} disabled={loading}>
+            <RadioGroup
+              value={destinationType}
+              onValueChange={(v: EndpointType) => setDestinationType(v)}
+              disabled={loading}
+            >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="any" id="dest-any" />
                 <Label htmlFor="dest-any" className="font-normal cursor-pointer">Any</Label>

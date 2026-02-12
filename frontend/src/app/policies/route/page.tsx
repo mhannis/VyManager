@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus,
   Search,
@@ -18,12 +18,23 @@ import {
   Route as RouteIcon,
   Trash2,
   Pencil,
-  X,
   Network,
 } from "lucide-react";
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
-import { routeService, PolicyRoute, RouteCapabilitiesResponse } from "@/lib/api/route";
+import {
+  routeService,
+  type PolicyRoute,
+  type PolicyRouteRule,
+  type RouteCapabilitiesResponse,
+} from "@/lib/api/route";
 import { CreateRoutePolicyModal } from "@/components/policies/CreateRoutePolicyModal";
 import { EditRoutePolicyModal } from "@/components/policies/EditRoutePolicyModal";
 import { DeleteRoutePolicyModal } from "@/components/policies/DeleteRoutePolicyModal";
@@ -35,8 +46,6 @@ import { RouteReorderBanner } from "@/components/policies/RouteReorderBanner";
 import { ManagePolicyInterfacesModal } from "@/components/policies/ManagePolicyInterfacesModal";
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { apiClient } from "@/lib/api/client";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function RoutePage() {
   const [ipv4Policies, setIpv4Policies] = useState<PolicyRoute[]>([]);
@@ -59,15 +68,13 @@ export default function RoutePage() {
   const [showCreateRuleModal, setShowCreateRuleModal] = useState(false);
   const [showEditRuleModal, setShowEditRuleModal] = useState(false);
   const [showDeleteRuleModal, setShowDeleteRuleModal] = useState(false);
-  const [selectedRule, setSelectedRule] = useState<any>(null);
+  const [selectedRule, setSelectedRule] = useState<PolicyRouteRule | null>(null);
 
   const [showManageInterfacesModal, setShowManageInterfacesModal] = useState(false);
 
   // Drag and drop states
-  const [reorderedRules, setReorderedRules] = useState<any[]>([]);
-  const [originalRules, setOriginalRules] = useState<any[]>([]);
+  const [reorderedRules, setReorderedRules] = useState<PolicyRouteRule[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
-  const [activeId, setActiveId] = useState<number | null>(null);
   const [savingReorder, setSavingReorder] = useState(false);
 
   // Interface management states
@@ -82,7 +89,7 @@ export default function RoutePage() {
     })
   );
 
-  const fetchData = async (refresh: boolean = false) => {
+  const fetchData = useCallback(async (refresh: boolean = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -97,7 +104,6 @@ export default function RoutePage() {
       // Reset reorder state
       setHasChanges(false);
       setReorderedRules([]);
-      setOriginalRules([]);
 
       // Auto-select first policy if none selected
       if (!selectedPolicyName) {
@@ -112,11 +118,11 @@ export default function RoutePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedPolicyName, selectedPolicyType]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const policies = selectedPolicyType === "route" ? ipv4Policies : ipv6Policies;
   const selectedPolicyData = policies.find((p) => p.name === selectedPolicyName);
@@ -147,13 +153,8 @@ export default function RoutePage() {
   });
 
   // Drag and drop handlers
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id);
-  };
-
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveId(null);
 
     if (!over || active.id === over.id) return;
 
@@ -162,11 +163,6 @@ export default function RoutePage() {
 
     if (oldIndex !== newIndex) {
       const newOrder = arrayMove(currentRules, oldIndex, newIndex);
-
-      // Initialize states on first reorder
-      if (!hasChanges) {
-        setOriginalRules([...currentRules]);
-      }
 
       setReorderedRules(newOrder);
       setHasChanges(true);
@@ -186,7 +182,6 @@ export default function RoutePage() {
 
       setHasChanges(false);
       setReorderedRules([]);
-      setOriginalRules([]);
       await fetchData(true);
     } catch (err) {
       console.error("Failed to save rule order:", err);
@@ -199,7 +194,6 @@ export default function RoutePage() {
   const handleCancelReorder = () => {
     setReorderedRules([]);
     setHasChanges(false);
-    setOriginalRules([]);
   };
 
   const handlePolicyTypeChange = (type: "route" | "route6") => {
@@ -207,7 +201,6 @@ export default function RoutePage() {
     if (hasChanges) {
       setHasChanges(false);
       setReorderedRules([]);
-      setOriginalRules([]);
     }
     setSelectedPolicyType(type);
     setSearchQuery("");
@@ -227,7 +220,6 @@ export default function RoutePage() {
     if (hasChanges) {
       setHasChanges(false);
       setReorderedRules([]);
-      setOriginalRules([]);
     }
     setSelectedPolicyName(name);
     setRuleSearchQuery("");
@@ -247,18 +239,18 @@ export default function RoutePage() {
     fetchData(true);
   };
 
-  const handleEditRule = (rule: any) => {
+  const handleEditRule = (rule: PolicyRouteRule) => {
     setSelectedRule(rule);
     setShowEditRuleModal(true);
   };
 
-  const handleDeleteRule = (rule: any) => {
+  const handleDeleteRule = (rule: PolicyRouteRule) => {
     setSelectedRule(rule);
     setShowDeleteRuleModal(true);
   };
 
   // Interface management functions
-  const loadPolicyInterfaces = async () => {
+  const loadPolicyInterfaces = useCallback(async () => {
     if (!selectedPolicyName) {
       setPolicyInterfaces([]);
       return;
@@ -278,12 +270,12 @@ export default function RoutePage() {
       console.error("Failed to load policy interfaces:", err);
       setPolicyInterfaces([]);
     }
-  };
+  }, [selectedPolicyName, selectedPolicyType]);
 
   // Load policy interfaces when selected policy changes
   useEffect(() => {
     loadPolicyInterfaces();
-  }, [selectedPolicyName, selectedPolicyType]);
+  }, [loadPolicyInterfaces]);
 
   const ruleIds = filteredRules.map((r) => r.rule_number);
   const totalRules = policies.reduce((sum, p) => sum + p.rules.length, 0);
@@ -512,7 +504,7 @@ export default function RoutePage() {
                     {policyInterfaces.length === 0 ? (
                       <div className="text-center py-4">
                         <p className="text-sm text-muted-foreground">
-                          No interfaces configured. Click "Manage Interfaces" to assign interfaces.
+                          No interfaces configured. Click Manage Interfaces to assign interfaces.
                         </p>
                       </div>
                     ) : (
@@ -572,7 +564,6 @@ export default function RoutePage() {
                       <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
-                        onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
                       >
                         <Table>

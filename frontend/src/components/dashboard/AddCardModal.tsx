@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Network, Plus, Server, Clock3, HardDrive } from "lucide-react";
+import { Clock3, HardDrive, Link2, Network, Plus, Server } from "lucide-react";
 
 interface AvailableCard {
   type: string;
@@ -43,6 +43,12 @@ const AVAILABLE_CARDS: AvailableCard[] = [
     name: "Interface Statistics",
     description: "View real-time network interface counters and statistics",
     icon: Network,
+  },
+  {
+    type: "interface-overview",
+    name: "Interface Overview",
+    description: "pfSense-style snapshot of link state, role, and addresses",
+    icon: Link2,
   },
   // Future cards will be added here
 ];

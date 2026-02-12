@@ -44,8 +44,8 @@ export function InstanceCard({
     setError(null);
     try {
       await onConnect(instance.id);
-    } catch (err: any) {
-      setError(err.message || "Failed to connect");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to connect");
     } finally {
       setLoading(false);
     }
@@ -56,8 +56,8 @@ export function InstanceCard({
     setError(null);
     try {
       await onDisconnect();
-    } catch (err: any) {
-      setError(err.message || "Failed to disconnect");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to disconnect");
     } finally {
       setLoading(false);
     }

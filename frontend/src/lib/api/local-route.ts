@@ -90,14 +90,14 @@ class LocalRouteService {
   /**
    * Refresh the cached configuration
    */
-  async refreshConfig(): Promise<any> {
+  async refreshConfig(): Promise<unknown> {
     return apiClient.post("/vyos/config/refresh");
   }
 
   /**
    * Execute batch operations
    */
-  async batchConfigure(request: LocalRouteBatchRequest): Promise<any> {
+  async batchConfigure(request: LocalRouteBatchRequest): Promise<unknown> {
     const result = await apiClient.post("/vyos/local-route/batch", request);
     await this.refreshConfig();
     return result;
@@ -109,7 +109,7 @@ class LocalRouteService {
   async reorderRules(
     ruleType: string,
     rules: Array<{ old_number: number; new_number: number; rule_data: LocalRouteRule }>
-  ): Promise<any> {
+  ): Promise<unknown> {
     const result = await apiClient.post("/vyos/local-route/reorder", {
       rule_type: ruleType,
       rules,
@@ -125,7 +125,7 @@ class LocalRouteService {
     ruleNumber: number,
     ruleType: string,
     config: Partial<LocalRouteRule>
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: LocalRouteBatchOperation[] = [];
 
     // Create rule
@@ -187,7 +187,7 @@ class LocalRouteService {
     ruleNumber: number,
     ruleType: string,
     config: Partial<LocalRouteRule>
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: LocalRouteBatchOperation[] = [];
 
     // IMPORTANT: Process deletes FIRST, then sets
@@ -267,7 +267,7 @@ class LocalRouteService {
   async deleteRule(
     ruleNumber: number,
     ruleType: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: LocalRouteBatchOperation[] = [];
     operations.push({
       op: ruleType === "ipv4" ? "delete_local_route_rule" : "delete_local_route6_rule"

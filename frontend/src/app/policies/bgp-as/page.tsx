@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,10 +19,22 @@ import {
   Pencil,
   GripVertical,
 } from "lucide-react";
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { asPathListService, AsPathList, AsPathListCapabilities } from "@/lib/api/as-path-list";
+import {
+  asPathListService,
+  type AsPathList,
+  type AsPathListCapabilities,
+  type AsPathListRule,
+} from "@/lib/api/as-path-list";
 import { CreateAsPathListModal } from "@/components/policies/CreateAsPathListModal";
 import { EditAsPathListModal } from "@/components/policies/EditAsPathListModal";
 import { DeleteAsPathListModal } from "@/components/policies/DeleteAsPathListModal";
@@ -34,7 +46,13 @@ import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 // Sortable row component
-function AsPathListRuleRow({ rule, onEdit, onDelete }: any) {
+interface AsPathListRuleRowProps {
+  rule: AsPathListRule;
+  onEdit: (rule: AsPathListRule) => void;
+  onDelete: (rule: AsPathListRule) => void;
+}
+
+function AsPathListRuleRow({ rule, onEdit, onDelete }: AsPathListRuleRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rule.rule_number,
   });
@@ -104,13 +122,11 @@ export default function BGPASPage() {
   const [showCreateRuleModal, setShowCreateRuleModal] = useState(false);
   const [showEditRuleModal, setShowEditRuleModal] = useState(false);
   const [showDeleteRuleModal, setShowDeleteRuleModal] = useState(false);
-  const [selectedRule, setSelectedRule] = useState<any>(null);
+  const [selectedRule, setSelectedRule] = useState<AsPathListRule | null>(null);
 
   // Drag and drop states
-  const [reorderedRules, setReorderedRules] = useState<any[]>([]);
-  const [originalRules, setOriginalRules] = useState<any[]>([]);
+  const [reorderedRules, setReorderedRules] = useState<AsPathListRule[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
-  const [activeId, setActiveId] = useState<number | null>(null);
   const [savingReorder, setSavingReorder] = useState(false);
 
   // Drag and drop sensors
@@ -122,7 +138,7 @@ export default function BGPASPage() {
     })
   );
 
-  const fetchData = async (refresh: boolean = false) => {
+  const fetchData = useCallback(async (refresh: boolean = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -136,7 +152,6 @@ export default function BGPASPage() {
       // Reset reorder state
       setHasChanges(false);
       setReorderedRules([]);
-      setOriginalRules([]);
 
       // Auto-select first AS path list if none selected
       if (!selectedAsPathList) {
@@ -150,11 +165,11 @@ export default function BGPASPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedAsPathList]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const selectedAsPathListData = asPathLists.find((apl) => apl.name === selectedAsPathList);
 
@@ -185,13 +200,8 @@ export default function BGPASPage() {
   });
 
   // Drag and drop handlers
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id);
-  };
-
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveId(null);
 
     if (!over || active.id === over.id) return;
 
@@ -200,11 +210,6 @@ export default function BGPASPage() {
 
     if (oldIndex !== newIndex) {
       const newOrder = arrayMove(currentRules, oldIndex, newIndex);
-
-      // Initialize states on first reorder
-      if (!hasChanges) {
-        setOriginalRules([...currentRules]);
-      }
 
       setReorderedRules(newOrder);
       setHasChanges(true);
@@ -227,7 +232,6 @@ export default function BGPASPage() {
 
       setHasChanges(false);
       setReorderedRules([]);
-      setOriginalRules([]);
       await fetchData(true);
     } catch (err) {
       console.error("Failed to save rule order:", err);
@@ -240,7 +244,6 @@ export default function BGPASPage() {
   const handleCancelReorder = () => {
     setReorderedRules([]);
     setHasChanges(false);
-    setOriginalRules([]);
   };
 
   const handleAsPathListSelect = (name: string) => {
@@ -248,7 +251,6 @@ export default function BGPASPage() {
     if (hasChanges) {
       setHasChanges(false);
       setReorderedRules([]);
-      setOriginalRules([]);
     }
     setSelectedAsPathList(name);
     setRuleSearchQuery("");
@@ -268,12 +270,12 @@ export default function BGPASPage() {
     fetchData(true);
   };
 
-  const handleEditRule = (rule: any) => {
+  const handleEditRule = (rule: AsPathListRule) => {
     setSelectedRule(rule);
     setShowEditRuleModal(true);
   };
 
-  const handleDeleteRule = (rule: any) => {
+  const handleDeleteRule = (rule: AsPathListRule) => {
     setSelectedRule(rule);
     setShowDeleteRuleModal(true);
   };
@@ -509,7 +511,6 @@ export default function BGPASPage() {
                       <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
-                        onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
                       >
                         <Table>

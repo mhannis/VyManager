@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,7 @@ import {
   Table,
 } from "lucide-react";
 import { signOut, useSession } from "@/lib/auth-client";
-import { Site, sessionService } from "@/lib/api/session";
+import { Instance, Site, sessionService } from "@/lib/api/session";
 import { useSessionStore } from "@/store/session-store";
 import { InstanceCard } from "@/components/sites/InstanceCard";
 import { InstanceTableView } from "@/components/sites/InstanceTableView";
@@ -76,7 +76,7 @@ export default function SitesPage() {
   const [instanceViewMode, setInstanceViewMode] = useState<"cards" | "table">("cards");
 
   // Instance state
-  const [instances, setInstances] = useState<any[]>([]);
+  const [instances, setInstances] = useState<Instance[]>([]);
   const [instancesLoading, setInstancesLoading] = useState(false);
 
   // Modal states
@@ -92,14 +92,31 @@ export default function SitesPage() {
   const [editInstanceOpen, setEditInstanceOpen] = useState(false);
   const [moveInstanceOpen, setMoveInstanceOpen] = useState(false);
   const [deleteInstanceOpen, setDeleteInstanceOpen] = useState(false);
-  const [selectedInstance, setSelectedInstance] = useState<any | null>(null);
+  const [selectedInstance, setSelectedInstance] = useState<Instance | null>(null);
 
   // CSV import/export
   const [importCSVOpen, setImportCSVOpen] = useState(false);
 
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [sitesData] = await Promise.all([
+        sessionService.listSites(),
+        loadSession(),
+      ]);
+      setSites(sitesData);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load data";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [loadSession]);
+
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // Auto-select first site when sites load
   useEffect(() => {
@@ -117,28 +134,12 @@ export default function SitesPage() {
     }
   }, [selectedSite]);
 
-  const loadData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [sitesData] = await Promise.all([
-        sessionService.listSites(),
-        loadSession(),
-      ]);
-      setSites(sitesData);
-    } catch (err: any) {
-      setError(err.message || "Failed to load data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const loadInstances = async (siteId: string) => {
     setInstancesLoading(true);
     try {
       const data = await sessionService.listInstances(siteId);
       setInstances(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error loading instances:", err);
       setInstances([]);
     } finally {
@@ -167,7 +168,7 @@ export default function SitesPage() {
     try {
       const instances = await sessionService.listInstances(site.id);
       setInstanceCount(instances.length);
-    } catch (err) {
+    } catch {
       setInstanceCount(0);
     }
     setSiteToDelete(site);
@@ -189,17 +190,17 @@ export default function SitesPage() {
     router.refresh();
   };
 
-  const handleEditInstance = (instance: any) => {
+  const handleEditInstance = (instance: Instance) => {
     setSelectedInstance(instance);
     setEditInstanceOpen(true);
   };
 
-  const handleMoveInstance = (instance: any) => {
+  const handleMoveInstance = (instance: Instance) => {
     setSelectedInstance(instance);
     setMoveInstanceOpen(true);
   };
 
-  const handleDeleteInstance = (instance: any) => {
+  const handleDeleteInstance = (instance: Instance) => {
     setSelectedInstance(instance);
     setDeleteInstanceOpen(true);
   };
@@ -218,9 +219,10 @@ export default function SitesPage() {
   const handleExportCSV = async () => {
     try {
       await sessionService.exportCSV();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Export failed:", err);
-      setError(err.message || "Failed to export CSV");
+      const message = err instanceof Error ? err.message : "Failed to export CSV";
+      setError(message);
     }
   };
 

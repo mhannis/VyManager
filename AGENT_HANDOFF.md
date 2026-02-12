@@ -19,6 +19,61 @@ Branch: `dev`
 
 ## Completed Work In This Workspace
 
+### Latest) Dashboard Interface Overview + Type/Lint Cleanup Batch
+- Added new pfSense-style dashboard card:
+  - `frontend/src/components/dashboard/InterfaceOverviewCard.tsx`
+  - Shows per-interface summary with:
+    - role hint (`WAN`/`LAN`)
+    - link state
+    - addressing summary
+    - speed/duplex (suppresses noisy unknown values like `Unknown! (255)`)
+    - NIC model / driver
+  - Includes manual refresh, optional auto-refresh, resize support, and remove action.
+- Integrated card into dashboard plumbing:
+  - `frontend/src/components/dashboard/AddCardModal.tsx`
+  - `frontend/src/app/page.tsx`
+
+- Recovered type/build regressions caused by broad API return-type changes:
+  - Unified instance typing across sites views (`session.Instance` used consistently).
+  - Fixed `InstanceTableView`/sites-page callback compatibility.
+  - `npx tsc --noEmit --pretty false` now passes.
+  - `npm run -s build` now passes.
+
+- Performed additional warning reduction cleanup across policy + sites flows:
+  - Stronger typing and DnD event typing in:
+    - `frontend/src/app/policies/route/page.tsx`
+    - `frontend/src/app/policies/bgp-as/page.tsx`
+    - `frontend/src/app/policies/bgp-community/page.tsx`
+    - `frontend/src/app/policies/bgp-extended-community/page.tsx`
+    - `frontend/src/app/policies/bgp-large-community/page.tsx`
+    - `frontend/src/components/policies/RouteRuleRow.tsx`
+  - Access-list modal cleanup:
+    - `frontend/src/components/policies/AddAccessListRuleModal.tsx`
+    - `frontend/src/components/policies/EditAccessListRuleModal.tsx`
+  - Sites modal/card cleanup:
+    - `frontend/src/app/sites/page.tsx`
+    - `frontend/src/components/sites/*.tsx` (Create/Edit/Delete/Move/Instance/Site card/table)
+  - API typings cleanup touchpoints:
+    - `frontend/src/lib/api/access-list.ts`
+    - `frontend/src/lib/api/as-path-list.ts`
+    - `frontend/src/lib/api/community-list.ts`
+    - `frontend/src/lib/api/extcommunity-list.ts`
+    - `frontend/src/lib/api/large-community-list.ts`
+    - `frontend/src/lib/api/local-route.ts`
+    - `frontend/src/lib/api/prefix-list.ts`
+    - `frontend/src/lib/api/route-map.ts`
+    - `frontend/src/lib/api/route.ts`
+    - `frontend/src/lib/api/session.ts`
+    - `frontend/src/lib/api/static-routes.ts`
+    - `frontend/src/lib/api/config.ts`
+    - `frontend/src/lib/api/dashboard.ts`
+    - `frontend/src/lib/api/wireguard.ts`
+
+- Validation snapshot after this batch:
+  - `npx tsc --noEmit --pretty false` => pass
+  - `npm run -s build` => pass
+  - `npm run -s lint` => `0 errors`, `315 warnings` (down from 519 earlier baseline)
+
 ### 1) Auth/session/user management hardening
 - Session timeout / middleware behavior adjusted in backend.
 - Login/onboarding/user-management updated to support username-style auth identifiers (not only email format).
@@ -228,4 +283,5 @@ Branch: `dev`
    - `npm run -s build`
 9. Current lint baseline:
    - `npm run lint` returns warnings only (0 errors).
+   - Current warning count: `315`.
    - If/when desired, tighten rules incrementally per feature area instead of globally.

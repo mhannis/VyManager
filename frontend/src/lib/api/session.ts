@@ -129,9 +129,16 @@ class SessionService {
   async getCurrentSession(): Promise<ActiveSession | null> {
     try {
       return await apiClient.get<ActiveSession>("/session/current");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const status =
+        typeof error === "object" &&
+        error !== null &&
+        "status" in error &&
+        typeof (error as { status?: unknown }).status === "number"
+          ? (error as { status: number }).status
+          : null;
       // Return null if no session (expected when user hasn't connected)
-      if (error.status === 404 || error.status === 400) {
+      if (status === 404 || status === 400) {
         return null;
       }
       throw error;

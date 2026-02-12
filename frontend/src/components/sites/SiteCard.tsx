@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Building2, ChevronDown, ChevronRight, Loader2, MoreVertical, Pencil, Trash2, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,22 +52,22 @@ export function SiteCard({
   const [moveInstanceOpen, setMoveInstanceOpen] = useState(false);
   const [selectedInstance, setSelectedInstance] = useState<Instance | null>(null);
 
-  useEffect(() => {
-    loadInstances();
-  }, [site.id]);
-
-  const loadInstances = async () => {
+  const loadInstances = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await sessionService.listInstances(site.id);
       setInstances(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load instances");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load instances");
     } finally {
       setLoading(false);
     }
-  };
+  }, [site.id]);
+
+  useEffect(() => {
+    loadInstances();
+  }, [loadInstances]);
 
   const handleInstanceSuccess = () => {
     loadInstances();

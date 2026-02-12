@@ -108,8 +108,8 @@ export function CreateInstanceModal({
 
       handleClose();
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to create instance");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create instance");
     } finally {
       setLoading(false);
     }

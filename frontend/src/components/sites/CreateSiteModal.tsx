@@ -58,8 +58,8 @@ export function CreateSiteModal({
 
       handleClose();
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to create site");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create site");
     } finally {
       setLoading(false);
     }

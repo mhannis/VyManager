@@ -18,16 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { MoreVertical, Power, PowerOff, Pencil, Trash2, MoveRight } from "lucide-react";
-
-interface Instance {
-  id: string;
-  name: string;
-  description?: string | null;
-  host: string;
-  port: number;
-  is_active: boolean;
-  vyos_version?: string | null;
-}
+import { Instance } from "@/lib/api/session";
 
 interface InstanceTableViewProps {
   instances: Instance[];

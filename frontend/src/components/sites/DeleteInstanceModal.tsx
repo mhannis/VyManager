@@ -46,8 +46,8 @@ export function DeleteInstanceModal({
       await sessionService.deleteInstance(instance.id);
       handleClose();
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to delete instance");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to delete instance");
     } finally {
       setLoading(false);
     }

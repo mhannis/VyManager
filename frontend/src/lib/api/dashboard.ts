@@ -37,7 +37,7 @@ class DashboardService {
   /**
    * Save the user's dashboard layout
    */
-  async saveLayout(layout: DashboardLayout): Promise<any> {
+  async saveLayout(layout: DashboardLayout): Promise<unknown> {
     return apiClient.post("/dashboard/layout", { layout });
   }
 }

@@ -70,14 +70,14 @@ class LargeCommunityListService {
   /**
    * Refresh the cached configuration
    */
-  async refreshConfig(): Promise<any> {
+  async refreshConfig(): Promise<unknown> {
     return apiClient.post("/vyos/config/refresh");
   }
 
   /**
    * Execute batch operations
    */
-  async batchConfigure(request: LargeCommunityListBatchRequest): Promise<any> {
+  async batchConfigure(request: LargeCommunityListBatchRequest): Promise<unknown> {
     const result = await apiClient.post("/vyos/large-community-list/batch", request);
     await this.refreshConfig();
     return result;
@@ -86,7 +86,7 @@ class LargeCommunityListService {
   /**
    * Delete an entire large community list
    */
-  async deleteLargeCommunityList(name: string): Promise<any> {
+  async deleteLargeCommunityList(name: string): Promise<unknown> {
     const operations: LargeCommunityListBatchOperation[] = [];
     operations.push({ op: "delete_large_community_list" });
 
@@ -100,7 +100,7 @@ class LargeCommunityListService {
   /**
    * Delete a specific rule from a large community list and renumber remaining rules to close gaps
    */
-  async deleteRule(name: string, ruleNumber: number): Promise<any> {
+  async deleteRule(name: string, ruleNumber: number): Promise<unknown> {
     // Get current configuration
     const config = await this.getConfig(true);
     const communityList = config.large_community_lists.find(cl => cl.name === name);
@@ -160,7 +160,7 @@ class LargeCommunityListService {
   /**
    * Helper: Create a new large community list with a rule
    */
-  async createLargeCommunityList(name: string, description: string | null, rule: Partial<LargeCommunityListRule>): Promise<any> {
+  async createLargeCommunityList(name: string, description: string | null, rule: Partial<LargeCommunityListRule>): Promise<unknown> {
     const operations: LargeCommunityListBatchOperation[] = [];
 
     // Create large community list
@@ -205,7 +205,7 @@ class LargeCommunityListService {
     description: string | null,
     rule?: Partial<LargeCommunityListRule>,
     ruleNumber?: number
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: LargeCommunityListBatchOperation[] = [];
 
     // Update description
@@ -255,7 +255,7 @@ class LargeCommunityListService {
   /**
    * Helper: Add a new rule to existing large community list
    */
-  async addRule(name: string, rule: Partial<LargeCommunityListRule>): Promise<any> {
+  async addRule(name: string, rule: Partial<LargeCommunityListRule>): Promise<unknown> {
     const operations: LargeCommunityListBatchOperation[] = [];
 
     // Create rule
@@ -286,7 +286,7 @@ class LargeCommunityListService {
   /**
    * Update an existing rule
    */
-  async updateRule(name: string, ruleNumber: number, rule: Partial<LargeCommunityListRule>): Promise<any> {
+  async updateRule(name: string, ruleNumber: number, rule: Partial<LargeCommunityListRule>): Promise<unknown> {
     const operations: LargeCommunityListBatchOperation[] = [];
 
     // Rule description
@@ -322,7 +322,7 @@ class LargeCommunityListService {
   /**
    * Reorder large community list rules
    */
-  async reorderRules(largeCommunityListName: string, rules: Array<{ old_number: number; new_number: number; rule_data: LargeCommunityListRule }>): Promise<any> {
+  async reorderRules(largeCommunityListName: string, rules: Array<{ old_number: number; new_number: number; rule_data: LargeCommunityListRule }>): Promise<unknown> {
     const result = await apiClient.post("/vyos/large-community-list/reorder", {
       large_community_list_name: largeCommunityListName,
       rules: rules,

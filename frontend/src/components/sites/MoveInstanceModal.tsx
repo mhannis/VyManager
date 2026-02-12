@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,13 +19,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AlertCircle, MoveRight, Loader2 } from "lucide-react";
-import { sessionService, Site } from "@/lib/api/session";
+import { sessionService, Site, Instance } from "@/lib/api/session";
 
 interface MoveInstanceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  instance: any | null;
+  instance: Instance | null;
   currentSite: Site | null;
   allSites: Site[];
 }
@@ -41,15 +41,6 @@ export function MoveInstanceModal({
   const [destinationSiteId, setDestinationSiteId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Reset form when modal opens
-  useEffect(() => {
-    if (open) {
-      setDestinationSiteId("");
-      setError(null);
-      setLoading(false);
-    }
-  }, [open]);
 
   const handleMove = async () => {
     if (!instance || !destinationSiteId) {
@@ -90,13 +81,21 @@ export function MoveInstanceModal({
 
   if (!instance || !currentSite) return null;
 
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      handleClose();
+      return;
+    }
+    onOpenChange(true);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Move Instance to Another Site</DialogTitle>
           <DialogDescription>
-            Move "{instance.name}" to a different site. You can only move instances
+            Move &quot;{instance.name}&quot; to a different site. You can only move instances
             to sites where you have Owner or Admin permissions.
           </DialogDescription>
         </DialogHeader>
@@ -162,7 +161,7 @@ export function MoveInstanceModal({
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Moving this instance will immediately change its site association.
-                  If you're currently connected to this instance, you'll be
+                  If you&apos;re currently connected to this instance, you&apos;ll be
                   disconnected.
                 </p>
               </div>

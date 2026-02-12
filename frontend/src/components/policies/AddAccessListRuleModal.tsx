@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertCircle } from "lucide-react";
-import { accessListService, type AccessList } from "@/lib/api/access-list";
+import { accessListService, type AccessList, type AccessListRule } from "@/lib/api/access-list";
 
 interface AddAccessListRuleModalProps {
   open: boolean;
@@ -32,7 +32,6 @@ export function AddAccessListRuleModal({
   const [action, setAction] = useState<"permit" | "deny">("permit");
   const [ruleDescription, setRuleDescription] = useState("");
   const [sourceType, setSourceType] = useState<"any" | "host" | "network">("any");
-  const [sourceNetworkFormat, setSourceNetworkFormat] = useState<"network" | "inverse-mask">("network");
   const [sourceAddress, setSourceAddress] = useState("");
   const [sourceMask, setSourceMask] = useState("");
   // IPv6 specific fields
@@ -40,7 +39,6 @@ export function AddAccessListRuleModal({
   const [sourceExactMatch, setSourceExactMatch] = useState(false);
   const [sourceNetwork, setSourceNetwork] = useState("");
   const [destinationType, setDestinationType] = useState<"any" | "host" | "network">("any");
-  const [destinationNetworkFormat, setDestinationNetworkFormat] = useState<"network" | "inverse-mask">("network");
   const [destinationAddress, setDestinationAddress] = useState("");
   const [destinationMask, setDestinationMask] = useState("");
 
@@ -82,13 +80,13 @@ export function AddAccessListRuleModal({
     if (sourceNetwork.trim() && sourceExactMatch) {
       setSourceExactMatch(false);
     }
-  }, [sourceNetwork]);
+  }, [sourceExactMatch, sourceNetwork]);
 
   useEffect(() => {
     if (sourceExactMatch && sourceNetwork.trim()) {
       setSourceNetwork("");
     }
-  }, [sourceExactMatch]);
+  }, [sourceExactMatch, sourceNetwork]);
 
   const resetForm = () => {
     setRuleNumber(100);
@@ -172,7 +170,7 @@ export function AddAccessListRuleModal({
     setError(null);
 
     try {
-      const newRule: any = {
+      const newRule: Partial<AccessListRule> & { rule_number: number; action: "permit" | "deny" } = {
         rule_number: ruleNumber,
         action,
         description: ruleDescription || null,
@@ -284,7 +282,11 @@ export function AddAccessListRuleModal({
             {listType === "ipv4" ? (
               /* IPv4 Source - Radio Buttons */
               <>
-                <RadioGroup value={sourceType} onValueChange={(v: any) => setSourceType(v)} disabled={loading}>
+                <RadioGroup
+                  value={sourceType}
+                  onValueChange={(v: "any" | "host" | "network") => setSourceType(v)}
+                  disabled={loading}
+                >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="any" id="source-any" />
                     <Label htmlFor="source-any" className="font-normal cursor-pointer">Any</Label>
@@ -385,7 +387,11 @@ export function AddAccessListRuleModal({
           {listType === "ipv4" && (
             <div className="space-y-3 border rounded-lg p-4">
               <Label>Destination</Label>
-            <RadioGroup value={destinationType} onValueChange={(v: any) => setDestinationType(v)} disabled={loading}>
+            <RadioGroup
+              value={destinationType}
+              onValueChange={(v: "any" | "host" | "network") => setDestinationType(v)}
+              disabled={loading}
+            >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="any" id="dest-any" />
                 <Label htmlFor="dest-any" className="font-normal cursor-pointer">Any</Label>

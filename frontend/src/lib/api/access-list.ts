@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import { VyOSResponse, BatchRequest } from "../types/api";
+import { VyOSResponse } from "../types/api";
 
 // ============================================================================
 // TypeScript Interfaces
@@ -406,7 +406,7 @@ class AccessListService {
     listType: string,
     ruleNumber: number,
     rule: Partial<AccessListRule>
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: AccessListBatchOperation[] = [];
 
     // Delete existing source first
@@ -533,7 +533,7 @@ class AccessListService {
     identifier: string,
     listType: string,
     ruleNumber: number
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: AccessListBatchOperation[] = [];
     operations.push({
       op: listType === "ipv4" ? "delete_rule" : "delete_rule6"

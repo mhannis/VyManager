@@ -70,14 +70,14 @@ class ExtCommunityListService {
   /**
    * Refresh the cached configuration
    */
-  async refreshConfig(): Promise<any> {
+  async refreshConfig(): Promise<unknown> {
     return apiClient.post("/vyos/config/refresh");
   }
 
   /**
    * Execute batch operations
    */
-  async batchConfigure(request: ExtCommunityListBatchRequest): Promise<any> {
+  async batchConfigure(request: ExtCommunityListBatchRequest): Promise<unknown> {
     const result = await apiClient.post("/vyos/extcommunity-list/batch", request);
     await this.refreshConfig();
     return result;
@@ -86,7 +86,7 @@ class ExtCommunityListService {
   /**
    * Delete an entire extcommunity list
    */
-  async deleteExtCommunityList(name: string): Promise<any> {
+  async deleteExtCommunityList(name: string): Promise<unknown> {
     const operations: ExtCommunityListBatchOperation[] = [];
     operations.push({ op: "delete_extcommunity_list" });
 
@@ -100,7 +100,7 @@ class ExtCommunityListService {
   /**
    * Delete a specific rule from a extcommunity list and renumber remaining rules to close gaps
    */
-  async deleteRule(name: string, ruleNumber: number): Promise<any> {
+  async deleteRule(name: string, ruleNumber: number): Promise<unknown> {
     // Get current configuration
     const config = await this.getConfig(true);
     const communityList = config.extcommunity_lists.find(cl => cl.name === name);
@@ -160,7 +160,7 @@ class ExtCommunityListService {
   /**
    * Helper: Create a new extcommunity list with a rule
    */
-  async createExtCommunityList(name: string, description: string | null, rule: Partial<ExtCommunityListRule>): Promise<any> {
+  async createExtCommunityList(name: string, description: string | null, rule: Partial<ExtCommunityListRule>): Promise<unknown> {
     const operations: ExtCommunityListBatchOperation[] = [];
 
     // Create extcommunity list
@@ -205,7 +205,7 @@ class ExtCommunityListService {
     description: string | null,
     rule?: Partial<ExtCommunityListRule>,
     ruleNumber?: number
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: ExtCommunityListBatchOperation[] = [];
 
     // Update description
@@ -255,7 +255,7 @@ class ExtCommunityListService {
   /**
    * Helper: Add a new rule to existing extcommunity list
    */
-  async addRule(name: string, rule: Partial<ExtCommunityListRule>): Promise<any> {
+  async addRule(name: string, rule: Partial<ExtCommunityListRule>): Promise<unknown> {
     const operations: ExtCommunityListBatchOperation[] = [];
 
     // Create rule
@@ -286,7 +286,7 @@ class ExtCommunityListService {
   /**
    * Update an existing rule
    */
-  async updateRule(name: string, ruleNumber: number, rule: Partial<ExtCommunityListRule>): Promise<any> {
+  async updateRule(name: string, ruleNumber: number, rule: Partial<ExtCommunityListRule>): Promise<unknown> {
     const operations: ExtCommunityListBatchOperation[] = [];
 
     // Rule description
@@ -322,7 +322,7 @@ class ExtCommunityListService {
   /**
    * Reorder extcommunity list rules
    */
-  async reorderRules(extcommunityListName: string, rules: Array<{ old_number: number; new_number: number; rule_data: ExtCommunityListRule }>): Promise<any> {
+  async reorderRules(extcommunityListName: string, rules: Array<{ old_number: number; new_number: number; rule_data: ExtCommunityListRule }>): Promise<unknown> {
     const result = await apiClient.post("/vyos/extcommunity-list/reorder", {
       extcommunity_list_name: extcommunityListName,
       rules: rules,

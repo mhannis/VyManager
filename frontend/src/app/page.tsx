@@ -10,6 +10,7 @@ import { useSession } from "@/lib/auth-client";
 import { useSessionStore } from "@/store/session-store";
 import { dashboardService, DashboardCard, DashboardLayout } from "@/lib/api/dashboard";
 import { InterfaceStatisticsCard } from "@/components/dashboard/InterfaceStatisticsCard";
+import { InterfaceOverviewCard } from "@/components/dashboard/InterfaceOverviewCard";
 import { SystemInformationCard } from "@/components/dashboard/SystemInformationCard";
 import { NtpStatusCard } from "@/components/dashboard/NtpStatusCard";
 import { DiskUsageCard } from "@/components/dashboard/DiskUsageCard";
@@ -133,7 +134,7 @@ export default function Home() {
         const cardsWithSpan = (response.layout.cards || []).map((card) => {
           if (card.span === undefined) {
             // Set default span based on card type
-            if (card.type === "interface-statistics") {
+            if (card.type === "interface-statistics" || card.type === "interface-overview") {
               return { ...card, span: 2 };
             }
             return { ...card, span: 1 };
@@ -343,7 +344,7 @@ export default function Home() {
   const handleAddCard = (cardType: string) => {
     // Determine default span based on card type
     let defaultSpan = 1;
-    if (cardType === "interface-statistics") {
+    if (cardType === "interface-statistics" || cardType === "interface-overview") {
       defaultSpan = 2;
     }
 
@@ -456,6 +457,8 @@ export default function Home() {
         return <DiskUsageCard {...baseProps} />;
       case "interface-statistics":
         return <InterfaceStatisticsCard {...baseProps} />;
+      case "interface-overview":
+        return <InterfaceOverviewCard {...baseProps} />;
       default:
         return null;
     }

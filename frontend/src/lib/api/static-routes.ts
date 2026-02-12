@@ -218,14 +218,14 @@ class StaticRoutesService {
   /**
    * Refresh the cached configuration
    */
-  async refreshConfig(): Promise<any> {
+  async refreshConfig(): Promise<unknown> {
     return apiClient.post("/vyos/config/refresh");
   }
 
   /**
    * Execute batch operations
    */
-  async batchConfigure(request: StaticRoutesBatchRequest): Promise<any> {
+  async batchConfigure(request: StaticRoutesBatchRequest): Promise<unknown> {
     const result = await apiClient.post("/vyos/static-routes/batch", request);
     await this.refreshConfig();
     return result;
@@ -238,7 +238,7 @@ class StaticRoutesService {
     route_type: "ipv4" | "ipv6",
     destination: string,
     table_id?: number
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: StaticRoutesBatchOperation[] = [];
 
     // Add delete operation based on route type
@@ -259,7 +259,7 @@ class StaticRoutesService {
   /**
    * Set route-map for static routes
    */
-  async setRouteMap(route_map_name: string): Promise<any> {
+  async setRouteMap(route_map_name: string): Promise<unknown> {
     const result = await apiClient.post(
       "/vyos/static-routes/route-map",
       { route_map_name }
@@ -271,7 +271,7 @@ class StaticRoutesService {
   /**
    * Delete route-map for static routes
    */
-  async deleteRouteMap(): Promise<any> {
+  async deleteRouteMap(): Promise<unknown> {
     const result = await apiClient.delete("/vyos/static-routes/route-map");
     await this.refreshConfig();
     return result;
@@ -280,7 +280,7 @@ class StaticRoutesService {
   /**
    * Helper: Create a new IPv4 route
    */
-  async createIPv4Route(destination: string, config: Partial<StaticRoute>): Promise<any> {
+  async createIPv4Route(destination: string, config: Partial<StaticRoute>): Promise<unknown> {
     const operations: StaticRoutesBatchOperation[] = [];
 
     // Create the route
@@ -390,7 +390,7 @@ class StaticRoutesService {
   /**
    * Helper: Create a new IPv6 route
    */
-  async createIPv6Route(destination: string, config: Partial<StaticRoute>): Promise<any> {
+  async createIPv6Route(destination: string, config: Partial<StaticRoute>): Promise<unknown> {
     const operations: StaticRoutesBatchOperation[] = [];
 
     // Create the route
@@ -498,7 +498,7 @@ class StaticRoutesService {
     route_type: "ipv4" | "ipv6",
     originalRoute: StaticRoute,
     config: Partial<StaticRoute>
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations: StaticRoutesBatchOperation[] = [];
 
     // Description

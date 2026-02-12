@@ -69,8 +69,8 @@ export function EditSiteModal({
 
       handleClose();
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to update site");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update site");
     } finally {
       setLoading(false);
     }

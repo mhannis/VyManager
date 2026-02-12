@@ -46,8 +46,8 @@ export function DeleteSiteModal({
       await sessionService.deleteSite(site.id);
       handleClose();
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to delete site");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to delete site");
     } finally {
       setLoading(false);
     }
