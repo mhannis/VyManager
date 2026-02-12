@@ -389,3 +389,43 @@ Branch: `dev`
 - UI polish/UX follow-up candidates:
   - add form-level validation hints on zones/users pages (current behavior relies mostly on backend validation errors).
   - optionally expose additional card customization on System Information and Disk cards.
+
+## Update (2026-02-12) - Page Load Errors (Zones/Logs/Users/IPsec)
+
+### 16) Symptom Reported
+- User saw generic frontend errors:
+  - `Failed to load firewall zones`
+  - `Failed to load system logs`
+  - `Failed to load local users`
+  - `Failed to load IPsec data`
+
+### 17) Root Cause + Runtime Findings
+- Backend routes were present and healthy, and live endpoint checks returned `200` for all four routes when called with a valid auth session token.
+- A frontend error-handling bug masked real backend messages:
+  - `apiClient` threw plain objects instead of `Error` instances.
+  - Page code commonly checks `err instanceof Error`, so it fell back to generic `Failed to load ...` text and hid the true cause.
+- Runtime reliability note:
+  - Backend must run with `DATABASE_URL` set; otherwise auth/session checks fail and feature pages break.
+
+### 18) Fix Applied
+- File: `frontend/src/lib/api/client.ts`
+  - Added `ApiClientError extends Error` carrying `status` and `details`.
+  - Replaced plain-object throws with `ApiClientError` throws for:
+    - non-2xx responses
+    - HTML/non-JSON backend responses
+    - network/unexpected failures
+  - Result: page-level `err instanceof Error` checks now show actual backend error text.
+
+### 19) Validation
+- Frontend build:
+  - `cd frontend && npm run build` -> success
+- Live backend endpoint checks with active session cookie:
+  - `GET /vyos/firewall/zones/config` -> `200`
+  - `GET /vyos/system/logs?lines=20` -> `200`
+  - `GET /vyos/system/local-users?refresh=true` -> `200`
+  - `GET /vyos/vpn/ipsec/config` -> `200`
+
+### 20) Git
+- Commit: `4dd25c7`
+- Branch: `dev`
+- Pushed to: `origin/dev`
