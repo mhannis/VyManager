@@ -21,8 +21,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { systemService, type SystemLogsResponse } from "@/lib/api/system";
-import { AlertCircle, RefreshCw, Search } from "lucide-react";
+import { systemService, type SystemLogsResponse, type SystemLogSource } from "@/lib/api/system";
+import { AlertCircle, Download, RefreshCw, Search } from "lucide-react";
 
 function severityColor(severity?: string | null): string {
   const normalized = (severity || "").toLowerCase();
@@ -44,20 +44,24 @@ function severityColor(severity?: string | null): string {
 export default function SystemLogsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   const [lineCount, setLineCount] = useState("200");
+  const [logSource, setLogSource] = useState<SystemLogSource>("auto");
   const [searchInput, setSearchInput] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
   const [logs, setLogs] = useState<SystemLogsResponse | null>(null);
+
+  const parsedLineCount = Number.parseInt(lineCount, 10);
+  const effectiveLineCount = Number.isNaN(parsedLineCount) ? 200 : parsedLineCount;
 
   const loadData = async () => {
     try {
       setError(null);
       setRefreshing(true);
-      const count = Number.parseInt(lineCount, 10);
-      const response = await systemService.getLogs(Number.isNaN(count) ? 200 : count, searchFilter || undefined);
+      const response = await systemService.getLogs(effectiveLineCount, searchFilter || undefined, logSource);
       setLogs(response);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load system logs");
@@ -69,13 +73,72 @@ export default function SystemLogsPage() {
 
   useEffect(() => {
     loadData();
-  }, [lineCount, searchFilter]);
+  }, [lineCount, searchFilter, logSource]);
 
   useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(loadData, 10000);
     return () => clearInterval(interval);
-  }, [autoRefresh, lineCount, searchFilter]);
+  }, [autoRefresh, lineCount, searchFilter, logSource]);
+
+  const handleDownload = async () => {
+    try {
+      setError(null);
+      setDownloading(true);
+
+      const params = new URLSearchParams({
+        lines: String(effectiveLineCount),
+        source: logSource,
+      });
+      if (searchFilter && searchFilter.trim()) {
+        params.set("contains", searchFilter.trim());
+      }
+
+      const response = await fetch(`/api/vyos/system/logs/download?${params.toString()}`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type") || "";
+        let message = `Failed to download logs (${response.status})`;
+
+        if (contentType.includes("application/json")) {
+          const payload = await response.json();
+          const detail = payload?.detail || payload?.error || payload?.message;
+          if (typeof detail === "string" && detail.trim()) {
+            message = detail.trim();
+          }
+        } else {
+          const raw = await response.text();
+          const trimmed = raw.trim();
+          if (trimmed) {
+            message = trimmed.slice(0, 300);
+          }
+        }
+
+        throw new Error(message);
+      }
+
+      const disposition = response.headers.get("content-disposition") || "";
+      const filenameMatch = /filename=\"?([^\";]+)\"?/i.exec(disposition);
+      const filename = filenameMatch?.[1] || `vyos-${logSource}-logs.log`;
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to download logs");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const entries = useMemo(() => logs?.entries || [], [logs]);
 
@@ -90,6 +153,10 @@ export default function SystemLogsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleDownload} disabled={downloading}>
+              <Download className="mr-2 h-4 w-4" />
+              {downloading ? "Downloading..." : "Download"}
+            </Button>
             <Button
               variant={autoRefresh ? "default" : "outline"}
               onClick={() => setAutoRefresh((previous) => !previous)}
@@ -148,7 +215,7 @@ export default function SystemLogsPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Filters</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-3">
+          <CardContent className="grid gap-3 md:grid-cols-4">
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Line Count</p>
               <Select value={lineCount} onValueChange={setLineCount}>
@@ -161,6 +228,20 @@ export default function SystemLogsPage() {
                   <SelectItem value="500">500</SelectItem>
                   <SelectItem value="1000">1000</SelectItem>
                   <SelectItem value="2000">2000</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Log Source</p>
+              <Select value={logSource} onValueChange={(value) => setLogSource(value as SystemLogSource)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Auto</SelectItem>
+                  <SelectItem value="syslog">Syslog (show log)</SelectItem>
+                  <SelectItem value="tail">Tail (show log tail)</SelectItem>
+                  <SelectItem value="system">System (show system logs)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

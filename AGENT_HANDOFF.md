@@ -429,3 +429,59 @@ Branch: `dev`
 - Commit: `4dd25c7`
 - Branch: `dev`
 - Pushed to: `origin/dev`
+
+## Update (2026-02-12) - System Logs: Row Count, Source Selection, Download
+
+### 21) User-Reported Problem
+- System Logs page always showed only ~10 rows even when larger line count was selected.
+- Requested:
+  - reliable higher line-count retrieval
+  - support for actual syslog view
+  - ability to download latest logs
+
+### 22) Backend Changes
+- File: `backend/routers/system.py`
+- `GET /vyos/system/logs`:
+  - Added query parameter `source` with values:
+    - `auto`
+    - `syslog` (uses `show log`)
+    - `tail` (uses `show log tail`)
+    - `system` (uses `show system logs`)
+  - Reworked log collection:
+    - tries source-specific command families
+    - in `auto`, prefers richer syslog output first, then fallbacks
+    - for `tail`, attempts explicit line variants before default tail
+    - returns best available output and no longer gets stuck on a 10-line-first result
+- Added `GET /vyos/system/logs/download`:
+  - supports `lines`, `contains`, `source`
+  - returns plain text with `Content-Disposition` filename
+  - includes `X-Log-Source-Command` header when available
+
+### 23) Frontend Changes
+- File: `frontend/src/lib/api/system.ts`
+  - Added `SystemLogSource` type
+  - `getLogs()` now accepts `source`
+- File: `frontend/src/app/system/logs/page.tsx`
+  - Added `Log Source` filter dropdown:
+    - Auto
+    - Syslog (`show log`)
+    - Tail (`show log tail`)
+    - System (`show system logs`)
+  - Added `Download` button for current filter set (`lines`, `contains`, `source`)
+- File: `frontend/src/app/api/vyos/[...path]/route.ts`
+  - Proxy now preserves `Content-Disposition` and `X-Log-Source-Command` for non-JSON responses (needed for download filename/header passthrough)
+
+### 24) Live Validation Performed
+- Backend checks with active auth session token:
+  - `source=auto`: returned `200` lines (requested `200`), command `show log (syslog)`
+  - `source=syslog`: returned `200` lines
+  - `source=tail`: returned `200` lines
+  - `source=system`: unavailable on this target (returns empty) as expected fallback behavior
+- Download endpoint check:
+  - `GET /vyos/system/logs/download?lines=200&source=syslog` -> `200 OK`
+  - Received file headers including `Content-Disposition`
+  - Saved file contained `200` lines
+
+### 25) Validation Commands
+- Backend: `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q` -> pass
+- Frontend: `cd frontend && npm run build` -> success

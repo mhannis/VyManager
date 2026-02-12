@@ -7,9 +7,11 @@ API endpoints for retrieving system information about the VyOS device.
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import PlainTextResponse
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List, Tuple, Literal
+from datetime import datetime, timezone
 import re
 
 from session_vyos_service import get_session_vyos_service
@@ -733,6 +735,67 @@ def _parse_log_line(raw_line: str) -> SystemLogEntry:
     return SystemLogEntry(raw=raw_line, severity=_infer_log_severity(line), message=line)
 
 
+def _build_log_command_sets(source: Literal["auto", "syslog", "tail", "system"], max_lines: int) -> List[Tuple[str, List[List[str]]]]:
+    tail_commands: List[List[str]] = [
+        ["log", "tail", str(max_lines)],
+        ["log", "tail", "lines", str(max_lines)],
+        ["log", "tail"],
+    ]
+
+    command_map: Dict[str, Tuple[str, List[List[str]]]] = {
+        "syslog": ("show log (syslog)", [["log"]]),
+        "tail": ("show log tail", tail_commands),
+        "system": ("show system logs", [["system", "logs"]]),
+    }
+
+    if source == "syslog":
+        return [command_map["syslog"]]
+    if source == "tail":
+        return [command_map["tail"]]
+    if source == "system":
+        return [command_map["system"]]
+
+    # auto mode: prefer syslog output (usually richer), then tail/system fallback
+    return [command_map["syslog"], command_map["tail"], command_map["system"]]
+
+
+async def _collect_log_output(
+    service: Any,
+    source: Literal["auto", "syslog", "tail", "system"],
+    max_lines: int,
+) -> Tuple[Optional[str], str]:
+    selected_command: Optional[str] = None
+    best_output = ""
+    best_line_count = 0
+
+    for command_label, command_paths in _build_log_command_sets(source, max_lines):
+        for command_path in command_paths:
+            response = await run_in_threadpool(service.device.show, path=command_path)
+            if response.status != 200:
+                continue
+
+            output = _extract_show_output(response.result).strip()
+            if not output:
+                continue
+
+            selected_command = command_label
+            line_count = len([line for line in output.splitlines() if line.strip()])
+
+            if line_count > best_line_count:
+                best_line_count = line_count
+                best_output = output
+
+            # If this command already provided enough rows, stop probing fallbacks.
+            if line_count >= max_lines:
+                return selected_command, output
+
+        # In explicit source mode, don't cross over into another source family.
+        if source != "auto" and best_output:
+            return selected_command, best_output
+
+    return selected_command, best_output
+
+
 # ========================================================================
 # Existing Endpoints
 # ========================================================================
@@ -1156,6 +1219,7 @@ async def get_system_logs(
     request: Request,
     lines: int = 200,
     contains: Optional[str] = None,
+    source: Literal["auto", "syslog", "tail", "system"] = "auto",
 ) -> SystemLogsResponse:
     """Get recent system log entries from the active VyOS instance."""
     await require_read_permission(request, FeatureGroup.SYSTEM)
@@ -1165,25 +1229,11 @@ async def get_system_logs(
         filter_text = (contains or "").strip().lower()
         service = get_session_vyos_service(request)
 
-        attempts: List[Tuple[str, List[str]]] = [
-            ("show log tail", ["log", "tail"]),
-            ("show log", ["log"]),
-            ("show system logs", ["system", "logs"]),
-        ]
-
-        selected_command: Optional[str] = None
-        raw_output = ""
-
-        for command_label, command_path in attempts:
-            response = await run_in_threadpool(service.device.show, path=command_path)
-            if response.status != 200:
-                continue
-            output = _extract_show_output(response.result).strip()
-            if not output:
-                continue
-            selected_command = command_label
-            raw_output = output
-            break
+        selected_command, raw_output = await _collect_log_output(
+            service=service,
+            source=source,
+            max_lines=max_lines,
+        )
 
         if not raw_output:
             return SystemLogsResponse(
@@ -1217,6 +1267,39 @@ async def get_system_logs(
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error retrieving system logs: {str(exc)}")
+
+
+@router.get("/logs/download", response_class=PlainTextResponse)
+async def download_system_logs(
+    request: Request,
+    lines: int = 200,
+    contains: Optional[str] = None,
+    source: Literal["auto", "syslog", "tail", "system"] = "auto",
+) -> PlainTextResponse:
+    """Download recent system log output as a text file."""
+    logs = await get_system_logs(
+        request=request,
+        lines=lines,
+        contains=contains,
+        source=source,
+    )
+
+    if not logs.available or not logs.raw_output:
+        raise HTTPException(status_code=404, detail="No log output available to download")
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%SZ")
+    filename = f"vyos-{source}-logs-{timestamp}.log"
+    headers = {
+        "Content-Disposition": f'attachment; filename="{filename}"',
+    }
+    if logs.source_command:
+        headers["X-Log-Source-Command"] = logs.source_command
+
+    content = logs.raw_output
+    if not content.endswith("\n"):
+        content = f"{content}\n"
+
+    return PlainTextResponse(content=content, headers=headers)
 
 
 @router.get("/local-users", response_model=LocalUsersResponse)

@@ -108,9 +108,20 @@ async function proxyRequest(
       return NextResponse.json(data, { status: response.status });
     } catch {
       // Return as-is if not JSON
+      const responseHeaders = new Headers();
+      responseHeaders.set("Content-Type", response.headers.get("Content-Type") || "text/plain");
+      const contentDisposition = response.headers.get("Content-Disposition");
+      if (contentDisposition) {
+        responseHeaders.set("Content-Disposition", contentDisposition);
+      }
+      const logSourceCommand = response.headers.get("X-Log-Source-Command");
+      if (logSourceCommand) {
+        responseHeaders.set("X-Log-Source-Command", logSourceCommand);
+      }
+
       return new NextResponse(responseText, {
         status: response.status,
-        headers: { "Content-Type": response.headers.get("Content-Type") || "text/plain" },
+        headers: responseHeaders,
       });
     }
   } catch (error) {

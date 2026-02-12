@@ -129,6 +129,8 @@ export interface SystemLogsResponse {
   raw_output?: string | null;
 }
 
+export type SystemLogSource = "auto" | "syslog" | "tail" | "system";
+
 export interface LocalUserAuthState {
   has_plaintext_password: boolean;
   has_encrypted_password: boolean;
@@ -242,11 +244,16 @@ class SystemService {
   /**
    * Get system logs from VyOS.
    */
-  async getLogs(lines: number = 200, contains?: string): Promise<SystemLogsResponse> {
+  async getLogs(
+    lines: number = 200,
+    contains?: string,
+    source: SystemLogSource = "auto",
+  ): Promise<SystemLogsResponse> {
     const query: Record<string, string> = { lines: String(lines) };
     if (contains && contains.trim()) {
       query.contains = contains.trim();
     }
+    query.source = source;
     return apiClient.get<SystemLogsResponse>("/vyos/system/logs", query);
   }
 
