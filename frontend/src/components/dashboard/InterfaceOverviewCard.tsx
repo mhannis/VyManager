@@ -219,8 +219,8 @@ export function InterfaceOverviewCard({
       setError(null);
       const [ethernetConfig, physicalResponse, runtimeResponse] = await Promise.all([
         ethernetService.getConfig(),
-        showService.getInterfacePhysical(),
-        showService.getInterfaceRuntimeAddresses(),
+        showService.getInterfacePhysical().catch(() => ({ interfaces: [], total: 0 })),
+        showService.getInterfaceRuntimeAddresses().catch(() => ({ interfaces: [], total: 0 })),
       ]);
 
       const roleMap = interfaceRoleMap(ethernetConfig.interfaces);
