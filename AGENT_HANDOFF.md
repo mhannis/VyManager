@@ -1,6 +1,6 @@
 # VyManager Agent Handoff
 
-Last updated: 2026-02-11
+Last updated: 2026-02-12
 Branch: `dev`
 
 ## Git / Remote Status
@@ -14,6 +14,8 @@ Branch: `dev`
 - tmux sessions active:
   - `vm-api`
   - `vm-ui`
+- Backend process currently launched with:
+  - `DATABASE_URL=postgresql://vymanager:vymanager_secure_password@127.0.0.1:5432/vymanager_auth`
 
 ## Completed Work In This Workspace
 
@@ -44,8 +46,9 @@ Branch: `dev`
 - Added backend endpoint: `POST /vyos/show/interface-blink`
   - File: `backend/routers/show.py`
   - Permission-gated with `INTERFACES` write permission
-  - Validates ethernet interface exists
-  - Attempts multiple VyOS command path variants for compatibility
+  - Uses upstream-supported VyOS op-mode path first:
+    - `show interfaces ethernet <iface> identify`
+  - Falls back through additional legacy/variant command paths for compatibility.
 - Added frontend API helper:
   - File: `frontend/src/lib/api/show.ts`
   - Method: `showService.blinkInterface(interfaceName, durationSeconds)`
@@ -53,13 +56,16 @@ Branch: `dev`
   - File: `frontend/src/app/network/setup-wizard/page.tsx`
   - Buttons: `Blink Selected WAN` / `Blink Selected LAN`
   - Inline success/error status messages
+  - Improved error parsing so UI shows backend detail (including first failed attempt), not only generic fallback text.
 
 ## Current Request In Progress
-End-to-end validation of blink behavior on live hardware/driver combinations.
+Blink failure for `eth5` reported by user.
 
 Status:
-- Implemented in backend + frontend.
-- Not all NICs/drivers support identify/locator operations; unsupported devices return structured error from API.
+- Backend command path mismatch fixed (no-duration `identify` path now attempted first).
+- Frontend error detail visibility improved.
+- Services restarted and API restored with DB env.
+- Awaiting user re-test on live hardware.
 
 ## Known Notes / Caveats
 - Repo has many pre-existing lint issues unrelated to current wizard work.
@@ -69,6 +75,7 @@ Status:
   - `npx tsc --noEmit --project tsconfig.json`
   - `npx eslint src/app/network/setup-wizard/page.tsx src/lib/api/show.ts`
 - Sidebar file has an existing lint rule issue (`react-hooks/set-state-in-effect`) that predates this handoff workflow.
+- If backend is restarted manually without `DATABASE_URL`, frontend API calls degrade to `503` auth/session failures.
 
 ## Files Touching Recent Feature Work
 - Backend:
@@ -100,4 +107,4 @@ Status:
 1. Read this file first.
 2. Verify running services (`tmux ls`, ports 3000/8000).
 3. Re-test wizard and blink behavior against live VyOS instance.
-4. If identify fails on specific hardware, add a driver/platform-specific fallback command path in `backend/routers/show.py`.
+4. If identify still fails on specific hardware, capture `detail.attempts` from the API error and add driver/platform-specific fallback command path in `backend/routers/show.py`.

@@ -463,25 +463,35 @@ async def blink_interface_led(request: Request, body: InterfaceBlinkRequest):
     interface_name = body.interface.strip()
     if not interface_name:
         raise HTTPException(status_code=400, detail="Interface name is required")
+    if not re.match(r"^[A-Za-z0-9._:-]+$", interface_name):
+        raise HTTPException(status_code=400, detail="Invalid interface name")
 
     duration = max(1, min(int(body.duration_seconds), 30))
 
     try:
         service = get_session_vyos_service(request)
 
-        # Validate interface exists in ethernet config
-        full_config = service.get_full_config(refresh=False)
-        ethernet_config = full_config.get("interfaces", {}).get("ethernet", {})
-        if not isinstance(ethernet_config, dict) or interface_name not in ethernet_config:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Ethernet interface '{interface_name}' was not found",
-            )
-
-        # Try a few command variants for compatibility across VyOS versions.
+        # Try command variants for compatibility across VyOS versions/platforms.
+        #
+        # Upstream VyOS op-mode defines:
+        #   show interfaces ethernet <iface> identify
+        # which blinks for 30 seconds (fixed by VyOS command definition).
         attempts = [
             (
-                "show interfaces ethernet <iface> physical identify <seconds>",
+                "show interfaces ethernet <iface> identify",
+                30,
+                lambda: service.device.show(
+                    path=[
+                        "interfaces",
+                        "ethernet",
+                        interface_name,
+                        "identify",
+                    ]
+                ),
+            ),
+            (
+                "show interfaces ethernet <iface> physical identify",
+                30,
                 lambda: service.device.show(
                     path=[
                         "interfaces",
@@ -489,12 +499,37 @@ async def blink_interface_led(request: Request, body: InterfaceBlinkRequest):
                         interface_name,
                         "physical",
                         "identify",
-                        str(duration),
+                    ]
+                ),
+            ),
+            (
+                "generate interfaces ethernet <iface> identify",
+                30,
+                lambda: service.device.generate(
+                    path=[
+                        "interfaces",
+                        "ethernet",
+                        interface_name,
+                        "identify",
+                    ]
+                ),
+            ),
+            (
+                "generate interfaces ethernet <iface> physical identify",
+                30,
+                lambda: service.device.generate(
+                    path=[
+                        "interfaces",
+                        "ethernet",
+                        interface_name,
+                        "physical",
+                        "identify",
                     ]
                 ),
             ),
             (
                 "show interfaces ethernet <iface> identify <seconds>",
+                duration,
                 lambda: service.device.show(
                     path=[
                         "interfaces",
@@ -506,8 +541,9 @@ async def blink_interface_led(request: Request, body: InterfaceBlinkRequest):
                 ),
             ),
             (
-                "generate interfaces ethernet <iface> physical identify <seconds>",
-                lambda: service.device.generate(
+                "show interfaces ethernet <iface> physical identify <seconds>",
+                duration,
+                lambda: service.device.show(
                     path=[
                         "interfaces",
                         "ethernet",
@@ -520,6 +556,7 @@ async def blink_interface_led(request: Request, body: InterfaceBlinkRequest):
             ),
             (
                 "generate interfaces ethernet <iface> identify <seconds>",
+                duration,
                 lambda: service.device.generate(
                     path=[
                         "interfaces",
@@ -530,10 +567,24 @@ async def blink_interface_led(request: Request, body: InterfaceBlinkRequest):
                     ]
                 ),
             ),
+            (
+                "generate interfaces ethernet <iface> physical identify <seconds>",
+                duration,
+                lambda: service.device.generate(
+                    path=[
+                        "interfaces",
+                        "ethernet",
+                        interface_name,
+                        "physical",
+                        "identify",
+                        str(duration),
+                    ]
+                ),
+            ),
         ]
 
         errors: List[str] = []
-        for method_name, method_call in attempts:
+        for method_name, effective_duration, method_call in attempts:
             try:
                 response = method_call()
                 if response.status == 200:
@@ -541,12 +592,15 @@ async def blink_interface_led(request: Request, body: InterfaceBlinkRequest):
                     return InterfaceBlinkResponse(
                         success=True,
                         interface=interface_name,
-                        duration_seconds=duration,
+                        duration_seconds=effective_duration,
                         method=method_name,
                         output=output or None,
                     )
+                error_text = response.error or extract_show_output(response.result) or "unknown"
+                if len(error_text) > 240:
+                    error_text = f"{error_text[:240]}..."
                 errors.append(
-                    f"{method_name}: status={response.status}, error={response.error or 'unknown'}"
+                    f"{method_name}: status={response.status}, error={error_text}"
                 )
             except Exception as command_error:
                 errors.append(f"{method_name}: {str(command_error)}")

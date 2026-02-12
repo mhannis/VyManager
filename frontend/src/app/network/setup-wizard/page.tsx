@@ -556,10 +556,51 @@ export default function NetworkSetupWizardPage() {
       const methodInfo = result.method ? ` (${result.method})` : "";
       setBlinkStatus(`Blink triggered on ${interfaceName} for ${result.duration_seconds}s${methodInfo}`);
     } catch (error) {
+      const fallbackMessage = `Failed to trigger blink on ${interfaceName}`;
+      const errorObject = error as {
+        message?: unknown;
+        details?: { detail?: unknown } | unknown;
+      };
+
+      let message = fallbackMessage;
+      if (typeof errorObject?.message === "string" && errorObject.message.trim()) {
+        message = errorObject.message;
+      }
+
+      const detailPayload =
+        errorObject?.details &&
+        typeof errorObject.details === "object" &&
+        !Array.isArray(errorObject.details)
+          ? (errorObject.details as { detail?: unknown }).detail
+          : undefined;
+
+      if (detailPayload && typeof detailPayload === "object" && !Array.isArray(detailPayload)) {
+        const detailObj = detailPayload as {
+          error?: unknown;
+          attempts?: unknown;
+        };
+        const detailError =
+          typeof detailObj.error === "string" && detailObj.error.trim()
+            ? detailObj.error
+            : null;
+        const firstAttempt =
+          Array.isArray(detailObj.attempts) &&
+          detailObj.attempts.length > 0 &&
+          typeof detailObj.attempts[0] === "string"
+            ? detailObj.attempts[0]
+            : null;
+
+        if (detailError && firstAttempt) {
+          message = `${detailError}: ${firstAttempt}`;
+        } else if (detailError) {
+          message = detailError;
+        }
+      } else if (typeof detailPayload === "string" && detailPayload.trim()) {
+        message = detailPayload;
+      }
+
       setBlinkError(
-        error instanceof Error
-          ? error.message
-          : `Failed to trigger blink on ${interfaceName}`
+        message
       );
     } finally {
       setBlinkingInterface(null);
