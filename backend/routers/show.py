@@ -7,14 +7,18 @@ Uses session-based architecture - VyOS instance comes from user's active session
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Callable, Tuple
+import logging
 import re
+import threading
 
 from session_vyos_service import get_session_vyos_service
 from fastapi_permissions import require_write_permission
 from rbac_permissions import FeatureGroup
+from vyos_service import VyOSDeviceConfig, VyOSService
 
 router = APIRouter(prefix="/vyos/show", tags=["show"])
+logger = logging.getLogger(__name__)
 
 
 # ========================================================================
@@ -73,6 +77,9 @@ class InterfaceBlinkResponse(BaseModel):
     duration_seconds: int
     method: str
     output: Optional[str] = None
+
+
+BlinkAttempt = Tuple[str, int, Callable[[], Any]]
 
 
 # ========================================================================
@@ -245,6 +252,165 @@ def parse_interface_physical_details(
         details.nic_model = nic_models_by_bus[normalized_bus]
 
     return details
+
+
+def _build_interface_blink_attempts(device: Any, interface_name: str, duration: int) -> List[BlinkAttempt]:
+    """
+    Build command variants for interface identify/bink compatibility.
+
+    Upstream VyOS op-mode typically supports:
+      show interfaces ethernet <iface> identify
+    which triggers a fixed 30-second identify cycle.
+    """
+    return [
+        (
+            "show interfaces ethernet <iface> identify",
+            30,
+            lambda: device.show(
+                path=[
+                    "interfaces",
+                    "ethernet",
+                    interface_name,
+                    "identify",
+                ]
+            ),
+        ),
+        (
+            "show interfaces ethernet <iface> physical identify",
+            30,
+            lambda: device.show(
+                path=[
+                    "interfaces",
+                    "ethernet",
+                    interface_name,
+                    "physical",
+                    "identify",
+                ]
+            ),
+        ),
+        (
+            "generate interfaces ethernet <iface> identify",
+            30,
+            lambda: device.generate(
+                path=[
+                    "interfaces",
+                    "ethernet",
+                    interface_name,
+                    "identify",
+                ]
+            ),
+        ),
+        (
+            "generate interfaces ethernet <iface> physical identify",
+            30,
+            lambda: device.generate(
+                path=[
+                    "interfaces",
+                    "ethernet",
+                    interface_name,
+                    "physical",
+                    "identify",
+                ]
+            ),
+        ),
+        (
+            "show interfaces ethernet <iface> identify <seconds>",
+            duration,
+            lambda: device.show(
+                path=[
+                    "interfaces",
+                    "ethernet",
+                    interface_name,
+                    "identify",
+                    str(duration),
+                ]
+            ),
+        ),
+        (
+            "show interfaces ethernet <iface> physical identify <seconds>",
+            duration,
+            lambda: device.show(
+                path=[
+                    "interfaces",
+                    "ethernet",
+                    interface_name,
+                    "physical",
+                    "identify",
+                    str(duration),
+                ]
+            ),
+        ),
+        (
+            "generate interfaces ethernet <iface> identify <seconds>",
+            duration,
+            lambda: device.generate(
+                path=[
+                    "interfaces",
+                    "ethernet",
+                    interface_name,
+                    "identify",
+                    str(duration),
+                ]
+            ),
+        ),
+        (
+            "generate interfaces ethernet <iface> physical identify <seconds>",
+            duration,
+            lambda: device.generate(
+                path=[
+                    "interfaces",
+                    "ethernet",
+                    interface_name,
+                    "physical",
+                    "identify",
+                    str(duration),
+                ]
+            ),
+        ),
+    ]
+
+
+def _run_interface_blink_in_background(
+    service_config: VyOSDeviceConfig,
+    interface_name: str,
+    duration: int,
+) -> None:
+    """
+    Run interface identify command(s) in a detached worker.
+
+    This keeps the API response immediate while still attempting the identify
+    operation on the device.
+    """
+    worker_service = VyOSService(service_config)
+    errors: List[str] = []
+
+    for method_name, _effective_duration, method_call in _build_interface_blink_attempts(
+        worker_service.device,
+        interface_name,
+        duration,
+    ):
+        try:
+            response = method_call()
+            if response.status == 200:
+                logger.info(
+                    "Interface blink triggered for %s using method: %s",
+                    interface_name,
+                    method_name,
+                )
+                return
+
+            error_text = response.error or extract_show_output(response.result) or "unknown"
+            if len(error_text) > 240:
+                error_text = f"{error_text[:240]}..."
+            errors.append(f"{method_name}: status={response.status}, error={error_text}")
+        except Exception as command_error:
+            errors.append(f"{method_name}: {str(command_error)}")
+
+    logger.warning(
+        "Interface blink/identify unsupported or failed for %s: %s",
+        interface_name,
+        "; ".join(errors),
+    )
 
 
 # ========================================================================
@@ -470,148 +636,33 @@ async def blink_interface_led(request: Request, body: InterfaceBlinkRequest):
 
     try:
         service = get_session_vyos_service(request)
+        queued_method = "show interfaces ethernet <iface> identify"
+        queued_duration = 30
 
-        # Try command variants for compatibility across VyOS versions/platforms.
-        #
-        # Upstream VyOS op-mode defines:
-        #   show interfaces ethernet <iface> identify
-        # which blinks for 30 seconds (fixed by VyOS command definition).
-        attempts = [
-            (
-                "show interfaces ethernet <iface> identify",
-                30,
-                lambda: service.device.show(
-                    path=[
-                        "interfaces",
-                        "ethernet",
-                        interface_name,
-                        "identify",
-                    ]
-                ),
-            ),
-            (
-                "show interfaces ethernet <iface> physical identify",
-                30,
-                lambda: service.device.show(
-                    path=[
-                        "interfaces",
-                        "ethernet",
-                        interface_name,
-                        "physical",
-                        "identify",
-                    ]
-                ),
-            ),
-            (
-                "generate interfaces ethernet <iface> identify",
-                30,
-                lambda: service.device.generate(
-                    path=[
-                        "interfaces",
-                        "ethernet",
-                        interface_name,
-                        "identify",
-                    ]
-                ),
-            ),
-            (
-                "generate interfaces ethernet <iface> physical identify",
-                30,
-                lambda: service.device.generate(
-                    path=[
-                        "interfaces",
-                        "ethernet",
-                        interface_name,
-                        "physical",
-                        "identify",
-                    ]
-                ),
-            ),
-            (
-                "show interfaces ethernet <iface> identify <seconds>",
-                duration,
-                lambda: service.device.show(
-                    path=[
-                        "interfaces",
-                        "ethernet",
-                        interface_name,
-                        "identify",
-                        str(duration),
-                    ]
-                ),
-            ),
-            (
-                "show interfaces ethernet <iface> physical identify <seconds>",
-                duration,
-                lambda: service.device.show(
-                    path=[
-                        "interfaces",
-                        "ethernet",
-                        interface_name,
-                        "physical",
-                        "identify",
-                        str(duration),
-                    ]
-                ),
-            ),
-            (
-                "generate interfaces ethernet <iface> identify <seconds>",
-                duration,
-                lambda: service.device.generate(
-                    path=[
-                        "interfaces",
-                        "ethernet",
-                        interface_name,
-                        "identify",
-                        str(duration),
-                    ]
-                ),
-            ),
-            (
-                "generate interfaces ethernet <iface> physical identify <seconds>",
-                duration,
-                lambda: service.device.generate(
-                    path=[
-                        "interfaces",
-                        "ethernet",
-                        interface_name,
-                        "physical",
-                        "identify",
-                        str(duration),
-                    ]
-                ),
-            ),
-        ]
+        # Clone config for thread safety and run command in detached worker.
+        worker_config = VyOSDeviceConfig(
+            hostname=service.config.hostname,
+            apikey=service.config.apikey,
+            version=service.config.version,
+            protocol=service.config.protocol,
+            port=service.config.port,
+            verify=service.config.verify,
+            timeout=service.config.timeout,
+        )
+        worker_thread = threading.Thread(
+            target=_run_interface_blink_in_background,
+            args=(worker_config, interface_name, duration),
+            daemon=True,
+            name=f"interface-blink-{interface_name}",
+        )
+        worker_thread.start()
 
-        errors: List[str] = []
-        for method_name, effective_duration, method_call in attempts:
-            try:
-                response = method_call()
-                if response.status == 200:
-                    output = extract_show_output(response.result)
-                    return InterfaceBlinkResponse(
-                        success=True,
-                        interface=interface_name,
-                        duration_seconds=effective_duration,
-                        method=method_name,
-                        output=output or None,
-                    )
-                error_text = response.error or extract_show_output(response.result) or "unknown"
-                if len(error_text) > 240:
-                    error_text = f"{error_text[:240]}..."
-                errors.append(
-                    f"{method_name}: status={response.status}, error={error_text}"
-                )
-            except Exception as command_error:
-                errors.append(f"{method_name}: {str(command_error)}")
-
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "error": "Interface blink/identify is not supported by this device or interface",
-                "interface": interface_name,
-                "attempts": errors,
-            },
+        return InterfaceBlinkResponse(
+            success=True,
+            interface=interface_name,
+            duration_seconds=queued_duration,
+            method=f"{queued_method} (queued)",
+            output="Blink request queued",
         )
 
     except HTTPException:

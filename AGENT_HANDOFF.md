@@ -46,9 +46,11 @@ Branch: `dev`
 - Added backend endpoint: `POST /vyos/show/interface-blink`
   - File: `backend/routers/show.py`
   - Permission-gated with `INTERFACES` write permission
+  - Queues identify work in a background thread and returns immediately (no 30s API wait).
   - Uses upstream-supported VyOS op-mode path first:
     - `show interfaces ethernet <iface> identify`
   - Falls back through additional legacy/variant command paths for compatibility.
+  - Logs failures server-side (unsupported NIC/driver cases), instead of blocking UI.
 - Added frontend API helper:
   - File: `frontend/src/lib/api/show.ts`
   - Method: `showService.blinkInterface(interfaceName, durationSeconds)`
@@ -59,11 +61,11 @@ Branch: `dev`
   - Improved error parsing so UI shows backend detail (including first failed attempt), not only generic fallback text.
 
 ## Current Request In Progress
-Blink failure for `eth5` reported by user.
+User requested immediate blink UX (no long spinner) after command trigger.
 
 Status:
-- Backend command path mismatch fixed (no-duration `identify` path now attempted first).
-- Frontend error detail visibility improved.
+- Backend now queues blink asynchronously and responds immediately.
+- Backend command path mismatch remains fixed (no-duration `identify` attempted first).
 - Services restarted and API restored with DB env.
 - Awaiting user re-test on live hardware.
 
@@ -107,4 +109,4 @@ Status:
 1. Read this file first.
 2. Verify running services (`tmux ls`, ports 3000/8000).
 3. Re-test wizard and blink behavior against live VyOS instance.
-4. If identify still fails on specific hardware, capture `detail.attempts` from the API error and add driver/platform-specific fallback command path in `backend/routers/show.py`.
+4. For unsupported hardware (e.g., some SFP+), check backend logs (`tmux capture-pane -pt vm-api:0.0`) and add driver/platform-specific fallback command path in `backend/routers/show.py` if desired.
