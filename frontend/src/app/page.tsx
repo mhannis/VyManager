@@ -36,7 +36,7 @@ import { CSS } from "@dnd-kit/utilities";
 const GRID_COLUMNS = 3;
 const MAX_GRID_SCAN_ROWS = 200;
 const MASONRY_ROW_HEIGHT_PX = 1;
-const DASHBOARD_GRID_GAP_PX = 10;
+const DASHBOARD_GRID_GAP_PX = 15;
 
 function getCardSpan(card: DashboardCard): number {
   if (!card.span || card.span < 1) return 1;
