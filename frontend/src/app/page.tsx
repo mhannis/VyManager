@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, Save, Edit3, X } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -35,6 +35,8 @@ import { CSS } from "@dnd-kit/utilities";
 
 const GRID_COLUMNS = 3;
 const MAX_GRID_SCAN_ROWS = 200;
+const MASONRY_ROW_HEIGHT_PX = 8;
+const DASHBOARD_GRID_GAP_PX = 24;
 
 function getCardSpan(card: DashboardCard): number {
   if (!card.span || card.span < 1) return 1;
@@ -211,6 +213,60 @@ function DroppableColumnOverlay({
         <div>Column {columnNumber}</div>
         {isDragging && <div className="text-sm font-normal mt-2">Drop here</div>}
       </div>
+    </div>
+  );
+}
+
+function DashboardMasonryItem({
+  card,
+  children,
+}: {
+  card: DashboardCard;
+  children: React.ReactNode;
+}) {
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [rowSpan, setRowSpan] = useState(1);
+  const span = getCardSpan(card);
+  const maxStartColumn = GRID_COLUMNS - span;
+  const startColumn = Math.max(0, Math.min(card.column, maxStartColumn)) + 1;
+
+  const recalculateRowSpan = useCallback(() => {
+    const element = contentRef.current;
+    if (!element) return;
+
+    const height = element.getBoundingClientRect().height;
+    const computedSpan = Math.max(
+      1,
+      Math.ceil((height + DASHBOARD_GRID_GAP_PX) / (MASONRY_ROW_HEIGHT_PX + DASHBOARD_GRID_GAP_PX))
+    );
+
+    setRowSpan((previous) => (previous === computedSpan ? previous : computedSpan));
+  }, []);
+
+  useLayoutEffect(() => {
+    recalculateRowSpan();
+  }, [recalculateRowSpan, span, card.column, card.id]);
+
+  useEffect(() => {
+    const element = contentRef.current;
+    if (!element || typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver(() => {
+      recalculateRowSpan();
+    });
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [recalculateRowSpan]);
+
+  return (
+    <div
+      style={{
+        gridColumn: `${startColumn} / span ${span}`,
+        gridRowEnd: `span ${rowSpan}`,
+      }}
+    >
+      <div ref={contentRef}>{children}</div>
     </div>
   );
 }
@@ -449,7 +505,7 @@ export default function Home() {
 
     console.log(`[Drag] Placed card: column=${targetColumn}, position=${finalPosition}, span=${cardSpan}`);
 
-    setCards(updatedCards);
+    setCards(compactCards(updatedCards));
     setHasUnsavedChanges(true);
   };
 
@@ -542,28 +598,15 @@ export default function Home() {
     }
   };
 
-  // Get grid placement classes and styles for explicit positioning
-  const getGridClasses = (card: DashboardCard) => {
-    const span = card.span || 1;
-    let classes = "";
-
-    // Column span
-    if (span === 2) classes += "col-span-2 ";
-    if (span === 3) classes += "col-span-3 ";
-
-    // Column start position
-    if (card.column === 1) classes += "col-start-2 ";
-    if (card.column === 2) classes += "col-start-3 ";
-
-    return classes.trim();
-  };
-
-  const getGridStyle = (card: DashboardCard) => {
-    // Explicit row placement
-    return {
-      gridRow: card.position + 1
-    };
-  };
+  const orderedCards = useMemo(
+    () =>
+      [...cards].sort((left, right) => {
+        if (left.position !== right.position) return left.position - right.position;
+        if (left.column !== right.column) return left.column - right.column;
+        return left.id.localeCompare(right.id);
+      }),
+    [cards]
+  );
 
   return (
     <AppLayout>
@@ -683,30 +726,26 @@ export default function Home() {
           >
             {/* Wrapper for grid and overlays */}
             <div className="relative">
-              {/* Main grid with explicit card placement */}
-              <div className="grid grid-cols-3 gap-6 auto-rows-min relative z-0">
+              {/* Main masonry grid */}
+              <div className="grid grid-cols-3 gap-6 auto-rows-[8px] relative z-0">
                 <SortableContext
-                  items={cards.map((c) => c.id)}
+                  items={orderedCards.map((c) => c.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  {/* Render cards with explicit grid placement */}
-                  {cards.map((card) => {
+                  {/* Render cards with measured row spans for gap-free stacking */}
+                  {orderedCards.map((card) => {
                     const cardElement = editMode ? (
-                      <SortableCard key={card.id} card={card}>
+                      <SortableCard card={card}>
                         {renderCard(card)}
                       </SortableCard>
                     ) : (
-                      <div key={card.id}>{renderCard(card)}</div>
+                      <div>{renderCard(card)}</div>
                     );
 
                     return (
-                      <div
-                        key={card.id}
-                        className={getGridClasses(card)}
-                        style={getGridStyle(card)}
-                      >
+                      <DashboardMasonryItem key={card.id} card={card}>
                         {cardElement}
-                      </div>
+                      </DashboardMasonryItem>
                     );
                   })}
                 </SortableContext>

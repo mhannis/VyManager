@@ -543,3 +543,25 @@ Branch: `dev`
 ### 30) Validation
 - Frontend build:
   - `cd frontend && npm run build` -> success
+
+## Update (2026-02-12) - Dashboard Gap Reduction (Masonry Packing)
+
+### 31) Problem
+- Users still observed vertical gaps between cards in the same column when neighboring columns had taller cards.
+- Root cause: dashboard used fixed shared grid rows (`gridRow` placement by integer position), so row heights were synchronized across all columns.
+
+### 32) Fix
+- File: `frontend/src/app/page.tsx`
+- Switched dashboard rendering from explicit shared-row placement to masonry-style row packing:
+  - Grid now uses `auto-rows-[8px]` and measured `gridRowEnd: span N` per card.
+  - Added `DashboardMasonryItem` wrapper:
+    - measures card height using `useLayoutEffect` + `ResizeObserver`
+    - computes row span and applies dynamic `gridRowEnd`.
+  - Cards keep column + width span behavior (`gridColumn: start / span`), but now stack tightly in each column.
+- Ordering stability:
+  - Added `orderedCards` memoized sort by `position`, then `column`, then `id`.
+  - `handleDragEnd` now compacts after move (`setCards(compactCards(updatedCards))`) to keep clean ordering/state.
+
+### 33) Validation
+- Frontend build:
+  - `cd frontend && npm run build` -> success
