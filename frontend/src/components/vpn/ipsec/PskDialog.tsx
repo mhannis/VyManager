@@ -25,6 +25,8 @@ import { ipsecService, type PSKAuthentication } from "@/lib/api/ipsec";
 
 type DialogMode = "create" | "edit";
 
+const SELECT_UNSET_VALUE = "__unset__";
+
 function parseIds(raw: string): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
@@ -184,12 +186,15 @@ export function PskDialog({
 
         <div className="space-y-2">
           <Label>Secret Type (optional)</Label>
-          <Select value={secretType} onValueChange={setSecretType}>
+          <Select
+            value={secretType || SELECT_UNSET_VALUE}
+            onValueChange={(value) => setSecretType(value === SELECT_UNSET_VALUE ? "" : value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="text" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">(unset)</SelectItem>
+              <SelectItem value={SELECT_UNSET_VALUE}>(unset)</SelectItem>
               <SelectItem value="text">text</SelectItem>
               <SelectItem value="base64">base64</SelectItem>
             </SelectContent>

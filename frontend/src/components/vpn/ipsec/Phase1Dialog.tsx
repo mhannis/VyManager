@@ -33,6 +33,8 @@ import {
 
 type DialogMode = "create" | "edit";
 
+const SELECT_UNSET_VALUE = "__unset__";
+
 function valueOrEmpty(value?: string | null): string {
   return value ? value : "";
 }
@@ -561,12 +563,16 @@ export function Phase1Dialog({
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2">
                     <Label>Action</Label>
-                    <Select value={ikeDpdAction} onValueChange={setIkeDpdAction} disabled={!updateIkeGroup}>
+                    <Select
+                      value={ikeDpdAction || SELECT_UNSET_VALUE}
+                      onValueChange={(value) => setIkeDpdAction(value === SELECT_UNSET_VALUE ? "" : value)}
+                      disabled={!updateIkeGroup}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="restart" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">(unset)</SelectItem>
+                        <SelectItem value={SELECT_UNSET_VALUE}>(unset)</SelectItem>
                         <SelectItem value="restart">restart</SelectItem>
                         <SelectItem value="clear">clear</SelectItem>
                         <SelectItem value="hold">hold</SelectItem>

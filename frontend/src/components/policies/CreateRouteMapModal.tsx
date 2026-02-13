@@ -20,6 +20,9 @@ interface CreateRouteMapModalProps {
   onSuccess: () => void;
 }
 
+// Radix Select items cannot use an empty string value; use a sentinel and map to "" in state.
+const SELECT_NONE_VALUE = "__none__";
+
 export function CreateRouteMapModal({ open, onOpenChange, onSuccess }: CreateRouteMapModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -456,12 +459,15 @@ export function CreateRouteMapModal({ open, onOpenChange, onSuccess }: CreateRou
 
                     <div className="space-y-2">
                       <Label htmlFor="matchOrigin">Origin</Label>
-                      <Select value={matchOrigin} onValueChange={setMatchOrigin}>
+                      <Select
+                        value={matchOrigin || SELECT_NONE_VALUE}
+                        onValueChange={(value) => setMatchOrigin(value === SELECT_NONE_VALUE ? "" : value)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select origin" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value={SELECT_NONE_VALUE}>None</SelectItem>
                           <SelectItem value="egp">EGP</SelectItem>
                           <SelectItem value="igp">IGP</SelectItem>
                           <SelectItem value="incomplete">Incomplete</SelectItem>
@@ -553,12 +559,15 @@ export function CreateRouteMapModal({ open, onOpenChange, onSuccess }: CreateRou
 
                     <div className="space-y-2">
                       <Label htmlFor="matchRpki">RPKI Validation</Label>
-                      <Select value={matchRpki} onValueChange={setMatchRpki}>
+                      <Select
+                        value={matchRpki || SELECT_NONE_VALUE}
+                        onValueChange={(value) => setMatchRpki(value === SELECT_NONE_VALUE ? "" : value)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select RPKI state" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value={SELECT_NONE_VALUE}>None</SelectItem>
                           <SelectItem value="valid">Valid</SelectItem>
                           <SelectItem value="invalid">Invalid</SelectItem>
                           <SelectItem value="notfound">Not Found</SelectItem>
@@ -744,12 +753,15 @@ export function CreateRouteMapModal({ open, onOpenChange, onSuccess }: CreateRou
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="matchProtocol">Protocol</Label>
-                      <Select value={matchProtocol} onValueChange={setMatchProtocol}>
+                      <Select
+                        value={matchProtocol || SELECT_NONE_VALUE}
+                        onValueChange={(value) => setMatchProtocol(value === SELECT_NONE_VALUE ? "" : value)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select protocol" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value={SELECT_NONE_VALUE}>None</SelectItem>
                           <SelectItem value="babel">Babel</SelectItem>
                           <SelectItem value="bgp">BGP</SelectItem>
                           <SelectItem value="connected">Connected</SelectItem>
@@ -851,18 +863,23 @@ export function CreateRouteMapModal({ open, onOpenChange, onSuccess }: CreateRou
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="setCommunityAction">Action</Label>
-                        <Select value={setCommunityAction} onValueChange={setSetCommunityAction}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select action" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">None</SelectItem>
-                            <SelectItem value="add">Add</SelectItem>
-                            <SelectItem value="replace">Replace</SelectItem>
-                            <SelectItem value="delete">Delete</SelectItem>
-                            <SelectItem value="none">Remove All</SelectItem>
-                          </SelectContent>
+                      <Label htmlFor="setCommunityAction">Action</Label>
+                      <Select
+                        value={setCommunityAction || SELECT_NONE_VALUE}
+                        onValueChange={(value) =>
+                          setSetCommunityAction(value === SELECT_NONE_VALUE ? "" : value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select action" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={SELECT_NONE_VALUE}>None</SelectItem>
+                          <SelectItem value="add">Add</SelectItem>
+                          <SelectItem value="replace">Replace</SelectItem>
+                          <SelectItem value="delete">Delete</SelectItem>
+                          <SelectItem value="none">Remove All</SelectItem>
+                        </SelectContent>
                         </Select>
                       </div>
                     </div>
@@ -879,18 +896,23 @@ export function CreateRouteMapModal({ open, onOpenChange, onSuccess }: CreateRou
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="setLargeCommunityAction">Action</Label>
-                        <Select value={setLargeCommunityAction} onValueChange={setSetLargeCommunityAction}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select action" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">None</SelectItem>
-                            <SelectItem value="add">Add</SelectItem>
-                            <SelectItem value="replace">Replace</SelectItem>
-                            <SelectItem value="delete">Delete</SelectItem>
-                            <SelectItem value="none">Remove All</SelectItem>
-                          </SelectContent>
+                      <Label htmlFor="setLargeCommunityAction">Action</Label>
+                      <Select
+                        value={setLargeCommunityAction || SELECT_NONE_VALUE}
+                        onValueChange={(value) =>
+                          setSetLargeCommunityAction(value === SELECT_NONE_VALUE ? "" : value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select action" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={SELECT_NONE_VALUE}>None</SelectItem>
+                          <SelectItem value="add">Add</SelectItem>
+                          <SelectItem value="replace">Replace</SelectItem>
+                          <SelectItem value="delete">Delete</SelectItem>
+                          <SelectItem value="none">Remove All</SelectItem>
+                        </SelectContent>
                         </Select>
                       </div>
                     </div>
@@ -984,12 +1006,15 @@ export function CreateRouteMapModal({ open, onOpenChange, onSuccess }: CreateRou
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="setOrigin">Origin</Label>
-                      <Select value={setOrigin} onValueChange={setSetOrigin}>
+                      <Select
+                        value={setOrigin || SELECT_NONE_VALUE}
+                        onValueChange={(value) => setSetOrigin(value === SELECT_NONE_VALUE ? "" : value)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select origin" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value={SELECT_NONE_VALUE}>None</SelectItem>
                           <SelectItem value="egp">EGP</SelectItem>
                           <SelectItem value="igp">IGP</SelectItem>
                           <SelectItem value="incomplete">Incomplete</SelectItem>
@@ -1150,12 +1175,15 @@ export function CreateRouteMapModal({ open, onOpenChange, onSuccess }: CreateRou
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="setMetricType">Metric Type (OSPF)</Label>
-                      <Select value={setMetricType} onValueChange={setSetMetricType}>
+                      <Select
+                        value={setMetricType || SELECT_NONE_VALUE}
+                        onValueChange={(value) => setSetMetricType(value === SELECT_NONE_VALUE ? "" : value)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value={SELECT_NONE_VALUE}>None</SelectItem>
                           <SelectItem value="type-1">Type 1</SelectItem>
                           <SelectItem value="type-2">Type 2</SelectItem>
                         </SelectContent>

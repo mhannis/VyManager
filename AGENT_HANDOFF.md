@@ -794,3 +794,23 @@ Branch: `dev`
 ### 58) Validation Snapshot
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run build` -> pass
+
+## Update (2026-02-13) - Fix Client Crash (Radix Select Empty Value)
+
+### 59) User-Reported Problem
+- Clicking `Phase 1 Crypto` caused a full-page Next.js client error ("client-side exception").
+
+### 60) Root Cause
+- Radix UI Select throws at runtime when a `<SelectItem />` has an empty string `value=""`:
+  - This existed in a few places (notably the new Phase 1/PSK UI and an older Route Map modal).
+
+### 61) Fix
+- Files:
+  - `frontend/src/components/vpn/ipsec/Phase1Dialog.tsx`
+  - `frontend/src/components/vpn/ipsec/PskDialog.tsx`
+  - `frontend/src/components/policies/CreateRouteMapModal.tsx`
+- Replaced `value=""` Select items with a sentinel value (e.g. `__unset__` / `__none__`) and mapped back to `""` in component state.
+
+### 62) Validation Snapshot
+- `cd frontend && npx tsc --noEmit --pretty false` -> pass
+- `cd frontend && npm run build` -> pass
