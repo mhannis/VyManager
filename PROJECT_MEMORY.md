@@ -94,7 +94,7 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Worktree status: clean
 - Most recently shipped increment:
   - Gateway dashboard card + endpoint: commit `bfb029d` (adds `GET /vyos/show/gateway-summary` and `GatewayStatusCard`)
-  - Orchestrator memory files: commit `ccbe26e` (adds `PROJECT_MEMORY.md`, etc.)
+  - Orchestrator memory files: commits `ccbe26e`, `0e2cf5a` (adds `ORCHESTRATOR.md`, `PROJECT_MEMORY.md`, `CURRENT_FEATURE.md`, `DECISIONS.md`)
 
 ## TODO Backlog (Short)
 - Pick next feature and run Spec Gate (Analyst/SME spec -> plan -> implementation -> tests -> review -> docs).
