@@ -827,3 +827,19 @@ Branch: `dev`
 - Verified:
   - `ss -lntp` shows a listener on `0.0.0.0:3000`
   - `curl -I http://127.0.0.1:3000/` returns `307` redirect to `/login`
+
+## Update (2026-02-13) - Git Commit Author Identity
+
+### 65) User-Reported Problem
+- GitHub showed commits authored by `xTITUSMAXIMUSX`, but the fork owner account is `mhannis`.
+
+### 66) Root Cause
+- Repo-local git config (`.git/config`) had:
+  - `user.name = xTITUSMAXIMUSX`
+  - `user.email = 62310795+xTITUSMAXIMUSX@users.noreply.github.com`
+
+### 67) Fix
+- Updated repo-local identity to attribute future commits to `mhannis`:
+  - `user.name = mhannis`
+  - `user.email = 60040465+mhannis@users.noreply.github.com`
+- Note: previously pushed commits keep their original author unless history is rewritten and force-pushed.
