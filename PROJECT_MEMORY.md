@@ -26,6 +26,9 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
   - `cd backend && python3 -m uvicorn app:app --reload --host 0.0.0.0 --port 8000 --proxy-headers`
 - Frontend dev:
   - `cd frontend && npm run dev`
+- Frontend start (bind to LAN):
+  - `cd frontend && npm run -s build`
+  - `cd frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000`
 - Backend tests:
   - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q`
 - Frontend typecheck:
@@ -96,6 +99,11 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 ## Work In Progress
 - Branch: `dev` (tracking `origin/dev`)
 - Worktree status: clean
+- Host toolchain (dev box): node `v20.20.0`, npm `10.8.2`, python `3.12.3`.
+- Dev services are typically run in `tmux`:
+  - `vm-api`: backend (`uvicorn` on `0.0.0.0:8000`)
+  - `vm-ui`: frontend (`next start` on `0.0.0.0:3000`)
+- Current UI access (LAN): `http://192.168.10.249:3000`
 - Most recently shipped increment:
   - Gateway dashboard card + endpoint: commit `bfb029d` (adds `GET /vyos/show/gateway-summary` and `GatewayStatusCard`)
   - Orchestrator memory files: commits `ccbe26e`, `0e2cf5a` (adds `ORCHESTRATOR.md`, `PROJECT_MEMORY.md`, `CURRENT_FEATURE.md`, `DECISIONS.md`)
