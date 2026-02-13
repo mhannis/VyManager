@@ -919,3 +919,14 @@ Branch: `dev`
 ### 72) Verification
 - Frontend production build succeeds:
   - `cd frontend && npm run -s build`
+
+## Update (2026-02-13) - Disable VPP UI When Not Supported
+
+### 73) User-Reported Constraint
+- VPP/DPDK features require a different VyOS image (e.g., VPP addon / Stream build) and are not available on the user's current build.
+
+### 74) Change
+- `frontend/src/app/system/acceleration/page.tsx`
+  - VPP tab is now disabled (greyed out) when `GET /vyos/system/vpp-status` reports `available=false`.
+  - Page shows a small note explaining VPP is unavailable on this image.
+  - VPP config is lazily loaded only if the user selects the VPP tab and it is supported.
