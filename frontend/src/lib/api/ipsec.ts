@@ -9,11 +9,27 @@ export interface IPsecProposal {
   prf?: string | null; // Pseudorandom function
 }
 
+// Proposal upsert model used by the write API
+export interface IPsecProposalUpsertRequest {
+  proposal_id: string;
+  encryption?: string | null;
+  hash?: string | null;
+  dh_group?: string | null;
+  prf?: string | null;
+}
+
 // Dead peer detection configuration
 export interface DeadPeerDetection {
   action?: string | null; // Action on dead peer (restart, clear, hold)
   interval?: string | null; // DPD interval in seconds
   timeout?: string | null; // DPD timeout in seconds
+}
+
+export interface IKEGroupUpsertRequest {
+  key_exchange?: string | null;
+  lifetime?: string | null;
+  dead_peer_detection?: DeadPeerDetection | null;
+  proposals: IPsecProposalUpsertRequest[];
 }
 
 // IKE (Internet Key Exchange) group configuration
@@ -24,6 +40,13 @@ export interface IKEGroup {
   "dead-peer-detection"?: DeadPeerDetection | null;
   "ikev2-reauth"?: Record<string, any> | null;
   proposals: Record<string, IPsecProposal>;
+}
+
+export interface ESPGroupUpsertRequest {
+  lifetime?: string | null;
+  mode?: string | null;
+  pfs?: string | null;
+  proposals: IPsecProposalUpsertRequest[];
 }
 
 // ESP (Encapsulating Security Payload) group configuration
@@ -41,11 +64,40 @@ export interface VTIBinding {
   "esp-group"?: string | null; // ESP group to use
 }
 
+export interface VTIBindingUpsertRequest {
+  bind?: string | null;
+  esp_group?: string | null;
+}
+
 // Site-to-site peer authentication
 export interface PeerAuthentication {
   mode?: string | null; // Authentication mode (e.g., 'pre-shared-secret')
   "local-id"?: string | null;
   "remote-id"?: string | null;
+}
+
+export interface PeerAuthenticationUpsertRequest {
+  mode?: string | null;
+  local_id?: string | null;
+  remote_id?: string | null;
+}
+
+export interface TunnelUpsertRequest {
+  tunnel_id: string;
+  local_prefix?: string | null;
+  remote_prefix?: string | null;
+  esp_group?: string | null;
+}
+
+export interface SiteToSitePeerUpsertRequest {
+  description?: string | null;
+  connection_type?: string | null;
+  ike_group?: string | null;
+  local_address?: string | null;
+  remote_address?: string | null;
+  authentication?: PeerAuthenticationUpsertRequest | null;
+  vti?: VTIBindingUpsertRequest | null;
+  tunnels: TunnelUpsertRequest[];
 }
 
 // Site-to-site IPsec peer
@@ -62,11 +114,23 @@ export interface SiteToSitePeer {
   tunnels?: Record<string, Record<string, any>> | null; // Legacy tunnel configurations
 }
 
+export interface PSKUpsertRequest {
+  ids: string[];
+  secret?: string | null;
+}
+
 // Pre-Shared Key authentication
 export interface PSKAuthentication {
   psk_id: string;
   ids: string[];
   secret?: string | null; // PSK secret (not exposed in read operations)
+}
+
+export interface IPsecOperationResponse {
+  success: boolean;
+  resource: string;
+  name: string;
+  message: string;
 }
 
 // Complete IPsec VPN configuration
@@ -116,6 +180,38 @@ class IPsecService {
    */
   async getStatus(): Promise<IPsecStatus> {
     return apiClient.get<IPsecStatus>("/vyos/vpn/ipsec/status");
+  }
+
+  async upsertIkeGroup(name: string, request: IKEGroupUpsertRequest): Promise<IPsecOperationResponse> {
+    return apiClient.put<IPsecOperationResponse>(`/vyos/vpn/ipsec/ike-group/${encodeURIComponent(name)}`, request);
+  }
+
+  async deleteIkeGroup(name: string): Promise<IPsecOperationResponse> {
+    return apiClient.delete<IPsecOperationResponse>(`/vyos/vpn/ipsec/ike-group/${encodeURIComponent(name)}`);
+  }
+
+  async upsertEspGroup(name: string, request: ESPGroupUpsertRequest): Promise<IPsecOperationResponse> {
+    return apiClient.put<IPsecOperationResponse>(`/vyos/vpn/ipsec/esp-group/${encodeURIComponent(name)}`, request);
+  }
+
+  async deleteEspGroup(name: string): Promise<IPsecOperationResponse> {
+    return apiClient.delete<IPsecOperationResponse>(`/vyos/vpn/ipsec/esp-group/${encodeURIComponent(name)}`);
+  }
+
+  async upsertPeer(peerId: string, request: SiteToSitePeerUpsertRequest): Promise<IPsecOperationResponse> {
+    return apiClient.put<IPsecOperationResponse>(`/vyos/vpn/ipsec/peer/${encodeURIComponent(peerId)}`, request);
+  }
+
+  async deletePeer(peerId: string): Promise<IPsecOperationResponse> {
+    return apiClient.delete<IPsecOperationResponse>(`/vyos/vpn/ipsec/peer/${encodeURIComponent(peerId)}`);
+  }
+
+  async upsertPsk(pskId: string, request: PSKUpsertRequest): Promise<IPsecOperationResponse> {
+    return apiClient.put<IPsecOperationResponse>(`/vyos/vpn/ipsec/psk/${encodeURIComponent(pskId)}`, request);
+  }
+
+  async deletePsk(pskId: string): Promise<IPsecOperationResponse> {
+    return apiClient.delete<IPsecOperationResponse>(`/vyos/vpn/ipsec/psk/${encodeURIComponent(pskId)}`);
   }
 }
 

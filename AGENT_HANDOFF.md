@@ -1,6 +1,6 @@
 # VyManager Agent Handoff
 
-Last updated: 2026-02-12
+Last updated: 2026-02-13
 Branch: `dev`
 
 ## Git / Remote Status
@@ -228,6 +228,32 @@ Branch: `dev`
 - Result:
   - Lint still reports warnings (legacy debt), but no blocking errors.
   - This restores CI/developer flow while preserving visibility of issues.
+
+### 9) IPsec VPN Configuration (Write Support + UI)
+- Backend IPsec router upgraded from read-only to full config management:
+  - File: `backend/routers/ipsec.py`
+  - New write endpoints (all permission-gated with `FeatureGroup.IPSEC` write):
+    - `PUT /vyos/vpn/ipsec/ike-group/{name}` / `DELETE ...`
+    - `PUT /vyos/vpn/ipsec/esp-group/{name}` / `DELETE ...`
+    - `PUT /vyos/vpn/ipsec/peer/{peer_id}` / `DELETE ...` (site-to-site peers)
+    - `PUT /vyos/vpn/ipsec/psk/{psk_id}` / `DELETE ...`
+  - Uses replace semantics for managed subtrees (proposals/DPD/auth/vti/tunnels/id selectors) while preserving other config keys.
+  - Refreshes cached running config after successful apply.
+- Frontend IPsec page updated to allow full configuration from UI:
+  - File: `frontend/src/app/vpn/ipsec/page.tsx`
+  - Added tabbed editor sections: Peers, IKE Groups, ESP Groups, PSK
+  - Added create/edit dialogs:
+    - `frontend/src/components/vpn/ipsec/IkeGroupDialog.tsx`
+    - `frontend/src/components/vpn/ipsec/EspGroupDialog.tsx`
+    - `frontend/src/components/vpn/ipsec/PeerDialog.tsx`
+    - `frontend/src/components/vpn/ipsec/PskDialog.tsx`
+  - Uses RBAC gating: edit controls only show when user has `IPSEC` (or `VPN`) write.
+  - Reduced API calls on page load (derives peer list directly from `/vyos/vpn/ipsec/config`).
+- Frontend API client extended:
+  - File: `frontend/src/lib/api/ipsec.ts`
+  - Added typed write methods for the above endpoints.
+- Tooling fix:
+  - `frontend/tsconfig.json` now excludes Next-generated `.next/types/validator.ts` to keep `npx tsc --noEmit` passing (Next 16 typegen currently emits an import to `./routes.js` without generating a matching module).
 
 ## Known Notes / Caveats
 - Frontend build warning remains about multiple lockfiles at repo root and `frontend/`; build still succeeds.
