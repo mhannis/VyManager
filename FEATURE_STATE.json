@@ -1,0 +1,93 @@
+{
+  "feature_id": "ipsec-s2s-wizard-v1",
+  "title": "IPsec Site-to-Site VPN Wizard (v1)",
+  "status": "spec",
+  "acceptance_criteria": [
+    "Wizard can create one site-to-site IPsec tunnel (Phase 1 + Phase 2) from UI with minimal inputs.",
+    "Wizard configures required firewall/NAT so traffic flows (IKE/ESP/NAT-T as applicable).",
+    "Wizard is idempotent or clearly warns before overwriting config it created.",
+    "Wizard failures surface actionable errors and avoid silently leaving partial config.",
+    "Automated tests exist for backend parsing/build/apply logic."
+  ],
+  "assumptions": [
+    "v1 targets IPv4, IKEv2, PSK auth, single tunnel.",
+    "Default mode (policy-based vs VTI) is TBD; must be confirmed by Mark.",
+    "Wizard-created config will be tagged with a stable description/prefix for detection and cleanup."
+  ],
+  "tasks": [
+    {
+      "id": "T1",
+      "owner_role": "Analyst",
+      "status": "todo",
+      "files": [],
+      "notes": "Produce Feature Spec Packet (wizard steps, validations, VyOS semantics, firewall/NAT behavior)."
+    },
+    {
+      "id": "T2",
+      "owner_role": "Planner",
+      "status": "todo",
+      "files": [],
+      "notes": "Convert spec into implementation plan, milestones, rollback, and test strategy."
+    },
+    {
+      "id": "T3",
+      "owner_role": "Backend",
+      "status": "todo",
+      "files": [
+        "backend/routers/ipsec.py",
+        "backend/routers/firewall/*",
+        "backend/routers/nat/*"
+      ],
+      "notes": "Add wizard apply endpoint(s) and any helper services/builders; ensure RBAC gates."
+    },
+    {
+      "id": "T4",
+      "owner_role": "UI",
+      "status": "todo",
+      "files": [
+        "frontend/src/app/vpn/ipsec/*",
+        "frontend/src/components/vpn/ipsec/*"
+      ],
+      "notes": "Add wizard UI flow (similar to existing setup wizards) with validation and review/apply step."
+    },
+    {
+      "id": "T5",
+      "owner_role": "Test",
+      "status": "todo",
+      "files": [
+        "backend/tests/*"
+      ],
+      "notes": "Add/extend automated tests; run locally and document commands + results."
+    },
+    {
+      "id": "T6",
+      "owner_role": "Reviewer",
+      "status": "todo",
+      "files": [],
+      "notes": "Review for security (RBAC), correctness, idempotency, and edge cases."
+    },
+    {
+      "id": "T7",
+      "owner_role": "Analyst",
+      "status": "todo",
+      "files": [
+        "PROJECT_MEMORY.md",
+        "AGENT_HANDOFF.md"
+      ],
+      "notes": "Update docs and verification steps; prep PR summary."
+    }
+  ],
+  "commands": {
+    "build": "cd frontend && npm run -s build",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q",
+    "lint": "cd frontend && npm run -s lint"
+  },
+  "worktrees_or_threads": [
+    {
+      "name": "main",
+      "purpose": "Primary VyManager worktree",
+      "status": "idle"
+    }
+  ]
+}
+
