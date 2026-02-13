@@ -211,6 +211,11 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM
       },
       {
+        title: "Acceleration",
+        href: "/system/acceleration",
+        requiredPermission: FeatureGroup.SYSTEM
+      },
+      {
         title: "Containers",
         href: "/system/containers",
         requiredPermission: FeatureGroup.SYSTEM

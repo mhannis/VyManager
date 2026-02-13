@@ -7,6 +7,7 @@ Much cleaner and easier to maintain!
 
 from typing import Optional, Union, Dict, Any, List
 from contextlib import contextmanager
+import threading
 
 from pyvyos import VyDevice
 from pyvyos.core.rest_client import ApiResponse
@@ -53,6 +54,10 @@ class VyOSService:
         )
         # Cache for full configuration (for read operations)
         self._cached_config: Optional[Dict[str, Any]] = None
+        # Prevent concurrent expensive config fetches from duplicating work.
+        # Requests frequently call get_full_config() in parallel; without a lock,
+        # the same large JSON payload can be fetched multiple times at once.
+        self._config_lock = threading.Lock()
 
     def get_version(self) -> str:
         """Get the VyOS version for this device."""
@@ -192,28 +197,34 @@ class VyOSService:
             >>> config = service.get_full_config()
             >>> ethernet_config = config.get("interfaces", {}).get("ethernet", {})
         """
-        # Return cached config if available and not forcing refresh
+        # Fast path: return cached config when available.
         if self._cached_config is not None and not refresh:
             return self._cached_config
 
-        # Fetch full config using pyvyos show() with JSON output
-        response = self.device.show(path=["configuration", "json", "pretty"])
+        # Slow path: fetch config once (even if multiple requests arrive concurrently).
+        with self._config_lock:
+            # Another request might have populated the cache while we waited.
+            if self._cached_config is not None and not refresh:
+                return self._cached_config
 
-        if response.status != 200:
-            error_msg = response.error if response.error else "Unknown error"
-            raise ValueError(f"Failed to retrieve full config: {error_msg}")
+            # Fetch full config using pyvyos show() with JSON output
+            response = self.device.show(path=["configuration", "json", "pretty"])
 
-        # Parse JSON from result
-        import json
-        # response.result is already the JSON string
-        config_json = response.result
+            if response.status != 200:
+                error_msg = response.error if response.error else "Unknown error"
+                raise ValueError(f"Failed to retrieve full config: {error_msg}")
 
-        try:
-            self._cached_config = json.loads(config_json)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse configuration JSON: {e}")
+            # Parse JSON from result
+            import json
+            # response.result is already the JSON string
+            config_json = response.result
 
-        return self._cached_config
+            try:
+                self._cached_config = json.loads(config_json)
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Failed to parse configuration JSON: {e}")
+
+            return self._cached_config
 
     def refresh_config(self) -> Dict[str, Any]:
         """

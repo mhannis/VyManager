@@ -506,6 +506,167 @@ class NtpServiceConfigRequest(BaseModel):
     listen_addresses: List[str] = Field(default_factory=list)
 
 
+# ========================================================================
+# LLDP Service Models
+# ========================================================================
+
+
+LldpInterfaceMode = Literal["disable", "rx-tx", "rx", "tx"]
+
+
+class LldpInterfaceConfig(BaseModel):
+    interface: str
+    mode: Optional[LldpInterfaceMode] = None
+
+
+class LldpServiceConfigResponse(BaseModel):
+    enabled: bool = False
+    all_interfaces: bool = True
+    interfaces: List[LldpInterfaceConfig] = Field(default_factory=list)
+    management_addresses: List[str] = Field(default_factory=list)
+    snmp: bool = False
+    legacy_protocols: List[str] = Field(default_factory=list)
+
+
+class LldpServiceConfigRequest(BaseModel):
+    enabled: bool = False
+    all_interfaces: bool = True
+    interfaces: List[LldpInterfaceConfig] = Field(default_factory=list)
+    management_addresses: List[str] = Field(default_factory=list)
+    snmp: bool = False
+    legacy_protocols: List[str] = Field(default_factory=list)
+
+
+class LldpNeighbor(BaseModel):
+    local_interface: Optional[str] = None
+    chassis_id: Optional[str] = None
+    port_id: Optional[str] = None
+    port_description: Optional[str] = None
+    system_name: Optional[str] = None
+    system_description: Optional[str] = None
+    platform: Optional[str] = None
+    capabilities: Optional[str] = None
+    raw: str
+
+
+class LldpStatusResponse(BaseModel):
+    enabled: bool
+    neighbors: List[LldpNeighbor] = Field(default_factory=list)
+    raw_neighbors: Optional[str] = None
+    raw_neighbors_detail: Optional[str] = None
+    error: Optional[str] = None
+
+
+# ========================================================================
+# mDNS Repeater (Avahi) Models
+# ========================================================================
+
+
+MdnsIpVersion = Literal["ipv4", "ipv6", "both"]
+
+
+class MdnsRepeaterConfigResponse(BaseModel):
+    configured: bool = False
+    enabled: bool = False
+    interfaces: List[str] = Field(default_factory=list)
+    ip_version: MdnsIpVersion = "both"
+    allow_services: List[str] = Field(default_factory=list)
+    browse_domains: List[str] = Field(default_factory=list)
+    cache_entries: Optional[int] = None
+
+
+class MdnsRepeaterConfigRequest(BaseModel):
+    enabled: bool = False
+    interfaces: List[str] = Field(default_factory=list)
+    ip_version: MdnsIpVersion = "both"
+    allow_services: List[str] = Field(default_factory=list)
+    browse_domains: List[str] = Field(default_factory=list)
+    cache_entries: Optional[int] = None
+
+
+class MdnsRepeaterStatusResponse(BaseModel):
+    enabled: bool
+    raw_log: Optional[str] = None
+    error: Optional[str] = None
+
+
+# ========================================================================
+# Acceleration Models (QAT + VPP/DPDK)
+# ========================================================================
+
+
+class QatConfigResponse(BaseModel):
+    enabled: bool = False
+
+
+class QatConfigRequest(BaseModel):
+    enabled: bool = False
+
+
+class QatStatusResponse(BaseModel):
+    available: bool = False
+    raw_devices: Optional[str] = None
+    raw_status: Optional[str] = None
+    error: Optional[str] = None
+
+
+VppInterfaceDriver = Literal["dpdk", "xdp"]
+
+
+class VppInterfaceDriverConfig(BaseModel):
+    interface: str
+    driver: VppInterfaceDriver
+
+
+class VppHostResourcesConfig(BaseModel):
+    max_map_count: Optional[int] = None
+    nr_hugepages: Optional[int] = None
+    shmmax: Optional[str] = None
+
+
+class VppMemoryConfig(BaseModel):
+    main_heap_page_size: Optional[str] = None
+    main_heap_size: Optional[str] = None
+
+
+class VppStatsegConfig(BaseModel):
+    page_size: Optional[str] = None
+    size: Optional[str] = None
+
+
+class VppLcpNetlinkConfig(BaseModel):
+    rx_buffer_size: Optional[str] = None
+
+
+class VppLcpConfig(BaseModel):
+    ignore_kernel_routes: bool = False
+    netlink: VppLcpNetlinkConfig = Field(default_factory=VppLcpNetlinkConfig)
+
+
+class VppSettingsConfigResponse(BaseModel):
+    enabled: bool = False
+    interfaces: List[VppInterfaceDriverConfig] = Field(default_factory=list)
+    lcp: VppLcpConfig = Field(default_factory=VppLcpConfig)
+    host_resources: VppHostResourcesConfig = Field(default_factory=VppHostResourcesConfig)
+    memory: VppMemoryConfig = Field(default_factory=VppMemoryConfig)
+    statseg: VppStatsegConfig = Field(default_factory=VppStatsegConfig)
+
+
+class VppSettingsConfigRequest(BaseModel):
+    enabled: bool = False
+    interfaces: List[VppInterfaceDriverConfig] = Field(default_factory=list)
+    lcp: VppLcpConfig = Field(default_factory=VppLcpConfig)
+    host_resources: VppHostResourcesConfig = Field(default_factory=VppHostResourcesConfig)
+    memory: VppMemoryConfig = Field(default_factory=VppMemoryConfig)
+    statseg: VppStatsegConfig = Field(default_factory=VppStatsegConfig)
+
+
+class VppStatusResponse(BaseModel):
+    available: bool = False
+    raw_output: Optional[str] = None
+    error: Optional[str] = None
+
+
 class SystemLogEntry(BaseModel):
     raw: str
     timestamp: Optional[str] = None
@@ -603,6 +764,265 @@ def _parse_ntp_service_config(full_config: Dict[str, Any]) -> NtpServiceConfigRe
         servers=sorted(servers, key=lambda server: server.address),
         allow_clients=allow_clients,
         listen_addresses=listen_addresses,
+    )
+
+
+RE_INTERFACE_NAME = re.compile(r"^[A-Za-z0-9._:-]+$")
+
+
+def _normalize_interface_name_or_400(name: str, field_name: str = "interface") -> str:
+    cleaned = name.strip()
+    if not cleaned:
+        raise HTTPException(status_code=400, detail=f"{field_name} is required")
+    if not RE_INTERFACE_NAME.match(cleaned):
+        raise HTTPException(status_code=400, detail=f"Invalid {field_name}: {cleaned}")
+    return cleaned
+
+
+def _string_or_none(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        stripped = value.strip()
+        return stripped or None
+    return str(value).strip() or None
+
+
+def _parse_lldp_service_config(full_config: Dict[str, Any]) -> LldpServiceConfigResponse:
+    service_root = _as_dict(full_config.get("service"))
+    lldp_root = service_root.get("lldp")
+
+    if not isinstance(lldp_root, dict):
+        return LldpServiceConfigResponse(enabled=False)
+
+    management_addresses = _extract_tag_values(lldp_root, ["management-address"])
+    legacy_protocols = _extract_tag_values(lldp_root, ["legacy-protocols"])
+    snmp = "snmp" in lldp_root
+
+    all_interfaces = True
+    interfaces: List[LldpInterfaceConfig] = []
+
+    raw_interfaces = lldp_root.get("interface")
+    if isinstance(raw_interfaces, dict):
+        for iface_name, iface_value in sorted(raw_interfaces.items(), key=lambda item: str(item[0])):
+            iface = str(iface_name).strip()
+            if not iface:
+                continue
+            if iface.lower() == "all":
+                all_interfaces = True
+                continue
+
+            all_interfaces = False
+            iface_data = iface_value if isinstance(iface_value, dict) else {}
+            mode_value = iface_data.get("mode")
+            mode: Optional[LldpInterfaceMode] = None
+            if isinstance(mode_value, str) and mode_value.strip():
+                normalized = mode_value.strip().lower()
+                if normalized in {"disable", "rx-tx", "rx", "tx"}:
+                    mode = normalized  # type: ignore[assignment]
+
+            interfaces.append(LldpInterfaceConfig(interface=iface, mode=mode))
+
+    elif isinstance(raw_interfaces, list):
+        cleaned = [str(item).strip() for item in raw_interfaces if str(item).strip()]
+        if any(item.lower() == "all" for item in cleaned):
+            all_interfaces = True
+        else:
+            all_interfaces = False
+            for iface in sorted(set(cleaned)):
+                interfaces.append(LldpInterfaceConfig(interface=iface))
+
+    return LldpServiceConfigResponse(
+        enabled=True,
+        all_interfaces=all_interfaces,
+        interfaces=interfaces,
+        management_addresses=management_addresses,
+        snmp=snmp,
+        legacy_protocols=legacy_protocols,
+    )
+
+
+ANSI_ESCAPE_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
+
+
+def _strip_ansi(text: str) -> str:
+    return ANSI_ESCAPE_RE.sub("", text or "")
+
+
+def _split_table_columns(line: str) -> List[str]:
+    return [segment.strip() for segment in re.split(r"\s{2,}", line.strip()) if segment.strip()]
+
+
+def _parse_lldp_neighbors_output(output: str) -> List[LldpNeighbor]:
+    cleaned = _strip_ansi(output or "")
+    lines = [line.rstrip("\r") for line in cleaned.splitlines() if line.strip()]
+    if not lines:
+        return []
+
+    header_index: Optional[int] = None
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if re.match(r"(?i)^(interface|local\\s+port|local\\s+interface)\\b", stripped):
+            header_index = index
+            break
+
+    if header_index is None:
+        return []
+
+    headers = _split_table_columns(lines[header_index])
+    if not headers:
+        return []
+
+    def find_index(predicate) -> Optional[int]:
+        for idx, header in enumerate(headers):
+            if predicate(header.lower()):
+                return idx
+        return None
+
+    idx_local = find_index(
+        lambda h: h.startswith("interface")
+        or ("local" in h and "port" in h)
+        or ("local" in h and "interface" in h)
+    )
+    idx_chassis = find_index(lambda h: "chassis" in h)
+    idx_port_id = find_index(lambda h: "port" in h and "id" in h)
+    idx_port_descr = find_index(lambda h: "port" in h and ("descr" in h or "description" in h))
+    idx_sys_name = find_index(lambda h: ("sys" in h and "name" in h) or ("system" in h and "name" in h))
+    idx_sys_descr = find_index(
+        lambda h: ("sys" in h and ("descr" in h or "description" in h))
+        or ("system" in h and ("descr" in h or "description" in h))
+    )
+    idx_platform = find_index(lambda h: "platform" in h)
+    idx_caps = find_index(lambda h: "cap" in h)
+
+    neighbors: List[LldpNeighbor] = []
+
+    for line in lines[header_index + 1:]:
+        if re.match(r"^-{3,}$", line.strip()):
+            continue
+
+        parts = _split_table_columns(line)
+        if len(parts) < 2:
+            continue
+
+        if len(parts) < len(headers):
+            parts += [""] * (len(headers) - len(parts))
+
+        def get(idx: Optional[int]) -> Optional[str]:
+            if idx is None or idx >= len(parts):
+                return None
+            value = parts[idx].strip()
+            return value or None
+
+        neighbors.append(
+            LldpNeighbor(
+                local_interface=get(idx_local),
+                chassis_id=get(idx_chassis),
+                port_id=get(idx_port_id),
+                port_description=get(idx_port_descr),
+                system_name=get(idx_sys_name),
+                system_description=get(idx_sys_descr),
+                platform=get(idx_platform),
+                capabilities=get(idx_caps),
+                raw=line.strip(),
+            )
+        )
+
+    return neighbors
+
+
+def _parse_mdns_repeater_config(full_config: Dict[str, Any]) -> MdnsRepeaterConfigResponse:
+    service_root = _as_dict(full_config.get("service"))
+    mdns_root = _as_dict(service_root.get("mdns"))
+    repeater_root = mdns_root.get("repeater")
+
+    if not isinstance(repeater_root, dict):
+        return MdnsRepeaterConfigResponse(configured=False, enabled=False)
+
+    interfaces = _extract_tag_values(repeater_root, ["interface"])
+
+    ip_version_value = repeater_root.get("ip-version")
+    ip_version: MdnsIpVersion = "both"
+    if isinstance(ip_version_value, str) and ip_version_value.strip():
+        value = ip_version_value.strip().lower()
+        if value in {"ipv4", "ipv6", "both"}:
+            ip_version = value  # type: ignore[assignment]
+
+    allow_services = _extract_tag_values(repeater_root, ["allow-service"])
+    browse_domains = _extract_tag_values(repeater_root, ["browse-domain"])
+    cache_entries = _safe_int(repeater_root.get("cache-entries"))
+
+    enabled = "disable" not in repeater_root
+
+    return MdnsRepeaterConfigResponse(
+        configured=True,
+        enabled=enabled,
+        interfaces=interfaces,
+        ip_version=ip_version,
+        allow_services=allow_services,
+        browse_domains=browse_domains,
+        cache_entries=cache_entries,
+    )
+
+
+def _parse_qat_config(full_config: Dict[str, Any]) -> QatConfigResponse:
+    system_root = _as_dict(full_config.get("system"))
+    accel_root = _as_dict(system_root.get("acceleration"))
+    return QatConfigResponse(enabled="qat" in accel_root)
+
+
+def _parse_vpp_settings_config(full_config: Dict[str, Any]) -> VppSettingsConfigResponse:
+    vpp_root = _as_dict(full_config.get("vpp"))
+    settings_root = _as_dict(vpp_root.get("settings"))
+    enabled = bool(settings_root)
+
+    interfaces: List[VppInterfaceDriverConfig] = []
+    interface_root = _as_dict(settings_root.get("interface"))
+    for iface_name, iface_data in sorted(interface_root.items(), key=lambda item: str(item[0])):
+        iface = str(iface_name).strip()
+        if not iface:
+            continue
+        data = _as_dict(iface_data)
+        driver_value = data.get("driver")
+        driver = _string_or_none(driver_value)
+        if driver:
+            normalized = driver.lower()
+            if normalized in {"dpdk", "xdp"}:
+                interfaces.append(VppInterfaceDriverConfig(interface=iface, driver=normalized))  # type: ignore[arg-type]
+
+    lcp_root = _as_dict(settings_root.get("lcp"))
+    netlink_root = _as_dict(lcp_root.get("netlink"))
+    lcp = VppLcpConfig(
+        ignore_kernel_routes="ignore-kernel-routes" in lcp_root,
+        netlink=VppLcpNetlinkConfig(rx_buffer_size=_string_or_none(netlink_root.get("rx-buffer-size"))),
+    )
+
+    host_resources_root = _as_dict(settings_root.get("host-resources"))
+    host_resources = VppHostResourcesConfig(
+        max_map_count=_safe_int(host_resources_root.get("max-map-count")),
+        nr_hugepages=_safe_int(host_resources_root.get("nr-hugepages")),
+        shmmax=_string_or_none(host_resources_root.get("shmmax")),
+    )
+
+    memory_root = _as_dict(settings_root.get("memory"))
+    memory = VppMemoryConfig(
+        main_heap_page_size=_string_or_none(memory_root.get("main-heap-page-size")),
+        main_heap_size=_string_or_none(memory_root.get("main-heap-size")),
+    )
+
+    statseg_root = _as_dict(settings_root.get("statseg"))
+    statseg = VppStatsegConfig(
+        page_size=_string_or_none(statseg_root.get("page-size")),
+        size=_string_or_none(statseg_root.get("size")),
+    )
+
+    return VppSettingsConfigResponse(
+        enabled=enabled,
+        interfaces=interfaces,
+        lcp=lcp,
+        host_resources=host_resources,
+        memory=memory,
+        statseg=statseg,
     )
 
 
@@ -1653,3 +2073,581 @@ async def delete_local_user(request: Request, username: str) -> LocalUserOperati
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error deleting local user: {str(exc)}")
+
+
+# ========================================================================
+# Additional System Service Endpoints (LLDP + mDNS + Acceleration)
+# ========================================================================
+
+
+@router.get("/lldp-config", response_model=LldpServiceConfigResponse)
+async def get_lldp_config(request: Request, refresh: bool = False) -> LldpServiceConfigResponse:
+    """Get current LLDP service configuration from VyOS config tree."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        return _parse_lldp_service_config(full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving LLDP configuration: {str(exc)}")
+
+
+@router.put("/lldp-config", response_model=LldpServiceConfigResponse)
+async def update_lldp_config(request: Request, body: LldpServiceConfigRequest) -> LldpServiceConfigResponse:
+    """Update LLDP service configuration."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        desired_management_addresses = _normalize_unique_strings(body.management_addresses)
+        desired_legacy = _normalize_unique_strings(body.legacy_protocols)
+
+        desired_interfaces: List[LldpInterfaceConfig] = []
+        if body.enabled and not body.all_interfaces:
+            if not body.interfaces:
+                raise HTTPException(
+                    status_code=400,
+                    detail="At least one interface is required when LLDP is enabled and 'all interfaces' is disabled.",
+                )
+
+            seen = set()
+            for iface in body.interfaces:
+                name = _normalize_interface_name_or_400(iface.interface, field_name="interface")
+                if name.lower() == "all":
+                    continue
+                if name in seen:
+                    continue
+                seen.add(name)
+                desired_interfaces.append(LldpInterfaceConfig(interface=name, mode=iface.mode))
+
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        current = _parse_lldp_service_config(full_config)
+        raw_lldp = _as_dict(_as_dict(full_config.get("service")).get("lldp"))
+        raw_lldp_interfaces = raw_lldp.get("interface")
+        has_explicit_all = False
+        if isinstance(raw_lldp_interfaces, dict):
+            has_explicit_all = any(str(key).strip().lower() == "all" for key in raw_lldp_interfaces.keys())
+        elif isinstance(raw_lldp_interfaces, list):
+            has_explicit_all = any(str(item).strip().lower() == "all" for item in raw_lldp_interfaces)
+
+        operations: List[Dict[str, Any]] = []
+
+        if not body.enabled:
+            if current.enabled:
+                operations.append({"op": "delete", "path": ["service", "lldp"]})
+        else:
+            # Ensure root exists
+            operations.append({"op": "set", "path": ["service", "lldp"]})
+
+            # snmp flag
+            if body.snmp and not current.snmp:
+                operations.append({"op": "set", "path": ["service", "lldp", "snmp"]})
+            elif current.snmp and not body.snmp:
+                operations.append({"op": "delete", "path": ["service", "lldp", "snmp"]})
+
+            # management-address list
+            current_mgmt = set(current.management_addresses)
+            desired_mgmt = set(desired_management_addresses)
+            for addr in sorted(current_mgmt - desired_mgmt):
+                operations.append({"op": "delete", "path": ["service", "lldp", "management-address", addr]})
+            for addr in sorted(desired_mgmt - current_mgmt):
+                operations.append({"op": "set", "path": ["service", "lldp", "management-address", addr]})
+
+            # legacy-protocols list
+            current_legacy = set(current.legacy_protocols)
+            desired_legacy_set = set(desired_legacy)
+            for proto in sorted(current_legacy - desired_legacy_set):
+                operations.append({"op": "delete", "path": ["service", "lldp", "legacy-protocols", proto]})
+            for proto in sorted(desired_legacy_set - current_legacy):
+                operations.append({"op": "set", "path": ["service", "lldp", "legacy-protocols", proto]})
+
+            # interfaces
+            current_iface_modes: Dict[str, Optional[LldpInterfaceMode]] = {item.interface: item.mode for item in current.interfaces}
+            desired_iface_modes: Dict[str, Optional[LldpInterfaceMode]] = {item.interface: item.mode for item in desired_interfaces}
+
+            if body.all_interfaces:
+                # Enable LLDP on all interfaces and remove any explicit per-interface config.
+                operations.append({"op": "set", "path": ["service", "lldp", "interface", "all"]})
+
+                for iface in sorted(current_iface_modes.keys()):
+                    operations.append({"op": "delete", "path": ["service", "lldp", "interface", iface]})
+            else:
+                # Switch away from 'all' mode.
+                if has_explicit_all:
+                    operations.append({"op": "delete", "path": ["service", "lldp", "interface", "all"]})
+
+                for iface in sorted(set(current_iface_modes.keys()) - set(desired_iface_modes.keys())):
+                    operations.append({"op": "delete", "path": ["service", "lldp", "interface", iface]})
+
+                for iface, desired_mode in desired_iface_modes.items():
+                    operations.append({"op": "set", "path": ["service", "lldp", "interface", iface]})
+                    current_mode = current_iface_modes.get(iface)
+
+                    if desired_mode:
+                        if current_mode != desired_mode:
+                            operations.append(
+                                {
+                                    "op": "set",
+                                    "path": ["service", "lldp", "interface", iface, "mode", desired_mode],
+                                }
+                            )
+                    else:
+                        if current_mode:
+                            operations.append(
+                                {"op": "delete", "path": ["service", "lldp", "interface", iface, "mode"]}
+                            )
+
+        if operations:
+            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            if response.status != 200:
+                raise HTTPException(status_code=500, detail=response.error or "Unknown VyOS error")
+
+        updated_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        return _parse_lldp_service_config(updated_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating LLDP configuration: {str(exc)}")
+
+
+@router.get("/lldp-status", response_model=LldpStatusResponse)
+async def get_lldp_status(request: Request, refresh: bool = False) -> LldpStatusResponse:
+    """Get LLDP neighbor status (best effort)."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        config = _parse_lldp_service_config(full_config)
+
+        if not config.enabled:
+            return LldpStatusResponse(enabled=False)
+
+        neighbors_output = ""
+        detail_output = ""
+        error: Optional[str] = None
+
+        neighbors_response, detail_response = await asyncio.gather(
+            run_in_threadpool(service.device.show, path=["lldp", "neighbors"]),
+            run_in_threadpool(service.device.show, path=["lldp", "neighbors", "detail"]),
+            return_exceptions=True,
+        )
+
+        if isinstance(neighbors_response, Exception):
+            error = str(neighbors_response)
+        elif neighbors_response.status == 200:
+            neighbors_output = _extract_show_output(neighbors_response.result)
+        else:
+            error = neighbors_response.error or "Failed to run 'show lldp neighbors'"
+
+        if not isinstance(detail_response, Exception) and getattr(detail_response, "status", None) == 200:
+            detail_output = _extract_show_output(detail_response.result)
+
+        neighbors = _parse_lldp_neighbors_output(neighbors_output) if neighbors_output else []
+
+        return LldpStatusResponse(
+            enabled=True,
+            neighbors=neighbors,
+            raw_neighbors=neighbors_output or None,
+            raw_neighbors_detail=detail_output or None,
+            error=error,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving LLDP status: {str(exc)}")
+
+
+@router.get("/mdns-config", response_model=MdnsRepeaterConfigResponse)
+async def get_mdns_config(request: Request, refresh: bool = False) -> MdnsRepeaterConfigResponse:
+    """Get current mDNS repeater (Avahi) configuration."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        return _parse_mdns_repeater_config(full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving mDNS configuration: {str(exc)}")
+
+
+@router.put("/mdns-config", response_model=MdnsRepeaterConfigResponse)
+async def update_mdns_config(request: Request, body: MdnsRepeaterConfigRequest) -> MdnsRepeaterConfigResponse:
+    """Update mDNS repeater configuration."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        desired_interfaces = _normalize_unique_strings(body.interfaces)
+        desired_allow_services = _normalize_unique_strings(body.allow_services)
+        desired_browse_domains = _normalize_unique_strings(body.browse_domains)
+
+        if body.enabled and len(desired_interfaces) < 2:
+            raise HTTPException(
+                status_code=400,
+                detail="mDNS repeater requires at least two interfaces when enabled.",
+            )
+
+        for iface in desired_interfaces:
+            _normalize_interface_name_or_400(iface, field_name="interface")
+
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        current = _parse_mdns_repeater_config(full_config)
+
+        operations: List[Dict[str, Any]] = []
+
+        # Ensure root exists when editing or enabling.
+        if body.enabled or desired_interfaces or desired_allow_services or desired_browse_domains or body.cache_entries is not None:
+            operations.append({"op": "set", "path": ["service", "mdns", "repeater"]})
+
+        if body.enabled:
+            # Only delete the disable flag when it's actually present.
+            if current.configured and not current.enabled:
+                operations.append({"op": "delete", "path": ["service", "mdns", "repeater", "disable"]})
+        else:
+            if current.configured:
+                operations.append({"op": "set", "path": ["service", "mdns", "repeater", "disable"]})
+
+        # Interfaces list
+        current_ifaces = set(current.interfaces)
+        desired_ifaces = set(desired_interfaces)
+        for iface in sorted(current_ifaces - desired_ifaces):
+            operations.append({"op": "delete", "path": ["service", "mdns", "repeater", "interface", iface]})
+        for iface in sorted(desired_ifaces - current_ifaces):
+            operations.append({"op": "set", "path": ["service", "mdns", "repeater", "interface", iface]})
+
+        # ip-version leaf
+        if body.ip_version != current.ip_version:
+            operations.append({"op": "set", "path": ["service", "mdns", "repeater", "ip-version", body.ip_version]})
+
+        # allow-service list
+        current_allow = set(current.allow_services)
+        desired_allow = set(desired_allow_services)
+        for entry in sorted(current_allow - desired_allow):
+            operations.append({"op": "delete", "path": ["service", "mdns", "repeater", "allow-service", entry]})
+        for entry in sorted(desired_allow - current_allow):
+            operations.append({"op": "set", "path": ["service", "mdns", "repeater", "allow-service", entry]})
+
+        # browse-domain list
+        current_domains = set(current.browse_domains)
+        desired_domains = set(desired_browse_domains)
+        for entry in sorted(current_domains - desired_domains):
+            operations.append({"op": "delete", "path": ["service", "mdns", "repeater", "browse-domain", entry]})
+        for entry in sorted(desired_domains - current_domains):
+            operations.append({"op": "set", "path": ["service", "mdns", "repeater", "browse-domain", entry]})
+
+        # cache-entries leaf
+        if body.cache_entries is None:
+            if current.cache_entries is not None:
+                operations.append({"op": "delete", "path": ["service", "mdns", "repeater", "cache-entries"]})
+        else:
+            if body.cache_entries != current.cache_entries:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["service", "mdns", "repeater", "cache-entries", str(int(body.cache_entries))],
+                    }
+                )
+
+        if operations:
+            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            if response.status != 200:
+                raise HTTPException(status_code=500, detail=response.error or "Unknown VyOS error")
+
+        updated_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        return _parse_mdns_repeater_config(updated_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating mDNS configuration: {str(exc)}")
+
+
+@router.get("/mdns-status", response_model=MdnsRepeaterStatusResponse)
+async def get_mdns_status(request: Request, refresh: bool = False) -> MdnsRepeaterStatusResponse:
+    """Get mDNS repeater status/logs (best effort)."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        config = _parse_mdns_repeater_config(full_config)
+
+        if not config.configured:
+            return MdnsRepeaterStatusResponse(enabled=False)
+
+        log_output = ""
+        error: Optional[str] = None
+
+        for path in (["log", "mdns", "repeater"], ["log", "mdns", "repeater", "tail"]):
+            response = await run_in_threadpool(service.device.show, path=path)
+            if response.status == 200:
+                log_output = _extract_show_output(response.result)
+                break
+            error = response.error or error
+
+        return MdnsRepeaterStatusResponse(
+            enabled=config.enabled,
+            raw_log=log_output or None,
+            error=error,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving mDNS status: {str(exc)}")
+
+
+@router.get("/qat-config", response_model=QatConfigResponse)
+async def get_qat_config(request: Request, refresh: bool = False) -> QatConfigResponse:
+    """Get QAT acceleration configuration."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        return _parse_qat_config(full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving QAT configuration: {str(exc)}")
+
+
+@router.put("/qat-config", response_model=QatConfigResponse)
+async def update_qat_config(request: Request, body: QatConfigRequest) -> QatConfigResponse:
+    """Enable/disable Intel QAT acceleration."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        current = _parse_qat_config(full_config)
+
+        operations: List[Dict[str, Any]] = []
+        if body.enabled and not current.enabled:
+            operations.append({"op": "set", "path": ["system", "acceleration", "qat"]})
+        elif current.enabled and not body.enabled:
+            operations.append({"op": "delete", "path": ["system", "acceleration", "qat"]})
+
+        if operations:
+            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            if response.status != 200:
+                raise HTTPException(status_code=500, detail=response.error or "Unknown VyOS error")
+
+        updated_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        return _parse_qat_config(updated_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating QAT configuration: {str(exc)}")
+
+
+@router.get("/qat-status", response_model=QatStatusResponse)
+async def get_qat_status(request: Request) -> QatStatusResponse:
+    """Get QAT device and status information (best effort)."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        devices_output = ""
+        status_output = ""
+
+        devices_response, status_response = await asyncio.gather(
+            run_in_threadpool(service.device.show, path=["system", "acceleration", "qat"]),
+            run_in_threadpool(service.device.show, path=["system", "acceleration", "qat", "status"]),
+            return_exceptions=True,
+        )
+
+        error: Optional[str] = None
+
+        if isinstance(devices_response, Exception):
+            error = str(devices_response)
+        elif devices_response.status == 200:
+            devices_output = _extract_show_output(devices_response.result)
+        else:
+            error = devices_response.error or "Failed to run 'show system acceleration qat'"
+
+        if isinstance(status_response, Exception):
+            error = error or str(status_response)
+        elif status_response.status == 200:
+            status_output = _extract_show_output(status_response.result)
+
+        available = bool(devices_output.strip() or status_output.strip())
+
+        return QatStatusResponse(
+            available=available,
+            raw_devices=devices_output or None,
+            raw_status=status_output or None,
+            error=error,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving QAT status: {str(exc)}")
+
+
+@router.get("/vpp-config", response_model=VppSettingsConfigResponse)
+async def get_vpp_config(request: Request, refresh: bool = False) -> VppSettingsConfigResponse:
+    """Get VPP settings configuration (includes DPDK/XDP interface driver selection)."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        return _parse_vpp_settings_config(full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving VPP configuration: {str(exc)}")
+
+
+@router.put("/vpp-config", response_model=VppSettingsConfigResponse)
+async def update_vpp_config(request: Request, body: VppSettingsConfigRequest) -> VppSettingsConfigResponse:
+    """Update VPP settings configuration (best effort)."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        desired_interfaces: List[VppInterfaceDriverConfig] = []
+        seen = set()
+        for iface in body.interfaces:
+            name = _normalize_interface_name_or_400(iface.interface, field_name="interface")
+            if name in seen:
+                continue
+            seen.add(name)
+            desired_interfaces.append(VppInterfaceDriverConfig(interface=name, driver=iface.driver))
+
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        current = _parse_vpp_settings_config(full_config)
+
+        operations: List[Dict[str, Any]] = []
+
+        if not body.enabled:
+            if current.enabled:
+                operations.append({"op": "delete", "path": ["vpp", "settings"]})
+        else:
+            if not current.enabled:
+                operations.append({"op": "set", "path": ["vpp", "settings"]})
+
+            current_driver = {entry.interface: entry.driver for entry in current.interfaces}
+            desired_driver = {entry.interface: entry.driver for entry in desired_interfaces}
+
+            for iface_name in sorted(set(current_driver.keys()) - set(desired_driver.keys())):
+                operations.append({"op": "delete", "path": ["vpp", "settings", "interface", iface_name, "driver"]})
+
+            for iface_name, driver in desired_driver.items():
+                if current_driver.get(iface_name) != driver:
+                    operations.append(
+                        {
+                            "op": "set",
+                            "path": ["vpp", "settings", "interface", iface_name, "driver", driver],
+                        }
+                    )
+
+            # LCP settings
+            if body.lcp.ignore_kernel_routes and not current.lcp.ignore_kernel_routes:
+                operations.append({"op": "set", "path": ["vpp", "settings", "lcp", "ignore-kernel-routes"]})
+            elif current.lcp.ignore_kernel_routes and not body.lcp.ignore_kernel_routes:
+                operations.append({"op": "delete", "path": ["vpp", "settings", "lcp", "ignore-kernel-routes"]})
+
+            desired_rx_buffer = _string_or_none(body.lcp.netlink.rx_buffer_size)
+            current_rx_buffer = _string_or_none(current.lcp.netlink.rx_buffer_size)
+            if desired_rx_buffer:
+                if desired_rx_buffer != current_rx_buffer:
+                    operations.append(
+                        {
+                            "op": "set",
+                            "path": ["vpp", "settings", "lcp", "netlink", "rx-buffer-size", desired_rx_buffer],
+                        }
+                    )
+            else:
+                if current_rx_buffer:
+                    operations.append({"op": "delete", "path": ["vpp", "settings", "lcp", "netlink", "rx-buffer-size"]})
+
+            # Host resources
+            for key, desired_value, current_value in (
+                ("max-map-count", body.host_resources.max_map_count, current.host_resources.max_map_count),
+                ("nr-hugepages", body.host_resources.nr_hugepages, current.host_resources.nr_hugepages),
+            ):
+                if desired_value is None:
+                    if current_value is not None:
+                        operations.append({"op": "delete", "path": ["vpp", "settings", "host-resources", key]})
+                else:
+                    if desired_value != current_value:
+                        operations.append(
+                            {
+                                "op": "set",
+                                "path": ["vpp", "settings", "host-resources", key, str(int(desired_value))],
+                            }
+                        )
+
+            desired_shmmax = _string_or_none(body.host_resources.shmmax)
+            current_shmmax = _string_or_none(current.host_resources.shmmax)
+            if desired_shmmax:
+                if desired_shmmax != current_shmmax:
+                    operations.append({"op": "set", "path": ["vpp", "settings", "host-resources", "shmmax", desired_shmmax]})
+            else:
+                if current_shmmax:
+                    operations.append({"op": "delete", "path": ["vpp", "settings", "host-resources", "shmmax"]})
+
+            # Memory
+            for key, desired_value, current_value in (
+                ("main-heap-page-size", _string_or_none(body.memory.main_heap_page_size), _string_or_none(current.memory.main_heap_page_size)),
+                ("main-heap-size", _string_or_none(body.memory.main_heap_size), _string_or_none(current.memory.main_heap_size)),
+            ):
+                if desired_value:
+                    if desired_value != current_value:
+                        operations.append({"op": "set", "path": ["vpp", "settings", "memory", key, desired_value]})
+                else:
+                    if current_value:
+                        operations.append({"op": "delete", "path": ["vpp", "settings", "memory", key]})
+
+            # Statseg
+            for key, desired_value, current_value in (
+                ("page-size", _string_or_none(body.statseg.page_size), _string_or_none(current.statseg.page_size)),
+                ("size", _string_or_none(body.statseg.size), _string_or_none(current.statseg.size)),
+            ):
+                if desired_value:
+                    if desired_value != current_value:
+                        operations.append({"op": "set", "path": ["vpp", "settings", "statseg", key, desired_value]})
+                else:
+                    if current_value:
+                        operations.append({"op": "delete", "path": ["vpp", "settings", "statseg", key]})
+
+        if operations:
+            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            if response.status != 200:
+                raise HTTPException(status_code=500, detail=response.error or "Unknown VyOS error")
+
+        updated_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        return _parse_vpp_settings_config(updated_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating VPP configuration: {str(exc)}")
+
+
+@router.get("/vpp-status", response_model=VppStatusResponse)
+async def get_vpp_status(request: Request) -> VppStatusResponse:
+    """Get best-effort VPP runtime status if supported on this image."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        error: Optional[str] = None
+
+        for path in (["vpp"], ["vpp", "status"], ["vpp", "version"], ["vpp", "settings"]):
+            response = await run_in_threadpool(service.device.show, path=path)
+            if response.status == 200:
+                output = _extract_show_output(response.result)
+                return VppStatusResponse(available=True, raw_output=output or None)
+            error = response.error or error
+
+        return VppStatusResponse(available=False, error=error or "VPP status not available on this image")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving VPP status: {str(exc)}")

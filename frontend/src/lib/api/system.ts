@@ -111,6 +111,130 @@ export interface NtpConfig {
   listen_addresses: string[];
 }
 
+// ============================================================================
+// LLDP
+// ============================================================================
+
+export type LldpInterfaceMode = "disable" | "rx-tx" | "rx" | "tx";
+
+export interface LldpInterfaceConfig {
+  interface: string;
+  mode?: LldpInterfaceMode | null;
+}
+
+export interface LldpConfig {
+  enabled: boolean;
+  all_interfaces: boolean;
+  interfaces: LldpInterfaceConfig[];
+  management_addresses: string[];
+  snmp: boolean;
+  legacy_protocols: string[];
+}
+
+export interface LldpNeighbor {
+  local_interface?: string | null;
+  chassis_id?: string | null;
+  port_id?: string | null;
+  port_description?: string | null;
+  system_name?: string | null;
+  system_description?: string | null;
+  platform?: string | null;
+  capabilities?: string | null;
+  raw: string;
+}
+
+export interface LldpStatus {
+  enabled: boolean;
+  neighbors: LldpNeighbor[];
+  raw_neighbors?: string | null;
+  raw_neighbors_detail?: string | null;
+  error?: string | null;
+}
+
+// ============================================================================
+// mDNS Repeater (Avahi)
+// ============================================================================
+
+export type MdnsIpVersion = "ipv4" | "ipv6" | "both";
+
+export interface MdnsRepeaterConfig {
+  configured: boolean;
+  enabled: boolean;
+  interfaces: string[];
+  ip_version: MdnsIpVersion;
+  allow_services: string[];
+  browse_domains: string[];
+  cache_entries: number | null;
+}
+
+export interface MdnsRepeaterStatus {
+  enabled: boolean;
+  raw_log?: string | null;
+  error?: string | null;
+}
+
+// ============================================================================
+// Acceleration (QAT + VPP/DPDK)
+// ============================================================================
+
+export interface QatConfig {
+  enabled: boolean;
+}
+
+export interface QatStatus {
+  available: boolean;
+  raw_devices?: string | null;
+  raw_status?: string | null;
+  error?: string | null;
+}
+
+export type VppInterfaceDriver = "dpdk" | "xdp";
+
+export interface VppInterfaceDriverConfig {
+  interface: string;
+  driver: VppInterfaceDriver;
+}
+
+export interface VppHostResourcesConfig {
+  max_map_count?: number | null;
+  nr_hugepages?: number | null;
+  shmmax?: string | null;
+}
+
+export interface VppMemoryConfig {
+  main_heap_page_size?: string | null;
+  main_heap_size?: string | null;
+}
+
+export interface VppStatsegConfig {
+  page_size?: string | null;
+  size?: string | null;
+}
+
+export interface VppLcpNetlinkConfig {
+  rx_buffer_size?: string | null;
+}
+
+export interface VppLcpConfig {
+  ignore_kernel_routes: boolean;
+  netlink: VppLcpNetlinkConfig;
+}
+
+export interface VppConfig {
+  enabled: boolean;
+  interfaces: VppInterfaceDriverConfig[];
+  lcp: VppLcpConfig;
+  host_resources: VppHostResourcesConfig;
+  memory: VppMemoryConfig;
+  statseg: VppStatsegConfig;
+}
+
+export interface VppStatus {
+  available: boolean;
+  raw_output?: string | null;
+  error?: string | null;
+}
+
 export interface SystemLogEntry {
   raw: string;
   timestamp?: string | null;
@@ -239,6 +363,102 @@ class SystemService {
    */
   async updateNtpConfig(config: NtpConfig): Promise<NtpConfig> {
     return apiClient.put<NtpConfig>("/vyos/system/ntp-config", config);
+  }
+
+  /**
+   * Get LLDP service configuration.
+   */
+  async getLldpConfig(refresh: boolean = false): Promise<LldpConfig> {
+    return apiClient.get<LldpConfig>("/vyos/system/lldp-config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  /**
+   * Update LLDP service configuration.
+   */
+  async updateLldpConfig(config: LldpConfig): Promise<LldpConfig> {
+    return apiClient.put<LldpConfig>("/vyos/system/lldp-config", config);
+  }
+
+  /**
+   * Get LLDP runtime status (neighbors).
+   */
+  async getLldpStatus(refresh: boolean = false): Promise<LldpStatus> {
+    return apiClient.get<LldpStatus>("/vyos/system/lldp-status", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  /**
+   * Get mDNS repeater configuration.
+   */
+  async getMdnsConfig(refresh: boolean = false): Promise<MdnsRepeaterConfig> {
+    return apiClient.get<MdnsRepeaterConfig>("/vyos/system/mdns-config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  /**
+   * Update mDNS repeater configuration.
+   */
+  async updateMdnsConfig(config: Omit<MdnsRepeaterConfig, "configured">): Promise<MdnsRepeaterConfig> {
+    return apiClient.put<MdnsRepeaterConfig>("/vyos/system/mdns-config", config);
+  }
+
+  /**
+   * Get mDNS repeater status/logs.
+   */
+  async getMdnsStatus(refresh: boolean = false): Promise<MdnsRepeaterStatus> {
+    return apiClient.get<MdnsRepeaterStatus>("/vyos/system/mdns-status", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  /**
+   * Get QAT acceleration configuration.
+   */
+  async getQatConfig(refresh: boolean = false): Promise<QatConfig> {
+    return apiClient.get<QatConfig>("/vyos/system/qat-config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  /**
+   * Enable/disable QAT acceleration.
+   */
+  async updateQatConfig(config: QatConfig): Promise<QatConfig> {
+    return apiClient.put<QatConfig>("/vyos/system/qat-config", config);
+  }
+
+  /**
+   * Get QAT device status.
+   */
+  async getQatStatus(): Promise<QatStatus> {
+    return apiClient.get<QatStatus>("/vyos/system/qat-status");
+  }
+
+  /**
+   * Get VPP settings configuration (includes DPDK/XDP driver selection).
+   */
+  async getVppConfig(refresh: boolean = false): Promise<VppConfig> {
+    return apiClient.get<VppConfig>("/vyos/system/vpp-config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  /**
+   * Update VPP settings configuration.
+   */
+  async updateVppConfig(config: VppConfig): Promise<VppConfig> {
+    return apiClient.put<VppConfig>("/vyos/system/vpp-config", config);
+  }
+
+  /**
+   * Get VPP runtime status (best effort).
+   */
+  async getVppStatus(): Promise<VppStatus> {
+    return apiClient.get<VppStatus>("/vyos/system/vpp-status");
   }
 
   /**

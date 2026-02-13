@@ -854,4 +854,68 @@ Branch: `dev`
     - `dev-author-fix-mhannis-v2`
   - Older intermediate branch `dev-author-fix-mhannis` exists, but does not include the `9754657` rewrite (superseded by `-v2`).
 - Note: updating the fork's `dev` branch to the rewritten history requires moving the `dev` branch ref:
-  - Recommended: rename branches on GitHub (`dev` -> backup name, then rename `dev-author-fix-mhannis-v2` -> `dev`).
+- Recommended: rename branches on GitHub (`dev` -> backup name, then rename `dev-author-fix-mhannis-v2` -> `dev`).
+
+## Update (2026-02-13) - LLDP + mDNS (Avahi) + Acceleration Pages
+
+### 69) Goal
+- Add GUI configuration + status for:
+  - LLDP
+  - mDNS Repeater (Avahi-based)
+  - Intel QAT acceleration
+  - VPP settings (DPDK/XDP driver selection + related host/memory knobs)
+- Improve perceived page load speed by reducing duplicate expensive config fetches.
+
+### 70) Backend Changes
+- Added a concurrency guard to avoid duplicated `show configuration json pretty` fetches:
+  - `backend/vyos_service.py`
+  - `VyOSService.get_full_config()` now uses a `threading.Lock` and double-checks cache to prevent parallel refresh storms.
+
+- Added new system endpoints and parsers:
+  - `backend/routers/system.py`
+  - New endpoints:
+    - `GET /vyos/system/lldp-config`
+    - `PUT /vyos/system/lldp-config`
+    - `GET /vyos/system/lldp-status`
+    - `GET /vyos/system/mdns-config`
+    - `PUT /vyos/system/mdns-config`
+    - `GET /vyos/system/mdns-status`
+    - `GET /vyos/system/qat-config`
+    - `PUT /vyos/system/qat-config`
+    - `GET /vyos/system/qat-status`
+    - `GET /vyos/system/vpp-config`
+    - `PUT /vyos/system/vpp-config`
+    - `GET /vyos/system/vpp-status`
+  - Notes:
+    - LLDP status uses `show lldp neighbors` (+ detail when available) and returns both parsed rows and raw output.
+    - mDNS status uses `show log mdns repeater` (best effort).
+    - QAT status uses:
+      - `show system acceleration qat`
+      - `show system acceleration qat status`
+    - VPP status is best effort and probes `show vpp` variants (may be unavailable if VPP addon not installed).
+
+### 71) Frontend Changes
+- Extended API client:
+  - `frontend/src/lib/api/system.ts`
+  - Added types + methods for LLDP, mDNS repeater, QAT, and VPP.
+
+- System Services page now supports tabs:
+  - `frontend/src/app/system/services/page.tsx`
+  - Tabs:
+    - NTP (existing)
+    - LLDP (new config + neighbor status)
+    - mDNS Repeater (new config + log/status)
+
+- Added new Acceleration page:
+  - `frontend/src/app/system/acceleration/page.tsx`
+  - Tabs:
+    - Intel QAT (enable + status output)
+    - VPP (enable VPP settings subtree + interface driver mapping + host/memory/statseg settings + status output)
+
+- Sidebar nav updated:
+  - `frontend/src/components/layout/Sidebar.tsx`
+  - Added `System -> Acceleration`.
+
+### 72) Verification
+- Frontend production build succeeds:
+  - `cd frontend && npm run -s build`
