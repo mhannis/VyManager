@@ -21,6 +21,13 @@ import {
 } from "@/components/ui/select";
 import { AlertCircle, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { ipsecService, type IKEGroup } from "@/lib/api/ipsec";
+import {
+  DH_GROUP_OPTIONS,
+  IKE_CLOSE_ACTION_OPTIONS,
+  IKE_PRF_OPTIONS,
+  IPSEC_ENCRYPTION_OPTIONS,
+  IPSEC_HASH_OPTIONS,
+} from "@/lib/ipsec/options";
 
 type DialogMode = "create" | "edit";
 
@@ -271,8 +278,9 @@ export function IkeGroupDialog({
               list="ike-close-action-options"
             />
             <datalist id="ike-close-action-options">
-              <option value="none" />
-              <option value="start" />
+              {IKE_CLOSE_ACTION_OPTIONS.map((value) => (
+                <option key={value} value={value} />
+              ))}
             </datalist>
           </div>
           <div className="space-y-2">
@@ -339,6 +347,7 @@ export function IkeGroupDialog({
                           value={proposal.encryption}
                           onChange={(event) => updateProposal(index, { encryption: event.target.value })}
                           placeholder="aes256"
+                          list="ike-proposal-encryption-options"
                         />
                       </div>
                       <div className="space-y-2 md:col-span-2">
@@ -347,6 +356,7 @@ export function IkeGroupDialog({
                           value={proposal.hash}
                           onChange={(event) => updateProposal(index, { hash: event.target.value })}
                           placeholder="sha256"
+                          list="ike-proposal-hash-options"
                         />
                       </div>
                       <div className="space-y-2">
@@ -355,6 +365,7 @@ export function IkeGroupDialog({
                           value={proposal.dh_group}
                           onChange={(event) => updateProposal(index, { dh_group: event.target.value })}
                           placeholder="14"
+                          list="ike-proposal-dh-group-options"
                         />
                       </div>
                       <div className="space-y-2">
@@ -363,6 +374,7 @@ export function IkeGroupDialog({
                           value={proposal.prf}
                           onChange={(event) => updateProposal(index, { prf: event.target.value })}
                           placeholder="(optional)"
+                          list="ike-proposal-prf-options"
                         />
                       </div>
                     </div>
@@ -381,6 +393,27 @@ export function IkeGroupDialog({
             </div>
           )}
         </div>
+
+        <datalist id="ike-proposal-encryption-options">
+          {IPSEC_ENCRYPTION_OPTIONS.map((value) => (
+            <option key={value} value={value} />
+          ))}
+        </datalist>
+        <datalist id="ike-proposal-hash-options">
+          {IPSEC_HASH_OPTIONS.map((value) => (
+            <option key={value} value={value} />
+          ))}
+        </datalist>
+        <datalist id="ike-proposal-dh-group-options">
+          {DH_GROUP_OPTIONS.map((value) => (
+            <option key={value} value={value} />
+          ))}
+        </datalist>
+        <datalist id="ike-proposal-prf-options">
+          {IKE_PRF_OPTIONS.map((value) => (
+            <option key={value} value={value} />
+          ))}
+        </datalist>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>

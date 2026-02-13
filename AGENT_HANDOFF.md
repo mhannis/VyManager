@@ -755,3 +755,42 @@ Branch: `dev`
 ### 53) Validation Snapshot
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run build` -> pass
+
+## Update (2026-02-13) - IPsec Crypto Embedded in Phase 1/2 + Logs Tab
+
+### 54) User Feedback
+- Encryption/proposal selection needed to feel like pfSense (visible under Phase 1 / Phase 2, not only under IKE/ESP group tabs).
+- Need quick access to IPsec logs for handshake troubleshooting.
+
+### 55) Phase 1 / Phase 2 Dialog Enhancements
+- Files:
+  - `frontend/src/components/vpn/ipsec/Phase1Dialog.tsx`
+  - `frontend/src/components/vpn/ipsec/Phase2Dialog.tsx`
+- Added:
+  - New tabs inside the dialogs:
+    - Phase 1: `Phase 1 Crypto` (edits IKE group proposals + DPD/key-exchange/close-action/lifetime)
+    - Phase 2: `Phase 2 Crypto` (edits ESP group proposals + PFS/mode/lifetime)
+  - Safety toggle to avoid accidentally modifying shared groups:
+    - `Update IKE Group` / `Update ESP Group`
+    - When disabled, dialogs require that referenced groups already exist.
+
+### 56) Algorithm Option Lists (pfSense-style dropdown suggestions)
+- New shared options list:
+  - `frontend/src/lib/ipsec/options.ts`
+- Wired into:
+  - `frontend/src/components/vpn/ipsec/IkeGroupDialog.tsx`
+  - `frontend/src/components/vpn/ipsec/EspGroupDialog.tsx`
+  - Phase 1/2 crypto tabs above
+- Provides best-effort lists for:
+  - encryption, hash, DH group, PRF, PFS, close-action
+
+### 57) IPsec Logs In IPsec Page
+- File: `frontend/src/app/vpn/ipsec/page.tsx`
+- Added `Logs` tab that embeds the existing System Logs backend endpoint with:
+  - default filter `charon`
+  - selectable line count + source (`auto/syslog/tail/system`)
+  - download support
+
+### 58) Validation Snapshot
+- `cd frontend && npx tsc --noEmit --pretty false` -> pass
+- `cd frontend && npm run build` -> pass

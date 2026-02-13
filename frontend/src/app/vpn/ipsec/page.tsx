@@ -10,6 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -32,8 +39,10 @@ import {
   type IPsecSettings,
   type IPsecStatus,
 } from "@/lib/api/ipsec";
+import { systemService, type SystemLogsResponse, type SystemLogSource } from "@/lib/api/system";
 import {
   AlertCircle,
+  Download,
   KeyRound,
   Pencil,
   Plus,
@@ -49,6 +58,23 @@ function valueOrDash(value?: string | null): string {
   if (!value) return "-";
   const trimmed = value.trim();
   return trimmed || "-";
+}
+
+function severityColor(severity?: string | null): string {
+  const normalized = (severity || "").toLowerCase();
+  if (["emerg", "alert", "crit", "err"].includes(normalized)) {
+    return "bg-red-500/10 text-red-600 border-red-500/20";
+  }
+  if (normalized === "warning") {
+    return "bg-amber-500/10 text-amber-600 border-amber-500/20";
+  }
+  if (normalized === "notice" || normalized === "info") {
+    return "bg-blue-500/10 text-blue-600 border-blue-500/20";
+  }
+  if (normalized === "debug") {
+    return "bg-muted text-muted-foreground border-border";
+  }
+  return "bg-muted text-muted-foreground border-border";
 }
 
 function parseCsvList(value: string): string[] {
@@ -79,6 +105,7 @@ export default function IPsecPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("tunnels");
 
   const [config, setConfig] = useState<IPsecConfig | null>(null);
   const [status, setStatus] = useState<IPsecStatus | null>(null);
@@ -88,6 +115,17 @@ export default function IPsecPage() {
   const [settingsInterfaces, setSettingsInterfaces] = useState("");
   const [disableRouteAutoinstall, setDisableRouteAutoinstall] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
+
+  const [logs, setLogs] = useState<SystemLogsResponse | null>(null);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsRefreshing, setLogsRefreshing] = useState(false);
+  const [logsDownloading, setLogsDownloading] = useState(false);
+  const [logsError, setLogsError] = useState<string | null>(null);
+  const [logsAutoRefresh, setLogsAutoRefresh] = useState(true);
+  const [logsLineCount, setLogsLineCount] = useState("200");
+  const [logsSource, setLogsSource] = useState<SystemLogSource>("auto");
+  const [logsSearchInput, setLogsSearchInput] = useState("charon");
+  const [logsSearchFilter, setLogsSearchFilter] = useState("charon");
 
   const [selectedPeerId, setSelectedPeerId] = useState<string>("");
 
@@ -162,9 +200,100 @@ export default function IPsecPage() {
     }
   };
 
+  const loadLogs = async () => {
+    if (activeTab !== "logs") return;
+    setLogsError(null);
+    if (!logs) setLogsLoading(true);
+    setLogsRefreshing(true);
+    try {
+      const parsedLineCount = Number.parseInt(logsLineCount, 10);
+      const effectiveLineCount = Number.isNaN(parsedLineCount) ? 200 : parsedLineCount;
+      const response = await systemService.getLogs(
+        effectiveLineCount,
+        logsSearchFilter || undefined,
+        logsSource,
+      );
+      setLogs(response);
+    } catch (err) {
+      setLogsError(err instanceof Error ? err.message : "Failed to load IPsec logs");
+    } finally {
+      setLogsLoading(false);
+      setLogsRefreshing(false);
+    }
+  };
+
+  const handleLogsDownload = async () => {
+    try {
+      setLogsError(null);
+      setLogsDownloading(true);
+
+      const parsedLineCount = Number.parseInt(logsLineCount, 10);
+      const effectiveLineCount = Number.isNaN(parsedLineCount) ? 200 : parsedLineCount;
+
+      const params = new URLSearchParams({
+        lines: String(effectiveLineCount),
+        source: logsSource,
+      });
+      if (logsSearchFilter && logsSearchFilter.trim()) {
+        params.set("contains", logsSearchFilter.trim());
+      }
+
+      const response = await fetch(`/api/vyos/system/logs/download?${params.toString()}`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type") || "";
+        let message = `Failed to download logs (${response.status})`;
+        if (contentType.includes("application/json")) {
+          const payload = await response.json();
+          const detail = payload?.detail || payload?.error || payload?.message;
+          if (typeof detail === "string" && detail.trim()) {
+            message = detail.trim();
+          }
+        } else {
+          const raw = await response.text();
+          const trimmed = raw.trim();
+          if (trimmed) message = trimmed.slice(0, 300);
+        }
+        throw new Error(message);
+      }
+
+      const disposition = response.headers.get("content-disposition") || "";
+      const filenameMatch = /filename=\"?([^\";]+)\"?/i.exec(disposition);
+      const filename = filenameMatch?.[1] || "vyos-ipsec-logs.log";
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setLogsError(err instanceof Error ? err.message : "Failed to download logs");
+    } finally {
+      setLogsDownloading(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== "logs") return;
+    loadLogs();
+  }, [activeTab, logsLineCount, logsSearchFilter, logsSource]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (activeTab !== "logs" || !logsAutoRefresh) return;
+    const interval = setInterval(loadLogs, 10000);
+    return () => clearInterval(interval);
+  }, [activeTab, logsAutoRefresh, logsLineCount, logsSearchFilter, logsSource]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const peerIds = Object.keys(config?.["site-to-site"] || {}).sort();
@@ -212,6 +341,7 @@ export default function IPsecPage() {
   const espGroupNames = useMemo(() => Object.keys(config?.["esp-group"] || {}).sort(), [config]);
   const existingPeerIds = useMemo(() => Object.keys(config?.["site-to-site"] || {}).sort(), [config]);
   const existingPskIds = useMemo(() => Object.keys(config?.psk_secrets || {}).sort(), [config]);
+  const logEntries = useMemo(() => logs?.entries || [], [logs]);
 
   const ikeGroupCount = ikeGroupNames.length;
   const espGroupCount = espGroupNames.length;
@@ -425,13 +555,14 @@ export default function IPsecPage() {
           </div>
         )}
 
-        <Tabs defaultValue="tunnels" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="tunnels">Tunnels</TabsTrigger>
             <TabsTrigger value="ike">IKE Groups</TabsTrigger>
             <TabsTrigger value="esp">ESP Groups</TabsTrigger>
             <TabsTrigger value="psk">PSK</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="logs">Logs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="tunnels" className="mt-4 space-y-4">
@@ -1097,6 +1228,179 @@ export default function IPsecPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="logs" className="mt-4 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold">IPsec Logs</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Helpful for troubleshooting IKE/ESP negotiation (search for <span className="font-mono">charon</span>,{" "}
+                  <span className="font-mono">ipsec</span>, <span className="font-mono">ike</span>,{" "}
+                  <span className="font-mono">esp</span>).
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={handleLogsDownload} disabled={logsDownloading}>
+                  <Download className="mr-2 h-4 w-4" />
+                  {logsDownloading ? "Downloading..." : "Download"}
+                </Button>
+                <Button
+                  variant={logsAutoRefresh ? "default" : "outline"}
+                  onClick={() => setLogsAutoRefresh((previous) => !previous)}
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${logsAutoRefresh ? "animate-spin" : ""}`} />
+                  Auto-refresh
+                </Button>
+                <Button variant="outline" onClick={loadLogs} disabled={logsRefreshing}>
+                  <RefreshCw className={`mr-2 h-4 w-4 ${logsRefreshing ? "animate-spin" : ""}`} />
+                  Refresh
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground">Source</p>
+                  <p className="mt-1 text-sm font-medium">{logs?.source_command || "-"}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground">Returned</p>
+                  <p className="mt-1 text-2xl font-bold">{logs?.returned_lines || 0}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground">Total in Output</p>
+                  <p className="mt-1 text-2xl font-bold">{logs?.total_lines || 0}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <div className="mt-1">
+                    <Badge variant={logs?.available ? "default" : "secondary"}>
+                      {logs?.available ? "Available" : "Unavailable"}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {logsError && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="mt-0.5 h-4 w-4" />
+                  <span>{logsError}</span>
+                </div>
+              </div>
+            )}
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Filters</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3 md:grid-cols-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Line Count</p>
+                  <Select value={logsLineCount} onValueChange={setLogsLineCount}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="100">100</SelectItem>
+                      <SelectItem value="200">200</SelectItem>
+                      <SelectItem value="500">500</SelectItem>
+                      <SelectItem value="1000">1000</SelectItem>
+                      <SelectItem value="2000">2000</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Log Source</p>
+                  <Select value={logsSource} onValueChange={(value) => setLogsSource(value as SystemLogSource)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto">Auto</SelectItem>
+                      <SelectItem value="syslog">Syslog (show log)</SelectItem>
+                      <SelectItem value="tail">Tail (show log tail)</SelectItem>
+                      <SelectItem value="system">System (show system logs)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 md:col-span-2">
+                  <p className="text-xs text-muted-foreground">Search</p>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={logsSearchInput}
+                        onChange={(event) => setLogsSearchInput(event.target.value)}
+                        placeholder="Match in raw log lines..."
+                        className="pl-9"
+                      />
+                    </div>
+                    <Button onClick={() => setLogsSearchFilter(logsSearchInput.trim())}>Apply</Button>
+                    {logsSearchFilter && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setLogsSearchInput("");
+                          setLogsSearchFilter("");
+                        }}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Log Entries</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {logsLoading ? (
+                  <div className="py-8 text-center text-sm text-muted-foreground">Loading logs...</div>
+                ) : logEntries.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-muted-foreground">No log entries found.</div>
+                ) : (
+                  <div className="overflow-x-auto rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[180px]">Timestamp</TableHead>
+                          <TableHead className="w-[180px]">Process</TableHead>
+                          <TableHead className="w-[110px]">Severity</TableHead>
+                          <TableHead>Message</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {logEntries.map((entry, index) => (
+                          <TableRow key={`${entry.timestamp || "ts"}-${entry.process || "proc"}-${index}`}>
+                            <TableCell className="font-mono text-xs">{entry.timestamp || "-"}</TableCell>
+                            <TableCell className="font-mono text-xs">{entry.process || "-"}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={severityColor(entry.severity)}>
+                                {(entry.severity || "unknown").toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm">{entry.message || entry.raw}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         <IkeGroupDialog
@@ -1137,6 +1441,7 @@ export default function IPsecPage() {
           existingPeerIds={existingPeerIds}
           peerId={phase1DialogMode === "edit" ? phase1DialogPeerId : undefined}
           peer={phase1DialogMode === "edit" ? (config?.["site-to-site"]?.[phase1DialogPeerId] ?? null) : null}
+          ikeGroups={config?.["ike-group"] || {}}
           ikeGroupNames={ikeGroupNames}
           espGroupNames={espGroupNames}
           interfaceNames={interfaceNames}
@@ -1161,6 +1466,7 @@ export default function IPsecPage() {
           peerId={phase2DialogPeerId}
           existingTunnelIds={phase2DialogPeerId ? sortedNumericKeys(config?.["site-to-site"]?.[phase2DialogPeerId]?.tunnels || {}) : []}
           espGroupNames={espGroupNames}
+          espGroups={config?.["esp-group"] || {}}
           tunnelId={phase2DialogMode === "edit" ? phase2DialogTunnelId : undefined}
           tunnel={
             phase2DialogMode === "edit"

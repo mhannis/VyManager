@@ -21,13 +21,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, Loader2, Save } from "lucide-react";
-import { ipsecService, type SiteToSitePeer } from "@/lib/api/ipsec";
+import { AlertCircle, Loader2, Save, Trash2 } from "lucide-react";
+import { ipsecService, type IKEGroup, type SiteToSitePeer } from "@/lib/api/ipsec";
+import {
+  DH_GROUP_OPTIONS,
+  IKE_CLOSE_ACTION_OPTIONS,
+  IKE_PRF_OPTIONS,
+  IPSEC_ENCRYPTION_OPTIONS,
+  IPSEC_HASH_OPTIONS,
+} from "@/lib/ipsec/options";
 
 type DialogMode = "create" | "edit";
 
 function valueOrEmpty(value?: string | null): string {
   return value ? value : "";
+}
+
+interface ProposalFormState {
+  proposal_id: string;
+  encryption: string;
+  hash: string;
+  dh_group: string;
+  prf: string;
+}
+
+function nextNumericId(existing: string[]): string {
+  const taken = new Set<number>();
+  for (const raw of existing) {
+    const parsed = Number.parseInt(raw, 10);
+    if (Number.isFinite(parsed)) taken.add(parsed);
+  }
+  for (let id = 1; id < 10000; id++) {
+    if (!taken.has(id)) return String(id);
+  }
+  return "1";
 }
 
 interface Phase1DialogProps {
@@ -36,6 +63,7 @@ interface Phase1DialogProps {
   existingPeerIds: string[];
   peerId?: string;
   peer?: SiteToSitePeer | null;
+  ikeGroups: Record<string, IKEGroup>;
   ikeGroupNames: string[];
   espGroupNames: string[];
   interfaceNames: string[];
@@ -49,6 +77,7 @@ export function Phase1Dialog({
   existingPeerIds,
   peerId,
   peer,
+  ikeGroups,
   ikeGroupNames,
   espGroupNames,
   interfaceNames,
@@ -73,6 +102,15 @@ export function Phase1Dialog({
   const [replayWindow, setReplayWindow] = useState("");
   const [virtualAddress, setVirtualAddress] = useState("");
 
+  const [updateIkeGroup, setUpdateIkeGroup] = useState(false);
+  const [ikeKeyExchange, setIkeKeyExchange] = useState("ikev2");
+  const [ikeCloseAction, setIkeCloseAction] = useState("");
+  const [ikeLifetime, setIkeLifetime] = useState("");
+  const [ikeDpdAction, setIkeDpdAction] = useState("");
+  const [ikeDpdInterval, setIkeDpdInterval] = useState("");
+  const [ikeDpdTimeout, setIkeDpdTimeout] = useState("");
+  const [ikeProposals, setIkeProposals] = useState<ProposalFormState[]>([]);
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,6 +122,41 @@ export function Phase1Dialog({
 
   const defaultIkeGroup = useMemo(() => ikeGroupNames[0] || "", [ikeGroupNames]);
   const defaultEspGroupValue = useMemo(() => espGroupNames[0] || "", [espGroupNames]);
+
+  const loadIkeGroup = (name: string) => {
+    const group = ikeGroups?.[name] || null;
+    setIkeKeyExchange(group?.["key-exchange"] || "ikev2");
+    setIkeCloseAction(group?.["close-action"] || "");
+    setIkeLifetime(group?.lifetime || "");
+
+    const dpd = (group as any)?.["dead-peer-detection"] || null;
+    setIkeDpdAction(dpd?.action || "");
+    setIkeDpdInterval(dpd?.interval || "");
+    setIkeDpdTimeout(dpd?.timeout || "");
+
+    const entries = Object.values(group?.proposals || {});
+    const mapped = entries.map((proposal) => ({
+      proposal_id: proposal.proposal_id || "",
+      encryption: proposal.encryption || "",
+      hash: proposal.hash || "",
+      dh_group: proposal["dh-group"] || "",
+      prf: proposal.prf || "",
+    }));
+    mapped.sort((left, right) => Number(left.proposal_id) - Number(right.proposal_id));
+    setIkeProposals(
+      mapped.length
+        ? mapped
+        : [
+            {
+              proposal_id: "1",
+              encryption: "aes256",
+              hash: "sha256",
+              dh_group: "14",
+              prf: "prfsha256",
+            },
+          ]
+    );
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -109,6 +182,10 @@ export function Phase1Dialog({
       setForceUdpEncapsulation(Boolean(peer?.["force-udp-encapsulation"]));
       setReplayWindow(valueOrEmpty(peer?.["replay-window"]));
       setVirtualAddress(valueOrEmpty(peer?.["virtual-address"]));
+
+      // By default, avoid modifying shared IKE groups when editing an existing peer.
+      setUpdateIkeGroup(false);
+      loadIkeGroup(valueOrEmpty(peer?.["ike-group"]) || defaultIkeGroup);
       return;
     }
 
@@ -129,6 +206,9 @@ export function Phase1Dialog({
     setForceUdpEncapsulation(false);
     setReplayWindow("");
     setVirtualAddress("");
+
+    setUpdateIkeGroup(true);
+    loadIkeGroup(defaultIkeGroup);
   }, [open, mode, peerId, peer, defaultIkeGroup, defaultEspGroupValue]);
 
   const validateForm = (): string | null => {
@@ -137,6 +217,9 @@ export function Phase1Dialog({
     if (mode === "create" && existingPeerIds.includes(key)) return `Peer '${key}' already exists.`;
 
     if (!ikeGroup.trim()) return "IKE group is required.";
+    if (!updateIkeGroup && !ikeGroups?.[ikeGroup.trim()]) {
+      return `IKE group '${ikeGroup.trim()}' does not exist. Select an existing group, or enable 'Update IKE Group' to create it.`;
+    }
 
     if (dhcpInterface.trim() && localAddress.trim()) {
       return "DHCP interface and Local address cannot both be set.";
@@ -149,7 +232,43 @@ export function Phase1Dialog({
       }
     }
 
+    if (updateIkeGroup) {
+      if (!ikeProposals.length) return "At least one Phase 1 proposal is required.";
+      const ids = new Set<string>();
+      for (const proposal of ikeProposals) {
+        const pid = proposal.proposal_id.trim();
+        if (!pid) return "Each Phase 1 proposal must have an ID.";
+        if (!/^[1-9][0-9]{0,3}$/.test(pid)) return `Proposal ID '${pid}' must be 1-9999.`;
+        if (ids.has(pid)) return `Duplicate proposal ID '${pid}'.`;
+        ids.add(pid);
+        if (!proposal.encryption.trim() || !proposal.hash.trim()) {
+          return `Proposal ${pid} requires encryption and hash.`;
+        }
+      }
+    }
+
     return null;
+  };
+
+  const addIkeProposal = () => {
+    setIkeProposals((prev) => [
+      ...prev,
+      {
+        proposal_id: nextNumericId(prev.map((entry) => entry.proposal_id)),
+        encryption: "aes256",
+        hash: "sha256",
+        dh_group: "14",
+        prf: "prfsha256",
+      },
+    ]);
+  };
+
+  const updateIkeProposal = (index: number, patch: Partial<ProposalFormState>) => {
+    setIkeProposals((prev) => prev.map((item, idx) => (idx === index ? { ...item, ...patch } : item)));
+  };
+
+  const removeIkeProposal = (index: number) => {
+    setIkeProposals((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const handleSubmit = async () => {
@@ -163,6 +282,32 @@ export function Phase1Dialog({
     setError(null);
     try {
       const key = peerKey.trim();
+
+      if (updateIkeGroup) {
+        const deadPeerDetection =
+          ikeDpdAction.trim() || ikeDpdInterval.trim() || ikeDpdTimeout.trim()
+            ? {
+                action: ikeDpdAction.trim() || null,
+                interval: ikeDpdInterval.trim() || null,
+                timeout: ikeDpdTimeout.trim() || null,
+              }
+            : null;
+
+        await ipsecService.upsertIkeGroup(ikeGroup.trim(), {
+          key_exchange: ikeKeyExchange.trim() || null,
+          close_action: ikeCloseAction.trim() || null,
+          lifetime: ikeLifetime.trim() || null,
+          dead_peer_detection: deadPeerDetection,
+          proposals: ikeProposals.map((proposal) => ({
+            proposal_id: proposal.proposal_id.trim(),
+            encryption: proposal.encryption.trim() || null,
+            hash: proposal.hash.trim() || null,
+            dh_group: proposal.dh_group.trim() || null,
+            prf: proposal.prf.trim() || null,
+          })),
+        });
+      }
+
       const request: any = {
         enabled,
         description: description.trim() || null,
@@ -213,9 +358,10 @@ export function Phase1Dialog({
         )}
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="auth">Authentication</TabsTrigger>
+            <TabsTrigger value="crypto">Phase 1 Crypto</TabsTrigger>
             <TabsTrigger value="advanced">Advanced</TabsTrigger>
           </TabsList>
 
@@ -355,6 +501,205 @@ export function Phase1Dialog({
             </div>
           </TabsContent>
 
+          <TabsContent value="crypto" className="mt-4 space-y-4">
+            <div className="rounded-lg border p-4 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="font-medium">Phase 1 Proposals (IKE Group)</div>
+                  <div className="text-sm text-muted-foreground">
+                    VyOS stores Phase 1 algorithms under <span className="font-mono">IKE Groups</span>. Enable editing to
+                    update the selected IKE group when you save this Phase 1.
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <Checkbox checked={updateIkeGroup} onCheckedChange={(value) => setUpdateIkeGroup(Boolean(value))} />
+                  <span className="text-sm text-muted-foreground">Update IKE Group</span>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Key Exchange</Label>
+                  <Select value={ikeKeyExchange} onValueChange={setIkeKeyExchange} disabled={!updateIkeGroup}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="ikev2" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ikev2">ikev2</SelectItem>
+                      <SelectItem value="ikev1">ikev1</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Close Action (optional)</Label>
+                  <Input
+                    value={ikeCloseAction}
+                    onChange={(event) => setIkeCloseAction(event.target.value)}
+                    placeholder="none"
+                    list="phase1-close-action-options"
+                    disabled={!updateIkeGroup}
+                  />
+                  <datalist id="phase1-close-action-options">
+                    {IKE_CLOSE_ACTION_OPTIONS.map((value) => (
+                      <option key={value} value={value} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="space-y-2">
+                  <Label>Lifetime (seconds, optional)</Label>
+                  <Input
+                    value={ikeLifetime}
+                    onChange={(event) => setIkeLifetime(event.target.value)}
+                    placeholder="3600"
+                    disabled={!updateIkeGroup}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-md border p-3 space-y-3">
+                <div className="font-medium text-sm">Dead Peer Detection (optional)</div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>Action</Label>
+                    <Select value={ikeDpdAction} onValueChange={setIkeDpdAction} disabled={!updateIkeGroup}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="restart" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">(unset)</SelectItem>
+                        <SelectItem value="restart">restart</SelectItem>
+                        <SelectItem value="clear">clear</SelectItem>
+                        <SelectItem value="hold">hold</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Interval</Label>
+                    <Input
+                      value={ikeDpdInterval}
+                      onChange={(event) => setIkeDpdInterval(event.target.value)}
+                      placeholder="30"
+                      disabled={!updateIkeGroup}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Timeout</Label>
+                    <Input
+                      value={ikeDpdTimeout}
+                      onChange={(event) => setIkeDpdTimeout(event.target.value)}
+                      placeholder="120"
+                      disabled={!updateIkeGroup}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-md border p-3 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-medium text-sm">Proposals</div>
+                  <Button type="button" variant="outline" size="sm" onClick={addIkeProposal} disabled={!updateIkeGroup}>
+                    Add Algorithm
+                  </Button>
+                </div>
+
+                {ikeProposals.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No proposals configured.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {ikeProposals.map((proposal, index) => (
+                      <div key={`${proposal.proposal_id}-${index}`} className="rounded-md border p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 flex-1">
+                            <div className="space-y-2">
+                              <Label>Id</Label>
+                              <Input
+                                value={proposal.proposal_id}
+                                onChange={(event) => updateIkeProposal(index, { proposal_id: event.target.value })}
+                                placeholder="1"
+                                disabled={!updateIkeGroup}
+                              />
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
+                              <Label>Encryption</Label>
+                              <Input
+                                value={proposal.encryption}
+                                onChange={(event) => updateIkeProposal(index, { encryption: event.target.value })}
+                                placeholder="aes256"
+                                list="phase1-proposal-encryption-options"
+                                disabled={!updateIkeGroup}
+                              />
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
+                              <Label>Hash</Label>
+                              <Input
+                                value={proposal.hash}
+                                onChange={(event) => updateIkeProposal(index, { hash: event.target.value })}
+                                placeholder="sha256"
+                                list="phase1-proposal-hash-options"
+                                disabled={!updateIkeGroup}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>DH Group</Label>
+                              <Input
+                                value={proposal.dh_group}
+                                onChange={(event) => updateIkeProposal(index, { dh_group: event.target.value })}
+                                placeholder="14"
+                                list="phase1-proposal-dh-options"
+                                disabled={!updateIkeGroup}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>PRF</Label>
+                              <Input
+                                value={proposal.prf}
+                                onChange={(event) => updateIkeProposal(index, { prf: event.target.value })}
+                                placeholder="(optional)"
+                                list="phase1-proposal-prf-options"
+                                disabled={!updateIkeGroup}
+                              />
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeIkeProposal(index)}
+                            title="Remove proposal"
+                            disabled={!updateIkeGroup}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <datalist id="phase1-proposal-encryption-options">
+                {IPSEC_ENCRYPTION_OPTIONS.map((value) => (
+                  <option key={value} value={value} />
+                ))}
+              </datalist>
+              <datalist id="phase1-proposal-hash-options">
+                {IPSEC_HASH_OPTIONS.map((value) => (
+                  <option key={value} value={value} />
+                ))}
+              </datalist>
+              <datalist id="phase1-proposal-dh-options">
+                {DH_GROUP_OPTIONS.map((value) => (
+                  <option key={value} value={value} />
+                ))}
+              </datalist>
+              <datalist id="phase1-proposal-prf-options">
+                {IKE_PRF_OPTIONS.map((value) => (
+                  <option key={value} value={value} />
+                ))}
+              </datalist>
+            </div>
+          </TabsContent>
+
           <TabsContent value="advanced" className="mt-4 space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -400,4 +745,3 @@ export function Phase1Dialog({
     </Dialog>
   );
 }
-

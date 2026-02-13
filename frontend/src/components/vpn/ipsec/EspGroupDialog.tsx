@@ -21,6 +21,11 @@ import {
 } from "@/components/ui/select";
 import { AlertCircle, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { ipsecService, type ESPGroup } from "@/lib/api/ipsec";
+import {
+  ESP_PFS_OPTIONS,
+  IPSEC_ENCRYPTION_OPTIONS,
+  IPSEC_HASH_OPTIONS,
+} from "@/lib/ipsec/options";
 
 type DialogMode = "create" | "edit";
 
@@ -103,7 +108,7 @@ export function EspGroupDialog({
     setName("");
     setLifetime("");
     setModeValue("tunnel");
-    setPfs("dh-group14");
+    setPfs("enable");
     setProposals([
       {
         proposal_id: "1",
@@ -235,7 +240,12 @@ export function EspGroupDialog({
           </div>
           <div className="space-y-2">
             <Label>PFS (optional)</Label>
-            <Input value={pfs} onChange={(event) => setPfs(event.target.value)} placeholder="dh-group14" />
+            <Input
+              value={pfs}
+              onChange={(event) => setPfs(event.target.value)}
+              placeholder="enable"
+              list="esp-pfs-options"
+            />
           </div>
         </div>
 
@@ -270,6 +280,7 @@ export function EspGroupDialog({
                           value={proposal.encryption}
                           onChange={(event) => updateProposal(index, { encryption: event.target.value })}
                           placeholder="aes256"
+                          list="esp-proposal-encryption-options"
                         />
                       </div>
                       <div className="space-y-2 md:col-span-2">
@@ -278,6 +289,7 @@ export function EspGroupDialog({
                           value={proposal.hash}
                           onChange={(event) => updateProposal(index, { hash: event.target.value })}
                           placeholder="sha256"
+                          list="esp-proposal-hash-options"
                         />
                       </div>
                     </div>
@@ -297,6 +309,22 @@ export function EspGroupDialog({
           )}
         </div>
 
+        <datalist id="esp-proposal-encryption-options">
+          {IPSEC_ENCRYPTION_OPTIONS.map((value) => (
+            <option key={value} value={value} />
+          ))}
+        </datalist>
+        <datalist id="esp-proposal-hash-options">
+          {IPSEC_HASH_OPTIONS.map((value) => (
+            <option key={value} value={value} />
+          ))}
+        </datalist>
+        <datalist id="esp-pfs-options">
+          {ESP_PFS_OPTIONS.map((value) => (
+            <option key={value} value={value} />
+          ))}
+        </datalist>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancel
@@ -310,4 +338,3 @@ export function EspGroupDialog({
     </Dialog>
   );
 }
-
