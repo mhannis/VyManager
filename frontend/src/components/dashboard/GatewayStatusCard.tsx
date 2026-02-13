@@ -207,20 +207,6 @@ export function GatewayStatusCard({ onRemove, span = 1, onSpanChange }: GatewayS
                 <p className="text-muted-foreground">Egress Interface</p>
                 <p className="font-medium font-mono text-xs">{displayOrDash(active?.interface || iface?.name)}</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-muted-foreground">Link State</p>
-                <p className="font-medium">
-                  {iface?.link_up === true
-                    ? "Up"
-                    : iface?.link_up === false
-                      ? "Down"
-                      : "Unknown"}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-muted-foreground">Speed / Duplex</p>
-                <p className="font-medium">{`${displayOrDash(iface?.speed)} / ${displayOrDash(iface?.duplex)}`}</p>
-              </div>
             </div>
 
             {configured && (
