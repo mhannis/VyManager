@@ -114,14 +114,41 @@ export default function SystemAccelerationPage() {
     }
   };
 
+  const loadVppStatusOnly = async () => {
+    setVppLoading(true);
+    try {
+      const status = await systemService.getVppStatus();
+      setVppStatus(status);
+    } finally {
+      setVppLoading(false);
+    }
+  };
+
+  const vppAvailable = vppStatus?.available === true;
+
   useEffect(() => {
     (async () => {
       setError(null);
-      await Promise.all([loadInterfaces(), loadQat(false), loadVpp(false)]).catch((err) => {
+      await Promise.all([loadInterfaces(), loadQat(false), loadVppStatusOnly()]).catch((err) => {
         setError(err instanceof Error ? err.message : "Failed to load acceleration data.");
       });
     })();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "vpp" && !vppAvailable && !vppLoading) {
+      setActiveTab("qat");
+    }
+  }, [activeTab, vppAvailable, vppLoading]);
+
+  useEffect(() => {
+    if (activeTab !== "vpp") return;
+    if (!vppAvailable) return;
+    if (vppConfig) return;
+    loadVpp(false).catch(() => {
+      // handled via UI error state on refresh/save
+    });
+  }, [activeTab, vppAvailable, vppConfig]);
 
   const handleRefresh = async () => {
     setSuccess(null);
@@ -130,6 +157,10 @@ export default function SystemAccelerationPage() {
       if (activeTab === "qat") {
         await loadQat(true);
       } else {
+        if (!vppAvailable) {
+          setError("VPP is not available on this VyOS image.");
+          return;
+        }
         await loadVpp(true);
       }
     } catch (err) {
@@ -192,6 +223,11 @@ export default function SystemAccelerationPage() {
 
   const handleSaveVpp = async () => {
     if (!vppConfig) return;
+    if (!vppAvailable) {
+      setError("VPP is not available on this VyOS image.");
+      setSuccess(null);
+      return;
+    }
 
     setSaving(true);
     setError(null);
@@ -245,8 +281,20 @@ export default function SystemAccelerationPage() {
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "qat" | "vpp")}>
           <TabsList>
             <TabsTrigger value="qat">Intel QAT</TabsTrigger>
-            <TabsTrigger value="vpp">VPP (DPDK/XDP)</TabsTrigger>
+            <TabsTrigger value="vpp" disabled={!vppAvailable || vppLoading}>
+              VPP (DPDK/XDP)
+              {!vppAvailable && !vppLoading && (
+                <Badge variant="outline" className="ml-2 bg-muted text-muted-foreground border-border">
+                  Unavailable
+                </Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
+          {!vppLoading && vppStatus && !vppAvailable && (
+            <p className="text-xs text-muted-foreground">
+              VPP is not available on this VyOS image. It typically requires the VyOS VPP addon / Stream build.
+            </p>
+          )}
 
           <TabsContent value="qat" className="space-y-6">
             <div className="grid gap-6 xl:grid-cols-3">
@@ -720,4 +768,3 @@ export default function SystemAccelerationPage() {
     </AppLayout>
   );
 }
-
