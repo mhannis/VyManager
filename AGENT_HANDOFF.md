@@ -697,3 +697,61 @@ Branch: `dev`
   - `/vyos/show/interface-counters`: ~`1.35s`
   - `/vyos/show/interface-runtime-addresses`: ~`1.69s`
   - `/vyos/show/interface-physical`: ~`2.19s`
+
+## Update (2026-02-13) - IPsec VPN (pfSense-like Phase 1/Phase 2)
+
+### 48) User Goal
+- Make IPsec configuration in the GUI feel like pfSense:
+  - Create Phase 1 first, then add Phase 2 from that Phase 1 entry.
+  - Expose more Phase 1/Phase 2 options (within VyOS capabilities).
+
+### 49) Backend: Expanded IPsec CRUD + Settings
+- File: `backend/routers/ipsec.py`
+- Improvements:
+  - Peer ID validation now allows `@RIGHT` style selectors.
+  - Peer (Phase 1) upsert now uses "fields provided" semantics to avoid wiping unrelated subtrees.
+  - Added CRUD endpoints for:
+    - Global IPsec settings:
+      - `GET /vyos/vpn/ipsec/settings`
+      - `PUT /vyos/vpn/ipsec/settings`
+    - Phase 2 tunnel CRUD:
+      - `PUT /vyos/vpn/ipsec/peer/{peer_id}/tunnel/{tunnel_id}`
+      - `DELETE /vyos/vpn/ipsec/peer/{peer_id}/tunnel/{tunnel_id}`
+    - Route-based VTI CRUD:
+      - `PUT /vyos/vpn/ipsec/peer/{peer_id}/vti`
+      - `DELETE /vyos/vpn/ipsec/peer/{peer_id}/vti`
+  - Added support for:
+    - IKE group `close-action`
+    - PSK `secret-type` (`text` or `base64`)
+    - Peer advanced options: `default-esp-group`, `dhcp-interface`, `force-udp-encapsulation`, `replay-window`, `virtual-address`, `disable`.
+
+### 50) Frontend: pfSense-like Phase 1/Phase 2 Workflow
+- File: `frontend/src/app/vpn/ipsec/page.tsx`
+- New layout:
+  - `Tunnels` tab:
+    - Phase 1 table (peers) with actions: add/edit/delete and "Add Phase 2"
+    - Phase 2 table for selected Phase 1 with add/edit/delete
+    - Optional VTI section for the selected Phase 1 (route-based)
+  - `IKE Groups`, `ESP Groups`, `PSK`, and `Settings` tabs.
+
+### 51) Frontend: New Dialog Components
+- Files:
+  - `frontend/src/components/vpn/ipsec/Phase1Dialog.tsx`
+  - `frontend/src/components/vpn/ipsec/Phase2Dialog.tsx`
+  - `frontend/src/components/vpn/ipsec/VtiDialog.tsx`
+- Added:
+  - Phase 1 dialog with General/Auth/Advanced tabs.
+  - Phase 2 dialog with Networks/Advanced tabs (supports ports, protocol, priority, esp-group).
+  - VTI dialog (bind, esp-group, traffic selector).
+
+### 52) Frontend: Missing Option Coverage
+- Files:
+  - `frontend/src/components/vpn/ipsec/IkeGroupDialog.tsx` (now supports `close-action`)
+  - `frontend/src/components/vpn/ipsec/PskDialog.tsx` (now supports `secret-type`)
+  - `frontend/src/components/vpn/ipsec/Phase2Dialog.tsx` (ESP group datalist suggestions)
+- File:
+  - `frontend/src/lib/api/ipsec.ts` updated to match new endpoints/models.
+
+### 53) Validation Snapshot
+- `cd frontend && npx tsc --noEmit --pretty false` -> pass
+- `cd frontend && npm run build` -> pass

@@ -65,6 +65,7 @@ export function IkeGroupDialog({
 }: IkeGroupDialogProps) {
   const [name, setName] = useState("");
   const [keyExchange, setKeyExchange] = useState("ikev2");
+  const [closeAction, setCloseAction] = useState("");
   const [lifetime, setLifetime] = useState("");
   const [dpdAction, setDpdAction] = useState("");
   const [dpdInterval, setDpdInterval] = useState("");
@@ -100,6 +101,7 @@ export function IkeGroupDialog({
     if (mode === "edit") {
       setName(groupName || "");
       setKeyExchange(group?.["key-exchange"] || "ikev2");
+      setCloseAction(group?.["close-action"] || "");
       setLifetime(group?.lifetime || "");
 
       const dpd = group?.["dead-peer-detection"] || null;
@@ -113,6 +115,7 @@ export function IkeGroupDialog({
 
     setName("");
     setKeyExchange("ikev2");
+    setCloseAction("");
     setLifetime("");
     setDpdAction("restart");
     setDpdInterval("30");
@@ -194,6 +197,7 @@ export function IkeGroupDialog({
 
       const upsert = {
         key_exchange: keyExchange.trim() || null,
+        close_action: closeAction.trim() || null,
         lifetime: lifetime.trim() || null,
         dead_peer_detection: deadPeerDetection,
         proposals: proposals.map((proposal) => ({
@@ -257,6 +261,19 @@ export function IkeGroupDialog({
                 <SelectItem value="ikev1">ikev1</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Close Action (optional)</Label>
+            <Input
+              value={closeAction}
+              onChange={(event) => setCloseAction(event.target.value)}
+              placeholder="none"
+              list="ike-close-action-options"
+            />
+            <datalist id="ike-close-action-options">
+              <option value="none" />
+              <option value="start" />
+            </datalist>
           </div>
           <div className="space-y-2">
             <Label>Lifetime (seconds)</Label>
@@ -378,4 +395,3 @@ export function IkeGroupDialog({
     </Dialog>
   );
 }
-

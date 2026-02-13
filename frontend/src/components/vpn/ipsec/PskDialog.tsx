@@ -13,6 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AlertCircle, Eye, EyeOff, Loader2, Save } from "lucide-react";
 import { ipsecService, type PSKAuthentication } from "@/lib/api/ipsec";
 
@@ -52,6 +59,7 @@ export function PskDialog({
   const [name, setName] = useState("");
   const [idsText, setIdsText] = useState("");
   const [secret, setSecret] = useState("");
+  const [secretType, setSecretType] = useState("text");
   const [showSecret, setShowSecret] = useState(false);
 
   const [saving, setSaving] = useState(false);
@@ -72,12 +80,14 @@ export function PskDialog({
       setName(pskId || entry?.psk_id || "");
       setIdsText((entry?.ids || []).join("\n"));
       setSecret("");
+      setSecretType(entry?.secret_type || "");
       return;
     }
 
     setName("");
     setIdsText("");
     setSecret("");
+    setSecretType("text");
   }, [open, mode, pskId, entry]);
 
   const validateForm = (): string | null => {
@@ -104,7 +114,7 @@ export function PskDialog({
     try {
       const targetName = name.trim();
       const ids = parseIds(idsText);
-      const request: any = { ids };
+      const request: any = { ids, secret_type: secretType.trim() || null };
       if (secret.trim()) {
         request.secret = secret;
       }
@@ -172,6 +182,23 @@ export function PskDialog({
           </div>
         </div>
 
+        <div className="space-y-2">
+          <Label>Secret Type (optional)</Label>
+          <Select value={secretType} onValueChange={setSecretType}>
+            <SelectTrigger>
+              <SelectValue placeholder="text" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">(unset)</SelectItem>
+              <SelectItem value="text">text</SelectItem>
+              <SelectItem value="base64">base64</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="text-xs text-muted-foreground">
+            Controls how VyOS interprets the PSK secret. Leave unset unless you specifically need base64.
+          </div>
+        </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancel
@@ -185,4 +212,3 @@ export function PskDialog({
     </Dialog>
   );
 }
-

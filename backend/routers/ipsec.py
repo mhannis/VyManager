@@ -22,7 +22,9 @@ from rbac_permissions import FeatureGroup
 router = APIRouter(prefix="/vyos/vpn/ipsec", tags=["ipsec"])
 
 RE_GROUP_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,62}$")
-RE_PEER_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,253}$")
+# VyOS peer "name" examples include IPs, FQDNs, and ID tokens like "@RIGHT".
+# Keep validation permissive but still reject whitespace/empty strings.
+RE_PEER_ID = re.compile(r"^[A-Za-z0-9@%][A-Za-z0-9@%._:-]{0,253}$")
 RE_PSK_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,62}$")
 RE_NUMERIC_ID = re.compile(r"^[1-9][0-9]{0,3}$")
 RE_INTERFACE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,62}$")
@@ -42,6 +44,7 @@ class IPsecProposal(BaseModel):
 class IKEGroup(BaseModel):
     name: str
     key_exchange: Optional[str] = Field(default=None, alias="key-exchange")
+    close_action: Optional[str] = Field(default=None, alias="close-action")
     lifetime: Optional[str] = None
     dead_peer_detection: Optional[Dict[str, Any]] = Field(default=None, alias="dead-peer-detection")
     ikev2_reauth: Optional[Dict[str, Any]] = Field(default=None, alias="ikev2-reauth")
@@ -65,7 +68,13 @@ class SiteToSitePeer(BaseModel):
     authentication: Optional[Dict[str, Any]] = None
     connection_type: Optional[str] = Field(default=None, alias="connection-type")
     ike_group: Optional[str] = Field(default=None, alias="ike-group")
+    default_esp_group: Optional[str] = Field(default=None, alias="default-esp-group")
     ikev2_reauth: Optional[str] = Field(default=None, alias="ikev2-reauth")
+    dhcp_interface: Optional[str] = Field(default=None, alias="dhcp-interface")
+    force_udp_encapsulation: Optional[bool] = Field(default=None, alias="force-udp-encapsulation")
+    replay_window: Optional[str] = Field(default=None, alias="replay-window")
+    virtual_address: Optional[str] = Field(default=None, alias="virtual-address")
+    disabled: Optional[bool] = Field(default=None, alias="disable")
     local_address: Optional[str] = Field(default=None, alias="local-address")
     remote_address: Optional[str] = Field(default=None, alias="remote-address")
     vti: Optional[Dict[str, Any]] = None
@@ -79,6 +88,7 @@ class PSKAuthentication(BaseModel):
     psk_id: str
     ids: List[str] = Field(default_factory=list)
     secret: Optional[str] = None
+    secret_type: Optional[str] = None
 
 
 class IPsecConfigResponse(BaseModel):
@@ -125,6 +135,7 @@ class IPsecProposalUpsertRequest(BaseModel):
 
 class IKEGroupUpsertRequest(BaseModel):
     key_exchange: Optional[str] = None
+    close_action: Optional[str] = None
     lifetime: Optional[str] = None
     dead_peer_detection: Optional[DeadPeerDetectionRequest] = None
     proposals: List[IPsecProposalUpsertRequest] = Field(default_factory=list)
@@ -139,9 +150,14 @@ class ESPGroupUpsertRequest(BaseModel):
 
 class TunnelUpsertRequest(BaseModel):
     tunnel_id: str
+    enabled: Optional[bool] = None
     local_prefix: Optional[str] = None
+    local_port: Optional[str] = None
     remote_prefix: Optional[str] = None
+    remote_port: Optional[str] = None
     esp_group: Optional[str] = None
+    priority: Optional[str] = None
+    protocol: Optional[str] = None
 
 
 class PeerAuthenticationUpsertRequest(BaseModel):
@@ -153,22 +169,31 @@ class PeerAuthenticationUpsertRequest(BaseModel):
 class VTIBindingUpsertRequest(BaseModel):
     bind: Optional[str] = None
     esp_group: Optional[str] = None
+    local_prefix: Optional[str] = None
+    remote_prefix: Optional[str] = None
 
 
 class SiteToSitePeerUpsertRequest(BaseModel):
+    enabled: Optional[bool] = None
     description: Optional[str] = None
     connection_type: Optional[str] = None
     ike_group: Optional[str] = None
+    default_esp_group: Optional[str] = None
     local_address: Optional[str] = None
     remote_address: Optional[str] = None
+    dhcp_interface: Optional[str] = None
+    force_udp_encapsulation: Optional[bool] = None
+    replay_window: Optional[str] = None
+    virtual_address: Optional[str] = None
     authentication: Optional[PeerAuthenticationUpsertRequest] = None
     vti: Optional[VTIBindingUpsertRequest] = None
-    tunnels: List[TunnelUpsertRequest] = Field(default_factory=list)
+    tunnels: Optional[List[TunnelUpsertRequest]] = None
 
 
 class PSKUpsertRequest(BaseModel):
     ids: List[str] = Field(default_factory=list)
     secret: Optional[str] = None
+    secret_type: Optional[str] = None
 
 
 class IPsecOperationResponse(BaseModel):
@@ -176,6 +201,34 @@ class IPsecOperationResponse(BaseModel):
     resource: str
     name: str
     message: str
+
+
+class IPsecSettingsResponse(BaseModel):
+    interfaces: List[str] = Field(default_factory=list)
+    disable_route_autoinstall: bool = False
+
+
+class IPsecSettingsUpdateRequest(BaseModel):
+    interfaces: Optional[List[str]] = None
+    disable_route_autoinstall: Optional[bool] = None
+
+
+class TunnelPhase2UpsertRequest(BaseModel):
+    enabled: Optional[bool] = None
+    esp_group: Optional[str] = None
+    priority: Optional[str] = None
+    protocol: Optional[str] = None
+    local_prefix: Optional[str] = None
+    local_port: Optional[str] = None
+    remote_prefix: Optional[str] = None
+    remote_port: Optional[str] = None
+
+
+class VtiUpsertRequest(BaseModel):
+    bind: Optional[str] = None
+    esp_group: Optional[str] = None
+    local_prefix: Optional[str] = None
+    remote_prefix: Optional[str] = None
 
 
 def _as_dict(value: Any) -> Dict[str, Any]:
@@ -232,6 +285,7 @@ def _parse_ike_groups(root: Any) -> Dict[str, IKEGroup]:
             name=str(group_name),
             **{
                 "key-exchange": _as_str(data.get("key-exchange")),
+                "close-action": _as_str(data.get("close-action")),
                 "dead-peer-detection": _as_dict(data.get("dead-peer-detection")) or None,
                 "ikev2-reauth": _as_dict(data.get("ikev2-reauth")) or None,
             },
@@ -277,9 +331,21 @@ def _parse_site_to_site(root: Any) -> Dict[str, SiteToSitePeer]:
         auth_clean = {key: value for key, value in auth_public.items() if value}
 
         vti_data = _as_dict(data.get("vti"))
+        traffic_root = _as_dict(vti_data.get("traffic-selector"))
+        ts_local = _as_dict(traffic_root.get("local"))
+        ts_remote = _as_dict(traffic_root.get("remote"))
+        ts_local_prefix = _as_str(ts_local.get("prefix"))
+        ts_remote_prefix = _as_str(ts_remote.get("prefix"))
+        traffic_selector: Dict[str, Any] = {}
+        if ts_local_prefix:
+            traffic_selector["local"] = {"prefix": ts_local_prefix}
+        if ts_remote_prefix:
+            traffic_selector["remote"] = {"prefix": ts_remote_prefix}
+
         vti_public = {
             "bind": _as_str(vti_data.get("bind")),
             "esp-group": _as_str(vti_data.get("esp-group")),
+            "traffic-selector": traffic_selector or None,
         }
         vti_clean = {key: value for key, value in vti_public.items() if value}
 
@@ -298,7 +364,13 @@ def _parse_site_to_site(root: Any) -> Dict[str, SiteToSitePeer]:
             **{
                 "connection-type": _as_str(data.get("connection-type")),
                 "ike-group": _as_str(data.get("ike-group")),
+                "default-esp-group": _as_str(data.get("default-esp-group")),
                 "ikev2-reauth": _as_str(data.get("ikev2-reauth")),
+                "dhcp-interface": _as_str(data.get("dhcp-interface")),
+                "force-udp-encapsulation": True if "force-udp-encapsulation" in data else None,
+                "replay-window": _as_str(data.get("replay-window")),
+                "virtual-address": _as_str(data.get("virtual-address")),
+                "disable": True if "disable" in data else None,
                 "local-address": _as_str(data.get("local-address")),
                 "remote-address": _as_str(data.get("remote-address")),
             },
@@ -318,6 +390,7 @@ def _parse_psk_secrets(root: Any) -> Dict[str, PSKAuthentication]:
             psk_id=str(psk_id),
             ids=_extract_tag_values(data.get("id")),
             secret=_as_str(data.get("secret")),
+            secret_type=_as_str(data.get("secret-type")),
         )
     return parsed
 
@@ -351,6 +424,14 @@ def _clean_optional(value: Optional[str]) -> Optional[str]:
         return None
     text = str(value).strip()
     return text if text else None
+
+
+def _model_fields_set(model: BaseModel) -> set[str]:
+    """Return the set of explicitly provided fields for pydantic v1/v2 models."""
+    raw = getattr(model, "model_fields_set", None)
+    if raw is None:
+        raw = getattr(model, "__fields_set__", set())
+    return set(raw or set())
 
 
 def _normalize_token_or_400(value: str, *, label: str, pattern: re.Pattern[str]) -> str:
@@ -391,6 +472,19 @@ def _normalize_cidr_or_400(value: str, *, label: str) -> str:
     except Exception:
         raise HTTPException(status_code=400, detail=f"{label} '{clean}' is not a valid CIDR network")
     return clean
+
+
+def _normalize_port_or_400(value: str, *, label: str) -> str:
+    clean = value.strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail=f"{label} is required")
+    try:
+        port = int(clean)
+    except Exception:
+        raise HTTPException(status_code=400, detail=f"{label} must be a number")
+    if port < 1 or port > 65535:
+        raise HTTPException(status_code=400, detail=f"{label} must be between 1 and 65535")
+    return str(port)
 
 
 def _extract_ipsec_root(full_config: Dict[str, Any]) -> Dict[str, Any]:
@@ -529,6 +623,14 @@ async def upsert_ike_group(
             )
         elif "key-exchange" in existing:
             operations.append({"op": "delete", "path": ["vpn", "ipsec", "ike-group", name, "key-exchange"]})
+
+        close_action = _clean_optional(body.close_action)
+        if close_action:
+            operations.append(
+                {"op": "set", "path": ["vpn", "ipsec", "ike-group", name, "close-action", close_action]}
+            )
+        elif "close-action" in existing:
+            operations.append({"op": "delete", "path": ["vpn", "ipsec", "ike-group", name, "close-action"]})
 
         lifetime = _clean_optional(body.lifetime)
         if lifetime:
@@ -751,94 +853,189 @@ async def upsert_site_to_site_peer(
     peer_id: str,
     body: SiteToSitePeerUpsertRequest,
 ) -> IPsecOperationResponse:
-    """Create/update one site-to-site peer (replace auth/vti/tunnel subtrees)."""
+    """Create/update one site-to-site peer (Phase 1 style settings)."""
     await require_write_permission(request, FeatureGroup.IPSEC)
 
     peer_key = _normalize_peer_id_or_400(peer_id)
 
     try:
+        fields_set = _model_fields_set(body)
+
         service = get_session_vyos_service(request)
         full_config = await run_in_threadpool(service.get_full_config, refresh=True)
         ipsec_root = _extract_ipsec_root(full_config)
         s2s_root = _as_dict(ipsec_root.get("site-to-site"))
         peer_root = _as_dict(s2s_root.get("peer")) or _as_dict(s2s_root)
         existing = _as_dict(peer_root.get(peer_key))
+        existing_present = peer_key in peer_root
 
         base = ["vpn", "ipsec", "site-to-site", "peer", peer_key]
         operations: List[Dict[str, Any]] = []
 
-        description = _clean_optional(body.description)
-        if description:
-            operations.append({"op": "set", "path": base + ["description", description]})
-        elif "description" in existing:
-            operations.append({"op": "delete", "path": base + ["description"]})
+        if "enabled" in fields_set:
+            enabled = body.enabled
+            if enabled is False:
+                operations.append({"op": "set", "path": base + ["disable"]})
+            elif enabled is True and "disable" in existing:
+                operations.append({"op": "delete", "path": base + ["disable"]})
 
-        connection_type = _clean_optional(body.connection_type)
-        if connection_type:
-            operations.append({"op": "set", "path": base + ["connection-type", connection_type]})
-        elif "connection-type" in existing:
-            operations.append({"op": "delete", "path": base + ["connection-type"]})
+        if "description" in fields_set:
+            description = _clean_optional(body.description)
+            if description:
+                operations.append({"op": "set", "path": base + ["description", description]})
+            elif "description" in existing:
+                operations.append({"op": "delete", "path": base + ["description"]})
 
-        ike_group = _clean_optional(body.ike_group)
-        if ike_group:
-            operations.append({"op": "set", "path": base + ["ike-group", ike_group]})
-        elif "ike-group" in existing:
-            operations.append({"op": "delete", "path": base + ["ike-group"]})
+        if "connection_type" in fields_set or (not existing_present and "connection_type" not in fields_set):
+            connection_type = _clean_optional(body.connection_type) or ("initiate" if not existing_present else None)
+            if connection_type:
+                operations.append({"op": "set", "path": base + ["connection-type", connection_type]})
+            elif "connection-type" in existing:
+                operations.append({"op": "delete", "path": base + ["connection-type"]})
 
+        if "ike_group" in fields_set:
+            ike_group = _clean_optional(body.ike_group)
+            if ike_group:
+                operations.append({"op": "set", "path": base + ["ike-group", ike_group]})
+            elif "ike-group" in existing:
+                operations.append({"op": "delete", "path": base + ["ike-group"]})
+
+        if "default_esp_group" in fields_set:
+            default_esp_group = _clean_optional(body.default_esp_group)
+            if default_esp_group:
+                operations.append({"op": "set", "path": base + ["default-esp-group", default_esp_group]})
+            elif "default-esp-group" in existing:
+                operations.append({"op": "delete", "path": base + ["default-esp-group"]})
+
+        dhcp_interface = _clean_optional(body.dhcp_interface)
         local_address = _clean_optional(body.local_address)
-        if local_address:
-            operations.append({"op": "set", "path": base + ["local-address", local_address]})
-        elif "local-address" in existing:
-            operations.append({"op": "delete", "path": base + ["local-address"]})
+        if dhcp_interface and local_address:
+            raise HTTPException(status_code=400, detail="dhcp_interface cannot be combined with local_address")
 
-        remote_address = _clean_optional(body.remote_address) or peer_key
-        if remote_address:
-            operations.append({"op": "set", "path": base + ["remote-address", remote_address]})
+        if "dhcp_interface" in fields_set:
+            if dhcp_interface:
+                _normalize_interface_name_or_400(dhcp_interface, label="DHCP interface")
+                operations.append({"op": "set", "path": base + ["dhcp-interface", dhcp_interface]})
+            elif "dhcp-interface" in existing:
+                operations.append({"op": "delete", "path": base + ["dhcp-interface"]})
 
-        # Replace auth subtree when present in config or request
-        if "authentication" in existing:
-            operations.append({"op": "delete", "path": base + ["authentication"]})
+        if "local_address" in fields_set:
+            if local_address:
+                operations.append({"op": "set", "path": base + ["local-address", local_address]})
+            elif "local-address" in existing:
+                operations.append({"op": "delete", "path": base + ["local-address"]})
 
-        auth = body.authentication
-        if auth:
-            mode = _clean_optional(auth.mode) or "pre-shared-secret"
-            operations.append({"op": "set", "path": base + ["authentication", "mode", mode]})
-            local_id = _clean_optional(auth.local_id)
-            if local_id:
-                operations.append({"op": "set", "path": base + ["authentication", "local-id", local_id]})
-            remote_id = _clean_optional(auth.remote_id)
-            if remote_id:
-                operations.append({"op": "set", "path": base + ["authentication", "remote-id", remote_id]})
+        if "remote_address" in fields_set:
+            remote_address = _clean_optional(body.remote_address)
+            if remote_address:
+                operations.append({"op": "set", "path": base + ["remote-address", remote_address]})
+            elif "remote-address" in existing:
+                operations.append({"op": "delete", "path": base + ["remote-address"]})
+        elif not existing_present:
+            # Ensure the peer node exists for new entries.
+            operations.append({"op": "set", "path": base + ["remote-address", peer_key]})
 
-        # Replace VTI subtree
-        if "vti" in existing:
-            operations.append({"op": "delete", "path": base + ["vti"]})
-        if body.vti:
-            vti_bind = _clean_optional(body.vti.bind)
-            vti_esp = _clean_optional(body.vti.esp_group)
-            if vti_bind:
-                _normalize_interface_name_or_400(vti_bind, label="VTI bind interface")
-                operations.append({"op": "set", "path": base + ["vti", "bind", vti_bind]})
-            if vti_esp:
-                operations.append({"op": "set", "path": base + ["vti", "esp-group", vti_esp]})
+        if "force_udp_encapsulation" in fields_set:
+            if body.force_udp_encapsulation:
+                operations.append({"op": "set", "path": base + ["force-udp-encapsulation"]})
+            elif "force-udp-encapsulation" in existing:
+                operations.append({"op": "delete", "path": base + ["force-udp-encapsulation"]})
 
-        # Replace tunnels subtree
-        if "tunnel" in existing:
-            operations.append({"op": "delete", "path": base + ["tunnel"]})
-        for tunnel in body.tunnels:
-            tunnel_id = _normalize_numeric_id_or_400(str(tunnel.tunnel_id), label="Tunnel ID")
-            esp_group_name = _clean_optional(tunnel.esp_group)
-            local_prefix = _clean_optional(tunnel.local_prefix)
-            remote_prefix = _clean_optional(tunnel.remote_prefix)
+        if "replay_window" in fields_set:
+            replay_window = _clean_optional(body.replay_window)
+            if replay_window:
+                operations.append({"op": "set", "path": base + ["replay-window", replay_window]})
+            elif "replay-window" in existing:
+                operations.append({"op": "delete", "path": base + ["replay-window"]})
 
-            if local_prefix:
-                local_prefix = _normalize_cidr_or_400(local_prefix, label=f"Tunnel {tunnel_id} local prefix")
-                operations.append({"op": "set", "path": base + ["tunnel", tunnel_id, "local", "prefix", local_prefix]})
-            if remote_prefix:
-                remote_prefix = _normalize_cidr_or_400(remote_prefix, label=f"Tunnel {tunnel_id} remote prefix")
-                operations.append({"op": "set", "path": base + ["tunnel", tunnel_id, "remote", "prefix", remote_prefix]})
-            if esp_group_name:
-                operations.append({"op": "set", "path": base + ["tunnel", tunnel_id, "esp-group", esp_group_name]})
+        if "virtual_address" in fields_set:
+            virtual_address = _clean_optional(body.virtual_address)
+            if virtual_address:
+                operations.append({"op": "set", "path": base + ["virtual-address", virtual_address]})
+            elif "virtual-address" in existing:
+                operations.append({"op": "delete", "path": base + ["virtual-address"]})
+
+        if "authentication" in fields_set:
+            if "authentication" in existing:
+                operations.append({"op": "delete", "path": base + ["authentication"]})
+
+            auth = body.authentication
+            if auth:
+                mode = _clean_optional(auth.mode) or "pre-shared-secret"
+                operations.append({"op": "set", "path": base + ["authentication", "mode", mode]})
+                local_id = _clean_optional(auth.local_id)
+                if local_id:
+                    operations.append({"op": "set", "path": base + ["authentication", "local-id", local_id]})
+                remote_id = _clean_optional(auth.remote_id)
+                if remote_id:
+                    operations.append({"op": "set", "path": base + ["authentication", "remote-id", remote_id]})
+
+        # Legacy/compat: allow replacing VTI and tunnel subtrees when explicitly provided.
+        if "vti" in fields_set:
+            if "vti" in existing:
+                operations.append({"op": "delete", "path": base + ["vti"]})
+            if body.vti:
+                vti_bind = _clean_optional(body.vti.bind)
+                vti_esp = _clean_optional(body.vti.esp_group)
+                vti_local_prefix = _clean_optional(body.vti.local_prefix)
+                vti_remote_prefix = _clean_optional(body.vti.remote_prefix)
+                if vti_bind:
+                    _normalize_interface_name_or_400(vti_bind, label="VTI bind interface")
+                    operations.append({"op": "set", "path": base + ["vti", "bind", vti_bind]})
+                if vti_esp:
+                    operations.append({"op": "set", "path": base + ["vti", "esp-group", vti_esp]})
+                if vti_local_prefix:
+                    vti_local_prefix = _normalize_cidr_or_400(vti_local_prefix, label="VTI local traffic selector")
+                    operations.append(
+                        {"op": "set", "path": base + ["vti", "traffic-selector", "local", "prefix", vti_local_prefix]}
+                    )
+                if vti_remote_prefix:
+                    vti_remote_prefix = _normalize_cidr_or_400(vti_remote_prefix, label="VTI remote traffic selector")
+                    operations.append(
+                        {"op": "set", "path": base + ["vti", "traffic-selector", "remote", "prefix", vti_remote_prefix]}
+                    )
+
+        if "tunnels" in fields_set:
+            if "tunnel" in existing:
+                operations.append({"op": "delete", "path": base + ["tunnel"]})
+            for tunnel in body.tunnels or []:
+                tunnel_id = _normalize_numeric_id_or_400(str(tunnel.tunnel_id), label="Tunnel ID")
+                tunnel_base = base + ["tunnel", tunnel_id]
+
+                if tunnel.enabled is False:
+                    operations.append({"op": "set", "path": tunnel_base + ["disable"]})
+
+                local_prefix = _clean_optional(tunnel.local_prefix)
+                if local_prefix:
+                    local_prefix = _normalize_cidr_or_400(local_prefix, label=f"Tunnel {tunnel_id} local prefix")
+                    operations.append({"op": "set", "path": tunnel_base + ["local", "prefix", local_prefix]})
+
+                local_port = _clean_optional(tunnel.local_port)
+                if local_port:
+                    local_port = _normalize_port_or_400(local_port, label=f"Tunnel {tunnel_id} local port")
+                    operations.append({"op": "set", "path": tunnel_base + ["local", "port", local_port]})
+
+                remote_prefix = _clean_optional(tunnel.remote_prefix)
+                if remote_prefix:
+                    remote_prefix = _normalize_cidr_or_400(remote_prefix, label=f"Tunnel {tunnel_id} remote prefix")
+                    operations.append({"op": "set", "path": tunnel_base + ["remote", "prefix", remote_prefix]})
+
+                remote_port = _clean_optional(tunnel.remote_port)
+                if remote_port:
+                    remote_port = _normalize_port_or_400(remote_port, label=f"Tunnel {tunnel_id} remote port")
+                    operations.append({"op": "set", "path": tunnel_base + ["remote", "port", remote_port]})
+
+                esp_group_name = _clean_optional(tunnel.esp_group)
+                if esp_group_name:
+                    operations.append({"op": "set", "path": tunnel_base + ["esp-group", esp_group_name]})
+
+                priority = _clean_optional(tunnel.priority)
+                if priority:
+                    operations.append({"op": "set", "path": tunnel_base + ["priority", priority]})
+
+                protocol = _clean_optional(tunnel.protocol)
+                if protocol:
+                    operations.append({"op": "set", "path": tunnel_base + ["protocol", protocol]})
 
         if not operations:
             return IPsecOperationResponse(success=True, resource="peer", name=peer_key, message="No changes requested")
@@ -881,6 +1078,352 @@ async def delete_site_to_site_peer(request: Request, peer_id: str) -> IPsecOpera
         raise HTTPException(status_code=500, detail=f"Error deleting IPsec peer: {str(exc)}")
 
 
+@router.get("/settings", response_model=IPsecSettingsResponse)
+async def get_ipsec_settings(request: Request, refresh: bool = False) -> IPsecSettingsResponse:
+    """Get global IPsec settings (interfaces + options)."""
+    await require_read_permission(request, FeatureGroup.IPSEC)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        ipsec_root = _extract_ipsec_root(full_config)
+
+        interfaces = _extract_tag_values(ipsec_root.get("interface"))
+        options_root = _as_dict(ipsec_root.get("options"))
+
+        return IPsecSettingsResponse(
+            interfaces=interfaces,
+            disable_route_autoinstall=("disable-route-autoinstall" in options_root),
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving IPsec settings: {str(exc)}")
+
+
+@router.put("/settings", response_model=IPsecOperationResponse)
+async def update_ipsec_settings(request: Request, body: IPsecSettingsUpdateRequest) -> IPsecOperationResponse:
+    """Update global IPsec settings (replace interfaces, toggle options)."""
+    await require_write_permission(request, FeatureGroup.IPSEC)
+
+    try:
+        fields_set = _model_fields_set(body)
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        ipsec_root = _extract_ipsec_root(full_config)
+
+        operations: List[Dict[str, Any]] = []
+
+        if "interfaces" in fields_set:
+            existing_interfaces = _extract_tag_values(ipsec_root.get("interface"))
+            if existing_interfaces:
+                operations.append({"op": "delete", "path": ["vpn", "ipsec", "interface"]})
+
+            seen = set()
+            for iface in body.interfaces or []:
+                name = _normalize_interface_name_or_400(str(iface), label="IPsec interface")
+                if name in seen:
+                    continue
+                seen.add(name)
+                operations.append({"op": "set", "path": ["vpn", "ipsec", "interface", name]})
+
+        if "disable_route_autoinstall" in fields_set:
+            existing_options = _as_dict(ipsec_root.get("options"))
+            flag_present = "disable-route-autoinstall" in existing_options
+            if body.disable_route_autoinstall:
+                operations.append({"op": "set", "path": ["vpn", "ipsec", "options", "disable-route-autoinstall"]})
+            elif flag_present:
+                operations.append({"op": "delete", "path": ["vpn", "ipsec", "options", "disable-route-autoinstall"]})
+
+        if not operations:
+            return IPsecOperationResponse(success=True, resource="settings", name="ipsec", message="No changes requested")
+
+        await _run_configure_or_500(service, operations, label="IPsec settings update")
+        await run_in_threadpool(service.refresh_config)
+        return IPsecOperationResponse(success=True, resource="settings", name="ipsec", message="IPsec settings updated")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating IPsec settings: {str(exc)}")
+
+
+@router.put("/peer/{peer_id}/tunnel/{tunnel_id}", response_model=IPsecOperationResponse)
+async def upsert_ipsec_tunnel(
+    request: Request,
+    peer_id: str,
+    tunnel_id: str,
+    body: TunnelPhase2UpsertRequest,
+) -> IPsecOperationResponse:
+    """Create/update one Phase 2 tunnel under a site-to-site peer."""
+    await require_write_permission(request, FeatureGroup.IPSEC)
+
+    peer_key = _normalize_peer_id_or_400(peer_id)
+    tunnel_key = _normalize_numeric_id_or_400(str(tunnel_id), label="Tunnel ID")
+
+    try:
+        fields_set = _model_fields_set(body)
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        ipsec_root = _extract_ipsec_root(full_config)
+
+        s2s_root = _as_dict(ipsec_root.get("site-to-site"))
+        peer_root = _as_dict(s2s_root.get("peer")) or _as_dict(s2s_root)
+        existing_peer = _as_dict(peer_root.get(peer_key))
+        if not existing_peer:
+            raise HTTPException(status_code=404, detail=f"Peer '{peer_key}' not found")
+
+        tunnel_root = _as_dict(existing_peer.get("tunnel"))
+        existing_tunnel = _as_dict(tunnel_root.get(tunnel_key))
+        tunnel_exists = tunnel_key in tunnel_root
+
+        if not tunnel_exists:
+            local_prefix_required = _clean_optional(body.local_prefix) if "local_prefix" in fields_set else None
+            remote_prefix_required = _clean_optional(body.remote_prefix) if "remote_prefix" in fields_set else None
+            if not local_prefix_required or not remote_prefix_required:
+                raise HTTPException(
+                    status_code=400,
+                    detail="local_prefix and remote_prefix are required when creating a new tunnel",
+                )
+
+        base = ["vpn", "ipsec", "site-to-site", "peer", peer_key, "tunnel", tunnel_key]
+        operations: List[Dict[str, Any]] = []
+
+        if "enabled" in fields_set:
+            if body.enabled is False:
+                operations.append({"op": "set", "path": base + ["disable"]})
+            elif body.enabled is True and "disable" in existing_tunnel:
+                operations.append({"op": "delete", "path": base + ["disable"]})
+
+        if "esp_group" in fields_set:
+            esp_group = _clean_optional(body.esp_group)
+            if esp_group:
+                operations.append({"op": "set", "path": base + ["esp-group", esp_group]})
+            elif "esp-group" in existing_tunnel:
+                operations.append({"op": "delete", "path": base + ["esp-group"]})
+
+        if "priority" in fields_set:
+            priority = _clean_optional(body.priority)
+            if priority:
+                operations.append({"op": "set", "path": base + ["priority", priority]})
+            elif "priority" in existing_tunnel:
+                operations.append({"op": "delete", "path": base + ["priority"]})
+
+        if "protocol" in fields_set:
+            protocol = _clean_optional(body.protocol)
+            if protocol:
+                operations.append({"op": "set", "path": base + ["protocol", protocol]})
+            elif "protocol" in existing_tunnel:
+                operations.append({"op": "delete", "path": base + ["protocol"]})
+
+        existing_local = _as_dict(existing_tunnel.get("local"))
+        if "local_prefix" in fields_set:
+            local_prefix = _clean_optional(body.local_prefix)
+            if local_prefix:
+                local_prefix = _normalize_cidr_or_400(local_prefix, label="Local prefix")
+                operations.append({"op": "set", "path": base + ["local", "prefix", local_prefix]})
+            elif "prefix" in existing_local:
+                operations.append({"op": "delete", "path": base + ["local", "prefix"]})
+
+        if "local_port" in fields_set:
+            local_port = _clean_optional(body.local_port)
+            if local_port:
+                local_port = _normalize_port_or_400(local_port, label="Local port")
+                operations.append({"op": "set", "path": base + ["local", "port", local_port]})
+            elif "port" in existing_local:
+                operations.append({"op": "delete", "path": base + ["local", "port"]})
+
+        existing_remote = _as_dict(existing_tunnel.get("remote"))
+        if "remote_prefix" in fields_set:
+            remote_prefix = _clean_optional(body.remote_prefix)
+            if remote_prefix:
+                remote_prefix = _normalize_cidr_or_400(remote_prefix, label="Remote prefix")
+                operations.append({"op": "set", "path": base + ["remote", "prefix", remote_prefix]})
+            elif "prefix" in existing_remote:
+                operations.append({"op": "delete", "path": base + ["remote", "prefix"]})
+
+        if "remote_port" in fields_set:
+            remote_port = _clean_optional(body.remote_port)
+            if remote_port:
+                remote_port = _normalize_port_or_400(remote_port, label="Remote port")
+                operations.append({"op": "set", "path": base + ["remote", "port", remote_port]})
+            elif "port" in existing_remote:
+                operations.append({"op": "delete", "path": base + ["remote", "port"]})
+
+        if not operations:
+            return IPsecOperationResponse(
+                success=True,
+                resource="tunnel",
+                name=f"{peer_key}:{tunnel_key}",
+                message="No changes requested",
+            )
+
+        await _run_configure_or_500(service, operations, label=f"Tunnel {tunnel_key} update")
+        await run_in_threadpool(service.refresh_config)
+        return IPsecOperationResponse(
+            success=True,
+            resource="tunnel",
+            name=f"{peer_key}:{tunnel_key}",
+            message="Tunnel updated",
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating tunnel: {str(exc)}")
+
+
+@router.delete("/peer/{peer_id}/tunnel/{tunnel_id}", response_model=IPsecOperationResponse)
+async def delete_ipsec_tunnel(request: Request, peer_id: str, tunnel_id: str) -> IPsecOperationResponse:
+    """Delete one Phase 2 tunnel."""
+    await require_write_permission(request, FeatureGroup.IPSEC)
+
+    peer_key = _normalize_peer_id_or_400(peer_id)
+    tunnel_key = _normalize_numeric_id_or_400(str(tunnel_id), label="Tunnel ID")
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        ipsec_root = _extract_ipsec_root(full_config)
+
+        s2s_root = _as_dict(ipsec_root.get("site-to-site"))
+        peer_root = _as_dict(s2s_root.get("peer")) or _as_dict(s2s_root)
+        existing_peer = _as_dict(peer_root.get(peer_key))
+        if not existing_peer:
+            raise HTTPException(status_code=404, detail=f"Peer '{peer_key}' not found")
+
+        tunnel_root = _as_dict(existing_peer.get("tunnel"))
+        if tunnel_key not in tunnel_root:
+            raise HTTPException(status_code=404, detail=f"Tunnel '{tunnel_key}' not found")
+
+        await _run_configure_or_500(
+            service,
+            [{"op": "delete", "path": ["vpn", "ipsec", "site-to-site", "peer", peer_key, "tunnel", tunnel_key]}],
+            label=f"Tunnel {tunnel_key} delete",
+        )
+        await run_in_threadpool(service.refresh_config)
+        return IPsecOperationResponse(
+            success=True,
+            resource="tunnel",
+            name=f"{peer_key}:{tunnel_key}",
+            message="Tunnel deleted",
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error deleting tunnel: {str(exc)}")
+
+
+@router.put("/peer/{peer_id}/vti", response_model=IPsecOperationResponse)
+async def upsert_ipsec_vti(
+    request: Request,
+    peer_id: str,
+    body: VtiUpsertRequest,
+) -> IPsecOperationResponse:
+    """Create/update route-based VTI bindings for a peer."""
+    await require_write_permission(request, FeatureGroup.IPSEC)
+
+    peer_key = _normalize_peer_id_or_400(peer_id)
+
+    try:
+        fields_set = _model_fields_set(body)
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        ipsec_root = _extract_ipsec_root(full_config)
+
+        s2s_root = _as_dict(ipsec_root.get("site-to-site"))
+        peer_root = _as_dict(s2s_root.get("peer")) or _as_dict(s2s_root)
+        existing_peer = _as_dict(peer_root.get(peer_key))
+        if not existing_peer:
+            raise HTTPException(status_code=404, detail=f"Peer '{peer_key}' not found")
+
+        existing_vti = _as_dict(existing_peer.get("vti"))
+        vti_exists = bool(existing_vti)
+
+        if not vti_exists and "bind" in fields_set and not _clean_optional(body.bind):
+            raise HTTPException(status_code=400, detail="bind is required when creating VTI configuration")
+
+        base = ["vpn", "ipsec", "site-to-site", "peer", peer_key, "vti"]
+        operations: List[Dict[str, Any]] = []
+
+        if "bind" in fields_set:
+            bind = _clean_optional(body.bind)
+            if bind:
+                _normalize_interface_name_or_400(bind, label="VTI bind interface")
+                operations.append({"op": "set", "path": base + ["bind", bind]})
+            elif "bind" in existing_vti:
+                operations.append({"op": "delete", "path": base + ["bind"]})
+
+        if "esp_group" in fields_set:
+            esp_group = _clean_optional(body.esp_group)
+            if esp_group:
+                operations.append({"op": "set", "path": base + ["esp-group", esp_group]})
+            elif "esp-group" in existing_vti:
+                operations.append({"op": "delete", "path": base + ["esp-group"]})
+
+        existing_ts = _as_dict(existing_vti.get("traffic-selector"))
+        existing_ts_local = _as_dict(existing_ts.get("local"))
+        if "local_prefix" in fields_set:
+            local_prefix = _clean_optional(body.local_prefix)
+            if local_prefix:
+                local_prefix = _normalize_cidr_or_400(local_prefix, label="VTI local traffic selector")
+                operations.append({"op": "set", "path": base + ["traffic-selector", "local", "prefix", local_prefix]})
+            elif "prefix" in existing_ts_local:
+                operations.append({"op": "delete", "path": base + ["traffic-selector", "local"]})
+
+        existing_ts_remote = _as_dict(existing_ts.get("remote"))
+        if "remote_prefix" in fields_set:
+            remote_prefix = _clean_optional(body.remote_prefix)
+            if remote_prefix:
+                remote_prefix = _normalize_cidr_or_400(remote_prefix, label="VTI remote traffic selector")
+                operations.append({"op": "set", "path": base + ["traffic-selector", "remote", "prefix", remote_prefix]})
+            elif "prefix" in existing_ts_remote:
+                operations.append({"op": "delete", "path": base + ["traffic-selector", "remote"]})
+
+        if not operations:
+            return IPsecOperationResponse(success=True, resource="vti", name=peer_key, message="No changes requested")
+
+        await _run_configure_or_500(service, operations, label=f"VTI update for {peer_key}")
+        await run_in_threadpool(service.refresh_config)
+        return IPsecOperationResponse(success=True, resource="vti", name=peer_key, message="VTI updated")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating VTI: {str(exc)}")
+
+
+@router.delete("/peer/{peer_id}/vti", response_model=IPsecOperationResponse)
+async def delete_ipsec_vti(request: Request, peer_id: str) -> IPsecOperationResponse:
+    """Delete route-based VTI config subtree for a peer."""
+    await require_write_permission(request, FeatureGroup.IPSEC)
+
+    peer_key = _normalize_peer_id_or_400(peer_id)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        ipsec_root = _extract_ipsec_root(full_config)
+
+        s2s_root = _as_dict(ipsec_root.get("site-to-site"))
+        peer_root = _as_dict(s2s_root.get("peer")) or _as_dict(s2s_root)
+        existing_peer = _as_dict(peer_root.get(peer_key))
+        if not existing_peer:
+            raise HTTPException(status_code=404, detail=f"Peer '{peer_key}' not found")
+
+        if not _as_dict(existing_peer.get("vti")):
+            raise HTTPException(status_code=404, detail="VTI not configured")
+
+        await _run_configure_or_500(
+            service,
+            [{"op": "delete", "path": ["vpn", "ipsec", "site-to-site", "peer", peer_key, "vti"]}],
+            label=f"VTI delete for {peer_key}",
+        )
+        await run_in_threadpool(service.refresh_config)
+        return IPsecOperationResponse(success=True, resource="vti", name=peer_key, message="VTI deleted")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error deleting VTI: {str(exc)}")
+
+
 @router.put("/psk/{psk_id}", response_model=IPsecOperationResponse)
 async def upsert_psk_entry(
     request: Request,
@@ -893,6 +1436,8 @@ async def upsert_psk_entry(
     name = _normalize_psk_id_or_400(psk_id)
 
     try:
+        fields_set = _model_fields_set(body)
+
         ids = [item.strip() for item in (body.ids or []) if str(item).strip()]
         unique_ids: List[str] = []
         seen = set()
@@ -932,6 +1477,15 @@ async def upsert_psk_entry(
 
         if secret_clean is not None:
             operations.append({"op": "set", "path": base + ["secret", secret_clean]})
+
+        if "secret_type" in fields_set:
+            secret_type = _clean_optional(body.secret_type)
+            if secret_type:
+                if secret_type not in {"text", "base64"}:
+                    raise HTTPException(status_code=400, detail="secret_type must be 'text' or 'base64'")
+                operations.append({"op": "set", "path": base + ["secret-type", secret_type]})
+            elif "secret-type" in existing:
+                operations.append({"op": "delete", "path": base + ["secret-type"]})
 
         if not operations:
             return IPsecOperationResponse(success=True, resource="psk", name=name, message="No changes requested")

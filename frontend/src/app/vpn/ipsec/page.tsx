@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -17,11 +19,19 @@ import {
 } from "@/components/ui/table";
 import { IkeGroupDialog } from "@/components/vpn/ipsec/IkeGroupDialog";
 import { EspGroupDialog } from "@/components/vpn/ipsec/EspGroupDialog";
-import { PeerDialog } from "@/components/vpn/ipsec/PeerDialog";
+import { Phase1Dialog } from "@/components/vpn/ipsec/Phase1Dialog";
+import { Phase2Dialog } from "@/components/vpn/ipsec/Phase2Dialog";
+import { VtiDialog } from "@/components/vpn/ipsec/VtiDialog";
 import { PskDialog } from "@/components/vpn/ipsec/PskDialog";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
-import { ipsecService, type IPsecConfig, type IPsecStatus } from "@/lib/api/ipsec";
+import { ethernetService } from "@/lib/api/ethernet";
+import {
+  ipsecService,
+  type IPsecConfig,
+  type IPsecSettings,
+  type IPsecStatus,
+} from "@/lib/api/ipsec";
 import {
   AlertCircle,
   KeyRound,
@@ -41,6 +51,24 @@ function valueOrDash(value?: string | null): string {
   return trimmed || "-";
 }
 
+function parseCsvList(value: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const entry of value.split(",")) {
+    const item = entry.trim();
+    if (!item || seen.has(item)) continue;
+    seen.add(item);
+    out.push(item);
+  }
+  return out;
+}
+
+function sortedNumericKeys(map: Record<string, any> | null | undefined): string[] {
+  const keys = Object.keys(map || {});
+  keys.sort((left, right) => Number(left) - Number(right));
+  return keys;
+}
+
 export default function IPsecPage() {
   const { canWrite } = usePermissions();
   const canEdit = canWrite(FeatureGroup.IPSEC) || canWrite(FeatureGroup.VPN);
@@ -54,6 +82,14 @@ export default function IPsecPage() {
 
   const [config, setConfig] = useState<IPsecConfig | null>(null);
   const [status, setStatus] = useState<IPsecStatus | null>(null);
+  const [interfaceNames, setInterfaceNames] = useState<string[]>([]);
+
+  const [settings, setSettings] = useState<IPsecSettings | null>(null);
+  const [settingsInterfaces, setSettingsInterfaces] = useState("");
+  const [disableRouteAutoinstall, setDisableRouteAutoinstall] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+
+  const [selectedPeerId, setSelectedPeerId] = useState<string>("");
 
   const [ikeDialogOpen, setIkeDialogOpen] = useState(false);
   const [ikeDialogMode, setIkeDialogMode] = useState<"create" | "edit">("create");
@@ -63,25 +99,61 @@ export default function IPsecPage() {
   const [espDialogMode, setEspDialogMode] = useState<"create" | "edit">("create");
   const [espDialogName, setEspDialogName] = useState("");
 
-  const [peerDialogOpen, setPeerDialogOpen] = useState(false);
-  const [peerDialogMode, setPeerDialogMode] = useState<"create" | "edit">("create");
-  const [peerDialogPeerId, setPeerDialogPeerId] = useState("");
+  const [phase1DialogOpen, setPhase1DialogOpen] = useState(false);
+  const [phase1DialogMode, setPhase1DialogMode] = useState<"create" | "edit">("create");
+  const [phase1DialogPeerId, setPhase1DialogPeerId] = useState("");
+
+  const [phase2DialogOpen, setPhase2DialogOpen] = useState(false);
+  const [phase2DialogMode, setPhase2DialogMode] = useState<"create" | "edit">("create");
+  const [phase2DialogPeerId, setPhase2DialogPeerId] = useState("");
+  const [phase2DialogTunnelId, setPhase2DialogTunnelId] = useState("");
+
+  const [vtiDialogOpen, setVtiDialogOpen] = useState(false);
+  const [vtiDialogPeerId, setVtiDialogPeerId] = useState("");
 
   const [pskDialogOpen, setPskDialogOpen] = useState(false);
   const [pskDialogMode, setPskDialogMode] = useState<"create" | "edit">("create");
   const [pskDialogName, setPskDialogName] = useState("");
 
   const loadData = async () => {
+    setError(null);
+    setSuccess(null);
+    setRefreshing(true);
     try {
-      setError(null);
-      setSuccess(null);
-      setRefreshing(true);
-      const [configData, statusData] = await Promise.all([
+      const [configResult, statusResult, ethResult, settingsResult] = await Promise.allSettled([
         ipsecService.getConfig(),
         ipsecService.getStatus().catch(() => null),
+        ethernetService.getConfig().catch(() => null),
+        ipsecService.getSettings().catch(() => null),
       ]);
-      setConfig(configData);
-      setStatus(statusData);
+
+      if (configResult.status !== "fulfilled") {
+        throw configResult.reason;
+      }
+
+      setConfig(configResult.value);
+      setStatus(statusResult.status === "fulfilled" ? (statusResult.value as any) : null);
+
+      const ethConfig = ethResult.status === "fulfilled" ? (ethResult.value as any) : null;
+      if (ethConfig?.interfaces) {
+        setInterfaceNames(
+          ethConfig.interfaces
+            .map((iface: any) => iface.name)
+            .filter(Boolean)
+            .sort()
+        );
+      } else {
+        setInterfaceNames([]);
+      }
+
+      const settingsValue = settingsResult.status === "fulfilled" ? (settingsResult.value as any) : null;
+      if (settingsValue) {
+        setSettings(settingsValue);
+        setSettingsInterfaces((settingsValue.interfaces || []).join(", "));
+        setDisableRouteAutoinstall(Boolean(settingsValue.disable_route_autoinstall));
+      } else {
+        setSettings(null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load IPsec data");
     } finally {
@@ -94,34 +166,57 @@ export default function IPsecPage() {
     loadData();
   }, []);
 
-  const peerEntries = useMemo(() => Object.entries(config?.["site-to-site"] || {}), [config]);
+  useEffect(() => {
+    const peerIds = Object.keys(config?.["site-to-site"] || {}).sort();
+    if (peerIds.length === 0) {
+      setSelectedPeerId("");
+      return;
+    }
+    if (!selectedPeerId || !peerIds.includes(selectedPeerId)) {
+      setSelectedPeerId(peerIds[0]);
+    }
+  }, [config]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const peerEntries = useMemo(() => {
+    const entries = Object.entries(config?.["site-to-site"] || {});
+    entries.sort((left, right) => left[0].localeCompare(right[0]));
+    return entries;
+  }, [config]);
+
   const filteredPeers = useMemo(() => {
     const needle = search.trim().toLowerCase();
     if (!needle) return peerEntries;
     return peerEntries.filter(([peerId, peer]) => {
+      const auth: any = peer?.authentication || {};
       const values = [
         peerId,
         peer.description,
         peer["local-address"],
         peer["remote-address"],
         peer["ike-group"],
+        peer["default-esp-group"],
         peer["connection-type"],
+        peer["dhcp-interface"],
+        auth?.["local-id"],
+        auth?.["remote-id"],
         peer.vti?.bind,
-        peer.vti?.["esp-group"],
       ];
-      return values.some((value) => value?.toLowerCase().includes(needle));
+      return values.some((value) => value?.toLowerCase?.().includes(needle));
     });
   }, [peerEntries, search]);
 
-  const ikeGroupCount = Object.keys(config?.["ike-group"] || {}).length;
-  const espGroupCount = Object.keys(config?.["esp-group"] || {}).length;
-  const pskCount = Object.keys(config?.psk_secrets || {}).length;
-  const peerCount = peerEntries.length;
+  const selectedPeer = selectedPeerId ? (config?.["site-to-site"]?.[selectedPeerId] ?? null) : null;
+  const selectedPeerTunnelIds = useMemo(() => sortedNumericKeys(selectedPeer?.tunnels || {}), [selectedPeer]);
 
   const ikeGroupNames = useMemo(() => Object.keys(config?.["ike-group"] || {}).sort(), [config]);
   const espGroupNames = useMemo(() => Object.keys(config?.["esp-group"] || {}).sort(), [config]);
   const existingPeerIds = useMemo(() => Object.keys(config?.["site-to-site"] || {}).sort(), [config]);
   const existingPskIds = useMemo(() => Object.keys(config?.psk_secrets || {}).sort(), [config]);
+
+  const ikeGroupCount = ikeGroupNames.length;
+  const espGroupCount = espGroupNames.length;
+  const pskCount = existingPskIds.length;
+  const peerCount = peerEntries.length;
 
   const handleSuccess = async (message: string) => {
     setSuccess(message);
@@ -164,7 +259,7 @@ export default function IPsecPage() {
 
   const deletePeer = async (peerId: string) => {
     if (!canEdit) return;
-    if (!window.confirm(`Delete peer '${peerId}'?`)) return;
+    if (!window.confirm(`Delete Phase 1 peer '${peerId}'? (All Phase 2 tunnels under it will be deleted)`)) return;
     setMutating(true);
     setError(null);
     setSuccess(null);
@@ -174,6 +269,40 @@ export default function IPsecPage() {
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete peer");
+    } finally {
+      setMutating(false);
+    }
+  };
+
+  const deleteTunnel = async (peerId: string, tunnelId: string) => {
+    if (!canEdit) return;
+    if (!window.confirm(`Delete Phase 2 tunnel '${tunnelId}' under peer '${peerId}'?`)) return;
+    setMutating(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await ipsecService.deleteTunnel(peerId, tunnelId);
+      setSuccess(result.message || `Tunnel '${tunnelId}' deleted.`);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete tunnel");
+    } finally {
+      setMutating(false);
+    }
+  };
+
+  const deleteVti = async (peerId: string) => {
+    if (!canEdit) return;
+    if (!window.confirm(`Remove VTI configuration for peer '${peerId}'?`)) return;
+    setMutating(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await ipsecService.deleteVti(peerId);
+      setSuccess(result.message || "VTI deleted.");
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete VTI");
     } finally {
       setMutating(false);
     }
@@ -196,6 +325,25 @@ export default function IPsecPage() {
     }
   };
 
+  const saveSettings = async () => {
+    if (!canEdit) return;
+    setSettingsSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await ipsecService.updateSettings({
+        interfaces: parseCsvList(settingsInterfaces),
+        disable_route_autoinstall: disableRouteAutoinstall,
+      });
+      setSuccess(result.message || "IPsec settings updated.");
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save IPsec settings");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6 p-6">
@@ -203,7 +351,7 @@ export default function IPsecPage() {
           <div>
             <h1 className="text-3xl font-bold text-foreground">IPsec VPN</h1>
             <p className="text-muted-foreground mt-1">
-              Manage IPsec groups, peers, PSKs, and runtime tunnel status.
+              pfSense-like tunnel workflow: create Phase 1, then add Phase 2 tunnels.
             </p>
           </div>
           <Button variant="outline" onClick={loadData} disabled={refreshing}>
@@ -215,7 +363,7 @@ export default function IPsecPage() {
         <div className="grid gap-4 md:grid-cols-5">
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Peers</p>
+              <p className="text-xs text-muted-foreground">Phase 1</p>
               <p className="mt-1 text-2xl font-bold">{peerCount}</p>
             </CardContent>
           </Card>
@@ -277,35 +425,36 @@ export default function IPsecPage() {
           </div>
         )}
 
-        <Tabs defaultValue="peers" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="peers">Peers</TabsTrigger>
+        <Tabs defaultValue="tunnels" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="tunnels">Tunnels</TabsTrigger>
             <TabsTrigger value="ike">IKE Groups</TabsTrigger>
             <TabsTrigger value="esp">ESP Groups</TabsTrigger>
             <TabsTrigger value="psk">PSK</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="peers" className="mt-4">
+          <TabsContent value="tunnels" className="mt-4 space-y-4">
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <CardTitle className="text-lg">Site-to-Site Peers</CardTitle>
+                    <CardTitle className="text-lg">Phase 1 (Peers)</CardTitle>
                     <div className="text-sm text-muted-foreground mt-1">
-                      Phase 1 peer entries and Phase 2 tunnels or VTI bindings.
+                      Create a Phase 1 entry, then add one or more Phase 2 tunnels.
                     </div>
                   </div>
                   {canEdit && (
                     <Button
                       onClick={() => {
-                        setPeerDialogMode("create");
-                        setPeerDialogPeerId("");
-                        setPeerDialogOpen(true);
+                        setPhase1DialogMode("create");
+                        setPhase1DialogPeerId("");
+                        setPhase1DialogOpen(true);
                       }}
                       disabled={mutating}
                     >
                       <Plus className="mr-2 h-4 w-4" />
-                      Add Peer
+                      Add Phase 1
                     </Button>
                   )}
                 </div>
@@ -314,16 +463,16 @@ export default function IPsecPage() {
                   <Input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Filter by peer, endpoints, group, or VTI..."
+                    placeholder="Filter peers..."
                     className="pl-9"
                   />
                 </div>
               </CardHeader>
               <CardContent>
                 {loading ? (
-                  <div className="py-8 text-center text-sm text-muted-foreground">Loading IPsec peers...</div>
+                  <div className="py-8 text-center text-sm text-muted-foreground">Loading Phase 1 peers...</div>
                 ) : filteredPeers.length === 0 ? (
-                  <div className="py-8 text-center text-sm text-muted-foreground">No peers found.</div>
+                  <div className="py-8 text-center text-sm text-muted-foreground">No Phase 1 peers found.</div>
                 ) : (
                   <div className="overflow-x-auto rounded-md border">
                     <Table>
@@ -331,59 +480,279 @@ export default function IPsecPage() {
                         <TableRow>
                           <TableHead>Peer</TableHead>
                           <TableHead>Description</TableHead>
-                          <TableHead>Local Address</TableHead>
-                          <TableHead>Remote Address</TableHead>
-                          <TableHead>IKE Group</TableHead>
+                          <TableHead>Enabled</TableHead>
+                          <TableHead>Local</TableHead>
+                          <TableHead>Remote</TableHead>
+                          <TableHead>IKE</TableHead>
+                          <TableHead>Default ESP</TableHead>
                           <TableHead>Type</TableHead>
+                          <TableHead>Phase 2</TableHead>
                           <TableHead>VTI</TableHead>
-                          <TableHead>Tunnels</TableHead>
                           {canEdit && <TableHead className="text-right">Actions</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredPeers.map(([peerId, peer]) => (
-                          <TableRow key={peerId}>
-                            <TableCell className="font-mono font-medium">{peerId}</TableCell>
-                            <TableCell>{valueOrDash(peer.description)}</TableCell>
-                            <TableCell className="font-mono">{valueOrDash(peer["local-address"])}</TableCell>
-                            <TableCell className="font-mono">{valueOrDash(peer["remote-address"])}</TableCell>
-                            <TableCell>{valueOrDash(peer["ike-group"])}</TableCell>
-                            <TableCell>{valueOrDash(peer["connection-type"])}</TableCell>
-                            <TableCell className="font-mono">{valueOrDash(peer.vti?.bind)}</TableCell>
-                            <TableCell>{Object.keys(peer.tunnels || {}).length || "-"}</TableCell>
-                            {canEdit && (
-                              <TableCell className="text-right">
-                                <div className="inline-flex gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      setPeerDialogMode("edit");
-                                      setPeerDialogPeerId(peerId);
-                                      setPeerDialogOpen(true);
-                                    }}
-                                    disabled={mutating}
-                                  >
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    Edit
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => deletePeer(peerId)}
-                                    disabled={mutating}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </Button>
-                                </div>
+                        {filteredPeers.map(([peerId, peer]) => {
+                          const isSelected = peerId === selectedPeerId;
+                          const tunnelCount = Object.keys(peer.tunnels || {}).length;
+                          const enabled = !peer.disable;
+                          return (
+                            <TableRow
+                              key={peerId}
+                              className={isSelected ? "bg-muted/40" : undefined}
+                              onClick={() => setSelectedPeerId(peerId)}
+                            >
+                              <TableCell className="font-mono font-medium">{peerId}</TableCell>
+                              <TableCell>{valueOrDash(peer.description)}</TableCell>
+                              <TableCell>{enabled ? "Yes" : "No"}</TableCell>
+                              <TableCell className="font-mono">
+                                {peer["dhcp-interface"] ? `dhcp:${peer["dhcp-interface"]}` : valueOrDash(peer["local-address"])}
                               </TableCell>
-                            )}
-                          </TableRow>
-                        ))}
+                              <TableCell className="font-mono">{valueOrDash(peer["remote-address"])}</TableCell>
+                              <TableCell>{valueOrDash(peer["ike-group"])}</TableCell>
+                              <TableCell>{valueOrDash(peer["default-esp-group"])}</TableCell>
+                              <TableCell>{valueOrDash(peer["connection-type"])}</TableCell>
+                              <TableCell>{tunnelCount}</TableCell>
+                              <TableCell className="font-mono">{valueOrDash(peer.vti?.bind)}</TableCell>
+                              {canEdit && (
+                                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                  <div className="inline-flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setPhase1DialogMode("edit");
+                                        setPhase1DialogPeerId(peerId);
+                                        setPhase1DialogOpen(true);
+                                      }}
+                                      disabled={mutating}
+                                    >
+                                      <Pencil className="mr-2 h-4 w-4" />
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedPeerId(peerId);
+                                        setPhase2DialogMode("create");
+                                        setPhase2DialogPeerId(peerId);
+                                        setPhase2DialogTunnelId("");
+                                        setPhase2DialogOpen(true);
+                                      }}
+                                      disabled={mutating}
+                                    >
+                                      <Plus className="mr-2 h-4 w-4" />
+                                      Phase 2
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => deletePeer(peerId)}
+                                      disabled={mutating}
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-lg">Phase 2 (Tunnels)</CardTitle>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {selectedPeerId ? (
+                        <span>
+                          Showing Phase 2 tunnels for <span className="font-mono">{selectedPeerId}</span>
+                        </span>
+                      ) : (
+                        "Select a Phase 1 peer above to manage Phase 2 tunnels."
+                      )}
+                    </div>
+                  </div>
+                  {canEdit && selectedPeerId && (
+                    <Button
+                      onClick={() => {
+                        setPhase2DialogMode("create");
+                        setPhase2DialogPeerId(selectedPeerId);
+                        setPhase2DialogTunnelId("");
+                        setPhase2DialogOpen(true);
+                      }}
+                      disabled={mutating}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Phase 2
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!selectedPeerId || !selectedPeer ? (
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    Select a Phase 1 peer to view tunnels.
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid gap-3 md:grid-cols-3 text-sm">
+                      <div className="rounded-md border p-3">
+                        <div className="text-xs text-muted-foreground">IKE Group</div>
+                        <div className="mt-1">{valueOrDash(selectedPeer["ike-group"])}</div>
+                      </div>
+                      <div className="rounded-md border p-3">
+                        <div className="text-xs text-muted-foreground">Default ESP Group</div>
+                        <div className="mt-1">{valueOrDash(selectedPeer["default-esp-group"])}</div>
+                      </div>
+                      <div className="rounded-md border p-3">
+                        <div className="text-xs text-muted-foreground">Force UDP Encapsulation</div>
+                        <div className="mt-1">{selectedPeer["force-udp-encapsulation"] ? "Yes" : "No"}</div>
+                      </div>
+                    </div>
+
+                    {selectedPeerTunnelIds.length === 0 ? (
+                      <div className="py-8 text-center text-sm text-muted-foreground">
+                        No Phase 2 tunnels configured for this peer.
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto rounded-md border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>ID</TableHead>
+                              <TableHead>Enabled</TableHead>
+                              <TableHead>Local</TableHead>
+                              <TableHead>L.Port</TableHead>
+                              <TableHead>Remote</TableHead>
+                              <TableHead>R.Port</TableHead>
+                              <TableHead>ESP</TableHead>
+                              <TableHead>Protocol</TableHead>
+                              <TableHead>Priority</TableHead>
+                              {canEdit && <TableHead className="text-right">Actions</TableHead>}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {selectedPeerTunnelIds.map((tunnelId) => {
+                              const tunnel: any = (selectedPeer.tunnels || {})[tunnelId] || {};
+                              const enabled = !Object.prototype.hasOwnProperty.call(tunnel, "disable");
+                              const espValue = tunnel["esp-group"] || selectedPeer["default-esp-group"] || "";
+                              return (
+                                <TableRow key={tunnelId}>
+                                  <TableCell className="font-mono font-medium">{tunnelId}</TableCell>
+                                  <TableCell>{enabled ? "Yes" : "No"}</TableCell>
+                                  <TableCell className="font-mono">{valueOrDash(tunnel?.local?.prefix)}</TableCell>
+                                  <TableCell className="font-mono">{valueOrDash(tunnel?.local?.port)}</TableCell>
+                                  <TableCell className="font-mono">{valueOrDash(tunnel?.remote?.prefix)}</TableCell>
+                                  <TableCell className="font-mono">{valueOrDash(tunnel?.remote?.port)}</TableCell>
+                                  <TableCell>{valueOrDash(espValue)}</TableCell>
+                                  <TableCell>{valueOrDash(tunnel?.protocol)}</TableCell>
+                                  <TableCell>{valueOrDash(tunnel?.priority)}</TableCell>
+                                  {canEdit && (
+                                    <TableCell className="text-right">
+                                      <div className="inline-flex gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            setPhase2DialogMode("edit");
+                                            setPhase2DialogPeerId(selectedPeerId);
+                                            setPhase2DialogTunnelId(tunnelId);
+                                            setPhase2DialogOpen(true);
+                                          }}
+                                          disabled={mutating}
+                                        >
+                                          <Pencil className="mr-2 h-4 w-4" />
+                                          Edit
+                                        </Button>
+                                        <Button
+                                          variant="destructive"
+                                          size="sm"
+                                          onClick={() => deleteTunnel(selectedPeerId, tunnelId)}
+                                          disabled={mutating}
+                                        >
+                                          <Trash2 className="mr-2 h-4 w-4" />
+                                          Delete
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  )}
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+
+                    <div className="rounded-lg border p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="font-medium">VTI (Route-Based)</div>
+                          <div className="text-sm text-muted-foreground">
+                            Optional route-based config. Not required for policy-based Phase 2 tunnels.
+                          </div>
+                        </div>
+                        {canEdit && (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setVtiDialogPeerId(selectedPeerId);
+                                setVtiDialogOpen(true);
+                              }}
+                              disabled={mutating}
+                            >
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Configure
+                            </Button>
+                            {selectedPeer.vti?.bind && (
+                              <Button
+                                variant="destructive"
+                                onClick={() => deleteVti(selectedPeerId)}
+                                disabled={mutating}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Remove
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid gap-3 md:grid-cols-3 text-sm mt-3">
+                        <div>
+                          <div className="text-xs text-muted-foreground">Bind</div>
+                          <div className="mt-1 font-mono">{valueOrDash(selectedPeer.vti?.bind)}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground">ESP Group</div>
+                          <div className="mt-1">{valueOrDash(selectedPeer.vti?.["esp-group"])}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground">Traffic Selector</div>
+                          <div className="mt-1 font-mono text-xs">
+                            {(() => {
+                              const ts: any = selectedPeer.vti?.["traffic-selector"] || null;
+                              const local = ts?.local?.prefix ? `L:${ts.local.prefix}` : "";
+                              const remote = ts?.remote?.prefix ? `R:${ts.remote.prefix}` : "";
+                              const combined = [local, remote].filter(Boolean).join(" ");
+                              return combined || "-";
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -424,6 +793,7 @@ export default function IPsecPage() {
                         <TableRow>
                           <TableHead>Name</TableHead>
                           <TableHead>Key Exchange</TableHead>
+                          <TableHead>Close Action</TableHead>
                           <TableHead>Lifetime</TableHead>
                           <TableHead>DPD</TableHead>
                           <TableHead>Proposals</TableHead>
@@ -435,11 +805,14 @@ export default function IPsecPage() {
                           const group = config?.["ike-group"]?.[name];
                           if (!group) return null;
                           const dpd = group["dead-peer-detection"] || null;
-                          const dpdSummary = dpd?.action ? `${dpd.action} ${valueOrDash(dpd.interval)}/${valueOrDash(dpd.timeout)}` : "-";
+                          const dpdSummary = dpd?.action
+                            ? `${dpd.action} ${valueOrDash(dpd.interval)}/${valueOrDash(dpd.timeout)}`
+                            : "-";
                           return (
                             <TableRow key={name}>
                               <TableCell className="font-mono font-medium">{name}</TableCell>
                               <TableCell>{valueOrDash(group["key-exchange"])}</TableCell>
+                              <TableCell>{valueOrDash(group["close-action"] || null)}</TableCell>
                               <TableCell>{valueOrDash(group.lifetime)}</TableCell>
                               <TableCell>{dpdSummary}</TableCell>
                               <TableCell>{Object.keys(group.proposals || {}).length}</TableCell>
@@ -613,6 +986,7 @@ export default function IPsecPage() {
                         <TableRow>
                           <TableHead>PSK</TableHead>
                           <TableHead>IDs</TableHead>
+                          <TableHead>Type</TableHead>
                           <TableHead>Secret</TableHead>
                           {canEdit && <TableHead className="text-right">Actions</TableHead>}
                         </TableRow>
@@ -625,6 +999,7 @@ export default function IPsecPage() {
                             <TableRow key={pskId}>
                               <TableCell className="font-mono font-medium">{pskId}</TableCell>
                               <TableCell className="font-mono text-xs">{(entry.ids || []).join(", ") || "-"}</TableCell>
+                              <TableCell>{valueOrDash(entry.secret_type || null)}</TableCell>
                               <TableCell>{entry.secret ? "Set" : "-"}</TableCell>
                               {canEdit && (
                                 <TableCell className="text-right">
@@ -664,6 +1039,64 @@ export default function IPsecPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="settings" className="mt-4 space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Global Settings</CardTitle>
+                <div className="text-sm text-muted-foreground mt-1">
+                  Configure global IPsec interfaces and options (VyOS-specific).
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!settings && (
+                  <div className="text-sm text-muted-foreground">
+                    Settings are unavailable (no active instance, or the device does not support the endpoint).
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label>IPsec Interfaces</Label>
+                  <Input
+                    value={settingsInterfaces}
+                    onChange={(event) => setSettingsInterfaces(event.target.value)}
+                    placeholder="eth0, eth1"
+                    disabled={!canEdit || settingsSaving}
+                    list="ipsec-interface-options"
+                  />
+                  <datalist id="ipsec-interface-options">
+                    {interfaceNames.map((name) => (
+                      <option key={name} value={name} />
+                    ))}
+                  </datalist>
+                  <div className="text-xs text-muted-foreground">
+                    Comma-separated. These are the interfaces VyOS uses for IPsec (similar to pfSense Phase 1 interface selection).
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Disable Route Auto-Install</Label>
+                  <div className="flex items-center gap-2 pt-2">
+                    <Checkbox
+                      checked={disableRouteAutoinstall}
+                      onCheckedChange={(value) => setDisableRouteAutoinstall(Boolean(value))}
+                      disabled={!canEdit || settingsSaving}
+                    />
+                    <span className="text-sm text-muted-foreground">Enable</span>
+                  </div>
+                </div>
+
+                {canEdit && (
+                  <div className="flex justify-end">
+                    <Button onClick={saveSettings} disabled={settingsSaving}>
+                      <RefreshCw className={`mr-2 h-4 w-4 ${settingsSaving ? "animate-spin" : ""}`} />
+                      Save Settings
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         <IkeGroupDialog
@@ -698,19 +1131,63 @@ export default function IPsecPage() {
           onSuccess={handleSuccess}
         />
 
-        <PeerDialog
-          open={peerDialogOpen}
-          mode={peerDialogMode}
+        <Phase1Dialog
+          open={phase1DialogOpen}
+          mode={phase1DialogMode}
           existingPeerIds={existingPeerIds}
-          peerId={peerDialogMode === "edit" ? peerDialogPeerId : undefined}
-          peer={peerDialogMode === "edit" ? (config?.["site-to-site"]?.[peerDialogPeerId] ?? null) : null}
+          peerId={phase1DialogMode === "edit" ? phase1DialogPeerId : undefined}
+          peer={phase1DialogMode === "edit" ? (config?.["site-to-site"]?.[phase1DialogPeerId] ?? null) : null}
           ikeGroupNames={ikeGroupNames}
           espGroupNames={espGroupNames}
+          interfaceNames={interfaceNames}
           onOpenChange={(open) => {
-            setPeerDialogOpen(open);
+            setPhase1DialogOpen(open);
             if (!open) {
-              setPeerDialogMode("create");
-              setPeerDialogPeerId("");
+              setPhase1DialogMode("create");
+              setPhase1DialogPeerId("");
+            }
+          }}
+          onSuccess={(message) => {
+            handleSuccess(message);
+            if (phase1DialogMode === "create" && phase1DialogPeerId) {
+              setSelectedPeerId(phase1DialogPeerId);
+            }
+          }}
+        />
+
+        <Phase2Dialog
+          open={phase2DialogOpen}
+          mode={phase2DialogMode}
+          peerId={phase2DialogPeerId}
+          existingTunnelIds={phase2DialogPeerId ? sortedNumericKeys(config?.["site-to-site"]?.[phase2DialogPeerId]?.tunnels || {}) : []}
+          espGroupNames={espGroupNames}
+          tunnelId={phase2DialogMode === "edit" ? phase2DialogTunnelId : undefined}
+          tunnel={
+            phase2DialogMode === "edit"
+              ? (config?.["site-to-site"]?.[phase2DialogPeerId]?.tunnels || {})[phase2DialogTunnelId] || null
+              : null
+          }
+          defaultEspGroup={phase2DialogPeerId ? (config?.["site-to-site"]?.[phase2DialogPeerId]?.["default-esp-group"] ?? null) : null}
+          onOpenChange={(open) => {
+            setPhase2DialogOpen(open);
+            if (!open) {
+              setPhase2DialogMode("create");
+              setPhase2DialogPeerId("");
+              setPhase2DialogTunnelId("");
+            }
+          }}
+          onSuccess={handleSuccess}
+        />
+
+        <VtiDialog
+          open={vtiDialogOpen}
+          peerId={vtiDialogPeerId}
+          vti={vtiDialogPeerId ? (config?.["site-to-site"]?.[vtiDialogPeerId]?.vti ?? null) : null}
+          espGroupNames={espGroupNames}
+          onOpenChange={(open) => {
+            setVtiDialogOpen(open);
+            if (!open) {
+              setVtiDialogPeerId("");
             }
           }}
           onSuccess={handleSuccess}

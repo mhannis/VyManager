@@ -27,6 +27,7 @@ export interface DeadPeerDetection {
 
 export interface IKEGroupUpsertRequest {
   key_exchange?: string | null;
+  close_action?: string | null;
   lifetime?: string | null;
   dead_peer_detection?: DeadPeerDetection | null;
   proposals: IPsecProposalUpsertRequest[];
@@ -36,6 +37,7 @@ export interface IKEGroupUpsertRequest {
 export interface IKEGroup {
   name: string;
   "key-exchange"?: string | null; // IKE version (ikev1, ikev2)
+  "close-action"?: string | null; // close-action (start|none)
   lifetime?: string | null; // SA lifetime in seconds
   "dead-peer-detection"?: DeadPeerDetection | null;
   "ikev2-reauth"?: Record<string, any> | null;
@@ -62,11 +64,14 @@ export interface ESPGroup {
 export interface VTIBinding {
   bind?: string | null; // Interface to bind (e.g., 'dum31')
   "esp-group"?: string | null; // ESP group to use
+  "traffic-selector"?: Record<string, any> | null;
 }
 
 export interface VTIBindingUpsertRequest {
   bind?: string | null;
   esp_group?: string | null;
+  local_prefix?: string | null;
+  remote_prefix?: string | null;
 }
 
 // Site-to-site peer authentication
@@ -84,20 +89,31 @@ export interface PeerAuthenticationUpsertRequest {
 
 export interface TunnelUpsertRequest {
   tunnel_id: string;
+  enabled?: boolean | null;
   local_prefix?: string | null;
+  local_port?: string | null;
   remote_prefix?: string | null;
+  remote_port?: string | null;
   esp_group?: string | null;
+  priority?: string | null;
+  protocol?: string | null;
 }
 
 export interface SiteToSitePeerUpsertRequest {
+  enabled?: boolean | null;
   description?: string | null;
   connection_type?: string | null;
   ike_group?: string | null;
+  default_esp_group?: string | null;
   local_address?: string | null;
   remote_address?: string | null;
+  dhcp_interface?: string | null;
+  force_udp_encapsulation?: boolean | null;
+  replay_window?: string | null;
+  virtual_address?: string | null;
   authentication?: PeerAuthenticationUpsertRequest | null;
   vti?: VTIBindingUpsertRequest | null;
-  tunnels: TunnelUpsertRequest[];
+  tunnels?: TunnelUpsertRequest[] | null;
 }
 
 // Site-to-site IPsec peer
@@ -107,16 +123,41 @@ export interface SiteToSitePeer {
   authentication?: PeerAuthentication | null;
   "connection-type"?: string | null; // Connection type (initiate, respond)
   "ike-group"?: string | null;
+  "default-esp-group"?: string | null;
   "ikev2-reauth"?: string | null;
+  "dhcp-interface"?: string | null;
+  "force-udp-encapsulation"?: boolean | null;
+  "replay-window"?: string | null;
+  "virtual-address"?: string | null;
+  disable?: boolean | null;
   "local-address"?: string | null;
   "remote-address"?: string | null;
   vti?: VTIBinding | null;
   tunnels?: Record<string, Record<string, any>> | null; // Legacy tunnel configurations
 }
 
+export interface TunnelPhase2UpsertRequest {
+  enabled?: boolean | null;
+  esp_group?: string | null;
+  priority?: string | null;
+  protocol?: string | null;
+  local_prefix?: string | null;
+  local_port?: string | null;
+  remote_prefix?: string | null;
+  remote_port?: string | null;
+}
+
+export interface VtiUpsertRequest {
+  bind?: string | null;
+  esp_group?: string | null;
+  local_prefix?: string | null;
+  remote_prefix?: string | null;
+}
+
 export interface PSKUpsertRequest {
   ids: string[];
   secret?: string | null;
+  secret_type?: string | null;
 }
 
 // Pre-Shared Key authentication
@@ -124,6 +165,7 @@ export interface PSKAuthentication {
   psk_id: string;
   ids: string[];
   secret?: string | null; // PSK secret (not exposed in read operations)
+  secret_type?: string | null;
 }
 
 export interface IPsecOperationResponse {
@@ -131,6 +173,16 @@ export interface IPsecOperationResponse {
   resource: string;
   name: string;
   message: string;
+}
+
+export interface IPsecSettings {
+  interfaces: string[];
+  disable_route_autoinstall: boolean;
+}
+
+export interface IPsecSettingsUpdateRequest {
+  interfaces?: string[] | null;
+  disable_route_autoinstall?: boolean | null;
 }
 
 // Complete IPsec VPN configuration
@@ -182,6 +234,14 @@ class IPsecService {
     return apiClient.get<IPsecStatus>("/vyos/vpn/ipsec/status");
   }
 
+  async getSettings(): Promise<IPsecSettings> {
+    return apiClient.get<IPsecSettings>("/vyos/vpn/ipsec/settings");
+  }
+
+  async updateSettings(request: IPsecSettingsUpdateRequest): Promise<IPsecOperationResponse> {
+    return apiClient.put<IPsecOperationResponse>("/vyos/vpn/ipsec/settings", request);
+  }
+
   async upsertIkeGroup(name: string, request: IKEGroupUpsertRequest): Promise<IPsecOperationResponse> {
     return apiClient.put<IPsecOperationResponse>(`/vyos/vpn/ipsec/ike-group/${encodeURIComponent(name)}`, request);
   }
@@ -204,6 +264,32 @@ class IPsecService {
 
   async deletePeer(peerId: string): Promise<IPsecOperationResponse> {
     return apiClient.delete<IPsecOperationResponse>(`/vyos/vpn/ipsec/peer/${encodeURIComponent(peerId)}`);
+  }
+
+  async upsertTunnel(peerId: string, tunnelId: string, request: TunnelPhase2UpsertRequest): Promise<IPsecOperationResponse> {
+    return apiClient.put<IPsecOperationResponse>(
+      `/vyos/vpn/ipsec/peer/${encodeURIComponent(peerId)}/tunnel/${encodeURIComponent(tunnelId)}`,
+      request,
+    );
+  }
+
+  async deleteTunnel(peerId: string, tunnelId: string): Promise<IPsecOperationResponse> {
+    return apiClient.delete<IPsecOperationResponse>(
+      `/vyos/vpn/ipsec/peer/${encodeURIComponent(peerId)}/tunnel/${encodeURIComponent(tunnelId)}`,
+    );
+  }
+
+  async upsertVti(peerId: string, request: VtiUpsertRequest): Promise<IPsecOperationResponse> {
+    return apiClient.put<IPsecOperationResponse>(
+      `/vyos/vpn/ipsec/peer/${encodeURIComponent(peerId)}/vti`,
+      request,
+    );
+  }
+
+  async deleteVti(peerId: string): Promise<IPsecOperationResponse> {
+    return apiClient.delete<IPsecOperationResponse>(
+      `/vyos/vpn/ipsec/peer/${encodeURIComponent(peerId)}/vti`,
+    );
   }
 
   async upsertPsk(pskId: string, request: PSKUpsertRequest): Promise<IPsecOperationResponse> {
