@@ -814,3 +814,16 @@ Branch: `dev`
 ### 62) Validation Snapshot
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run build` -> pass
+
+## Update (2026-02-13) - Frontend Restart (Site Down Recovery)
+
+### 63) User-Reported Problem
+- Frontend became unreachable ("site is down") while restarting to ensure the crash-fix build was running.
+
+### 64) Fix / Verification
+- Rebuilt + restarted the production UI:
+  - `cd frontend && npm run -s build`
+  - `tmux new-session -d -s vm-ui 'npx next start --hostname 0.0.0.0 --port 3000'`
+- Verified:
+  - `ss -lntp` shows a listener on `0.0.0.0:3000`
+  - `curl -I http://127.0.0.1:3000/` returns `307` redirect to `/login`
