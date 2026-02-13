@@ -1,6 +1,7 @@
 {
   "feature_id": "ipsec-s2s-wizard-v1",
   "title": "IPsec Site-to-Site VPN Wizard (v1)",
+  "last_updated": "2026-02-13",
   "status": "spec",
   "acceptance_criteria": [
     "Wizard can create one site-to-site IPsec tunnel (Phase 1 + Phase 2) from UI with minimal inputs.",
@@ -90,4 +91,3 @@
     }
   ]
 }
-

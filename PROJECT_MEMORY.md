@@ -56,6 +56,8 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Compose templates live in:
   - `container/vymanager-dev/env-file-docker-compose.yml`
   - `container/vymanager-prod/env-file-docker-compose.yml`
+- `vymanager-prod` uses pre-compiled `ghcr.io/...:beta` images and will **not** include local fork changes (e.g., new dashboard cards) unless you build/publish custom images.
+  - For local development/testing of fork changes, use `vymanager-dev` (builds from source + bind mounts) or run the frontend/backend dev servers directly.
 
 ## Architecture Notes
 - Frontend lives in `frontend/` and calls `/api/*` route handlers that proxy to backend `/vyos/*`.
@@ -103,3 +105,4 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Gateway card is best-effort: route parsing varies across VyOS/FRR versions; use `warnings[]` to surface gaps.
 - Backend uses session-based active instance; most endpoints fail with `{error:\"No active instance\"}` until connected.
 - For fast page loads, frontend `apiClient` dedupes in-flight GET requests and caches GET responses briefly (default 4s).
+- If a newly-added dashboard card doesn’t appear in the “Add Card” list, verify you’re not running `vymanager-prod` beta images; switch to `container/vymanager-dev/env-file-docker-compose.yml` or rebuild your own images.
