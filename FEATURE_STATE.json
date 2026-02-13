@@ -1,19 +1,20 @@
 {
-  "feature_id": "ipsec-s2s-wizard-v1",
-  "title": "IPsec Site-to-Site VPN Wizard (v1)",
+  "feature_id": "dhcp-ui-overhaul-v1",
+  "title": "DHCP UI Overhaul (pfSense-style) (v1)",
   "last_updated": "2026-02-13",
   "status": "spec",
   "acceptance_criteria": [
-    "Wizard can create one site-to-site IPsec tunnel (Phase 1 + Phase 2) from UI with minimal inputs.",
-    "Wizard configures required firewall/NAT so traffic flows (IKE/ESP/NAT-T as applicable).",
-    "Wizard is idempotent or clearly warns before overwriting config it created.",
-    "Wizard failures surface actionable errors and avoid silently leaving partial config.",
-    "Automated tests exist for backend parsing/build/apply logic."
+    "Network -> DHCP shows interface-based options for enabling DHCP only on interfaces with a configured static IPv4 address.",
+    "Interface options display the interface description/name (pfSense-like), not just raw interface IDs.",
+    "When creating a DHCP server for an interface, the default range is pre-populated within the interface subnet (and is adjustable).",
+    "UI validates that the DHCP range is inside the interface subnet and does not overlap the interface IP or broadcast/network addresses.",
+    "Backend apply is idempotent (re-applying the same config does not error) and surfaces actionable validation errors.",
+    "Automated tests exist for default range calculation + backend apply payload generation."
   ],
   "assumptions": [
-    "v1 targets IPv4, IKEv2, PSK auth, single tunnel.",
-    "Default mode (policy-based vs VTI) is TBD; must be confirmed by Mark.",
-    "Wizard-created config will be tagged with a stable description/prefix for detection and cleanup."
+    "v1 targets IPv4 DHCP server only (not DHCPv6).",
+    "Eligible interfaces are those with a configured static IPv4 address (not DHCP).",
+    "Default range selection will be conservative (avoid .1/.0/.255), and may need Mark confirmation for non-/24 subnets."
   ],
   "tasks": [
     {
@@ -21,35 +22,35 @@
       "owner_role": "Analyst",
       "status": "todo",
       "files": [],
-      "notes": "Produce Feature Spec Packet (wizard steps, validations, VyOS semantics, firewall/NAT behavior)."
+      "notes": "Produce Feature Spec Packet (UX flow, interface eligibility, default range algorithm, VyOS semantics)."
     },
     {
       "id": "T2",
       "owner_role": "Planner",
       "status": "todo",
       "files": [],
-      "notes": "Convert spec into implementation plan, milestones, rollback, and test strategy."
+      "notes": "Convert spec into implementation plan, milestones, rollback plan, and test strategy."
     },
     {
       "id": "T3",
       "owner_role": "Backend",
       "status": "todo",
       "files": [
-        "backend/routers/ipsec.py",
-        "backend/routers/firewall/*",
-        "backend/routers/nat/*"
+        "backend/routers/dhcp.py",
+        "backend/vyos_builders/dhcp/*",
+        "backend/vyos_mappers/dhcp/*"
       ],
-      "notes": "Add wizard apply endpoint(s) and any helper services/builders; ensure RBAC gates."
+      "notes": "Add/extend endpoints to list eligible interfaces + compute defaults; ensure RBAC and validation."
     },
     {
       "id": "T4",
       "owner_role": "UI",
       "status": "todo",
       "files": [
-        "frontend/src/app/vpn/ipsec/*",
-        "frontend/src/components/vpn/ipsec/*"
+        "frontend/src/app/network/dhcp/page.tsx",
+        "frontend/src/components/services/*dhcp*"
       ],
-      "notes": "Add wizard UI flow (similar to existing setup wizards) with validation and review/apply step."
+      "notes": "Overhaul DHCP page UX (pfSense-like interface selection + guided defaults) without breaking existing config editing."
     },
     {
       "id": "T5",
@@ -58,14 +59,14 @@
       "files": [
         "backend/tests/*"
       ],
-      "notes": "Add/extend automated tests; run locally and document commands + results."
+      "notes": "Add automated tests for default range logic + backend request validation; run locally and document results."
     },
     {
       "id": "T6",
       "owner_role": "Reviewer",
       "status": "todo",
       "files": [],
-      "notes": "Review for security (RBAC), correctness, idempotency, and edge cases."
+      "notes": "Review for security (RBAC), correctness, edge cases (odd subnets), and regression risk."
     },
     {
       "id": "T7",
@@ -88,6 +89,25 @@
       "name": "main",
       "purpose": "Primary VyManager worktree",
       "status": "idle"
+    }
+  ],
+  "backlog": [
+    {
+      "feature_id": "ipsec-s2s-wizard-v1",
+      "title": "IPsec Site-to-Site VPN Wizard (v1)",
+      "status": "spec",
+      "acceptance_criteria": [
+        "Wizard can create one site-to-site IPsec tunnel (Phase 1 + Phase 2) from UI with minimal inputs.",
+        "Wizard configures required firewall/NAT so traffic flows (IKE/ESP/NAT-T as applicable).",
+        "Wizard is idempotent or clearly warns before overwriting config it created.",
+        "Wizard failures surface actionable errors and avoid silently leaving partial config.",
+        "Automated tests exist for backend parsing/build/apply logic."
+      ],
+      "assumptions": [
+        "v1 targets IPv4, IKEv2, PSK auth, single tunnel.",
+        "Default mode (policy-based vs VTI) is TBD; must be confirmed by Mark.",
+        "Wizard-created config will be tagged with a stable description/prefix for detection and cleanup."
+      ]
     }
   ]
 }

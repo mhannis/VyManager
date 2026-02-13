@@ -91,10 +91,10 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Keep endpoints best-effort for `show` parsing: return structured data + `warnings[]` rather than failing hard when output formats vary.
 
 ## Current Objective
-- None (waiting for Mark to select the next feature).
+- Next: overhaul Network -> DHCP UI (pfSense-style) after finishing the gateway card polish.
 
 ## Current Feature Spec
-- None (`CURRENT_FEATURE.md` is `status: none`).
+- DHCP UI overhaul is next (spec pending).
 
 ## Work In Progress
 - Branch: `dev` (tracking `origin/dev`)
@@ -106,13 +106,19 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Current UI access (LAN): `http://192.168.10.249:3000`
 - Most recently shipped increment:
   - Gateway dashboard card + endpoint: commit `bfb029d` (adds `GET /vyos/show/gateway-summary` and `GatewayStatusCard`)
+  - Gateway card polish: commit `a273676` (removes redundant Link State and Speed/Duplex display)
   - Orchestrator memory files: commits `ccbe26e`, `0e2cf5a` (adds `ORCHESTRATOR.md`, `PROJECT_MEMORY.md`, `CURRENT_FEATURE.md`, `DECISIONS.md`)
 
 ## TODO Backlog (Short)
-- Pick next feature and run Spec Gate (Analyst/SME spec -> plan -> implementation -> tests -> review -> docs).
+- DHCP UI overhaul (pfSense-style enablement, interface-aware defaults)
+- DNS UI (forwarding + authoritative reverse) (spec pending)
+- Firewall zones UX + wizards/help (spec pending)
+- IPsec site-to-site wizard (spec started in `FEATURE_STATE.json`)
+- Gateway monitoring metrics (RTT/RTTsd/Loss) deferred (needs probe approach)
 
 ## Agent Handoff Notes
 - Gateway card is best-effort: route parsing varies across VyOS/FRR versions; use `warnings[]` to surface gaps.
+- Gateway monitoring metrics (RTT/RTTsd/Loss) are deferred because VyOS REST `show` does not support `ping`/monitor; would require a new integration approach (external probe/agent).
 - Backend uses session-based active instance; most endpoints fail with `{error:\"No active instance\"}` until connected.
 - For fast page loads, frontend `apiClient` dedupes in-flight GET requests and caches GET responses briefly (default 4s).
 - If a newly-added dashboard card doesn’t appear in the “Add Card” list, verify you’re not running `vymanager-prod` beta images; switch to `container/vymanager-dev/env-file-docker-compose.yml` or rebuild your own images.
