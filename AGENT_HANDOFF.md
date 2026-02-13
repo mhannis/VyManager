@@ -930,3 +930,36 @@ Branch: `dev`
   - VPP tab is now disabled (greyed out) when `GET /vyos/system/vpp-status` reports `available=false`.
   - Page shows a small note explaining VPP is unavailable on this image.
   - VPP config is lazily loaded only if the user selects the VPP tab and it is supported.
+
+## Update (2026-02-13) - Gateway Dashboard Card (Default Route)
+
+### 75) Goal
+- Add a pfSense-like gateway dashboard card that shows:
+  - active IPv4 default route next-hop + egress interface (best-effort)
+  - link state for the egress interface (best-effort)
+
+### 76) Backend
+- File: `backend/routers/show.py`
+- New endpoint:
+  - `GET /vyos/show/gateway-summary?refresh=false`
+- Notes:
+  - Parses `show ip route 0.0.0.0/0` output (falls back to `show ip route`).
+  - Reads configured static default route from `protocols.static.route["0.0.0.0/0"]` (if present).
+  - Returns structured fields plus a `warnings[]` list (no raw CLI output).
+  - RBAC: gated behind `FeatureGroup.DASHBOARD` read permission.
+
+### 77) Frontend
+- API client:
+  - `frontend/src/lib/api/show.ts`
+  - Added `getGatewaySummary()` and response types.
+- Dashboard card:
+  - `frontend/src/components/dashboard/GatewayStatusCard.tsx`
+  - Added Auto-refresh toggle + Refresh button, and a link to Static Routes.
+- Dashboard registration:
+  - `frontend/src/components/dashboard/AddCardModal.tsx`
+  - `frontend/src/app/page.tsx`
+
+### 78) Tests
+- Backend:
+  - `backend/tests/test_gateway_summary.py`
+  - `PYTHONPATH=. ./.venv/bin/pytest -q` -> `7 passed` (plus existing pydantic warnings)

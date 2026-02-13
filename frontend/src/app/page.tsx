@@ -14,6 +14,7 @@ import { InterfaceOverviewCard } from "@/components/dashboard/InterfaceOverviewC
 import { SystemInformationCard } from "@/components/dashboard/SystemInformationCard";
 import { NtpStatusCard } from "@/components/dashboard/NtpStatusCard";
 import { DiskUsageCard } from "@/components/dashboard/DiskUsageCard";
+import { GatewayStatusCard } from "@/components/dashboard/GatewayStatusCard";
 import { AddCardModal } from "@/components/dashboard/AddCardModal";
 import {
   DndContext,
@@ -593,6 +594,8 @@ export default function Home() {
         return <InterfaceStatisticsCard {...baseProps} />;
       case "interface-overview":
         return <InterfaceOverviewCard {...baseProps} />;
+      case "gateway-status":
+        return <GatewayStatusCard {...baseProps} />;
       default:
         return null;
     }

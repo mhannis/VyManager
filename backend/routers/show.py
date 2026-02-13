@@ -8,13 +8,15 @@ Uses session-based architecture - VyOS instance comes from user's active session
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any, Callable, Tuple
+import asyncio
+from datetime import datetime, timezone
 import logging
 import re
 import threading
 from starlette.concurrency import run_in_threadpool
 
 from session_vyos_service import get_session_vyos_service
-from fastapi_permissions import require_write_permission
+from fastapi_permissions import require_read_permission, require_write_permission
 from rbac_permissions import FeatureGroup
 from vyos_service import VyOSDeviceConfig, VyOSService
 
@@ -93,6 +95,39 @@ class InterfaceBlinkResponse(BaseModel):
     output: Optional[str] = None
 
 
+class ActiveDefaultGateway(BaseModel):
+    """Best-effort active IPv4 default gateway from operational routing table."""
+    destination: str = "0.0.0.0/0"
+    next_hop: Optional[str] = None
+    interface: Optional[str] = None
+    source: str = "opstate"
+
+
+class ConfiguredDefaultGateway(BaseModel):
+    """Configured IPv4 default gateway from static route configuration (if present)."""
+    destination: str = "0.0.0.0/0"
+    next_hops: List[str] = []
+    dhcp_interfaces: List[str] = []
+    description: Optional[str] = None
+
+
+class GatewayInterfaceStatus(BaseModel):
+    """Link state details for the egress interface (best-effort)."""
+    name: str
+    link_up: Optional[bool] = None
+    speed: Optional[str] = None
+    duplex: Optional[str] = None
+
+
+class GatewaySummaryResponse(BaseModel):
+    """Gateway summary response for dashboard card."""
+    generated_at: str
+    ipv4_default: Optional[ActiveDefaultGateway] = None
+    configured_ipv4_default: Optional[ConfiguredDefaultGateway] = None
+    interface: Optional[GatewayInterfaceStatus] = None
+    warnings: List[str] = []
+
+
 BlinkAttempt = Tuple[str, int, Callable[[], Any]]
 
 
@@ -153,6 +188,196 @@ def extract_show_output(result: Any) -> str:
     if isinstance(result, str):
         return result
     return str(result or "")
+
+
+def _strip_ansi(output: str) -> str:
+    """Remove ANSI escape sequences from show output."""
+    if not output:
+        return ""
+    return re.sub(r"\x1B\[[0-?]*[ -/]*[@-~]", "", output)
+
+
+def _is_valid_ipv4(ip: str) -> bool:
+    try:
+        parts = [int(part) for part in ip.split(".")]
+        if len(parts) != 4:
+            return False
+        return all(0 <= part <= 255 for part in parts)
+    except Exception:
+        return False
+
+
+def parse_active_ipv4_default_route(output: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    """
+    Best-effort parsing of `show ip route 0.0.0.0/0` (or `show ip route`) output.
+
+    Returns:
+        (next_hop, interface, protocol)
+    """
+    if not output or not isinstance(output, str):
+        return None, None, None
+
+    cleaned = _strip_ansi(output).strip()
+    if not cleaned:
+        return None, None, None
+
+    protocol: Optional[str] = None
+    known_match = re.search(r'Known via\s+"([^"]+)"', cleaned, re.IGNORECASE)
+    if known_match:
+        protocol = known_match.group(1).strip() or None
+    else:
+        proto_match = re.search(r"\bproto\s+([A-Za-z0-9_-]+)\b", cleaned, re.IGNORECASE)
+        if proto_match:
+            protocol = proto_match.group(1).strip() or None
+
+    ipv4 = r"(?P<gw>(?:\d{1,3}\.){3}\d{1,3})"
+    iface = r"(?P<iface>[A-Za-z0-9._:-]+)"
+
+    lines = cleaned.splitlines()
+
+    # FRR "Routing entry for ..." detailed output.
+    if re.search(r"\bRouting entry for\s+0\.0\.0\.0/0\b", cleaned, re.IGNORECASE):
+        for line in lines:
+            match = re.match(rf"^\s*\*\s+{ipv4}\s*,\s*via\s+{iface}\b", line, re.IGNORECASE)
+            if not match:
+                continue
+            gw = match.group("gw").strip()
+            iface_name = match.group("iface").strip()
+            if _is_valid_ipv4(gw) and iface_name:
+                return gw, iface_name, protocol
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+
+        # Linux iproute2 style when default is directly connected: "default dev eth0 ..."
+        match = re.search(rf"\bdefault\s+dev\s+{iface}\b", stripped, re.IGNORECASE)
+        if match:
+            iface_name = match.group("iface").strip()
+            if iface_name:
+                return None, iface_name, protocol
+
+        # Linux iproute2 style: "default via X dev eth0 ..."
+        match = re.search(rf"\bdefault\s+via\s+{ipv4}\s+dev\s+{iface}\b", stripped, re.IGNORECASE)
+        if match:
+            gw = match.group("gw").strip()
+            iface_name = match.group("iface").strip()
+            if _is_valid_ipv4(gw) and iface_name:
+                return gw, iface_name, protocol
+
+        if "0.0.0.0/0" not in stripped:
+            continue
+
+        # FRR table style: "... via X, eth0 ..."
+        match = re.search(rf"\bvia\s+{ipv4}\s*,\s*{iface}\b", stripped, re.IGNORECASE)
+        if match:
+            gw = match.group("gw").strip()
+            iface_name = match.group("iface").strip()
+            if _is_valid_ipv4(gw) and iface_name:
+                return gw, iface_name, protocol
+
+        # FRR table variant: "... via X dev eth0 ..."
+        match = re.search(rf"\bvia\s+{ipv4}\s+dev\s+{iface}\b", stripped, re.IGNORECASE)
+        if match:
+            gw = match.group("gw").strip()
+            iface_name = match.group("iface").strip()
+            if _is_valid_ipv4(gw) and iface_name:
+                return gw, iface_name, protocol
+
+        # Directly connected fallback (no explicit next-hop).
+        match = re.search(rf"\bis directly connected,\s*{iface}\b", stripped, re.IGNORECASE)
+        if match:
+            iface_name = match.group("iface").strip()
+            if iface_name:
+                return None, iface_name, protocol
+
+    return None, None, protocol
+
+
+def extract_configured_ipv4_default_gateway(
+    full_config: Dict[str, Any],
+) -> Tuple[Optional[ConfiguredDefaultGateway], Optional[str], List[str]]:
+    """
+    Extract configured IPv4 default route (0.0.0.0/0) from static routes config.
+
+    Returns:
+        (configured_gateway, preferred_interface, warnings)
+    """
+    warnings: List[str] = []
+    if not isinstance(full_config, dict):
+        return None, None, warnings
+
+    routes = (
+        full_config.get("protocols", {})
+        .get("static", {})
+        .get("route", {})
+    )
+    if not isinstance(routes, dict) or "0.0.0.0/0" not in routes:
+        return None, None, warnings
+
+    route_config = routes.get("0.0.0.0/0")
+    if route_config is None:
+        route_config = {}
+    if not isinstance(route_config, dict):
+        warnings.append("Configured default route exists but could not be parsed.")
+        return None, None, warnings
+
+    description = route_config.get("description")
+
+    next_hops_raw = route_config.get("next-hop", {})
+    next_hops: List[str] = []
+    preferred_interfaces: set[str] = set()
+
+    if isinstance(next_hops_raw, dict):
+        for nh_address, nh_config in next_hops_raw.items():
+            nh_address = str(nh_address).strip()
+            if nh_address:
+                next_hops.append(nh_address)
+
+            if isinstance(nh_config, dict):
+                iface = nh_config.get("interface")
+                if isinstance(iface, str) and iface.strip():
+                    preferred_interfaces.add(iface.strip())
+
+    dhcp_interfaces: List[str] = []
+    dhcp_iface_raw = route_config.get("dhcp-interface")
+    if dhcp_iface_raw:
+        if isinstance(dhcp_iface_raw, str):
+            dhcp_interfaces = [dhcp_iface_raw]
+        elif isinstance(dhcp_iface_raw, list):
+            dhcp_interfaces = [str(entry).strip() for entry in dhcp_iface_raw if str(entry).strip()]
+        elif isinstance(dhcp_iface_raw, dict):
+            dhcp_interfaces = [str(entry).strip() for entry in dhcp_iface_raw.keys() if str(entry).strip()]
+
+    for dhcp_iface in dhcp_interfaces:
+        if isinstance(dhcp_iface, str) and dhcp_iface.strip():
+            preferred_interfaces.add(dhcp_iface.strip())
+
+    interfaces_raw = route_config.get("interface", {})
+    if isinstance(interfaces_raw, dict):
+        for iface_name in interfaces_raw.keys():
+            iface_name = str(iface_name).strip()
+            if iface_name:
+                preferred_interfaces.add(iface_name)
+
+    if "blackhole" in route_config:
+        warnings.append("Configured default route is a blackhole route.")
+    if "reject" in route_config:
+        warnings.append("Configured default route is a reject route.")
+
+    preferred_interface: Optional[str] = None
+    if len(preferred_interfaces) == 1:
+        preferred_interface = next(iter(preferred_interfaces))
+
+    configured = ConfiguredDefaultGateway(
+        destination="0.0.0.0/0",
+        next_hops=sorted(next_hops),
+        dhcp_interfaces=sorted(set(dhcp_interfaces)),
+        description=description if isinstance(description, str) and description.strip() else None,
+    )
+
+    return configured, preferred_interface, warnings
 
 
 def _normalize_pci_bus_id(value: Optional[str]) -> Optional[str]:
@@ -1043,6 +1268,142 @@ async def get_interface_runtime_addresses(request: Request):
             interfaces=runtime_interfaces,
             total=len(runtime_interfaces),
         )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========================================================================
+# Endpoint: Gateway Summary (Default Route + Link State)
+# ========================================================================
+
+
+@router.get("/gateway-summary", response_model=GatewaySummaryResponse)
+async def get_gateway_summary(request: Request, refresh: bool = False) -> GatewaySummaryResponse:
+    """
+    Return a pfSense-like gateway summary for dashboard widgets.
+
+    Best-effort by design:
+    - Does not fail the entire request if some commands are unavailable.
+    - Avoids returning raw CLI output; returns structured fields + warnings.
+    """
+    await require_read_permission(request, FeatureGroup.DASHBOARD)
+
+    warnings: List[str] = []
+    generated_at = datetime.now(timezone.utc).isoformat()
+
+    try:
+        service = get_session_vyos_service(request)
+
+        active_output = ""
+        active_source = "opstate"
+
+        # Fetch config in parallel with the routing-table lookup.
+        route_result, config_result = await asyncio.gather(
+            run_in_threadpool(service.device.show, path=["ip", "route", "0.0.0.0/0"]),
+            run_in_threadpool(service.get_full_config, refresh=refresh),
+            return_exceptions=True,
+        )
+
+        full_config: Dict[str, Any] = {}
+        if isinstance(config_result, Exception):
+            warnings.append(
+                f"Failed to load configured default route: {type(config_result).__name__}: {str(config_result)}"
+            )
+        elif isinstance(config_result, dict):
+            full_config = config_result
+        else:
+            warnings.append("Configured route lookup returned unexpected data.")
+
+        if isinstance(route_result, Exception):
+            warnings.append(
+                f"Active default route lookup failed: {type(route_result).__name__}: {str(route_result)}"
+            )
+        else:
+            route_response = route_result
+            if route_response.status == 200:
+                active_output = extract_show_output(route_response.result)
+            else:
+                error_text = route_response.error or "unknown error"
+                warnings.append(f"Active default route lookup failed: {error_text}")
+
+        # Fallback to full routing table if the targeted query produced no output.
+        if not active_output:
+            active_source = "opstate-fallback"
+            table_response = await run_in_threadpool(service.device.show, path=["ip", "route"])
+            if table_response.status == 200:
+                active_output = extract_show_output(table_response.result)
+                warnings.append("Fell back to `show ip route` to locate default route.")
+            else:
+                error_text = table_response.error or "unknown error"
+                warnings.append(f"`show ip route` failed: {error_text}")
+
+        next_hop, iface_name, _protocol = parse_active_ipv4_default_route(active_output)
+        ipv4_default: Optional[ActiveDefaultGateway] = None
+        if active_output and not (next_hop or iface_name):
+            warnings.append("Unable to parse active default route from routing output.")
+
+        # If we parsed anything, return the active-default object (even if some fields are null).
+        if next_hop or iface_name:
+            ipv4_default = ActiveDefaultGateway(
+                destination="0.0.0.0/0",
+                next_hop=next_hop,
+                interface=iface_name,
+                source=active_source,
+            )
+
+        configured_ipv4_default: Optional[ConfiguredDefaultGateway] = None
+        configured_iface_name: Optional[str] = None
+        (
+            configured_ipv4_default,
+            configured_iface_name,
+            configured_warnings,
+        ) = extract_configured_ipv4_default_gateway(full_config)
+        warnings.extend(configured_warnings)
+
+        selected_interface = iface_name or configured_iface_name
+        interface: Optional[GatewayInterfaceStatus] = None
+
+        if selected_interface:
+            try:
+                physical_response = await run_in_threadpool(
+                    service.device.show,
+                    path=["interfaces", "ethernet", selected_interface, "physical"],
+                )
+                if physical_response.status == 200:
+                    physical_output = extract_show_output(physical_response.result)
+                    parsed = parse_interface_physical_details(
+                        interface_name=selected_interface,
+                        output=physical_output,
+                        nic_models_by_bus={},
+                    )
+                    interface = GatewayInterfaceStatus(
+                        name=selected_interface,
+                        link_up=parsed.link_up,
+                        speed=parsed.speed,
+                        duplex=parsed.duplex,
+                    )
+                else:
+                    error_text = physical_response.error or "unsupported"
+                    warnings.append(
+                        f"Interface physical details unavailable for {selected_interface}: {error_text}"
+                    )
+                    interface = GatewayInterfaceStatus(name=selected_interface)
+            except Exception as e:
+                warnings.append(
+                    f"Interface physical details unavailable for {selected_interface}: {type(e).__name__}: {str(e)}"
+                )
+                interface = GatewayInterfaceStatus(name=selected_interface)
+
+        return GatewaySummaryResponse(
+            generated_at=generated_at,
+            ipv4_default=ipv4_default,
+            configured_ipv4_default=configured_ipv4_default,
+            interface=interface,
+            warnings=warnings,
+        )
+
     except HTTPException:
         raise
     except Exception as e:

@@ -67,6 +67,35 @@ export interface InterfaceBlinkResponse {
   output?: string | null;
 }
 
+export interface ActiveDefaultGateway {
+  destination: string;
+  next_hop: string | null;
+  interface: string | null;
+  source: string;
+}
+
+export interface ConfiguredDefaultGateway {
+  destination: string;
+  next_hops: string[];
+  dhcp_interfaces: string[];
+  description: string | null;
+}
+
+export interface GatewayInterfaceStatus {
+  name: string;
+  link_up: boolean | null;
+  speed: string | null;
+  duplex: string | null;
+}
+
+export interface GatewaySummaryResponse {
+  generated_at: string;
+  ipv4_default: ActiveDefaultGateway | null;
+  configured_ipv4_default: ConfiguredDefaultGateway | null;
+  interface: GatewayInterfaceStatus | null;
+  warnings: string[];
+}
+
 // ============================================================================
 // API Service
 // ============================================================================
@@ -111,6 +140,15 @@ class ShowService {
     return apiClient.post<InterfaceBlinkResponse>("/vyos/show/interface-blink", {
       interface: interfaceName,
       duration_seconds: durationSeconds,
+    });
+  }
+
+  /**
+   * Get default gateway summary (active default route + best-effort link state).
+   */
+  async getGatewaySummary(refresh: boolean = false): Promise<GatewaySummaryResponse> {
+    return apiClient.get<GatewaySummaryResponse>("/vyos/show/gateway-summary", {
+      refresh: String(refresh),
     });
   }
 }
