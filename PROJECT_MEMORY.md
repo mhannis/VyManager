@@ -80,6 +80,8 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 
 ## Conventions
 - Prefer additive, small increments that include: implementation + tests + docs + review notes.
+- Orchestration flow includes a HEAVY `Build/Execution` pass (smoke install/build/lint/test) before review/release; record command outcomes and toolchain versions when running on-host validations.
+- Use feature branches for work; avoid committing directly to `main`.
 - Backend tests should be run with `PYTHONPATH=.` (repo currently assumes this).
 - Frontend lint currently emits warnings across the codebase; do not introduce new errors.
   - ESLint rules are intentionally warning-only for legacy patterns (see `frontend/eslint.config.mjs`).
