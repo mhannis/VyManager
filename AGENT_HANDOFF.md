@@ -843,3 +843,14 @@ Branch: `dev`
   - `user.name = mhannis`
   - `user.email = 60040465+mhannis@users.noreply.github.com`
 - Note: previously pushed commits keep their original author unless history is rewritten and force-pushed.
+
+### 68) History Rewrite (Dev Branch)
+- Requirement: commits after `9754657` (work done in this fork) should display `mhannis` on GitHub.
+- Action taken:
+  - Created a safety backup branch on the fork with the original history:
+    - `dev-author-backup-20260213`
+  - Rewrote author + committer metadata for commits in range `9754657..HEAD` to `mhannis` (kept commit dates).
+  - Pushed rewritten history to a new branch on the fork:
+    - `dev-author-fix-mhannis`
+- Note: updating the fork's `dev` branch to the rewritten history requires moving the `dev` branch ref:
+  - Recommended: rename branches on GitHub (`dev` -> backup name, then rename `dev-author-fix-mhannis` -> `dev`).
