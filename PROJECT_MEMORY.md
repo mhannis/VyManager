@@ -1,6 +1,6 @@
 # PROJECT_MEMORY.md
 
-Last updated: 2026-02-13
+Last updated: 2026-02-14
 
 Repo: https://github.com/mhannis/VyManager/tree/dev
 
@@ -80,6 +80,13 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
  - Key backend layout:
    - Feature endpoints: `backend/routers/**`
    - Version-aware config generation: `backend/vyos_builders/**` + `backend/vyos_mappers/**`
+- Containers automation:
+  - VyOS HTTPS API does not expose op-mode `add container image ...`, so image pulls + host dir creation are performed via SSH.
+  - Backend endpoints:
+    - `GET /vyos/containers/bootstrap-status`
+    - `POST /vyos/containers/bootstrap`
+    - `POST /vyos/containers/{name}/install`
+  - SSH key material is stored under `backend/.devdata/ssh/` (gitignored); backend Dockerfile installs `openssh-client`.
 
 ## Conventions
 - Prefer additive, small increments that include: implementation + tests + docs + review notes.
@@ -91,13 +98,25 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Keep endpoints best-effort for `show` parsing: return structured data + `warnings[]` rather than failing hard when output formats vary.
 
 ## Current Objective
-- Next: overhaul Network -> DHCP UI (pfSense-style) after finishing the gateway card polish.
+- Ship Container Management automation (bootstrap + install + link host selection) so Pi-hole and other templates install reliably.
 
 ## Current Feature Spec
-- DHCP UI overhaul is next (spec pending).
+- **Container Management Automation (v1)**
+  - Setup gate: `System -> Containers` shows a Setup Required screen until:
+    - `service ssh` is enabled
+    - `system login user vyos authentication public-keys vymanager` is installed
+  - Install flow: UI has an explicit **Install** button that:
+    - pulls the image (`add container image ...`) via SSH
+    - creates missing `/config/containers/*` volume paths via SSH
+    - commits the container config via HTTPS API
+  - Link host selection: UI lets the user choose which interface/host IP to use when opening container web links (default prefers private static interface IPs over the instance host).
+  - Tests: backend pytest covers `/bootstrap` and `/install` happy paths with mocked SSH.
+  - Assumptions:
+    - Selecting a link host changes only the URL used to open the service (it does not change which IPs the ports bind to).
+    - Firewall exposure (WAN vs LAN) is handled by firewall/zones configuration and is out-of-scope for v1.
 
 ## Work In Progress
-- Branch: `dev` (tracking `origin/dev`)
+- Branch: `feature/containers-automation-v1` (based on `origin/dev`)
 - Worktree status: clean
 - Host toolchain (dev box): node `v20.20.0`, npm `10.8.2`, python `3.12.3`.
 - Dev services are typically run in `tmux`:
@@ -107,7 +126,12 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Most recently shipped increment:
   - Gateway dashboard card + endpoint: commit `bfb029d` (adds `GET /vyos/show/gateway-summary` and `GatewayStatusCard`)
   - Gateway card polish: commit `a273676` (removes redundant Link State and Speed/Duplex display)
+  - Containers automation:
+    - `6d21a51` Containers: add SSH bootstrap + install endpoints
+    - `2764416` Containers UI: bootstrap gate, install button, link host selection
   - Orchestrator memory files: commits `ccbe26e`, `0e2cf5a` (adds `ORCHESTRATOR.md`, `PROJECT_MEMORY.md`, `CURRENT_FEATURE.md`, `DECISIONS.md`)
+ - Unfinished work:
+   - DHCP fixes are stashed locally (`git stash list`) and not yet on a branch/PR.
 
 ## TODO Backlog (Short)
 - DHCP UI overhaul (pfSense-style enablement, interface-aware defaults)

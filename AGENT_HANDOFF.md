@@ -196,7 +196,7 @@ Branch: `dev`
 ### 7) Container Template Catalog + LAN Planning Helper
 - Enhanced container create/edit UX:
   - File: `frontend/src/app/system/containers/page.tsx`
-  - Added template catalog with `Populate` and `Populate + Install` actions.
+  - Added template catalog with a `Populate` action (edit first, then install explicitly).
   - Added common presets:
     - Pi-hole
     - AdGuard Home
@@ -212,6 +212,33 @@ Branch: `dev`
     - One-click copy of helper IP into container `network_address` (when `network` is set)
   - Updated refresh behavior to refresh both container overview and LAN helper data.
   - Save path now supports internal draft override for one-click template install.
+
+### 7b) Containers Automation Bootstrap + Install (SSH)
+- Background:
+  - VyOS HTTPS API does not expose op-mode `add container image ...`, so image pulls must be performed outside the API.
+- Backend:
+  - File: `backend/utils/ssh_exec.py`
+    - Generates/uses an ed25519 keypair stored under `backend/.devdata/ssh/` (gitignored).
+    - Runs restricted SSH commands:
+      - `sudo -n mkdir -p` for `/config/containers/*` volume paths
+      - `sudo -n /opt/vyatta/bin/vyatta-op-cmd-wrapper add container image <ref>`
+  - File: `backend/routers/containers.py`
+    - Added endpoints:
+      - `GET /vyos/containers/bootstrap-status`
+      - `POST /vyos/containers/bootstrap`
+      - `POST /vyos/containers/{container_name}/install`
+    - Validation fix: allow port publishing with `network` (per VyOS docs).
+    - Link generation fix: published ports are reachable at the VyOS host address (not the container `network_address`).
+- Frontend:
+  - File: `frontend/src/app/system/containers/page.tsx`
+    - Adds a Setup Required screen until SSH + key are configured.
+    - Adds an explicit **Install Container** action (pull image + create host paths + commit config).
+    - Adds an "Open links using" selector (defaults to private static interface IPs instead of the instance host).
+  - File: `frontend/src/lib/api/containers.ts`
+    - Added typed bindings for bootstrap/install endpoints.
+- Tests:
+  - File: `backend/tests/test_containers_automation_v1.py`
+  - Covers `/bootstrap` and `/install` happy paths with mocked SSH.
 
 ### 8) Frontend Lint Unblocked (Pre-existing Errors)
 - Goal achieved: `npm run lint` now exits with `0` (no errors).
