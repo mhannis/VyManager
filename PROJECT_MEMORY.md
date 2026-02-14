@@ -80,7 +80,7 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: VPN completion batch implemented and validated; commit/push pending in this cycle.
+- Status: VPN completion batch implemented, validated, committed, and pushed (`c0cac8d`).
 - Working tree is dirty with unrelated pre-existing changes outside this hotfix.
 
 ### Files Touched This Cycle (hotfix-owned)

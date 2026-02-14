@@ -3,7 +3,7 @@ status: done
 title: VPN backlog batch - DMVPN/OpenConnect/PPTP/SSTP/Overview
 branch: feature/containers-automation-v1
 commits:
-  - pending-commit
+  - c0cac8d
 notes:
   - Added backend wrapper endpoints for `/vyos/vpn-openconnect`, `/vyos/vpn-pptp`, and `/vyos/vpn-sstp`.
   - Added DMVPN backend router at `/vyos/vpn-dmvpn` with scoped command validation for tunnel/NHRP/IPsec-profile operations.
