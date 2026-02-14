@@ -60,9 +60,12 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 
 ## Current Objective
 - Deliver IA polish requested by Mark:
-  - keep SSH/NTP/LLDP/mDNS under `System`
+  - keep `NTP/LLDP/mDNS` under `Services`
+  - keep `SSH` under `System -> Options & Coverage`
   - avoid DHCP Server appearing under `Services` (prevent dual-open with `Network`)
   - expose additional system-level controls in `System` via a dedicated options page
+  - remove redundant shortcut buttons from `System -> Options & Coverage` (no Logs/Users/Containers there)
+  - hide the service tab strip when opening a single service from sidebar shortcuts
   - keep zone guided setup as a top-right, one-time wizard entry point
   - keep clear onboarding path for WAN/LAN setup using wizards
 
@@ -71,20 +74,22 @@ Feature: **System IA + Guided Setup Cohesion (v2)**
 
 Acceptance criteria:
 - Sidebar `Services` no longer includes DHCP Server to avoid opening `Network` and `Services` at once.
-- Sidebar keeps SSH under `System`.
+- Sidebar places `NTP/LLDP/mDNS` under `Services`.
+- Sidebar keeps SSH under `System -> Options & Coverage` flow.
 - `System -> Options & Coverage` exists and is functional.
 - System options page allows editing:
   - `system host-name`
   - `system time-zone`
   - `system domain-name`
-  - `system name-server` list
+- System options page does not duplicate DNS name-server editing; DNS server controls stay in DNS Resolver.
 - System options page links users to setup flow (Network Wizard -> Zone Wizard -> Policies).
 - Firewall Zones guided setup is a top-right button and runs as modal one-time wizard (re-runnable).
 - Firewall Policies page provides direct links to setup wizards.
+- Opening service pages from sidebar does not show the horizontal multi-service tab strip.
 
 Assumptions:
 - Existing `network/setup-wizard` remains the primary base bootstrap workflow.
-- `system name-server` tokens can be validated with the existing safe token validator in this codebase.
+- System options saves preserve existing system name-servers while DNS server ownership remains in DNS Resolver UI.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
@@ -92,16 +97,13 @@ Assumptions:
 - Host toolchain: node `v20.20.0`, npm `10.8.2`, python `3.12.3`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q` -> `27 passed`
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
-- `cd frontend && npm run -s lint` -> pass with existing warning debt (0 errors)
 - `cd frontend && npm run -s build` -> pass
 - `cd frontend && npm run -s smoke:runtime` -> pass
-- `cd frontend && npm run -s smoke:ui` -> fail (missing host lib `libnspr4.so`; tracked in `LAST_FAILURE.txt`)
-- Runtime redeploy completed:
+- `cd frontend && npm run -s lint` -> pass with existing warning debt (0 errors)
+- Runtime redeploy completed for UI:
   - restarted `vm-ui` on `0.0.0.0:3000`
-  - restarted `vm-api` with `.env` sourced on `0.0.0.0:8000`
-  - health checks: `/docs` -> `200`, frontend root -> `307` (expected redirect), `/session/sites` -> `401` (expected unauthenticated)
+  - health checks: frontend root -> `307` (expected redirect), `/docs` -> `200`
 
 ### Key Implementation Notes
 - Added `PUT /vyos/system/config` in `backend/routers/system.py`.
@@ -115,9 +117,12 @@ Assumptions:
   - setup wizard launch card
   - system coverage/navigation card
 - Sidebar IA updates:
-  - moved SSH/NTP/LLDP/mDNS to `System`
+  - moved NTP/LLDP/mDNS into `Services`
   - removed DHCP Server from `Services`
-  - added `System -> Options & Coverage`
+  - kept `System -> Options & Coverage` as SSH entry point
+- Added single-service view mode for `/system/services` (`view=single`) so sidebar service shortcuts do not show the tab strip.
+- Removed redundant shortcuts from `System -> Options & Coverage` (Logs/Users/Containers and other duplicated service links).
+- Kept DNS server ownership in DNS Resolver flow; System Options now preserves existing name-servers during save.
 - Firewall Zones now includes top-right guided wizard flow and one-time localStorage marker.
 - Firewall Policies includes direct links to Network/Zone wizards.
 

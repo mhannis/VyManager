@@ -5,16 +5,19 @@
   "status": "in_progress",
   "acceptance_criteria": [
     "Sidebar Services no longer includes DHCP Server to prevent simultaneous Services+Network expansion.",
-    "SSH remains under System navigation.",
-    "System Options page exists and allows editing hostname/timezone/domain/system name-servers.",
+    "Sidebar places NTP/LLDP/mDNS under Services.",
+    "SSH remains under the System -> Options & Coverage flow.",
+    "System Options page exists and allows editing hostname/timezone/domain.",
+    "DNS server ownership remains in DNS Resolver flow (not duplicated in System Options).",
     "System Options page provides clear setup-wizard entry points for WAN/LAN/firewall onboarding.",
     "Firewall Zones guided setup is a top-right modal button intended for one-time use but re-runnable.",
     "Firewall Policies page includes direct links to Network Wizard and Zone Wizard.",
+    "Service shortcuts open without the horizontal multi-service tab strip.",
     "Runtime build/start validation passes and site remains reachable after deploy."
   ],
   "assumptions": [
     "Network Setup Wizard remains the primary initial bootstrap path for new users.",
-    "Existing token validator is sufficient for system name-server entries in this codebase.",
+    "System Options saves should preserve existing system name-servers while DNS configuration is managed via DNS Resolver.",
     "Playwright browser smoke remains blocked on this host until OS dependencies are installed."
   ],
   "tasks": [
@@ -46,9 +49,10 @@
         "frontend/src/components/layout/Sidebar.tsx",
         "frontend/src/app/firewall/zones/page.tsx",
         "frontend/src/app/firewall/policies/page.tsx",
+        "frontend/src/app/system/services/page.tsx",
         "frontend/src/lib/api/system.ts"
       ],
-      "notes": "Added System Options page, refined sidebar IA, and ensured setup wizard entry points are visible in zones/policies/system."
+      "notes": "Added System Options page, refined sidebar IA, enabled single-service view mode, and ensured setup wizard entry points are visible in zones/policies/system."
     },
     {
       "id": "T4",
@@ -66,7 +70,7 @@
       "files": [
         "LAST_FAILURE.txt"
       ],
-      "notes": "Ran backend tests + frontend typecheck/lint/build + runtime smoke; browser smoke failed due missing libnspr4.so (tracked)."
+      "notes": "Ran frontend typecheck/lint/build/runtime smoke; browser smoke remains blocked by missing host libs."
     },
     {
       "id": "T6",
@@ -75,7 +79,7 @@
       "files": [
         "PROJECT_MEMORY.md"
       ],
-      "notes": "Restarted vm-ui/vm-api and verified listeners/HTTP probes after deploy."
+      "notes": "Restarted vm-ui and verified listeners/HTTP probes after deploy."
     },
     {
       "id": "T7",

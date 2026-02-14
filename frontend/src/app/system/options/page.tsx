@@ -8,30 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { systemService, type SystemConfig } from "@/lib/api/system";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 import { AlertCircle, BookOpen, RefreshCw, Save, Settings2, Sparkles, Wrench } from "lucide-react";
-
-function normalizeNameServerList(value: string): string[] {
-  const seen = new Set<string>();
-  const result: string[] = [];
-
-  for (const token of value.split(/[\s,]+/)) {
-    const entry = token.trim();
-    if (!entry || seen.has(entry)) continue;
-    seen.add(entry);
-    result.push(entry);
-  }
-
-  return result;
-}
-
-function nameServersToText(config: SystemConfig | null): string {
-  if (!config) return "";
-  return config.name_servers.join("\n");
-}
 
 export default function SystemOptionsPage() {
   const { canWrite } = usePermissions();
@@ -46,17 +26,15 @@ export default function SystemOptionsPage() {
   const [hostname, setHostname] = useState("");
   const [timezone, setTimezone] = useState("");
   const [domainName, setDomainName] = useState("");
-  const [nameServersText, setNameServersText] = useState("");
 
   const hasUnsavedChanges = useMemo(() => {
     if (!config) return false;
     return (
       hostname !== (config.hostname || "") ||
       timezone !== (config.timezone || "") ||
-      domainName !== (config.domain_name || "") ||
-      nameServersText !== nameServersToText(config)
+      domainName !== (config.domain_name || "")
     );
-  }, [config, domainName, hostname, nameServersText, timezone]);
+  }, [config, domainName, hostname, timezone]);
 
   const loadConfig = async (refresh = false) => {
     setLoading(true);
@@ -67,7 +45,6 @@ export default function SystemOptionsPage() {
       setHostname(response.hostname || "");
       setTimezone(response.timezone || "");
       setDomainName(response.domain_name || "");
-      setNameServersText(nameServersToText(response));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load system options.");
     } finally {
@@ -88,13 +65,13 @@ export default function SystemOptionsPage() {
         hostname: hostname.trim() || null,
         timezone: timezone.trim() || null,
         domain_name: domainName.trim() || null,
-        name_servers: normalizeNameServerList(nameServersText),
+        // Name servers are managed under Services > DNS Resolver to avoid split ownership.
+        name_servers: config?.name_servers ?? [],
       });
       setConfig(updated);
       setHostname(updated.hostname || "");
       setTimezone(updated.timezone || "");
       setDomainName(updated.domain_name || "");
-      setNameServersText(nameServersToText(updated));
       setSuccess("System options saved.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save system options.");
@@ -182,20 +159,13 @@ export default function SystemOptionsPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="name-servers">System Name Servers</Label>
-                <Textarea
-                  id="name-servers"
-                  value={nameServersText}
-                  onChange={(event) => setNameServersText(event.target.value)}
-                  className="min-h-[120px] font-mono text-xs"
-                  placeholder={"1.1.1.1\n9.9.9.9"}
-                  disabled={!canEditSystem || loading || saving}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Enter one per line (or comma-separated). Used by system resolver and defaults in other services.
-                </p>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                DNS server management lives under{" "}
+                <Link href="/system/services?tab=dns-resolver&view=single" className="text-primary hover:text-primary/80">
+                  Services - DNS Resolver
+                </Link>
+                .
+              </p>
 
               {!canEditSystem && (
                 <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-700">
@@ -249,33 +219,12 @@ export default function SystemOptionsPage() {
               System Coverage
             </CardTitle>
             <CardDescription>
-              Major system controls currently surfaced in GUI, plus direct VyOS docs for additional reference.
+              Non-redundant shortcuts for system options and documentation.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             <Button asChild variant="outline" className="justify-start">
-              <Link href="/system/services?tab=ssh">SSH Service</Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start">
-              <Link href="/system/services?tab=ntp">NTP Service</Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start">
-              <Link href="/system/services?tab=lldp">LLDP Service</Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start">
-              <Link href="/system/services?tab=mdns">mDNS Repeater</Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start">
-              <Link href="/system/acceleration">Acceleration (QAT/VPP)</Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start">
-              <Link href="/system/logs">System Logs</Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start">
-              <Link href="/system/users">Local Users</Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start">
-              <Link href="/system/containers">Containers</Link>
+              <Link href="/system/services?tab=ssh&view=single">SSH Service</Link>
             </Button>
             <Button asChild variant="outline" className="justify-start">
               <a href="https://docs.vyos.io/en/latest/configuration/system/" target="_blank" rel="noreferrer">

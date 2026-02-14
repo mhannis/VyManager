@@ -107,6 +107,17 @@ const SERVICE_TAB_VALUES: ServiceTab[] = [
   "dhcp-relay",
 ];
 
+const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
+  ntp: "NTP",
+  lldp: "LLDP",
+  mdns: "mDNS Repeater",
+  ssh: "SSH",
+  "dns-forwarder": "DNS Forwarder",
+  "dns-resolver": "DNS Resolver",
+  "dynamic-dns": "Dynamic DNS",
+  "dhcp-relay": "DHCP Relay",
+};
+
 function normalizeServiceTab(raw: string | null): ServiceTab | null {
   if (!raw) return null;
   const normalized = raw === "dns" ? "dns-forwarder" : raw;
@@ -139,6 +150,7 @@ function SystemServicesPageContent() {
   const searchParams = useSearchParams();
   const { canWrite } = usePermissions();
   const canEditSystem = canWrite(FeatureGroup.SYSTEM);
+  const singleServiceView = searchParams.get("view") === "single";
 
   const [activeTab, setActiveTab] = useState<ServiceTab>("ntp");
   const [serviceRefreshNonce, setServiceRefreshNonce] = useState(0);
@@ -665,7 +677,9 @@ function SystemServicesPageContent() {
               System Services
             </h1>
             <p className="text-muted-foreground mt-2">
-              Configure and monitor system-level services such as NTP, LLDP, and mDNS.
+              {singleServiceView
+                ? `Configure and monitor ${SERVICE_TAB_LABELS[activeTab]}.`
+                : "Configure and monitor system-level services such as NTP, LLDP, and mDNS."}
             </p>
           </div>
           <Button variant="outline" onClick={handleRefresh} disabled={activeLoading || saving}>
@@ -689,16 +703,18 @@ function SystemServicesPageContent() {
         )}
 
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
-            <TabsTrigger value="ntp">NTP</TabsTrigger>
-            <TabsTrigger value="lldp">LLDP</TabsTrigger>
-            <TabsTrigger value="mdns">mDNS Repeater</TabsTrigger>
-            <TabsTrigger value="ssh">SSH</TabsTrigger>
-            <TabsTrigger value="dns-forwarder">DNS Forwarder</TabsTrigger>
-            <TabsTrigger value="dns-resolver">DNS Resolver</TabsTrigger>
-            <TabsTrigger value="dynamic-dns">Dynamic DNS</TabsTrigger>
-            <TabsTrigger value="dhcp-relay">DHCP Relay</TabsTrigger>
-          </TabsList>
+          {!singleServiceView && (
+            <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
+              <TabsTrigger value="ntp">NTP</TabsTrigger>
+              <TabsTrigger value="lldp">LLDP</TabsTrigger>
+              <TabsTrigger value="mdns">mDNS Repeater</TabsTrigger>
+              <TabsTrigger value="ssh">SSH</TabsTrigger>
+              <TabsTrigger value="dns-forwarder">DNS Forwarder</TabsTrigger>
+              <TabsTrigger value="dns-resolver">DNS Resolver</TabsTrigger>
+              <TabsTrigger value="dynamic-dns">Dynamic DNS</TabsTrigger>
+              <TabsTrigger value="dhcp-relay">DHCP Relay</TabsTrigger>
+            </TabsList>
+          )}
 
           <TabsContent value="ntp" className="space-y-6">
             <div className="grid gap-6 xl:grid-cols-3">

@@ -29,3 +29,7 @@
 - 2026-02-14: Added `PUT /vyos/system/config` to support GUI-driven updates for `system host-name`, `system time-zone`, `system domain-name`, and `system name-server` list from the new `System -> Options` page.
 - 2026-02-14: Sidebar IA adjusted so DHCP Server is not listed under `Services` (prevents dual-open confusion with `Network`), while SSH/NTP/LLDP/mDNS remain under `System`.
 - 2026-02-14: `System -> Options & Coverage` now acts as the high-level onboarding hub linking Network Wizard, Zone Wizard, and Firewall Policies for base setup flow clarity.
+- 2026-02-14: Re-classified `NTP`, `LLDP`, and `mDNS Repeater` under `Services` in sidebar IA; SSH remains discoverable via `System -> Options & Coverage` per Mark preference.
+- 2026-02-14: Added `view=single` mode to `/system/services` and updated service links to use it, hiding the horizontal multi-service tab strip for service-specific navigation.
+- 2026-02-14: Removed system name-server editing from `System -> Options` UI to avoid split ownership; DNS server controls stay under DNS Resolver flow, and System Options preserves existing name-servers on save.
+- 2026-02-14: Removed redundant shortcuts from `System -> Options & Coverage` (Logs, Users, Containers, and other duplicated service links).
