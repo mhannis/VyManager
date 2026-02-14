@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-14T22:04:54Z",
+  "generated_at": "2026-02-14T22:13:04Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -700,9 +700,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/eventhandler.html",
       "title": "Event Handler",
       "cli_scope": "service eventhandler",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 79,

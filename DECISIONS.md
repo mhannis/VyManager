@@ -99,3 +99,5 @@
 - 2026-02-14: Added service-wrapper routers for `broadcast-relay`, `conntrack-sync`, `console-server`, `salt-minion`, and `suricata` using the same thin wrapper pattern and permission model.
 - 2026-02-14: Added form-first service tabs for Broadcast Relay, Conntrack Sync, Console Server, Salt Minion, and Suricata under `/system/services` with no free-form CLI text entry.
 - 2026-02-14: Expanded smoke gates to include all new service tabs in single-view routes to catch service-page runtime regressions before handoff.
+- 2026-02-14: Added service-wrapper router and form-first page for `event-handler` under `/system/services`.
+- 2026-02-14: Coverage crawler aliasing extended for `eventhandler <-> event_handler`, and service-tail alias expansion added for wrapper detection; this resolved event-handler false `FRONTEND_ONLY` matrix output.

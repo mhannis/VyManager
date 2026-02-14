@@ -35,6 +35,7 @@ const ROUTES = (
     "/system/services?tab=broadcast-relay&view=single",
     "/system/services?tab=console-server&view=single",
     "/system/services?tab=conntrack-sync&view=single",
+    "/system/services?tab=event-handler&view=single",
     "/system/services?tab=https-api&view=single",
     "/system/services?tab=salt-minion&view=single",
     "/system/services?tab=snmp&view=single",

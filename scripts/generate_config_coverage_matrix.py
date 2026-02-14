@@ -195,6 +195,8 @@ def detect_domain_coverage(
         "load_balancing": {"loadbalancing"},
         "wireguard": {"wire_guard"},
         "dhcp": {"dhcp_server", "dhcp_relay"},
+        "eventhandler": {"event_handler"},
+        "event_handler": {"eventhandler"},
     }
 
     for token in list(normalized):
@@ -220,8 +222,12 @@ def detect_domain_coverage(
     # `service_<service>` backend router module names.
     if len(token_list) > 1 and token_list[0] == "service":
         service_tail = "_".join(token_list[1:])
-        normalized.add(f"{service_tail}_service")
-        normalized.add(f"service_{service_tail}")
+        service_tail_candidates = {service_tail}
+        if service_tail in aliases:
+            service_tail_candidates.update(aliases[service_tail])
+        for tail in service_tail_candidates:
+            normalized.add(f"{tail}_service")
+            normalized.add(f"service_{tail}")
 
     backend_detected = any(token in backend_domains for token in normalized)
     frontend_detected = any(token in frontend_domains for token in normalized)

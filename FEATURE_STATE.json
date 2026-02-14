@@ -1,17 +1,17 @@
 {
-  "feature_id": "services-batch-2-2026-02-14",
-  "title": "Services slice: Broadcast Relay, Conntrack Sync, Console Server, Salt Minion, Suricata",
+  "feature_id": "services-event-handler-2026-02-14",
+  "title": "Services slice: Event Handler",
   "status": "done",
   "acceptance_criteria": [
-    "Backend wrappers exist for broadcast-relay, conntrack-sync, console-server, salt-minion, and suricata.",
-    "System Services page exposes form-driven tabs for all five services without free-form CLI entry.",
-    "Services sidebar includes links for the five services in A-Z order.",
-    "Runtime smoke and browser smoke include all five tab routes and pass.",
-    "Coverage artifacts regenerate and show services domain progress (17 implemented, 6 partial)."
+    "Backend wrapper exists for event-handler with capabilities/config/batch endpoints.",
+    "System Services page exposes a form-driven Event Handler tab for events, filters, script path/args, and environment variables.",
+    "Services sidebar includes Event Handler in A-Z ordering.",
+    "Runtime and browser smoke include the Event Handler route and pass.",
+    "Coverage artifacts regenerate and show services domain progress (18 implemented, 5 partial)."
   ],
   "assumptions": [
-    "Advanced options for these services remain follow-up work (for example, Suricata EVE logging and some conntrack helper options).",
-    "Wrapper endpoints continue to use command-string batch payloads with strict subtree validation.",
+    "Some advanced service pages remain for later slices (monitoring, webproxy, pppoe/ipoe, service index).",
+    "Wrappers continue to use command-string operations under strict service subtree validation.",
     "Unrelated dirty worktree files remain untouched."
   ],
   "tasks": [
@@ -21,19 +21,11 @@
       "status": "done",
       "files": [
         "backend/app.py",
-        "backend/routers/broadcast_relay_service/__init__.py",
-        "backend/routers/broadcast_relay_service/broadcast_relay_service.py",
-        "backend/routers/conntrack_sync_service/__init__.py",
-        "backend/routers/conntrack_sync_service/conntrack_sync_service.py",
-        "backend/routers/console_server_service/__init__.py",
-        "backend/routers/console_server_service/console_server_service.py",
-        "backend/routers/salt_minion_service/__init__.py",
-        "backend/routers/salt_minion_service/salt_minion_service.py",
-        "backend/routers/suricata_service/__init__.py",
-        "backend/routers/suricata_service/suricata_service.py",
+        "backend/routers/event_handler_service/__init__.py",
+        "backend/routers/event_handler_service/event_handler_service.py",
         "backend/tests/test_service_wrapper_capabilities.py"
       ],
-      "notes": "Extended service wrapper coverage and tests for five additional service domains."
+      "notes": "Added event-handler wrapper and test coverage."
     },
     {
       "id": "T2",
@@ -41,15 +33,11 @@
       "status": "done",
       "files": [
         "frontend/src/lib/api/service-wrappers.ts",
-        "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
-        "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
-        "frontend/src/components/system/ConsoleServerServiceTab.tsx",
-        "frontend/src/components/system/SaltMinionServiceTab.tsx",
-        "frontend/src/components/system/SuricataServiceTab.tsx",
+        "frontend/src/components/system/EventHandlerServiceTab.tsx",
         "frontend/src/app/system/services/page.tsx",
         "frontend/src/components/layout/Sidebar.tsx"
       ],
-      "notes": "Added five new service tabs and navigation entries."
+      "notes": "Added event handler service UI and navigation integration."
     },
     {
       "id": "T3",
@@ -59,31 +47,28 @@
         "frontend/scripts/smoke-ui.mjs",
         "frontend/scripts/check-runtime.sh"
       ],
-      "notes": "Smoke coverage expanded for all new service tab routes."
+      "notes": "Added event-handler service tab route to smoke gates."
     },
     {
       "id": "T4",
       "owner_role": "Planner",
       "status": "done",
       "files": [
+        "scripts/generate_config_coverage_matrix.py",
         "CONFIG_COVERAGE_MATRIX.json",
         "CONFIG_COVERAGE_PHASE1.json",
         "PARITY_BACKLOG.json"
       ],
-      "notes": "Regenerated parity artifacts and confirmed services backlog reduction."
+      "notes": "Added eventhandler alias handling and regenerated parity artifacts."
     },
     {
       "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/app.py",
-        "backend/tests/test_service_wrapper_capabilities.py",
-        "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
-        "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
-        "frontend/src/components/system/ConsoleServerServiceTab.tsx",
-        "frontend/src/components/system/SaltMinionServiceTab.tsx",
-        "frontend/src/components/system/SuricataServiceTab.tsx"
+        "backend/routers/event_handler_service/event_handler_service.py",
+        "frontend/src/components/system/EventHandlerServiceTab.tsx",
+        "frontend/src/app/system/services/page.tsx"
       ],
       "notes": "Manual reviewer pass complete; no API contract breakages introduced."
     }

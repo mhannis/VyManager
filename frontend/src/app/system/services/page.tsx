@@ -74,6 +74,7 @@ import { SaltMinionServiceTab } from "@/components/system/SaltMinionServiceTab";
 import { SuricataServiceTab } from "@/components/system/SuricataServiceTab";
 import { BroadcastRelayServiceTab } from "@/components/system/BroadcastRelayServiceTab";
 import { ConntrackSyncServiceTab } from "@/components/system/ConntrackSyncServiceTab";
+import { EventHandlerServiceTab } from "@/components/system/EventHandlerServiceTab";
 import { formatInterfaceDisplayName } from "@/lib/utils";
 
 const EMPTY_SERVER: NtpServerConfig = {
@@ -110,25 +111,27 @@ type ServiceTab =
   | "dns-forwarder"
   | "dns-resolver"
   | "dynamic-dns"
+  | "event-handler"
   | "dhcp-relay";
 
 const SERVICE_TAB_VALUES: ServiceTab[] = [
-  "ntp",
-  "lldp",
-  "mdns",
-  "ssh",
   "broadcast-relay",
   "console-server",
   "conntrack-sync",
-  "salt-minion",
-  "https-api",
-  "snmp",
-  "suricata",
-  "tftp-server",
+  "dhcp-relay",
   "dns-forwarder",
   "dns-resolver",
   "dynamic-dns",
-  "dhcp-relay",
+  "event-handler",
+  "https-api",
+  "lldp",
+  "mdns",
+  "ntp",
+  "salt-minion",
+  "snmp",
+  "ssh",
+  "suricata",
+  "tftp-server",
 ];
 
 const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
@@ -144,6 +147,7 @@ const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
   snmp: "SNMP",
   suricata: "Suricata",
   "tftp-server": "TFTP Server",
+  "event-handler": "Event Handler",
   "dns-forwarder": "DNS Forwarder",
   "dns-resolver": "DNS Resolver",
   "dynamic-dns": "Dynamic DNS",
@@ -744,6 +748,7 @@ function SystemServicesPageContent() {
               <TabsTrigger value="dns-forwarder">DNS Forwarder</TabsTrigger>
               <TabsTrigger value="dns-resolver">DNS Resolver</TabsTrigger>
               <TabsTrigger value="dynamic-dns">Dynamic DNS</TabsTrigger>
+              <TabsTrigger value="event-handler">Event Handler</TabsTrigger>
               <TabsTrigger value="https-api">HTTP API</TabsTrigger>
               <TabsTrigger value="lldp">LLDP</TabsTrigger>
               <TabsTrigger value="mdns">mDNS Repeater</TabsTrigger>
@@ -1621,6 +1626,14 @@ function SystemServicesPageContent() {
             <ConntrackSyncServiceTab
               canEdit={canEditSystem}
               active={activeTab === "conntrack-sync"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
+          <TabsContent value="event-handler" className="space-y-6">
+            <EventHandlerServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "event-handler"}
               refreshNonce={serviceRefreshNonce}
             />
           </TabsContent>

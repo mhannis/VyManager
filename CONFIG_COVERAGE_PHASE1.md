@@ -1,6 +1,6 @@
 # CONFIG_COVERAGE_PHASE1
 
-Source matrix generated: `2026-02-14T22:04:54Z`
+Source matrix generated: `2026-02-14T22:13:04Z`
 Source docs root: `https://docs.vyos.io/en/latest/configuration/`
 
 Status labels:
@@ -87,7 +87,7 @@ Status labels:
 | 75 | [DHCP Relay](https://docs.vyos.io/en/latest/configuration/service/dhcp-relay.html) | `services` | `implemented` | `backend/routers/dhcp/__init__.py, backend/routers/dhcp/dhcp.py` | `frontend/src/app/network/dhcp/page.tsx, frontend/src/app/system/services/page.tsx` |
 | 76 | [DHCP Server](https://docs.vyos.io/en/latest/configuration/service/dhcp-server.html) | `services` | `implemented` | `backend/routers/dhcp/__init__.py, backend/routers/dhcp/dhcp.py` | `frontend/src/app/network/dhcp/page.tsx, frontend/src/app/system/services/page.tsx` |
 | 77 | [DNS Forwarding](https://docs.vyos.io/en/latest/configuration/service/dns.html) | `services` | `implemented` | `backend/routers/dhcp/__init__.py, backend/routers/dhcp/dhcp.py` | `frontend/src/app/network/dhcp/page.tsx, frontend/src/app/system/services/page.tsx` |
-| 78 | [Event Handler](https://docs.vyos.io/en/latest/configuration/service/eventhandler.html) | `services` | `partial` | `backend/routers/dhcp/__init__.py, backend/routers/dhcp/dhcp.py` | `frontend/src/app/network/dhcp/page.tsx, frontend/src/app/system/services/page.tsx` |
+| 78 | [Event Handler](https://docs.vyos.io/en/latest/configuration/service/eventhandler.html) | `services` | `implemented` | `backend/routers/dhcp/__init__.py, backend/routers/dhcp/dhcp.py` | `frontend/src/app/network/dhcp/page.tsx, frontend/src/app/system/services/page.tsx` |
 | 79 | [HTTP API](https://docs.vyos.io/en/latest/configuration/service/https.html) | `services` | `implemented` | `backend/routers/dhcp/__init__.py, backend/routers/dhcp/dhcp.py` | `frontend/src/app/network/dhcp/page.tsx, frontend/src/app/system/services/page.tsx` |
 | 80 | [Service](https://docs.vyos.io/en/latest/configuration/service/index.html) | `services` | `partial` | `backend/routers/dhcp/__init__.py, backend/routers/dhcp/dhcp.py` | `frontend/src/app/network/dhcp/page.tsx, frontend/src/app/system/services/page.tsx` |
 | 81 | [IPoE Server](https://docs.vyos.io/en/latest/configuration/service/ipoe-server.html) | `services` | `partial` | `backend/routers/dhcp/__init__.py, backend/routers/dhcp/dhcp.py` | `frontend/src/app/network/dhcp/page.tsx, frontend/src/app/system/services/page.tsx` |

@@ -1,14 +1,14 @@
 # CONFIG_COVERAGE_MATRIX
 
-Generated: `2026-02-14T22:04:54Z`
+Generated: `2026-02-14T22:13:04Z`
 Source: `https://docs.vyos.io/en/latest/configuration/`
 
 ## Status Summary
 
 - Total documentation pages discovered: **129**
-- `DETECTED` (backend + frontend signal): **106**
+- `DETECTED` (backend + frontend signal): **107**
 - `BACKEND_ONLY`: **0**
-- `FRONTEND_ONLY`: **19**
+- `FRONTEND_ONLY`: **18**
 - `MISSING`: **4**
 
 ## Notes
@@ -98,7 +98,7 @@ Source: `https://docs.vyos.io/en/latest/configuration/`
 | 75 | [DHCP Relay](https://docs.vyos.io/en/latest/configuration/service/dhcp-relay.html) | `service dhcp relay` | Y | Y | `DETECTED` |
 | 76 | [DHCP Server](https://docs.vyos.io/en/latest/configuration/service/dhcp-server.html) | `service dhcp server` | Y | Y | `DETECTED` |
 | 77 | [DNS Forwarding](https://docs.vyos.io/en/latest/configuration/service/dns.html) | `service dns` | Y | Y | `DETECTED` |
-| 78 | [Event Handler](https://docs.vyos.io/en/latest/configuration/service/eventhandler.html) | `service eventhandler` | N | Y | `FRONTEND_ONLY` |
+| 78 | [Event Handler](https://docs.vyos.io/en/latest/configuration/service/eventhandler.html) | `service eventhandler` | Y | Y | `DETECTED` |
 | 79 | [HTTP API](https://docs.vyos.io/en/latest/configuration/service/https.html) | `service https` | Y | Y | `DETECTED` |
 | 80 | [Service](https://docs.vyos.io/en/latest/configuration/service/index.html) | `service` | N | Y | `FRONTEND_ONLY` |
 | 81 | [IPoE Server](https://docs.vyos.io/en/latest/configuration/service/ipoe-server.html) | `service ipoe server` | N | Y | `FRONTEND_ONLY` |

@@ -135,6 +135,22 @@ class ServiceWrappersApi {
       operations,
     });
   }
+
+  async getEventHandlerCapabilities(): Promise<ServiceWrapperCapabilities> {
+    return apiClient.get<ServiceWrapperCapabilities>("/vyos/service-event-handler/capabilities");
+  }
+
+  async getEventHandlerConfig(refresh: boolean = false): Promise<ServiceWrapperConfigResponse> {
+    return apiClient.get<ServiceWrapperConfigResponse>("/vyos/service-event-handler/config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async configureEventHandler(operations: string[]): Promise<ServiceWrapperBatchResponse> {
+    return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-event-handler/batch", {
+      operations,
+    });
+  }
 }
 
 export const serviceWrappersApi = new ServiceWrappersApi();

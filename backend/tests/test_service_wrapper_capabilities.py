@@ -16,6 +16,7 @@ import routers.salt_minion_service.salt_minion_service as salt_minion_router
 import routers.suricata_service.suricata_service as suricata_router
 import routers.broadcast_relay_service.broadcast_relay_service as broadcast_relay_router
 import routers.conntrack_sync_service.conntrack_sync_service as conntrack_sync_router
+import routers.event_handler_service.event_handler_service as event_handler_router
 import routers._service_wrapper as service_wrapper_module
 
 
@@ -33,6 +34,7 @@ ROUTER_MODULES = (
     suricata_router,
     broadcast_relay_router,
     conntrack_sync_router,
+    event_handler_router,
 )
 
 
@@ -108,6 +110,15 @@ class DummyService:
                 "conntrack-sync": {
                     "listen-address": "192.0.2.10",
                 },
+                "event-handler": {
+                    "event": {
+                        "INTERFACE_DOWN": {
+                            "script": {
+                                "path": "/config/scripts/if-down.sh",
+                            },
+                        },
+                    },
+                },
             }
         }
 
@@ -135,6 +146,7 @@ def app():
     app.include_router(suricata_router.router)
     app.include_router(broadcast_relay_router.router)
     app.include_router(conntrack_sync_router.router)
+    app.include_router(event_handler_router.router)
     return app
 
 
@@ -174,6 +186,7 @@ def mock_service(monkeypatch):
         "/vyos/service-suricata/capabilities",
         "/vyos/service-broadcast-relay/capabilities",
         "/vyos/service-conntrack-sync/capabilities",
+        "/vyos/service-event-handler/capabilities",
     ],
 )
 def test_service_wrapper_capabilities_payload(app, allow_permissions, mock_service, path):
@@ -203,6 +216,7 @@ def test_service_wrapper_capabilities_payload(app, allow_permissions, mock_servi
         ("/vyos/service-suricata/config", "interface"),
         ("/vyos/service-broadcast-relay/config", "id"),
         ("/vyos/service-conntrack-sync/config", "listen-address"),
+        ("/vyos/service-event-handler/config", "event"),
     ],
 )
 def test_service_wrapper_config_payload(app, allow_permissions, mock_service, path, expected_marker):
@@ -282,6 +296,11 @@ def test_service_wrapper_config_payload(app, allow_permissions, mock_service, pa
             "/vyos/service-conntrack-sync/batch",
             "set service conntrack-sync listen-address 192.0.2.10",
             "set service broadcast-relay id 1 port 1900",
+        ),
+        (
+            "/vyos/service-event-handler/batch",
+            "set service event-handler event TEST script path /config/scripts/test.sh",
+            "set service conntrack-sync listen-address 192.0.2.10",
         ),
     ],
 )

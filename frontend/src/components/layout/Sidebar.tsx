@@ -256,6 +256,11 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
+        title: "Event Handler",
+        href: "/system/services?tab=event-handler&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
         title: "HTTP API",
         href: "/system/services?tab=https-api&view=single",
         requiredPermission: FeatureGroup.SYSTEM,

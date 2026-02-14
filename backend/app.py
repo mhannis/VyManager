@@ -67,6 +67,7 @@ from routers.salt_minion_service import salt_minion_service as salt_minion_servi
 from routers.suricata_service import suricata_service as suricata_service_router
 from routers.broadcast_relay_service import broadcast_relay_service as broadcast_relay_service_router
 from routers.conntrack_sync_service import conntrack_sync_service as conntrack_sync_service_router
+from routers.event_handler_service import event_handler_service as event_handler_service_router
 from routers import system
 from routers import power as power_router
 from routers.config import config as config_router
@@ -340,6 +341,7 @@ app.include_router(salt_minion_service_router.router)
 app.include_router(suricata_service_router.router)
 app.include_router(broadcast_relay_service_router.router)
 app.include_router(conntrack_sync_service_router.router)
+app.include_router(event_handler_service_router.router)
 app.include_router(system.router)
 app.include_router(power_router.router)
 app.include_router(config_router.router)
