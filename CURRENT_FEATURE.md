@@ -3,7 +3,7 @@ status: in_progress
 title: Parity Program Phase 0 Foundation (Driver + Safe Apply + Coverage Matrix)
 branch: feature/containers-automation-v1
 commits:
-  - working-tree-not-committed
+  - f41cbfc
 notes:
   - Added `safe_apply.py` with emulated commit-confirm (snapshot/apply/probe/rollback) for risky config paths.
   - Added `VyOSService.apply_operations(...)` and routed batch/config write flows through it.
