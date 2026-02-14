@@ -1,12 +1,12 @@
-feature_id: services-event-handler-2026-02-14
+feature_id: services-core-missing-2026-02-14
 status: done
-title: Services slice - Event Handler
+title: Services slice - Monitoring, Webproxy, PPPoE Server, IPoE Server
 branch: feature/containers-automation-v1
 commits:
   - uncommitted
 notes:
-  - Added backend wrapper for `/vyos/service-event-handler`.
-  - Added form-driven Event Handler tab in `/system/services` (events, filters, script path/args, environment vars).
-  - Extended `Services` sidebar links and smoke routes to include the event handler page.
-  - Updated coverage token aliases (`eventhandler` <-> `event_handler`) so matrix status reflects backend support correctly.
-  - Regenerated coverage artifacts; services domain improved from 17/6/0 to 19/4/0 implemented/partial/not_started.
+  - Added backend wrappers for `/vyos/service-monitoring`, `/vyos/service-webproxy`, `/vyos/service-pppoe-server`, `/vyos/service-ipoe-server`.
+  - Added form-driven tabs in `/system/services` for Monitoring, Webproxy, PPPoE Server, and IPoE Server.
+  - Extended Services sidebar links and smoke routes for the new service tabs.
+  - Expanded backend wrapper capability/config/scope tests for the new service routes.
+  - Regenerated parity artifacts; services domain is now 23/0/0 (implemented/partial/not_started).

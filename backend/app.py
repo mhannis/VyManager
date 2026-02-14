@@ -68,6 +68,10 @@ from routers.suricata_service import suricata_service as suricata_service_router
 from routers.broadcast_relay_service import broadcast_relay_service as broadcast_relay_service_router
 from routers.conntrack_sync_service import conntrack_sync_service as conntrack_sync_service_router
 from routers.event_handler_service import event_handler_service as event_handler_service_router
+from routers.monitoring_service import monitoring_service as monitoring_service_router
+from routers.webproxy_service import webproxy_service as webproxy_service_router
+from routers.pppoe_server_service import pppoe_server_service as pppoe_server_service_router
+from routers.ipoe_server_service import ipoe_server_service as ipoe_server_service_router
 from routers import system
 from routers import power as power_router
 from routers.config import config as config_router
@@ -342,6 +346,10 @@ app.include_router(suricata_service_router.router)
 app.include_router(broadcast_relay_service_router.router)
 app.include_router(conntrack_sync_service_router.router)
 app.include_router(event_handler_service_router.router)
+app.include_router(monitoring_service_router.router)
+app.include_router(webproxy_service_router.router)
+app.include_router(pppoe_server_service_router.router)
+app.include_router(ipoe_server_service_router.router)
 app.include_router(system.router)
 app.include_router(power_router.router)
 app.include_router(config_router.router)

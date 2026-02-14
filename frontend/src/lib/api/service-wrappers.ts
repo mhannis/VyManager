@@ -151,6 +151,70 @@ class ServiceWrappersApi {
       operations,
     });
   }
+
+  async getMonitoringCapabilities(): Promise<ServiceWrapperCapabilities> {
+    return apiClient.get<ServiceWrapperCapabilities>("/vyos/service-monitoring/capabilities");
+  }
+
+  async getMonitoringConfig(refresh: boolean = false): Promise<ServiceWrapperConfigResponse> {
+    return apiClient.get<ServiceWrapperConfigResponse>("/vyos/service-monitoring/config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async configureMonitoring(operations: string[]): Promise<ServiceWrapperBatchResponse> {
+    return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-monitoring/batch", {
+      operations,
+    });
+  }
+
+  async getWebproxyCapabilities(): Promise<ServiceWrapperCapabilities> {
+    return apiClient.get<ServiceWrapperCapabilities>("/vyos/service-webproxy/capabilities");
+  }
+
+  async getWebproxyConfig(refresh: boolean = false): Promise<ServiceWrapperConfigResponse> {
+    return apiClient.get<ServiceWrapperConfigResponse>("/vyos/service-webproxy/config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async configureWebproxy(operations: string[]): Promise<ServiceWrapperBatchResponse> {
+    return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-webproxy/batch", {
+      operations,
+    });
+  }
+
+  async getPppoeServerCapabilities(): Promise<ServiceWrapperCapabilities> {
+    return apiClient.get<ServiceWrapperCapabilities>("/vyos/service-pppoe-server/capabilities");
+  }
+
+  async getPppoeServerConfig(refresh: boolean = false): Promise<ServiceWrapperConfigResponse> {
+    return apiClient.get<ServiceWrapperConfigResponse>("/vyos/service-pppoe-server/config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async configurePppoeServer(operations: string[]): Promise<ServiceWrapperBatchResponse> {
+    return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-pppoe-server/batch", {
+      operations,
+    });
+  }
+
+  async getIpoeServerCapabilities(): Promise<ServiceWrapperCapabilities> {
+    return apiClient.get<ServiceWrapperCapabilities>("/vyos/service-ipoe-server/capabilities");
+  }
+
+  async getIpoeServerConfig(refresh: boolean = false): Promise<ServiceWrapperConfigResponse> {
+    return apiClient.get<ServiceWrapperConfigResponse>("/vyos/service-ipoe-server/config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async configureIpoeServer(operations: string[]): Promise<ServiceWrapperBatchResponse> {
+    return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-ipoe-server/batch", {
+      operations,
+    });
+  }
 }
 
 export const serviceWrappersApi = new ServiceWrappersApi();

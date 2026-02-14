@@ -102,3 +102,5 @@
 - 2026-02-14: Added service-wrapper router and form-first page for `event-handler` under `/system/services`.
 - 2026-02-14: Coverage crawler aliasing extended for `eventhandler <-> event_handler`, and service-tail alias expansion added for wrapper detection; this resolved event-handler false `FRONTEND_ONLY` matrix output.
 - 2026-02-14: Phase1 classifier now treats `https://docs.vyos.io/en/latest/configuration/service/index.html` as `DOC_ONLY_UI_COVERAGE`; services docs index is considered implemented when the Services UI page exists.
+- 2026-02-14: Added dedicated service-wrapper routers and form-first tabs for `monitoring`, `webproxy`, `pppoe-server`, and `ipoe-server` instead of introducing new backend abstractions, preserving the thin-wrapper contract around existing service APIs.
+- 2026-02-14: Coverage/backlog generation was re-run sequentially (`generate_config_coverage_matrix.py` then `generate_phase1_backlog.py`) because parallel execution can race and produce stale raw-status snapshots in phase1 outputs.

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-14T22:16:07Z",
+  "generated_at": "2026-02-14T22:36:34Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -727,9 +727,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/ipoe-server.html",
       "title": "IPoE Server",
       "cli_scope": "service ipoe server",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 82,
@@ -754,9 +754,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/monitoring.html",
       "title": "Monitoring",
       "cli_scope": "service monitoring",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 85,
@@ -772,9 +772,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/pppoe-server.html",
       "title": "PPPoE Server",
       "cli_scope": "service pppoe server",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 87,
@@ -835,9 +835,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/webproxy.html",
       "title": "Webproxy",
       "cli_scope": "service webproxy",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 94,

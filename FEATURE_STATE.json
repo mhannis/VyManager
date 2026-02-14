@@ -1,16 +1,16 @@
 {
-  "feature_id": "services-event-handler-2026-02-14",
-  "title": "Services slice: Event Handler",
+  "feature_id": "services-core-missing-2026-02-14",
+  "title": "Services slice: Monitoring, Webproxy, PPPoE Server, IPoE Server",
   "status": "done",
   "acceptance_criteria": [
-    "Backend wrapper exists for event-handler with capabilities/config/batch endpoints.",
-    "System Services page exposes a form-driven Event Handler tab for events, filters, script path/args, and environment variables.",
-    "Services sidebar includes Event Handler in A-Z ordering.",
-    "Runtime and browser smoke include the Event Handler route and pass.",
-    "Coverage artifacts regenerate and show services domain progress (19 implemented, 4 partial)."
+    "Backend wrappers exist for monitoring, webproxy, pppoe-server, and ipoe-server with capabilities/config/batch endpoints.",
+    "System Services page exposes form-driven tabs for Monitoring, Webproxy, PPPoE Server, and IPoE Server.",
+    "Services sidebar and service single-view links include the new tabs in A-Z order.",
+    "Backend tests, frontend typecheck/build, runtime smoke, and browser smoke all pass.",
+    "Coverage artifacts regenerate with services domain at 23 implemented, 0 partial, 0 not_started."
   ],
   "assumptions": [
-    "Some advanced service pages remain for later slices (monitoring, webproxy, pppoe/ipoe).",
+    "Advanced branches of PPPoE/IPoE and monitoring exporters will be expanded in later slices.",
     "Wrappers continue to use command-string operations under strict service subtree validation.",
     "Unrelated dirty worktree files remain untouched."
   ],
@@ -21,11 +21,17 @@
       "status": "done",
       "files": [
         "backend/app.py",
-        "backend/routers/event_handler_service/__init__.py",
-        "backend/routers/event_handler_service/event_handler_service.py",
+        "backend/routers/monitoring_service/__init__.py",
+        "backend/routers/monitoring_service/monitoring_service.py",
+        "backend/routers/webproxy_service/__init__.py",
+        "backend/routers/webproxy_service/webproxy_service.py",
+        "backend/routers/pppoe_server_service/__init__.py",
+        "backend/routers/pppoe_server_service/pppoe_server_service.py",
+        "backend/routers/ipoe_server_service/__init__.py",
+        "backend/routers/ipoe_server_service/ipoe_server_service.py",
         "backend/tests/test_service_wrapper_capabilities.py"
       ],
-      "notes": "Added event-handler wrapper and test coverage."
+      "notes": "Added wrapper routers and scope tests for the four remaining services pages."
     },
     {
       "id": "T2",
@@ -33,11 +39,14 @@
       "status": "done",
       "files": [
         "frontend/src/lib/api/service-wrappers.ts",
-        "frontend/src/components/system/EventHandlerServiceTab.tsx",
+        "frontend/src/components/system/MonitoringServiceTab.tsx",
+        "frontend/src/components/system/WebproxyServiceTab.tsx",
+        "frontend/src/components/system/PppoeServerServiceTab.tsx",
+        "frontend/src/components/system/IpoeServerServiceTab.tsx",
         "frontend/src/app/system/services/page.tsx",
         "frontend/src/components/layout/Sidebar.tsx"
       ],
-      "notes": "Added event handler service UI and navigation integration."
+      "notes": "Implemented form-first tabs and navigation wiring for monitoring/webproxy/pppoe/ipoe services."
     },
     {
       "id": "T3",
@@ -47,30 +56,37 @@
         "frontend/scripts/smoke-ui.mjs",
         "frontend/scripts/check-runtime.sh"
       ],
-      "notes": "Added event-handler service tab route to smoke gates."
+      "notes": "Added new service routes to runtime and browser smoke coverage."
     },
     {
       "id": "T4",
       "owner_role": "Planner",
       "status": "done",
       "files": [
-        "scripts/generate_config_coverage_matrix.py",
         "CONFIG_COVERAGE_MATRIX.json",
+        "CONFIG_COVERAGE_MATRIX.md",
         "CONFIG_COVERAGE_PHASE1.json",
-        "PARITY_BACKLOG.json"
+        "CONFIG_COVERAGE_PHASE1.md",
+        "PARITY_BACKLOG.json",
+        "PARITY_BACKLOG.md"
       ],
-      "notes": "Added eventhandler alias handling and regenerated parity artifacts."
+      "notes": "Regenerated matrix/backlog; services domain now reports complete."
     },
     {
       "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/routers/event_handler_service/event_handler_service.py",
-        "frontend/src/components/system/EventHandlerServiceTab.tsx",
-        "frontend/src/app/system/services/page.tsx"
+        "backend/routers/monitoring_service/monitoring_service.py",
+        "backend/routers/webproxy_service/webproxy_service.py",
+        "backend/routers/pppoe_server_service/pppoe_server_service.py",
+        "backend/routers/ipoe_server_service/ipoe_server_service.py",
+        "frontend/src/components/system/MonitoringServiceTab.tsx",
+        "frontend/src/components/system/WebproxyServiceTab.tsx",
+        "frontend/src/components/system/PppoeServerServiceTab.tsx",
+        "frontend/src/components/system/IpoeServerServiceTab.tsx"
       ],
-      "notes": "Manual reviewer pass complete; no API contract breakages introduced."
+      "notes": "Manual review pass complete; no existing API contracts were changed."
     }
   ],
   "commands": {
@@ -81,7 +97,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Services-domain parity implementation",
+      "purpose": "Parity implementation (services completion then VPN backlog)",
       "status": "active"
     }
   ]

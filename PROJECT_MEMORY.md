@@ -54,69 +54,55 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Continue services-domain parity with form-driven pages (no free-form CLI input).
-- Completed this cycle: implemented `Event Handler` service wrapper + form-driven tab and wired it into navigation/smoke coverage.
-- Completed this cycle: added backend tests for event-handler wrapper scope and config payload.
-- Completed this cycle: regenerated coverage artifacts; services domain improved to `19 implemented / 4 partial / 0 not_started`.
-- Next: continue services-domain backlog reduction on remaining partial pages.
+- Close remaining services-domain partials with form-driven pages and wrapper-backed APIs.
+- Completed this cycle: implemented `Monitoring`, `Webproxy`, `PPPoE Server`, and `IPoE Server` backend wrappers and GUI tabs.
+- Completed this cycle: extended service wrapper tests, services navigation, and runtime/browser smoke route coverage for the four new tabs.
+- Completed this cycle: regenerated parity artifacts; services domain is now `23 implemented / 0 partial / 0 not_started`.
+- Next: continue parity execution in the next non-complete domain (`vpn`).
 
 ## Current Feature Spec
-Feature: **Services slice batch 3: Event Handler**
+Feature: **Services slice batch 4: Monitoring + Webproxy + PPPoE + IPoE**
 
 Acceptance criteria:
 - Backend exposes dedicated wrappers:
-  - `/vyos/service-event-handler/*`
-- System Services page includes a form-driven Event Handler tab (events, filters, script path/args, environment vars).
-- Sidebar `Services` navigation includes Event Handler and remains A-Z ordered.
+  - `/vyos/service-monitoring/*`
+  - `/vyos/service-webproxy/*`
+  - `/vyos/service-pppoe-server/*`
+  - `/vyos/service-ipoe-server/*`
+- System Services page includes form-driven tabs for all four services (no free-form CLI input fields).
+- Sidebar `Services` navigation includes these services and remains A-Z ordered.
 - End-to-end validation (`pytest`, `tsc`, `build`, restart, runtime smoke, browser smoke) passes.
-- Coverage artifacts reflect progress (`services` improved from 17/6/0 to 19/4/0 implemented/partial/not_started).
+- Coverage artifacts reflect progress (`services` improved from 19/4/0 to 23/0/0 implemented/partial/not_started).
 
 Assumptions:
-- Advanced option coverage for several services (for example, Suricata logging and conntrack helper edge cases) remains a follow-up slice.
+- Advanced option coverage for monitoring exporters (e.g., blackbox module trees) and PPPoE/IPoE edge trees (full RADIUS dynamic-author, IPv6 pool details) will be expanded in future slices.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: event-handler slice implemented in working tree (not yet committed in this cycle).
+- Status: services batch 4 implemented in working tree (pending commit in this cycle).
 - Working tree is dirty with unrelated pre-existing changes outside this hotfix.
 
 ### Files Touched This Cycle (hotfix-owned)
 - `backend/app.py`
-- `backend/routers/broadcast_relay_service/__init__.py`
-- `backend/routers/broadcast_relay_service/broadcast_relay_service.py`
-- `backend/routers/conntrack_sync_service/__init__.py`
-- `backend/routers/conntrack_sync_service/conntrack_sync_service.py`
-- `backend/routers/https_service/__init__.py`
-- `backend/routers/https_service/https_service.py`
-- `backend/routers/snmp_service/__init__.py`
-- `backend/routers/snmp_service/snmp_service.py`
-- `backend/routers/tftp_server_service/__init__.py`
-- `backend/routers/tftp_server_service/tftp_server_service.py`
-- `backend/routers/console_server_service/__init__.py`
-- `backend/routers/console_server_service/console_server_service.py`
-- `backend/routers/salt_minion_service/__init__.py`
-- `backend/routers/salt_minion_service/salt_minion_service.py`
-- `backend/routers/suricata_service/__init__.py`
-- `backend/routers/suricata_service/suricata_service.py`
-- `backend/routers/event_handler_service/__init__.py`
-- `backend/routers/event_handler_service/event_handler_service.py`
+- `backend/routers/monitoring_service/__init__.py`
+- `backend/routers/monitoring_service/monitoring_service.py`
+- `backend/routers/webproxy_service/__init__.py`
+- `backend/routers/webproxy_service/webproxy_service.py`
+- `backend/routers/pppoe_server_service/__init__.py`
+- `backend/routers/pppoe_server_service/pppoe_server_service.py`
+- `backend/routers/ipoe_server_service/__init__.py`
+- `backend/routers/ipoe_server_service/ipoe_server_service.py`
 - `backend/tests/test_service_wrapper_capabilities.py`
 - `frontend/src/lib/api/service-wrappers.ts`
-- `frontend/src/components/system/BroadcastRelayServiceTab.tsx`
-- `frontend/src/components/system/ConntrackSyncServiceTab.tsx`
-- `frontend/src/components/system/ConsoleServerServiceTab.tsx`
-- `frontend/src/components/system/EventHandlerServiceTab.tsx`
-- `frontend/src/components/system/serviceTabHelpers.ts`
-- `frontend/src/components/system/HttpsServiceTab.tsx`
-- `frontend/src/components/system/SaltMinionServiceTab.tsx`
-- `frontend/src/components/system/SnmpServiceTab.tsx`
-- `frontend/src/components/system/SuricataServiceTab.tsx`
-- `frontend/src/components/system/TftpServiceTab.tsx`
+- `frontend/src/components/system/MonitoringServiceTab.tsx`
+- `frontend/src/components/system/WebproxyServiceTab.tsx`
+- `frontend/src/components/system/PppoeServerServiceTab.tsx`
+- `frontend/src/components/system/IpoeServerServiceTab.tsx`
 - `frontend/src/app/system/services/page.tsx`
 - `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/scripts/smoke-ui.mjs`
 - `frontend/scripts/check-runtime.sh`
-- `scripts/generate_config_coverage_matrix.py`
 - `CONFIG_COVERAGE_MATRIX.json`
 - `CONFIG_COVERAGE_MATRIX.md`
 - `CONFIG_COVERAGE_PHASE1.json`
@@ -125,7 +111,8 @@ Assumptions:
 - `PARITY_BACKLOG.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_service_wrapper_capabilities.py tests/test_app.py` -> pass (`43 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_service_wrapper_capabilities.py` -> pass (`54 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_app.py` -> pass (`1 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s build` -> pass
 - Restarted runtime API/UI sessions and verified listeners:
@@ -142,12 +129,11 @@ Assumptions:
 - Frontend lint warning debt remains high outside this slice.
 - Browser smoke currently depends on host-specific Playwright shared libs path; this should be standardized in dev bootstrap.
 - SNMPv3 configuration and HTTPS GraphQL/certificate controls are not exposed yet.
-- PPPoE/IPoE/Monitoring/Webproxy remain unimplemented in services domain.
+- PPPoE/IPoE tabs currently prioritize common operator paths; advanced branches should be added as follow-up.
 
 ## TODO Backlog (next queue)
-- Continue services parity slices with robust form-first UX.
-- Candidates next: `monitoring`, `webproxy`, `pppoe-server`, `ipoe-server`.
-- For each new slice: keep runtime gate sequence mandatory (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
+- Move parity execution to `vpn` domain (currently partial) after services completion.
+- Keep runtime gate sequence mandatory for each slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
 - PIM/PIM6 batch validators now allow exact subtree delete (`delete protocols pim`, `delete protocols pim6`) while preserving prefix boundary checks.
@@ -182,3 +168,6 @@ Assumptions:
 - Added service-wrapper router and form tab for `event-handler`, including nested environment variable editing per event.
 - Coverage crawler aliases now bridge `eventhandler` <-> `event_handler`, and service-wrapper signal generation now uses alias-expanded tails; this fixed `eventhandler` false `FRONTEND_ONLY` classification.
 - Phase1 backlog classifier now treats `service/index.html` as doc-only UI coverage, so the Service docs index is counted implemented when the Services UI exists.
+- Added service-wrapper routers and form-first tabs for `monitoring`, `webproxy`, `pppoe-server`, and `ipoe-server` under `System -> Services`.
+- Service tabs now include common CRUD coverage for listen interfaces, pools, authentication, and server lists without free-form command text fields.
+- Coverage/backlog generation must run sequentially (`generate_config_coverage_matrix.py` then `generate_phase1_backlog.py`); running them in parallel can produce stale phase1 raw statuses.

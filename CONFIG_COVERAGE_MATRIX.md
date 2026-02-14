@@ -1,14 +1,14 @@
 # CONFIG_COVERAGE_MATRIX
 
-Generated: `2026-02-14T22:16:07Z`
+Generated: `2026-02-14T22:36:34Z`
 Source: `https://docs.vyos.io/en/latest/configuration/`
 
 ## Status Summary
 
 - Total documentation pages discovered: **129**
-- `DETECTED` (backend + frontend signal): **107**
+- `DETECTED` (backend + frontend signal): **111**
 - `BACKEND_ONLY`: **0**
-- `FRONTEND_ONLY`: **18**
+- `FRONTEND_ONLY`: **14**
 - `MISSING`: **4**
 
 ## Notes
@@ -101,19 +101,19 @@ Source: `https://docs.vyos.io/en/latest/configuration/`
 | 78 | [Event Handler](https://docs.vyos.io/en/latest/configuration/service/eventhandler.html) | `service eventhandler` | Y | Y | `DETECTED` |
 | 79 | [HTTP API](https://docs.vyos.io/en/latest/configuration/service/https.html) | `service https` | Y | Y | `DETECTED` |
 | 80 | [Service](https://docs.vyos.io/en/latest/configuration/service/index.html) | `service` | N | Y | `FRONTEND_ONLY` |
-| 81 | [IPoE Server](https://docs.vyos.io/en/latest/configuration/service/ipoe-server.html) | `service ipoe server` | N | Y | `FRONTEND_ONLY` |
+| 81 | [IPoE Server](https://docs.vyos.io/en/latest/configuration/service/ipoe-server.html) | `service ipoe server` | Y | Y | `DETECTED` |
 | 82 | [LLDP](https://docs.vyos.io/en/latest/configuration/service/lldp.html) | `service lldp` | Y | Y | `DETECTED` |
 | 83 | [mDNS Repeater](https://docs.vyos.io/en/latest/configuration/service/mdns.html) | `service mdns` | Y | Y | `DETECTED` |
-| 84 | [Monitoring](https://docs.vyos.io/en/latest/configuration/service/monitoring.html) | `service monitoring` | N | Y | `FRONTEND_ONLY` |
+| 84 | [Monitoring](https://docs.vyos.io/en/latest/configuration/service/monitoring.html) | `service monitoring` | Y | Y | `DETECTED` |
 | 85 | [NTP](https://docs.vyos.io/en/latest/configuration/service/ntp.html) | `service ntp` | Y | Y | `DETECTED` |
-| 86 | [PPPoE Server](https://docs.vyos.io/en/latest/configuration/service/pppoe-server.html) | `service pppoe server` | N | Y | `FRONTEND_ONLY` |
+| 86 | [PPPoE Server](https://docs.vyos.io/en/latest/configuration/service/pppoe-server.html) | `service pppoe server` | Y | Y | `DETECTED` |
 | 87 | [Router Advertisements](https://docs.vyos.io/en/latest/configuration/service/router-advert.html) | `service router advert` | Y | Y | `DETECTED` |
 | 88 | [Salt-Minion](https://docs.vyos.io/en/latest/configuration/service/salt-minion.html) | `service salt minion` | Y | Y | `DETECTED` |
 | 89 | [SNMP](https://docs.vyos.io/en/latest/configuration/service/snmp.html) | `service snmp` | Y | Y | `DETECTED` |
 | 90 | [SSH](https://docs.vyos.io/en/latest/configuration/service/ssh.html) | `service ssh` | Y | Y | `DETECTED` |
 | 91 | [suricata](https://docs.vyos.io/en/latest/configuration/service/suricata.html) | `service suricata` | Y | Y | `DETECTED` |
 | 92 | [TFTP Server](https://docs.vyos.io/en/latest/configuration/service/tftp-server.html) | `service tftp server` | Y | Y | `DETECTED` |
-| 93 | [Webproxy](https://docs.vyos.io/en/latest/configuration/service/webproxy.html) | `service webproxy` | N | Y | `FRONTEND_ONLY` |
+| 93 | [Webproxy](https://docs.vyos.io/en/latest/configuration/service/webproxy.html) | `service webproxy` | Y | Y | `DETECTED` |
 | 94 | [Acceleration](https://docs.vyos.io/en/latest/configuration/system/acceleration.html) | `system acceleration` | Y | Y | `DETECTED` |
 | 95 | [Conntrack](https://docs.vyos.io/en/latest/configuration/system/conntrack.html) | `system conntrack` | Y | Y | `DETECTED` |
 | 96 | [Serial Console](https://docs.vyos.io/en/latest/configuration/system/console.html) | `system console` | Y | Y | `DETECTED` |

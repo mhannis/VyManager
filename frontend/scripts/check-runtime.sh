@@ -26,10 +26,14 @@ critical_routes=(
   "/system/services?tab=conntrack-sync&view=single"
   "/system/services?tab=event-handler&view=single"
   "/system/services?tab=https-api&view=single"
+  "/system/services?tab=ipoe-server&view=single"
+  "/system/services?tab=monitoring&view=single"
+  "/system/services?tab=pppoe-server&view=single"
   "/system/services?tab=salt-minion&view=single"
   "/system/services?tab=snmp&view=single"
   "/system/services?tab=suricata&view=single"
   "/system/services?tab=tftp-server&view=single"
+  "/system/services?tab=webproxy&view=single"
   "/services/dhcp-server"
 )
 

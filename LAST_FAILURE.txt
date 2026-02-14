@@ -1,9 +1,10 @@
-timestamp: 2026-02-14T21:34:00Z
-failing_command: cd /home/redhot/VyOS/VyManager && jq . FEATURE_STATE.json >/tmp/feature_state.pretty.json
-error_summary: Validation step failed because `jq` is not installed in this environment. This did not impact app runtime or smoke test execution.
+timestamp: 2026-02-14T22:39:00Z
+failing_command: cd /home/redhot/VyOS/VyManager/frontend && npx tsc --noEmit --pretty false
+error_summary: TypeScript failed in newly added service tabs because helper functions declared return type `JSX.Element`, but this frontend TS setup does not expose `JSX` namespace globally.
 
 relevant_output:
-/bin/bash: line 1: jq: command not found
+src/components/system/MonitoringServiceTab.tsx(106,4): error TS2503: Cannot find namespace 'JSX'.
+src/components/system/WebproxyServiceTab.tsx(161,4): error TS2503: Cannot find namespace 'JSX'.
 
-suspected_cause: Missing optional CLI dependency (`jq`) on host.
-next_step: Use Python stdlib for JSON validation (`python3 -m json.tool FEATURE_STATE.json`) or install `jq` if desired.
+suspected_cause: Explicit `JSX.Element` type annotation in utility render helpers under Next.js TS config.
+next_step: Remove `JSX.Element` return annotations (or switch to `React.ReactNode`) and rerun typecheck/build/smoke.

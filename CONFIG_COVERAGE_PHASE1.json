@@ -1,5 +1,5 @@
 {
-  "source_matrix_generated_at": "2026-02-14T22:16:07Z",
+  "source_matrix_generated_at": "2026-02-14T22:36:34Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -3619,11 +3619,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -3661,11 +3665,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -3703,11 +3711,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -3745,11 +3757,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -3787,11 +3803,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -3829,11 +3849,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -3871,11 +3895,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -3913,11 +3941,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -3955,11 +3987,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -3997,11 +4033,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4011,8 +4051,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/ipoe-server.html",
       "cli_scope": "service ipoe server",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -4039,11 +4079,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4081,11 +4125,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4123,11 +4171,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4137,8 +4189,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/monitoring.html",
       "cli_scope": "service monitoring",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -4165,11 +4217,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4207,11 +4263,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4221,8 +4281,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/pppoe-server.html",
       "cli_scope": "service pppoe server",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -4249,11 +4309,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4291,11 +4355,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4333,11 +4401,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4375,11 +4447,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4417,11 +4493,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4459,11 +4539,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4501,11 +4585,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4515,8 +4603,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/webproxy.html",
       "cli_scope": "service webproxy",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -4543,11 +4631,15 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4581,14 +4673,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4622,14 +4718,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4663,14 +4763,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4704,14 +4808,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4745,14 +4853,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4786,14 +4898,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4827,14 +4943,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4868,14 +4988,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4909,14 +5033,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4950,14 +5078,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -4991,14 +5123,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -5032,14 +5168,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -5073,14 +5213,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -5114,14 +5258,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -5155,14 +5303,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -5196,14 +5348,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -5237,14 +5393,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -5278,14 +5438,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -5319,14 +5483,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -5360,14 +5528,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -5401,14 +5573,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },
@@ -5442,14 +5618,18 @@
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/EventHandlerServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/IpoeServerServiceTab.tsx",
+          "frontend/src/components/system/MonitoringServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
+          "frontend/src/components/system/PppoeServerServiceTab.tsx",
           "frontend/src/components/system/RebootModal.tsx",
           "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
           "frontend/src/components/system/SuricataServiceTab.tsx",
-          "frontend/src/components/system/TftpServiceTab.tsx"
+          "frontend/src/components/system/TftpServiceTab.tsx",
+          "frontend/src/components/system/WebproxyServiceTab.tsx"
         ]
       }
     },

@@ -17,6 +17,10 @@ import routers.suricata_service.suricata_service as suricata_router
 import routers.broadcast_relay_service.broadcast_relay_service as broadcast_relay_router
 import routers.conntrack_sync_service.conntrack_sync_service as conntrack_sync_router
 import routers.event_handler_service.event_handler_service as event_handler_router
+import routers.monitoring_service.monitoring_service as monitoring_router
+import routers.webproxy_service.webproxy_service as webproxy_router
+import routers.pppoe_server_service.pppoe_server_service as pppoe_server_router
+import routers.ipoe_server_service.ipoe_server_service as ipoe_server_router
 import routers._service_wrapper as service_wrapper_module
 
 
@@ -35,6 +39,10 @@ ROUTER_MODULES = (
     broadcast_relay_router,
     conntrack_sync_router,
     event_handler_router,
+    monitoring_router,
+    webproxy_router,
+    pppoe_server_router,
+    ipoe_server_router,
 )
 
 
@@ -119,6 +127,26 @@ class DummyService:
                         },
                     },
                 },
+                "monitoring": {
+                    "prometheus": {
+                        "node-exporter": {
+                            "port": "9100",
+                        },
+                    },
+                },
+                "webproxy": {
+                    "default-port": "8080",
+                },
+                "pppoe-server": {
+                    "interface": {
+                        "eth2": {},
+                    },
+                },
+                "ipoe-server": {
+                    "interface": {
+                        "eth3": {},
+                    },
+                },
             }
         }
 
@@ -147,6 +175,10 @@ def app():
     app.include_router(broadcast_relay_router.router)
     app.include_router(conntrack_sync_router.router)
     app.include_router(event_handler_router.router)
+    app.include_router(monitoring_router.router)
+    app.include_router(webproxy_router.router)
+    app.include_router(pppoe_server_router.router)
+    app.include_router(ipoe_server_router.router)
     return app
 
 
@@ -187,6 +219,10 @@ def mock_service(monkeypatch):
         "/vyos/service-broadcast-relay/capabilities",
         "/vyos/service-conntrack-sync/capabilities",
         "/vyos/service-event-handler/capabilities",
+        "/vyos/service-monitoring/capabilities",
+        "/vyos/service-webproxy/capabilities",
+        "/vyos/service-pppoe-server/capabilities",
+        "/vyos/service-ipoe-server/capabilities",
     ],
 )
 def test_service_wrapper_capabilities_payload(app, allow_permissions, mock_service, path):
@@ -217,6 +253,10 @@ def test_service_wrapper_capabilities_payload(app, allow_permissions, mock_servi
         ("/vyos/service-broadcast-relay/config", "id"),
         ("/vyos/service-conntrack-sync/config", "listen-address"),
         ("/vyos/service-event-handler/config", "event"),
+        ("/vyos/service-monitoring/config", "prometheus"),
+        ("/vyos/service-webproxy/config", "default-port"),
+        ("/vyos/service-pppoe-server/config", "interface"),
+        ("/vyos/service-ipoe-server/config", "interface"),
     ],
 )
 def test_service_wrapper_config_payload(app, allow_permissions, mock_service, path, expected_marker):
@@ -301,6 +341,26 @@ def test_service_wrapper_config_payload(app, allow_permissions, mock_service, pa
             "/vyos/service-event-handler/batch",
             "set service event-handler event TEST script path /config/scripts/test.sh",
             "set service conntrack-sync listen-address 192.0.2.10",
+        ),
+        (
+            "/vyos/service-monitoring/batch",
+            "set service monitoring prometheus node-exporter port 9100",
+            "set service webproxy default-port 8080",
+        ),
+        (
+            "/vyos/service-webproxy/batch",
+            "set service webproxy default-port 8080",
+            "set service monitoring prometheus node-exporter port 9100",
+        ),
+        (
+            "/vyos/service-pppoe-server/batch",
+            "set service pppoe-server interface eth2",
+            "set service ipoe-server interface eth3",
+        ),
+        (
+            "/vyos/service-ipoe-server/batch",
+            "set service ipoe-server interface eth3",
+            "set service pppoe-server interface eth2",
         ),
     ],
 )

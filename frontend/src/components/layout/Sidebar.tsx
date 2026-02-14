@@ -266,6 +266,11 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
+        title: "IPoE Server",
+        href: "/system/services?tab=ipoe-server&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
         title: "LLDP",
         href: "/system/services?tab=lldp&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
@@ -276,8 +281,18 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
+        title: "Monitoring",
+        href: "/system/services?tab=monitoring&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
         title: "NTP",
         href: "/system/services?tab=ntp&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "PPPoE Server",
+        href: "/system/services?tab=pppoe-server&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
@@ -298,6 +313,11 @@ const navigation: NavItem[] = [
       {
         title: "TFTP Server",
         href: "/system/services?tab=tftp-server&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "Webproxy",
+        href: "/system/services?tab=webproxy&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
       },
     ],

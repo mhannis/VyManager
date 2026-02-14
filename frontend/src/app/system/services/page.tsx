@@ -75,6 +75,10 @@ import { SuricataServiceTab } from "@/components/system/SuricataServiceTab";
 import { BroadcastRelayServiceTab } from "@/components/system/BroadcastRelayServiceTab";
 import { ConntrackSyncServiceTab } from "@/components/system/ConntrackSyncServiceTab";
 import { EventHandlerServiceTab } from "@/components/system/EventHandlerServiceTab";
+import { MonitoringServiceTab } from "@/components/system/MonitoringServiceTab";
+import { WebproxyServiceTab } from "@/components/system/WebproxyServiceTab";
+import { PppoeServerServiceTab } from "@/components/system/PppoeServerServiceTab";
+import { IpoeServerServiceTab } from "@/components/system/IpoeServerServiceTab";
 import { formatInterfaceDisplayName } from "@/lib/utils";
 
 const EMPTY_SERVER: NtpServerConfig = {
@@ -99,10 +103,14 @@ type ServiceTab =
   | "broadcast-relay"
   | "console-server"
   | "conntrack-sync"
+  | "ipoe-server"
   | "ntp"
   | "lldp"
   | "mdns"
+  | "monitoring"
+  | "pppoe-server"
   | "ssh"
+  | "webproxy"
   | "salt-minion"
   | "https-api"
   | "snmp"
@@ -124,14 +132,18 @@ const SERVICE_TAB_VALUES: ServiceTab[] = [
   "dynamic-dns",
   "event-handler",
   "https-api",
+  "ipoe-server",
   "lldp",
   "mdns",
+  "monitoring",
   "ntp",
+  "pppoe-server",
   "salt-minion",
   "snmp",
   "ssh",
   "suricata",
   "tftp-server",
+  "webproxy",
 ];
 
 const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
@@ -144,10 +156,14 @@ const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
   "conntrack-sync": "Conntrack Sync",
   "salt-minion": "Salt Minion",
   "https-api": "HTTP API",
+  "ipoe-server": "IPoE Server",
   snmp: "SNMP",
   suricata: "Suricata",
   "tftp-server": "TFTP Server",
   "event-handler": "Event Handler",
+  monitoring: "Monitoring",
+  "pppoe-server": "PPPoE Server",
+  webproxy: "Webproxy",
   "dns-forwarder": "DNS Forwarder",
   "dns-resolver": "DNS Resolver",
   "dynamic-dns": "Dynamic DNS",
@@ -1606,6 +1622,14 @@ function SystemServicesPageContent() {
             />
           </TabsContent>
 
+          <TabsContent value="ipoe-server" className="space-y-6">
+            <IpoeServerServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "ipoe-server"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
           <TabsContent value="console-server" className="space-y-6">
             <ConsoleServerServiceTab
               canEdit={canEditSystem}
@@ -1638,6 +1662,14 @@ function SystemServicesPageContent() {
             />
           </TabsContent>
 
+          <TabsContent value="monitoring" className="space-y-6">
+            <MonitoringServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "monitoring"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
           <TabsContent value="snmp" className="space-y-6">
             <SnmpServiceTab
               canEdit={canEditSystem}
@@ -1650,6 +1682,14 @@ function SystemServicesPageContent() {
             <SaltMinionServiceTab
               canEdit={canEditSystem}
               active={activeTab === "salt-minion"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
+          <TabsContent value="pppoe-server" className="space-y-6">
+            <PppoeServerServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "pppoe-server"}
               refreshNonce={serviceRefreshNonce}
             />
           </TabsContent>
@@ -1677,6 +1717,14 @@ function SystemServicesPageContent() {
             <SuricataServiceTab
               canEdit={canEditSystem}
               active={activeTab === "suricata"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
+          <TabsContent value="webproxy" className="space-y-6">
+            <WebproxyServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "webproxy"}
               refreshNonce={serviceRefreshNonce}
             />
           </TabsContent>
