@@ -1,95 +1,121 @@
 {
-  "feature_id": "parity-phase0-foundation",
-  "title": "Parity Program Phase 0 Foundation",
-  "last_updated": "2026-02-14T15:54:00Z",
+  "feature_id": "parity-phase1-phase2-policy-foundation",
+  "title": "Phase 1 classification + Phase 2 reusable policy abstractions",
+  "last_updated": "2026-02-14T16:40:00Z",
   "status": "in_progress",
   "acceptance_criteria": [
-    "Unified thin VyOSDriver abstraction exists and preserves existing API contracts.",
-    "Safe Apply is centralized and used by write paths touching risky domains.",
-    "Safe Apply performs snapshot + apply + probe + rollback on probe failure.",
-    "Docs crawl inventory is generated from https://docs.vyos.io/en/latest/configuration/.",
-    "Coverage matrix files are present and ready for sequential parity slicing.",
-    "Baseline backend tests for safe apply and driver behavior pass."
+    "Coverage matrix entries are marked implemented/partial/not_started with evidence file paths.",
+    "A prioritized backlog is produced using foundational risk, breadth, and reuse potential.",
+    "Policy reorder banners are standardized behind one shared component.",
+    "Prefix-list create/add/edit dialogs share validation logic.",
+    "Capabilities endpoint loading is standardized for policy routers.",
+    "Route-map and local-route capability endpoints no longer crash.",
+    "Regression tests cover route-map/local-route capability endpoints."
   ],
   "assumptions": [
-    "VyOS HTTPS API in current project surface does not expose native commit-confirm transactions.",
-    "Emulated commit-confirm via snapshot/apply/probe/rollback is acceptable for WAN safety enforcement.",
-    "Coverage status is heuristic and requires domain-level verification as slices are implemented."
+    "Phase1 status classification is implementation-level and not full option-level parity verification.",
+    "Builder capability payloads are domain-specific; tests should check stable keys rather than identical schemas.",
+    "Existing API contracts and endpoint paths must remain unchanged."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "Analyst",
+      "owner_role": "Planner",
       "status": "done",
       "files": [
-        "VYOS_INTEGRATION_DISCOVERY.md"
+        "scripts/generate_phase1_backlog.py",
+        "CONFIG_COVERAGE_PHASE1.json",
+        "CONFIG_COVERAGE_PHASE1.md",
+        "PARITY_BACKLOG.json",
+        "PARITY_BACKLOG.md"
       ],
-      "notes": "Documented current VyOS integration architecture and write paths."
+      "notes": "Generated Phase1 coverage classification and backlog from the docs crawl matrix + repo scan evidence."
     },
     {
       "id": "T2",
-      "owner_role": "Backend",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "backend/safe_apply.py",
-        "backend/vyos_service.py"
+        "frontend/src/components/policies/PolicyReorderBanner.tsx",
+        "frontend/src/components/policies/AccessListReorderBanner.tsx",
+        "frontend/src/components/policies/PrefixListReorderBanner.tsx",
+        "frontend/src/components/policies/RouteMapReorderBanner.tsx",
+        "frontend/src/components/policies/RouteReorderBanner.tsx",
+        "frontend/src/components/policies/LocalRouteReorderBanner.tsx",
+        "frontend/src/components/policies/AsPathListReorderBanner.tsx",
+        "frontend/src/components/policies/CommunityListReorderBanner.tsx",
+        "frontend/src/components/policies/ExtCommunityListReorderBanner.tsx",
+        "frontend/src/components/policies/LargeCommunityListReorderBanner.tsx"
       ],
-      "notes": "Implemented Safe Apply and centralized write path in VyOSService.apply_operations()."
+      "notes": "Standardized repeated reorder banner UI into one shared abstraction while preserving existing component contracts."
     },
     {
       "id": "T3",
-      "owner_role": "Backend",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "backend/vyos_driver.py",
-        "backend/session_vyos_service.py"
+        "frontend/src/components/policies/utils/prefixListValidators.ts",
+        "frontend/src/components/policies/CreatePrefixListModal.tsx",
+        "frontend/src/components/policies/AddPrefixListRuleModal.tsx",
+        "frontend/src/components/policies/EditPrefixListRuleModal.tsx"
       ],
-      "notes": "Added thin VyOSDriver abstraction and session-scoped driver accessor."
+      "notes": "Consolidated prefix-list CIDR/GE/LE validation logic into shared utility."
     },
     {
       "id": "T4",
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/system.py",
-        "backend/routers/containers.py",
-        "backend/routers/ipsec.py",
-        "backend/routers/firewall/zones.py"
+        "backend/utils/router_helpers.py",
+        "backend/routers/access_list/access_list.py",
+        "backend/routers/prefix_list/prefix_list.py",
+        "backend/routers/route/route.py",
+        "backend/routers/route_map/route_map.py",
+        "backend/routers/local_route/local_route.py"
       ],
-      "notes": "Routed direct configure writes through service.apply_operations() to enforce safety policy."
+      "notes": "Added shared capability loader and fixed undefined request variable regressions in route-map/local-route capability handlers."
     },
     {
       "id": "T5",
-      "owner_role": "Planner",
-      "status": "done",
-      "files": [
-        "scripts/generate_config_coverage_matrix.py",
-        "CONFIG_COVERAGE_MATRIX.md",
-        "CONFIG_COVERAGE_MATRIX.json"
-      ],
-      "notes": "Generated full documentation coverage inventory from VyOS config guide crawl."
-    },
-    {
-      "id": "T6",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_safe_apply.py",
-        "backend/tests/test_vyos_driver_wrapper.py",
-        "backend/tests/test_vyos_service_safe_apply.py",
-        "backend/tests/test_system_services_ssh_dns.py",
-        "backend/tests/test_containers_automation_v1.py"
+        "backend/tests/test_policy_capabilities.py"
       ],
-      "notes": "Added safe-apply/driver tests and updated existing doubles for new write wrapper path."
+      "notes": "Added route-map/local-route capability regression tests."
     },
     {
-      "id": "T7",
+      "id": "T6",
       "owner_role": "Planner",
       "status": "doing",
       "files": [
-        "CONFIG_COVERAGE_MATRIX.md"
+        "PARITY_BACKLOG.md",
+        "CONFIG_COVERAGE_PHASE1.md"
       ],
-      "notes": "Execute domain implementation slices in documentation order toward MVP parity."
+      "notes": "Execute Phase3 vertical slices from backlog starting with remaining policy domain gaps, then protocols and services."
+    },
+    {
+      "id": "T7",
+      "owner_role": "Backend",
+      "status": "todo",
+      "files": [
+        "backend/routers/as_path_list/as_path_list.py",
+        "backend/routers/community_list/community_list.py",
+        "backend/routers/extcommunity_list/extcommunity_list.py",
+        "backend/routers/large_community_list/large_community_list.py"
+      ],
+      "notes": "Complete policy pages marked partial by adding missing parity endpoints/options and validation where needed."
+    },
+    {
+      "id": "T8",
+      "owner_role": "UI",
+      "status": "todo",
+      "files": [
+        "frontend/src/app/routing/infrastructure/page.tsx",
+        "frontend/src/app/routing/unicast-protocols/page.tsx",
+        "frontend/src/app/routing/multicast/page.tsx"
+      ],
+      "notes": "Start protocols slice using shared rule-editor/form patterns and remove known setState-in-effect performance issues as part of implementation hardening."
     }
   ],
   "commands": {
@@ -97,12 +123,14 @@
     "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q",
     "lint": "cd frontend && npm run -s lint",
     "typecheck": "cd frontend && npx tsc --noEmit --pretty false",
-    "matrix": "python3 scripts/generate_config_coverage_matrix.py"
+    "runtime_smoke": "cd frontend && npm run -s smoke:runtime",
+    "matrix": "python3 scripts/generate_config_coverage_matrix.py",
+    "phase1_backlog": "python3 scripts/generate_phase1_backlog.py"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Parity phase 0 foundation and subsequent matrix-driven domain slices",
+      "purpose": "Parity execution with phase-by-phase slices",
       "status": "active"
     }
   ]

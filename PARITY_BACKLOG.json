@@ -1,0 +1,161 @@
+{
+  "prioritization_policy": [
+    "foundational risk (interfaces/routing/firewall/nat first)",
+    "breadth (more uncovered pages first)",
+    "reuse potential"
+  ],
+  "domains": [
+    {
+      "domain": "policy",
+      "risk": 95,
+      "breadth": 6,
+      "reuse": 100,
+      "total_pages": 11,
+      "implemented": 5,
+      "partial": 4,
+      "not_started": 2
+    },
+    {
+      "domain": "protocols",
+      "risk": 94,
+      "breadth": 18,
+      "reuse": 90,
+      "total_pages": 18,
+      "implemented": 0,
+      "partial": 5,
+      "not_started": 13
+    },
+    {
+      "domain": "services",
+      "risk": 78,
+      "breadth": 19,
+      "reuse": 88,
+      "total_pages": 23,
+      "implemented": 4,
+      "partial": 19,
+      "not_started": 0
+    },
+    {
+      "domain": "vpn",
+      "risk": 70,
+      "breadth": 7,
+      "reuse": 72,
+      "total_pages": 12,
+      "implemented": 5,
+      "partial": 7,
+      "not_started": 0
+    },
+    {
+      "domain": "ha",
+      "risk": 65,
+      "breadth": 1,
+      "reuse": 55,
+      "total_pages": 1,
+      "implemented": 0,
+      "partial": 0,
+      "not_started": 1
+    },
+    {
+      "domain": "vrf",
+      "risk": 60,
+      "breadth": 1,
+      "reuse": 62,
+      "total_pages": 1,
+      "implemented": 0,
+      "partial": 1,
+      "not_started": 0
+    },
+    {
+      "domain": "load_balancing",
+      "risk": 55,
+      "breadth": 3,
+      "reuse": 68,
+      "total_pages": 3,
+      "implemented": 0,
+      "partial": 3,
+      "not_started": 0
+    },
+    {
+      "domain": "traffic_policy",
+      "risk": 50,
+      "breadth": 1,
+      "reuse": 78,
+      "total_pages": 1,
+      "implemented": 0,
+      "partial": 0,
+      "not_started": 1
+    },
+    {
+      "domain": "pki",
+      "risk": 35,
+      "breadth": 1,
+      "reuse": 30,
+      "total_pages": 1,
+      "implemented": 0,
+      "partial": 0,
+      "not_started": 1
+    },
+    {
+      "domain": "meta",
+      "risk": 10,
+      "breadth": 1,
+      "reuse": 10,
+      "total_pages": 1,
+      "implemented": 0,
+      "partial": 0,
+      "not_started": 1
+    }
+  ],
+  "completed_domains": [
+    {
+      "domain": "interfaces",
+      "risk": 100,
+      "breadth": 0,
+      "reuse": 95,
+      "total_pages": 21,
+      "implemented": 21,
+      "partial": 0,
+      "not_started": 0
+    },
+    {
+      "domain": "firewall",
+      "risk": 93,
+      "breadth": 0,
+      "reuse": 95,
+      "total_pages": 8,
+      "implemented": 8,
+      "partial": 0,
+      "not_started": 0
+    },
+    {
+      "domain": "nat",
+      "risk": 92,
+      "breadth": 0,
+      "reuse": 85,
+      "total_pages": 5,
+      "implemented": 5,
+      "partial": 0,
+      "not_started": 0
+    },
+    {
+      "domain": "system",
+      "risk": 80,
+      "breadth": 0,
+      "reuse": 75,
+      "total_pages": 22,
+      "implemented": 22,
+      "partial": 0,
+      "not_started": 0
+    },
+    {
+      "domain": "container",
+      "risk": 45,
+      "breadth": 0,
+      "reuse": 64,
+      "total_pages": 1,
+      "implemented": 1,
+      "partial": 0,
+      "not_started": 0
+    }
+  ]
+}

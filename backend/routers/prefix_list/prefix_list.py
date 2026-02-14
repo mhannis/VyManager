@@ -13,6 +13,7 @@ from session_vyos_service import get_session_vyos_service
 from vyos_builders import PrefixListBatchBuilder
 from fastapi_permissions import require_read_permission, require_write_permission
 from rbac_permissions import FeatureGroup
+from utils.router_helpers import load_vyos_capabilities
 import inspect
 
 router = APIRouter(prefix="/vyos/prefix-list", tags=["prefix-list"])
@@ -107,22 +108,11 @@ async def get_prefix_list_capabilities(request: Request):
     Returns feature flags indicating which operations are supported.
     Allows frontends to conditionally enable/disable features.
     """
-    # Check RBAC permission
-    await require_read_permission(request, FeatureGroup.PREFIX_LIST)
-
-    try:
-        service = get_session_vyos_service(request)
-        version = service.get_version()
-        builder = PrefixListBatchBuilder(version=version)
-        capabilities = builder.get_capabilities()
-
-        # Add instance info
-        if hasattr(request.state, "instance") and request.state.instance:
-            capabilities["instance_name"] = request.state.instance.get("name")
-            capabilities["instance_id"] = request.state.instance.get("id")
-        return capabilities
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return await load_vyos_capabilities(
+        request=request,
+        feature_group=FeatureGroup.PREFIX_LIST,
+        builder_cls=PrefixListBatchBuilder,
+    )
 
 
 # ============================================================================

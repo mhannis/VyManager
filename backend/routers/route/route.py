@@ -14,6 +14,7 @@ from session_vyos_service import get_session_vyos_service
 from vyos_builders import RouteBatchBuilder
 from fastapi_permissions import require_read_permission, require_write_permission
 from rbac_permissions import FeatureGroup
+from utils.router_helpers import load_vyos_capabilities
 import inspect
 
 router = APIRouter(prefix="/vyos/route", tags=["route"])
@@ -192,22 +193,11 @@ async def get_route_capabilities(request: Request):
 
     Returns feature flags indicating which operations are supported.
     """
-    # Check RBAC permission
-    await require_read_permission(request, FeatureGroup.ROUTE_POLICY)
-
-    try:
-        service = get_session_vyos_service(request)
-        version = service.get_version()
-        builder = RouteBatchBuilder(version=version)
-        capabilities = builder.get_capabilities()
-
-        # Add instance info
-        if hasattr(request.state, "instance") and request.state.instance:
-            capabilities["instance_name"] = request.state.instance.get("name")
-            capabilities["instance_id"] = request.state.instance.get("id")
-        return capabilities
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return await load_vyos_capabilities(
+        request=request,
+        feature_group=FeatureGroup.ROUTE_POLICY,
+        builder_cls=RouteBatchBuilder,
+    )
 
 
 # ============================================================================

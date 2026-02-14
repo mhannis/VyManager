@@ -8,6 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertCircle } from "lucide-react";
 import { prefixListService, type PrefixListRule } from "@/lib/api/prefix-list";
+import {
+  cidrExample,
+  getPrefixLength,
+  validatePrefixCidr,
+  validatePrefixRange,
+} from "@/components/policies/utils/prefixListValidators";
 
 interface EditPrefixListRuleModalProps {
   open: boolean;
@@ -61,33 +67,6 @@ export function EditPrefixListRuleModal({
     onOpenChange(false);
   };
 
-  // Validate CIDR notation
-  const validateCIDR = (cidr: string): boolean => {
-    if (!cidr) return false;
-
-    const parts = cidr.split('/');
-    if (parts.length !== 2) return false;
-
-    const [ip, prefixLen] = parts;
-    const prefixLength = parseInt(prefixLen, 10);
-
-    if (listType === "ipv4") {
-      // IPv4 validation
-      const ipParts = ip.split('.');
-      if (ipParts.length !== 4) return false;
-      if (!ipParts.every(part => {
-        const num = parseInt(part, 10);
-        return num >= 0 && num <= 255;
-      })) return false;
-      if (isNaN(prefixLength) || prefixLength < 0 || prefixLength > 32) return false;
-    } else {
-      // IPv6 validation (basic)
-      if (isNaN(prefixLength) || prefixLength < 0 || prefixLength > 128) return false;
-    }
-
-    return true;
-  };
-
   const handleSubmit = async () => {
     if (!rule || !listName) return;
 
@@ -97,49 +76,21 @@ export function EditPrefixListRuleModal({
       return;
     }
 
-    if (!validateCIDR(prefix)) {
-      setError(`Invalid ${listType.toUpperCase()} CIDR notation. Format: ${listType === "ipv4" ? "192.168.1.0/24" : "2001:db8::/32"}`);
+    if (!validatePrefixCidr(prefix, listType)) {
+      setError(`Invalid ${listType.toUpperCase()} CIDR notation. Format: ${cidrExample(listType)}`);
       return;
     }
 
-    // Validate ge/le if provided
-    if (ge && isNaN(parseInt(ge, 10))) {
-      setError("GE must be a valid number");
+    const prefixLength = getPrefixLength(prefix);
+    if (prefixLength === null) {
+      setError("Invalid prefix length in CIDR notation");
       return;
     }
 
-    if (le && isNaN(parseInt(le, 10))) {
-      setError("LE must be a valid number");
+    const rangeError = validatePrefixRange(ge, le, prefixLength, listType);
+    if (rangeError) {
+      setError(rangeError);
       return;
-    }
-
-    // Get prefix length from CIDR
-    const prefixLength = parseInt(prefix.split('/')[1], 10);
-    const maxLength = listType === "ipv4" ? 32 : 128;
-
-    if (ge) {
-      const geNum = parseInt(ge, 10);
-      if (geNum < prefixLength || geNum > maxLength) {
-        setError(`GE must be between ${prefixLength} (prefix length) and ${maxLength}`);
-        return;
-      }
-    }
-
-    if (le) {
-      const leNum = parseInt(le, 10);
-      if (leNum < prefixLength || leNum > maxLength) {
-        setError(`LE must be between ${prefixLength} (prefix length) and ${maxLength}`);
-        return;
-      }
-    }
-
-    if (ge && le) {
-      const geNum = parseInt(ge, 10);
-      const leNum = parseInt(le, 10);
-      if (geNum > leNum) {
-        setError("GE must be less than or equal to LE");
-        return;
-      }
     }
 
     setLoading(true);
