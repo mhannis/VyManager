@@ -1,18 +1,17 @@
-feature_id: parity-phase3-protocols-batch-02
-status: in_progress
-title: Phase 3 Protocols Batch (Static, Failover, MPLS, OpenFabric, RPKI)
+feature_id: parity-phase3-protocols-batch-03
+status: done
+title: Phase 3 Protocols Batch (PIM, PIM6, Protocols index, BGP page, BFD page)
 branch: feature/containers-automation-v1
 commits:
-  - c19143a
-  - cc385d6
-  - 7229af3
+  - 4f16851
 notes:
-  - Completed second 5-item protocol batch before reporting, per execution policy.
-  - Added backend routers for static protocol, failover, mpls, openfabric, and rpki.
-  - Added command-driven frontend protocol pages and route wiring for these items.
-  - Added dedicated pages: /routing/static-failover/failover, /routing/unicast-protocols/{openfabric,static}, /routing/infrastructure/{mpls,rpki}.
-  - /routing/static-failover root now redirects based on permissions (STATIC_ROUTES first, then FAILOVER).
-  - Expanded protocol tests and fixed duplicate static key in test fixture.
-  - Regenerated coverage artifacts; protocols backlog now: implemented 10, partial 5, not_started 3.
+  - Completed 5 protocol items before reporting, per execution policy.
+  - Added backend routers for PIM and PIM6 plus protocol overview endpoints.
+  - Added protocol overview frontend page at /routing/protocols.
+  - Added PIM and PIM6 views in multicast page and dedicated routes.
+  - Added dedicated routes for BGP and BFD.
+  - Updated sidebar with Routing Overview link.
+  - Expanded protocol tests and fixed validator behavior to allow subtree delete root commands.
+  - Regenerated coverage artifacts; protocols domain now 18 implemented, 0 partial, 0 not_started.
   - Reviewer verdict: APPROVED.
-  - Next protocol batch target: PIM, PIM6, Protocols index.
+  - Next target domain: services.

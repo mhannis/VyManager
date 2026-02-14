@@ -3,6 +3,8 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { InProgress } from "@/components/layout/InProgress";
 import { IgmpProxyContent } from "@/components/routing/IgmpProxyContent";
+import { PimContent } from "@/components/routing/PimContent";
+import { Pim6Content } from "@/components/routing/Pim6Content";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Radio, ChevronRight, Wifi } from "lucide-react";
@@ -120,6 +122,10 @@ export default function MulticastPage() {
         <div className="flex-1">
           {selectedMulticast === "igmp-proxy" ? (
             <IgmpProxyContent />
+          ) : selectedMulticast === "pim" ? (
+            <PimContent />
+          ) : selectedMulticast === "pim6" ? (
+            <Pim6Content />
           ) : (
             <InProgress />
           )}

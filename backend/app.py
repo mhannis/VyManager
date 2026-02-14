@@ -4,11 +4,13 @@ urllib3.disable_warnings()
 import os
 import asyncpg
 import asyncio
+from pathlib import Path
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
+from dotenv import load_dotenv
 
 from middleware.auth import AuthenticationMiddleware
 from middleware.session import SessionMiddleware
@@ -49,6 +51,9 @@ from routers.failover import failover
 from routers.mpls import mpls
 from routers.openfabric import openfabric
 from routers.rpki import rpki
+from routers.pim import pim
+from routers.pim6 import pim6
+from routers.protocols import protocols as protocols_overview
 from routers import system
 from routers import power as power_router
 from routers.config import config as config_router
@@ -57,6 +62,9 @@ from routers import dashboard as dashboard_router
 from routers import user_management as user_management_router
 from routers import containers as containers_router
 from routers import ipsec as ipsec_router
+
+# Load backend/.env when uvicorn is started without exported shell vars.
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 # Global variables
 db_pool: Optional[asyncpg.Pool] = None
@@ -303,6 +311,9 @@ app.include_router(failover.router)
 app.include_router(mpls.router)
 app.include_router(openfabric.router)
 app.include_router(rpki.router)
+app.include_router(pim.router)
+app.include_router(pim6.router)
+app.include_router(protocols_overview.router)
 app.include_router(system.router)
 app.include_router(power_router.router)
 app.include_router(config_router.router)

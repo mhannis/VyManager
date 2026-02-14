@@ -66,3 +66,7 @@
 - 2026-02-14: Added protocol routers/pages for Static, Failover, MPLS, OpenFabric, and RPKI using the existing command-batch pattern to rapidly reduce protocols backlog breadth.
 - 2026-02-14: `backend/tests/test_protocol_capabilities.py` fixture must avoid duplicate protocol keys (Python dict overwrite risk); static ARP + static route fixtures are now merged under a single `static` object.
 - 2026-02-14: `/routing/static-failover` now performs permission-aware redirect (`STATIC_ROUTES` preferred, fallback to `FAILOVER`) to avoid routing users into unauthorized pages.
+- 2026-02-14: Added protocol overview API/UI (`/vyos/protocols/*`, `/routing/protocols`) to represent docs index coverage and provide a routing entry surface.
+- 2026-02-14: PIM/PIM6 batch command validation now accepts exact root operations (`delete protocols pim`, `delete protocols pim6`) with boundary-safe matching to prevent cross-protocol prefix collisions.
+- 2026-02-14: Added dedicated route pages `/routing/unicast-protocols/bgp` and `/routing/infrastructure/bfd` to resolve coverage detector false partials and mark protocol docs pages implemented.
+- 2026-02-14: Protocols domain reached full parity in matrix terms (`implemented: 18`, `partial: 0`, `not_started: 0`); next execution focus moves to services-domain partials.

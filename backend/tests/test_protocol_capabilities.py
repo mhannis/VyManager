@@ -13,6 +13,9 @@ import routers.failover.failover as failover_router
 import routers.mpls.mpls as mpls_router
 import routers.openfabric.openfabric as openfabric_router
 import routers.rpki.rpki as rpki_router
+import routers.pim.pim as pim_router
+import routers.pim6.pim6 as pim6_router
+import routers.protocols.protocols as protocols_router
 
 
 ROUTER_MODULES = (
@@ -26,6 +29,9 @@ ROUTER_MODULES = (
     mpls_router,
     openfabric_router,
     rpki_router,
+    pim_router,
+    pim6_router,
+    protocols_router,
 )
 
 
@@ -58,6 +64,8 @@ class DummyService:
                 "mpls": {"interface": {"eth2": {}}},
                 "openfabric": {"interface": {"eth2": {}}},
                 "rpki": {"cache": {"192.0.2.10": {"port": "3323"}}},
+                "pim": {"interface": {"eth3": {"mode": "sm"}}},
+                "pim6": {"interface": {"eth3": {"mode": "sm"}}},
             }
         }
 
@@ -82,6 +90,9 @@ def app():
     app.include_router(mpls_router.router)
     app.include_router(openfabric_router.router)
     app.include_router(rpki_router.router)
+    app.include_router(pim_router.router)
+    app.include_router(pim6_router.router)
+    app.include_router(protocols_router.router)
     return app
 
 
@@ -94,8 +105,10 @@ def allow_permissions(monkeypatch):
         return None
 
     for router_module in ROUTER_MODULES:
-        monkeypatch.setattr(router_module, "require_read_permission", allow_read)
-        monkeypatch.setattr(router_module, "require_write_permission", allow_write)
+        if hasattr(router_module, "require_read_permission"):
+            monkeypatch.setattr(router_module, "require_read_permission", allow_read)
+        if hasattr(router_module, "require_write_permission"):
+            monkeypatch.setattr(router_module, "require_write_permission", allow_write)
 
 
 @pytest.fixture()
@@ -120,6 +133,9 @@ def mock_service(monkeypatch):
         ("/vyos/mpls/capabilities", ("protocol", "version", "features")),
         ("/vyos/openfabric/capabilities", ("protocol", "version", "features")),
         ("/vyos/rpki/capabilities", ("protocol", "version", "features")),
+        ("/vyos/pim/capabilities", ("protocol", "version", "features")),
+        ("/vyos/pim6/capabilities", ("protocol", "version", "features")),
+        ("/vyos/protocols/capabilities", ("protocol", "version", "features")),
     ],
 )
 def test_protocol_capabilities_endpoints_return_expected_payload(
@@ -151,6 +167,9 @@ def test_protocol_capabilities_endpoints_return_expected_payload(
         ("/vyos/mpls/config", "mpls"),
         ("/vyos/openfabric/config", "openfabric"),
         ("/vyos/rpki/config", "rpki"),
+        ("/vyos/pim/config", "pim"),
+        ("/vyos/pim6/config", "pim6"),
+        ("/vyos/protocols/config", "protocols"),
     ],
 )
 def test_protocol_config_endpoints_return_expected_payload(
@@ -221,6 +240,16 @@ def test_protocol_config_endpoints_return_expected_payload(
             "/vyos/rpki/batch",
             "set protocols rpki cache 192.0.2.10 port 3323",
             "set protocols bgp system-as 64512",
+        ),
+        (
+            "/vyos/pim/batch",
+            "delete protocols pim",
+            "set protocols pim6 interface eth3 mode sm",
+        ),
+        (
+            "/vyos/pim6/batch",
+            "delete protocols pim6",
+            "set protocols pim interface eth3 mode sm",
         ),
     ],
 )

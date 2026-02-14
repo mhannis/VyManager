@@ -6,16 +6,6 @@
   ],
   "domains": [
     {
-      "domain": "protocols",
-      "risk": 94,
-      "breadth": 8,
-      "reuse": 90,
-      "total_pages": 18,
-      "implemented": 10,
-      "partial": 5,
-      "not_started": 3
-    },
-    {
       "domain": "services",
       "risk": 78,
       "breadth": 19,
@@ -114,6 +104,16 @@
       "reuse": 100,
       "total_pages": 11,
       "implemented": 11,
+      "partial": 0,
+      "not_started": 0
+    },
+    {
+      "domain": "protocols",
+      "risk": 94,
+      "breadth": 0,
+      "reuse": 90,
+      "total_pages": 18,
+      "implemented": 18,
       "partial": 0,
       "not_started": 0
     },

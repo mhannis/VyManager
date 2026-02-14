@@ -108,6 +108,11 @@ const navigation: NavItem[] = [
     icon: Route,
     children: [
       {
+        title: "Overview",
+        href: "/routing/protocols",
+        requiredPermission: FeatureGroup.ROUTING
+      },
+      {
         title: "Unicast Protocols",
         href: "/routing/unicast-protocols",
         requiredPermission: FeatureGroup.UNICAST_PROTOCOLS

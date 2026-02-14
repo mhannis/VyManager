@@ -1,17 +1,19 @@
 {
-  "feature_id": "parity-phase3-protocols-batch-02",
-  "title": "Protocols slice batch: Static + Failover + MPLS + OpenFabric + RPKI",
-  "last_updated": "2026-02-14T18:00:00Z",
-  "status": "in_progress",
+  "feature_id": "parity-phase3-protocols-batch-03",
+  "title": "Protocols slice batch: PIM + PIM6 + Protocols index + BGP/BFD dedicated pages",
+  "last_updated": "2026-02-14T18:10:00Z",
+  "status": "done",
   "execution_policy": {
     "protocol_items_per_report_min": 3,
     "protocol_items_per_report_max": 5,
     "reporting_rule": "During protocols backlog execution, complete 3-5 items before issuing the next human-facing report."
   },
   "acceptance_criteria": [
-    "Backend routers exist for Static, Failover, MPLS, OpenFabric, and RPKI with capabilities/config/batch endpoints.",
-    "Routing UI has editors/pages for these five protocol areas.",
-    "Coverage artifacts are regenerated and protocols domain breadth decreases.",
+    "Backend routers exist for PIM and PIM6 with capabilities/config/batch endpoints.",
+    "Backend protocols index endpoints exist for capabilities/config.",
+    "Routing UI has PIM/PIM6 protocol editors and a protocols overview page.",
+    "Dedicated routes exist for BGP and BFD protocol pages.",
+    "Coverage artifacts are regenerated and protocols domain is fully implemented.",
     "Targeted backend tests and frontend validation commands pass.",
     "Code reviewer signs off APPROVED."
   ],
@@ -26,46 +28,41 @@
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/static/static.py",
-        "backend/routers/failover/failover.py",
-        "backend/routers/mpls/mpls.py",
-        "backend/routers/openfabric/openfabric.py",
-        "backend/routers/rpki/rpki.py",
+        "backend/routers/pim/__init__.py",
+        "backend/routers/pim/pim.py",
+        "backend/routers/pim6/__init__.py",
+        "backend/routers/pim6/pim6.py",
+        "backend/routers/protocols/__init__.py",
+        "backend/routers/protocols/protocols.py",
         "backend/app.py"
       ],
-      "notes": "Added protocol routers and wired them into FastAPI app."
+      "notes": "Added PIM/PIM6 routers and protocols overview router; wired routers into app."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/routing/FailoverContent.tsx",
-        "frontend/src/components/routing/MplsContent.tsx",
-        "frontend/src/components/routing/OpenfabricContent.tsx",
-        "frontend/src/components/routing/RpkiContent.tsx",
-        "frontend/src/components/routing/StaticProtocolContent.tsx",
-        "frontend/src/app/routing/unicast-protocols/page.tsx",
-        "frontend/src/app/routing/infrastructure/page.tsx",
-        "frontend/src/app/routing/static-failover/page.tsx",
-        "frontend/src/app/routing/static-failover/failover/page.tsx",
-        "frontend/src/app/routing/unicast-protocols/openfabric/page.tsx",
-        "frontend/src/app/routing/unicast-protocols/static/page.tsx",
-        "frontend/src/app/routing/infrastructure/mpls/page.tsx",
-        "frontend/src/app/routing/infrastructure/rpki/page.tsx"
+        "frontend/src/components/routing/PimContent.tsx",
+        "frontend/src/components/routing/Pim6Content.tsx",
+        "frontend/src/app/routing/multicast/page.tsx",
+        "frontend/src/app/routing/multicast/pim/page.tsx",
+        "frontend/src/app/routing/multicast/pim6/page.tsx",
+        "frontend/src/app/routing/protocols/page.tsx",
+        "frontend/src/app/routing/unicast-protocols/bgp/page.tsx",
+        "frontend/src/app/routing/infrastructure/bfd/page.tsx",
+        "frontend/src/components/layout/Sidebar.tsx"
       ],
-      "notes": "Replaced placeholders and added dedicated routes for coverage/discoverability."
+      "notes": "Added protocol surfaces and routing overview navigation."
     },
     {
       "id": "T3",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/failover.ts",
-        "frontend/src/lib/api/mpls.ts",
-        "frontend/src/lib/api/openfabric.ts",
-        "frontend/src/lib/api/rpki.ts",
-        "frontend/src/lib/api/static-protocol.ts"
+        "frontend/src/lib/api/pim.ts",
+        "frontend/src/lib/api/pim6.ts",
+        "frontend/src/lib/api/protocols.ts"
       ],
       "notes": "Added frontend API clients for new protocol endpoints."
     },
@@ -76,7 +73,7 @@
       "files": [
         "backend/tests/test_protocol_capabilities.py"
       ],
-      "notes": "Expanded capability/config/batch-scope tests for added routers and fixed duplicate static fixture key."
+      "notes": "Expanded capability/config/batch tests for PIM/PIM6/protocols index and covered root delete commands."
     },
     {
       "id": "T5",
@@ -87,27 +84,28 @@
         "CONFIG_COVERAGE_PHASE1.json",
         "PARITY_BACKLOG.json"
       ],
-      "notes": "Regenerated coverage artifacts; protocols implemented count increased from 5 to 10."
+      "notes": "Regenerated coverage artifacts; protocols domain now complete (18/18 implemented)."
     },
     {
       "id": "T6",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/tests/test_protocol_capabilities.py",
-        "frontend/src/app/routing/static-failover/page.tsx"
+        "backend/routers/pim/pim.py",
+        "backend/routers/pim6/pim6.py",
+        "backend/tests/test_protocol_capabilities.py"
       ],
-      "notes": "Final reviewer verdict: APPROVED after fixing duplicate fixture key and permission-aware redirect."
+      "notes": "Final reviewer verdict APPROVED after validating base delete command support with scoped prefix checks."
     },
     {
-      "id": "T7",
+      "id": "N1",
       "owner_role": "Planner",
-      "status": "doing",
+      "status": "todo",
       "files": [
-        "PARITY_BACKLOG.md",
-        "CONFIG_COVERAGE_PHASE1.md"
+        "CONFIG_COVERAGE_PHASE1.json",
+        "PARITY_BACKLOG.json"
       ],
-      "notes": "Next protocol batch target: PIM, PIM6, Protocols index (plus partial domains: BGP/BFD/Babel/Segment Routing/Multicast)."
+      "notes": "Next slice target: services domain partial items (dns/ssh/ntp/lldp/mdns first batch)."
     }
   ],
   "commands": {

@@ -1,13 +1,12 @@
-timestamp: 2026-02-14T17:17:00Z
-failing_command: cd frontend && npx tsc --noEmit --pretty false
-error_summary: TypeScript failed because the new shared protocol UI expected `getCapabilities(): Promise<Record<string, unknown>>`, while concrete API services returned typed capability objects without an index signature.
+timestamp: 2026-02-14T18:08:30Z
+failing_command: cat > LAST_FAILURE.txt ... (unquoted backticks in shell heredoc)
+error_summary: While updating LAST_FAILURE.txt, backticks in the text were interpreted by the shell, causing path fragments to execute as commands and producing "No such file or directory" / "command not found" errors. No repository code was affected.
 
 relevant_output:
-src/components/routing/ArpProtocolContent.tsx(11,7): error TS2322: Type 'ArpService' is not assignable to type 'ProtocolService'.
-src/components/routing/IgmpProxyContent.tsx(11,7): error TS2322: Type 'IgmpProxyService' is not assignable to type 'ProtocolService'.
-src/components/routing/IsisContent.tsx(11,7): error TS2322: Type 'IsisService' is not assignable to type 'ProtocolService'.
-src/components/routing/OspfContent.tsx(11,7): error TS2322: Type 'OspfService' is not assignable to type 'ProtocolService'.
-src/components/routing/RipContent.tsx(11,7): error TS2322: Type 'RipService' is not assignable to type 'ProtocolService'.
+/bin/bash: line 2: /home/redhot/VyManager: No such file or directory
+/bin/bash: line 2: /home/redhot/VyOS/VyManager: Is a directory
+/bin/bash: line 2: VyOS: command not found
+/bin/bash: line 2: /home/redhot/VyOS/VyManager: Is a directory
 
-suspected_cause: Overly strict generic service typing in `ProtocolCommandContent`.
-next_step: Relax `getCapabilities` type to `Promise<unknown>` and parse capabilities with runtime guards; rerun typecheck.
+suspected_cause: Used an unquoted heredoc while text contained backticks.
+next_step: Use a single-quoted heredoc delimiter when writing literal markdown/text with shell metacharacters.

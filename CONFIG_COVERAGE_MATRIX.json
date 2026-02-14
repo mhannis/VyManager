@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-14T17:53:09Z",
+  "generated_at": "2026-02-14T18:02:05Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -485,8 +485,8 @@
       "title": "Babel",
       "cli_scope": "protocols babel",
       "backend_detected": true,
-      "frontend_detected": false,
-      "status": "BACKEND_ONLY"
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 55,
@@ -494,8 +494,8 @@
       "title": "BFD",
       "cli_scope": "protocols bfd",
       "backend_detected": true,
-      "frontend_detected": false,
-      "status": "BACKEND_ONLY"
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 56,
@@ -503,8 +503,8 @@
       "title": "BGP",
       "cli_scope": "protocols bgp",
       "backend_detected": true,
-      "frontend_detected": false,
-      "status": "BACKEND_ONLY"
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 57,
@@ -529,9 +529,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/index.html",
       "title": "Protocols",
       "cli_scope": "protocols",
-      "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 60,
@@ -556,9 +556,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/multicast.html",
       "title": "Multicast",
       "cli_scope": "protocols multicast",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 63,
@@ -583,18 +583,18 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/pim.html",
       "title": "PIM \u2013 Protocol Independent Multicast",
       "cli_scope": "protocols pim",
-      "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 66,
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/pim6.html",
       "title": "PIM6 - Protocol Independent Multicast for IPv6",
       "cli_scope": "protocols pim6",
-      "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 67,
@@ -619,9 +619,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/segment-routing.html",
       "title": "Segment Routing",
       "cli_scope": "protocols segment routing",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 70,
