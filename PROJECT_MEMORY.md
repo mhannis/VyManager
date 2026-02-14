@@ -76,7 +76,7 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: services batch 4 committed and pushed (`609bbd1`); vpn rsa-keys slice committed and pushed (`4b855db`); vpn l2tp slice implemented in working tree (pending commit in this cycle).
+- Status: services batch 4 committed and pushed (`609bbd1`); vpn rsa-keys slice committed and pushed (`4b855db`); vpn l2tp slice committed and pushed (`c321782`).
 - Working tree is dirty with unrelated pre-existing changes outside this hotfix.
 
 ### Files Touched This Cycle (hotfix-owned)

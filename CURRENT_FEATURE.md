@@ -3,7 +3,7 @@ status: done
 title: VPN slice - L2TP
 branch: feature/containers-automation-v1
 commits:
-  - uncommitted
+  - c321782
 notes:
   - Added backend wrapper endpoints for `/vyos/vpn-l2tp`.
   - Added form-driven page at `/vpn/l2tp` for remote-access configuration.
