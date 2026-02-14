@@ -57,3 +57,4 @@
 - 2026-02-14: Standardized remaining BGP policy capability endpoints (`as-path-list`, `community-list`, `extcommunity-list`, `large-community-list`) to shared `load_vyos_capabilities(...)` helper for consistency and lower regression risk.
 - 2026-02-14: Coverage crawler alias map now includes irregular pluralization pairs (`policy<->policies`, `service<->services`) to reduce false `MISSING` classification in docs coverage matrix.
 - 2026-02-14: Phase backlog now treats policy docs index/examples as frontend-representable docs pages (`DOC_ONLY_UI_COVERAGE`) and marks them complete when UI exists.
+- 2026-02-14: Protocol domain reporting cadence set by Mark: batch 3-5 protocol backlog items in each run before reporting status.

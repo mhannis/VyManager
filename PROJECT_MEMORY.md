@@ -56,6 +56,7 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Prefer additive edits; do not rewrite working backend layers.
 - Ship in small slices with tests and memory updates.
 - Frontend lint has warning debt; `0 errors` is enforced.
+- Protocols execution cadence: complete **3-5 protocol backlog items per run** before the next report.
 
 ## Current Objective
 - Continue autonomous parity execution against `https://docs.vyos.io/en/latest/configuration/`.

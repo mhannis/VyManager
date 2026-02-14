@@ -3,6 +3,11 @@
   "title": "Phase 3 continuation: protocols domain implementation",
   "last_updated": "2026-02-14T17:00:00Z",
   "status": "in_progress",
+  "execution_policy": {
+    "protocol_items_per_report_min": 3,
+    "protocol_items_per_report_max": 5,
+    "reporting_rule": "During protocols backlog execution, complete 3-5 items before issuing the next human-facing report."
+  },
   "acceptance_criteria": [
     "Policy domain has no uncovered pages in PARITY_BACKLOG.md.",
     "All policy BGP capability endpoints use shared loader abstraction.",
@@ -88,7 +93,7 @@
         "PARITY_BACKLOG.md",
         "CONFIG_COVERAGE_PHASE1.md"
       ],
-      "notes": "Start protocols domain vertical slices in priority order (static, OSPF, BGP, multicast helpers)."
+      "notes": "Start protocols domain vertical slices in priority order (static, OSPF, BGP, multicast helpers) and batch 3-5 backlog items before reporting."
     },
     {
       "id": "T7",
