@@ -21,6 +21,9 @@ class DummyService:
     def get_full_config(self, refresh: bool = False):
         return self._full_config
 
+    def apply_operations(self, operations, **_kwargs):
+        return self.device.configure_multiple_op(op_path=operations)
+
     class DummyDevice:
         def __init__(self, parent: "DummyService"):
             self._parent = parent

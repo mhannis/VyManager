@@ -1,21 +1,20 @@
 {
-  "feature_id": "vlan-robust-handling-v1",
-  "title": "Robust VLAN/QinQ Handling Across Network Interfaces",
-  "last_updated": "2026-02-14",
-  "status": "in_review",
+  "feature_id": "parity-phase0-foundation",
+  "title": "Parity Program Phase 0 Foundation",
+  "last_updated": "2026-02-14T15:54:00Z",
+  "status": "in_progress",
   "acceptance_criteria": [
-    "Create flow supports standard VLAN (vif), QinQ service VLAN (vif-s), and QinQ customer VLAN (vif-c).",
-    "Edit flow applies the correct operation family for each VLAN type.",
-    "Delete flow is available from the interface UI for all VLAN types.",
-    "Nested vif-c entries are visible in the VLAN list and clearly labeled.",
-    "Backend supports delete_vif_s and delete_vif_c operations.",
-    "Malformed VLAN delete payloads return client validation errors (HTTP 400), not generic 500 errors.",
-    "Frontend build/runtime checks pass and services are restarted on :3000/:8000."
+    "Unified thin VyOSDriver abstraction exists and preserves existing API contracts.",
+    "Safe Apply is centralized and used by write paths touching risky domains.",
+    "Safe Apply performs snapshot + apply + probe + rollback on probe failure.",
+    "Docs crawl inventory is generated from https://docs.vyos.io/en/latest/configuration/.",
+    "Coverage matrix files are present and ready for sequential parity slicing.",
+    "Baseline backend tests for safe apply and driver behavior pass."
   ],
   "assumptions": [
-    "Current router/mappers remain the source of truth for vif/vif-s/vif-c command semantics.",
-    "QinQ customer VLAN creation may auto-create missing service VLAN when selected.",
-    "Playwright browser smoke remains blocked on this host until OS dependencies are installed."
+    "VyOS HTTPS API in current project surface does not expose native commit-confirm transactions.",
+    "Emulated commit-confirm via snapshot/apply/probe/rollback is acceptable for WAN safety enforcement.",
+    "Coverage status is heuristic and requires domain-level verification as slices are implemented."
   ],
   "tasks": [
     {
@@ -23,64 +22,87 @@
       "owner_role": "Analyst",
       "status": "done",
       "files": [
-        "PROJECT_MEMORY.md",
-        "CURRENT_FEATURE.md"
+        "VYOS_INTEGRATION_DISCOVERY.md"
       ],
-      "notes": "Translated user request into concrete VLAN/QinQ acceptance criteria with backend and UI coverage."
+      "notes": "Documented current VyOS integration architecture and write paths."
     },
     {
       "id": "T2",
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/vyos_builders/interfaces/ethernet.py",
-        "backend/routers/interfaces/ethernet.py"
+        "backend/safe_apply.py",
+        "backend/vyos_service.py"
       ],
-      "notes": "Implemented `delete_vif_s`/`delete_vif_c` and fixed error propagation by re-raising HTTPException."
+      "notes": "Implemented Safe Apply and centralized write path in VyOSService.apply_operations()."
     },
     {
       "id": "T3",
-      "owner_role": "UI",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/src/app/network/interfaces/page.tsx",
-        "frontend/src/components/network/ComprehensiveVLANModal.tsx",
-        "frontend/src/components/network/DeleteVLANModal.tsx",
-        "frontend/src/lib/api/types/ethernet.ts",
-        "frontend/src/components/network/index.ts"
+        "backend/vyos_driver.py",
+        "backend/session_vyos_service.py"
       ],
-      "notes": "Implemented robust VLAN/QinQ create/edit/delete UX and added nested vif-c visibility."
+      "notes": "Added thin VyOSDriver abstraction and session-scoped driver accessor."
     },
     {
       "id": "T4",
-      "owner_role": "Test",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/tests/test_ethernet_vlan_batch_ops.py"
+        "backend/routers/system.py",
+        "backend/routers/containers.py",
+        "backend/routers/ipsec.py",
+        "backend/routers/firewall/zones.py"
       ],
-      "notes": "Added targeted backend regression tests for new VLAN delete operations and invalid payload handling."
+      "notes": "Routed direct configure writes through service.apply_operations() to enforce safety policy."
     },
     {
       "id": "T5",
-      "owner_role": "Build",
+      "owner_role": "Planner",
       "status": "done",
       "files": [
-        "LAST_FAILURE.txt"
+        "scripts/generate_config_coverage_matrix.py",
+        "CONFIG_COVERAGE_MATRIX.md",
+        "CONFIG_COVERAGE_MATRIX.json"
       ],
-      "notes": "Ran backend pytest and frontend typecheck/build/lint/runtime smoke; restarted vm-api and vm-ui successfully."
+      "notes": "Generated full documentation coverage inventory from VyOS config guide crawl."
+    },
+    {
+      "id": "T6",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/test_safe_apply.py",
+        "backend/tests/test_vyos_driver_wrapper.py",
+        "backend/tests/test_vyos_service_safe_apply.py",
+        "backend/tests/test_system_services_ssh_dns.py",
+        "backend/tests/test_containers_automation_v1.py"
+      ],
+      "notes": "Added safe-apply/driver tests and updated existing doubles for new write wrapper path."
+    },
+    {
+      "id": "T7",
+      "owner_role": "Planner",
+      "status": "doing",
+      "files": [
+        "CONFIG_COVERAGE_MATRIX.md"
+      ],
+      "notes": "Execute domain implementation slices in documentation order toward MVP parity."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
     "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q",
     "lint": "cd frontend && npm run -s lint",
-    "runtime_smoke": "cd frontend && npm run -s smoke:runtime",
-    "browser_smoke": "cd frontend && npm run -s smoke:ui"
+    "typecheck": "cd frontend && npx tsc --noEmit --pretty false",
+    "matrix": "python3 scripts/generate_config_coverage_matrix.py"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "VLAN/QinQ implementation and validation",
+      "purpose": "Parity phase 0 foundation and subsequent matrix-driven domain slices",
       "status": "active"
     }
   ]

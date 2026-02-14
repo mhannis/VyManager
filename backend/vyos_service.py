@@ -12,6 +12,7 @@ import threading
 from pyvyos import VyDevice
 from pyvyos.core.rest_client import ApiResponse
 from vyos_builders import EthernetBatchBuilder, DummyBatchBuilder, FirewallGroupsBatchBuilder, NATBatchBuilder, DHCPBatchBuilder, WireGuardBatchBuilder
+from safe_apply import SafeApplySettings, apply_with_safe_apply, should_use_safe_apply
 
 
 class VyOSDeviceConfig:
@@ -58,6 +59,7 @@ class VyOSService:
         # Requests frequently call get_full_config() in parallel; without a lock,
         # the same large JSON payload can be fetched multiple times at once.
         self._config_lock = threading.Lock()
+        self._safe_apply_settings = SafeApplySettings.from_env()
 
     def get_version(self) -> str:
         """Get the VyOS version for this device."""
@@ -95,13 +97,47 @@ class VyOSService:
         """
         return NATBatchBuilder(self.config.version)
 
+    def apply_operations(
+        self,
+        operations: List[Dict[str, Any]],
+        *,
+        safe_apply: Optional[bool] = None,
+        probe_target: Optional[str] = None,
+        reason: Optional[str] = None,
+    ) -> ApiResponse:
+        """
+        Apply raw configure operations.
+
+        High-risk paths are automatically protected by Safe Apply
+        (emulated commit-confirm with connectivity probe + rollback).
+        """
+        if not operations:
+            raise ValueError("Cannot apply empty operations list")
+
+        if safe_apply is None:
+            safe_apply = should_use_safe_apply(operations, self._safe_apply_settings)
+
+        response = apply_with_safe_apply(
+            self.device,
+            operations,
+            settings=self._safe_apply_settings,
+            probe_target=probe_target,
+            reason=reason,
+            force_safe_apply=safe_apply,
+        )
+
+        if response.status == 200:
+            # Invalidate cached config after successful writes.
+            self._cached_config = None
+        return response
+
     def execute_batch(self, batch: Union[EthernetBatchBuilder, DummyBatchBuilder, FirewallGroupsBatchBuilder, NATBatchBuilder, DHCPBatchBuilder, WireGuardBatchBuilder]) -> ApiResponse:
         """Execute a batch of operations using configure_multiple_op."""
         if batch.is_empty():
             raise ValueError("Cannot execute empty batch")
 
         operations = batch.get_operations()
-        return self.device.configure_multiple_op(op_path=operations)
+        return self.apply_operations(operations, reason="execute_batch")
 
     def configure_batch(self, commands: List[str]) -> Dict[str, Any]:
         """
@@ -165,7 +201,7 @@ class VyOSService:
 
             # Execute using configure_multiple_op
             if operations:
-                response = self.device.configure_multiple_op(op_path=operations)
+                response = self.apply_operations(operations, reason="configure_batch")
 
                 if response.status == 200:
                     # Handle empty string responses from VyOS

@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Request
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Literal, Optional, Tuple
+import ipaddress
 import re
 
 from session_vyos_service import get_session_vyos_service
@@ -132,11 +133,23 @@ class ContainerLogsResponse(BaseModel):
     returned_lines: int
 
 
+class ContainerNetworkSummary(BaseModel):
+    name: str
+    description: Optional[str] = None
+    prefixes: List[str] = Field(default_factory=list)
+    mtu: Optional[int] = None
+    vrf: Optional[str] = None
+    dns_disabled: bool = False
+
+
 class ContainerBootstrapStatusResponse(BaseModel):
     ssh_enabled: bool = False
     ssh_key_installed: bool = False
     ssh_key_identifier: str = "vymanager"
     ssh_key_type: Optional[str] = None
+    automation_ready: bool = False
+    network_count: int = 0
+    networks: List[ContainerNetworkSummary] = Field(default_factory=list)
 
 
 class ContainerInstallResponse(BaseModel):
@@ -145,6 +158,17 @@ class ContainerInstallResponse(BaseModel):
     image_pulled: bool = False
     created_volume_paths: List[str] = Field(default_factory=list)
     pull_output: Optional[str] = None
+
+
+class ContainerInitialSetupRequest(BaseModel):
+    enable_automation: bool = True
+    create_default_network: bool = True
+    network_name: str = "containers-lan"
+    network_prefix: str = "172.20.20.0/24"
+    network_description: Optional[str] = "VyManager default container network"
+    network_mtu: Optional[int] = None
+    network_vrf: Optional[str] = None
+    disable_network_dns: bool = False
 
 
 # ========================================================================
@@ -513,6 +537,79 @@ async def _load_container_overview(request: Request, refresh: bool = False) -> T
     return service, _build_container_overview(full_config, host, runtime_output, images_output)
 
 
+def _extract_container_networks(full_config: Dict[str, Any]) -> List[ContainerNetworkSummary]:
+    container_root = full_config.get("container", {}) if isinstance(full_config, dict) else {}
+    network_root = container_root.get("network", {}) if isinstance(container_root, dict) else {}
+    if not isinstance(network_root, dict):
+        return []
+
+    networks: List[ContainerNetworkSummary] = []
+    for network_name, network_data in sorted(network_root.items(), key=lambda item: str(item[0]).lower()):
+        name = str(network_name).strip()
+        if not name:
+            continue
+
+        entry = network_data if isinstance(network_data, dict) else {}
+
+        raw_prefix = entry.get("prefix")
+        prefixes: List[str] = []
+        if isinstance(raw_prefix, str):
+            value = raw_prefix.strip()
+            if value:
+                prefixes.append(value)
+        elif isinstance(raw_prefix, list):
+            prefixes.extend(str(item).strip() for item in raw_prefix if str(item).strip())
+        elif isinstance(raw_prefix, dict):
+            prefixes.extend(str(key).strip() for key in raw_prefix.keys() if str(key).strip())
+
+        networks.append(
+            ContainerNetworkSummary(
+                name=name,
+                description=_string_or_none(entry.get("description")),
+                prefixes=sorted(set(prefixes)),
+                mtu=_int_or_none(entry.get("mtu")),
+                vrf=_string_or_none(entry.get("vrf")),
+                dns_disabled=("no-name-server" in entry),
+            )
+        )
+
+    return networks
+
+
+def _normalize_container_network_name_or_400(name: str) -> str:
+    clean = name.strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail="Container network name is required")
+    if not RE_CONTAINER_NAME.match(clean):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Container network name '{clean}' is invalid. "
+                "Use letters, numbers, dot, dash, underscore."
+            ),
+        )
+    return clean
+
+
+def _normalize_container_network_prefix_or_400(prefix: str) -> str:
+    value = prefix.strip()
+    if not value:
+        raise HTTPException(status_code=400, detail="Container network prefix is required")
+    try:
+        network = ipaddress.ip_network(value, strict=False)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid container network prefix: {value}")
+    return str(network)
+
+
+def _normalize_container_network_mtu_or_400(value: Optional[int]) -> Optional[int]:
+    if value is None:
+        return None
+    if value < 576 or value > 9216:
+        raise HTTPException(status_code=400, detail="Container network MTU must be between 576 and 9216")
+    return value
+
+
 def _bootstrap_status_from_config(full_config: Dict[str, Any], key_identifier: str = "vymanager") -> ContainerBootstrapStatusResponse:
     service_cfg = full_config.get("service", {}) if isinstance(full_config, dict) else {}
     ssh_cfg = service_cfg.get("ssh") if isinstance(service_cfg, dict) else None
@@ -532,11 +629,17 @@ def _bootstrap_status_from_config(full_config: Dict[str, Any], key_identifier: s
             ssh_key_installed = True
             key_type = _string_or_none(entry.get("type"))
 
+    networks = _extract_container_networks(full_config)
+    automation_ready = ssh_enabled and ssh_key_installed
+
     return ContainerBootstrapStatusResponse(
         ssh_enabled=ssh_enabled,
         ssh_key_installed=ssh_key_installed,
         ssh_key_identifier=key_identifier,
         ssh_key_type=key_type,
+        automation_ready=automation_ready,
+        network_count=len(networks),
+        networks=networks,
     )
 
 
@@ -772,7 +875,7 @@ async def bootstrap_container_automation(request: Request) -> ContainerBootstrap
             )
 
         if operations:
-            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            response = await run_in_threadpool(service.apply_operations, operations)
             if response.status != 200:
                 raise HTTPException(
                     status_code=500,
@@ -853,7 +956,7 @@ async def upsert_container(
             body=normalized_body,
             replace_existing=existing,
         )
-        response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+        response = await run_in_threadpool(service.apply_operations, operations)
         if response.status != 200:
             status_code = 400 if response.status == 400 else 500
             raise HTTPException(
@@ -927,7 +1030,7 @@ async def _ensure_container_automation_bootstrap(request: Request) -> ContainerB
         )
 
     if operations:
-        response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+        response = await run_in_threadpool(service.apply_operations, operations)
         if response.status != 200:
             raise HTTPException(
                 status_code=500,
@@ -1026,7 +1129,7 @@ async def install_container(
             body=normalized_body,
             replace_existing=existing,
         )
-        response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+        response = await run_in_threadpool(service.apply_operations, operations)
         if response.status != 200:
             if response.status == 400:
                 raise HTTPException(
@@ -1073,8 +1176,7 @@ async def delete_container(request: Request, container_name: str) -> ContainerDe
             raise HTTPException(status_code=404, detail=f"Container '{name}' not found")
 
         response = await run_in_threadpool(
-            service.device.configure_multiple_op,
-            op_path=[{"op": "delete", "path": ["container", "name", name]}],
+            service.apply_operations, [{"op": "delete", "path": ["container", "name", name]}],
         )
         if response.status != 200:
             raise HTTPException(
@@ -1120,8 +1222,7 @@ async def container_action(
                     message="Container is already enabled",
                 )
             start_response = await run_in_threadpool(
-                service.device.configure_multiple_op,
-                op_path=[{"op": "delete", "path": ["container", "name", name, "disable"]}],
+                service.apply_operations, [{"op": "delete", "path": ["container", "name", name, "disable"]}],
             )
             if start_response.status != 200:
                 raise HTTPException(
@@ -1147,8 +1248,7 @@ async def container_action(
                     message="Container is already disabled",
                 )
             stop_response = await run_in_threadpool(
-                service.device.configure_multiple_op,
-                op_path=[{"op": "set", "path": ["container", "name", name, "disable"]}],
+                service.apply_operations, [{"op": "set", "path": ["container", "name", name, "disable"]}],
             )
             if stop_response.status != 200:
                 raise HTTPException(
@@ -1218,8 +1318,7 @@ async def container_action(
             fallback_ops = [{"op": "delete", "path": ["container", "name", name, "disable"]}]
 
         fallback_response = await run_in_threadpool(
-            service.device.configure_multiple_op,
-            op_path=fallback_ops,
+            service.apply_operations, fallback_ops,
         )
         if fallback_response.status != 200:
             raise HTTPException(

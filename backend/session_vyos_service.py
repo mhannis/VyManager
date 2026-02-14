@@ -8,11 +8,13 @@ Replaces the single-device pattern with dynamic multi-instance support.
 from fastapi import Request, HTTPException
 from typing import Optional
 from vyos_service import VyOSService, VyOSDeviceConfig, VyOSDeviceRegistry
+from vyos_driver import VyOSDriver
 
 
 # Global registry for session-based VyOS services
 # Key format: "instance_id"
 _session_device_registry = VyOSDeviceRegistry()
+_session_driver_registry: dict[str, VyOSDriver] = {}
 
 
 def get_session_vyos_service(request: Request) -> VyOSService:
@@ -109,6 +111,54 @@ def get_session_vyos_service(request: Request) -> VyOSService:
         )
 
 
+def _extract_probe_target(request: Request) -> Optional[str]:
+    """
+    Best-effort source for connectivity probe target.
+
+    Priority:
+    1) X-Forwarded-For first hop
+    2) request.client.host
+    """
+    try:
+        forwarded_for = request.headers.get("x-forwarded-for")
+        if forwarded_for:
+            candidate = forwarded_for.split(",")[0].strip()
+            if candidate:
+                return candidate
+    except Exception:
+        pass
+
+    try:
+        client = getattr(request, "client", None)
+        if client and getattr(client, "host", None):
+            return str(client.host)
+    except Exception:
+        pass
+
+    return None
+
+
+def get_session_vyos_driver(request: Request) -> VyOSDriver:
+    """
+    Get unified VyOS driver for the active session.
+
+    This is a thin wrapper around the existing session-based VyOSService.
+    """
+    service = get_session_vyos_service(request)
+    instance = getattr(request.state, "instance", None) or {}
+    instance_id = instance.get("id")
+    if not instance_id:
+        raise HTTPException(status_code=500, detail="Active instance id not found")
+
+    driver = _session_driver_registry.get(instance_id)
+    if driver is None or driver.service is not service:
+        driver = VyOSDriver(service)
+        _session_driver_registry[instance_id] = driver
+
+    driver.set_probe_target(_extract_probe_target(request))
+    return driver
+
+
 def clear_session_cache(instance_id: str) -> None:
     """
     Clear cached VyOS service for a specific instance.
@@ -116,6 +166,7 @@ def clear_session_cache(instance_id: str) -> None:
     Useful when instance credentials change or to force reconnection.
     """
     _session_device_registry.unregister(instance_id)
+    _session_driver_registry.pop(instance_id, None)
 
 
 def clear_all_session_caches() -> None:
@@ -125,3 +176,4 @@ def clear_all_session_caches() -> None:
     Useful for cleanup or testing.
     """
     _session_device_registry.clear()
+    _session_driver_registry.clear()

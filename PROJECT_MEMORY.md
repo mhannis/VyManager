@@ -59,27 +59,29 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Frontend lint has warning-only legacy debt; avoid introducing lint errors
 
 ## Current Objective
-- Deliver robust VLAN handling across create/edit/delete flows:
-  - support `802.1Q` (`vif`)
-  - support QinQ service VLAN (`vif-s`)
-  - support QinQ customer VLAN (`vif-c`)
-  - expose delete actions in UI (VLAN cards) with correct backend operations
-  - ensure invalid VLAN payloads return correct client errors (400, not 500)
+- Execute the autonomous parity program against:
+  - `https://docs.vyos.io/en/latest/configuration/`
+- Complete Phase 0 foundation before domain expansion:
+  - document current VyOS integration
+  - implement unified thin driver abstraction around `vyos_service.py`
+  - enforce Safe Apply for risky config trees (emulated commit-confirm + connectivity probe + rollback)
+  - generate full coverage inventory from docs crawl
 
 ## Current Feature Spec
-Feature: **Robust VLAN Handling (v1)**
+Feature: **Parity Program Phase 0 Foundation**
 
 Acceptance criteria:
-- VLAN create modal supports selecting VLAN type (`802.1Q`, `QinQ service`, `QinQ customer`).
-- VLAN list includes `vif`, `vif-s`, and nested `vif-c` entries with clear labels.
-- VLAN edit applies correct operation families for each type (`set_vif_*`, `set_vif_s_*`, `set_vif_c_*`).
-- VLAN delete works from UI for all supported types.
-- Backend supports `delete_vif_s` and `delete_vif_c` operations.
-- Ethernet batch endpoint preserves explicit `HTTPException` status codes from validation failures.
+- `VyOSDriver` exists as a thin wrapper and preserves existing service contracts.
+- Existing write paths route through a centralized safe write method.
+- Safe Apply protects risky trees (`interfaces`, `firewall`, `nat`, `vrf`, `policy`, `route(s)`, `protocols`, `vpn/ipsec`, `vpn/wireguard`).
+- On failed post-apply probe, rollback is automatically attempted from config snapshot.
+- Full docs crawl is generated into `CONFIG_COVERAGE_MATRIX.md` and `CONFIG_COVERAGE_MATRIX.json`.
+- Foundation tests pass for safe apply and wrapper behavior.
 
 Assumptions:
-- `set_vif_c` may be used with optional auto-create of missing `vif-s` service VLAN.
-- Current `vif`/`vif-s`/`vif-c` read models (description/address/mtu/mac/vrf/disable) remain the source of truth.
+- VyOS HTTPS API does not provide native commit-confirm workflow in this project surface.
+- Safe Apply therefore uses emulated commit-confirm semantics via snapshot/apply/probe/rollback.
+- Coverage matrix status is heuristic signal and must be refined per-domain during implementation slices.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
@@ -87,73 +89,55 @@ Assumptions:
 - Host toolchain: node `v20.20.0`, npm `10.8.2`, python `3.12.3`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q backend/tests/test_ethernet_vlan_batch_ops.py backend/tests/test_system_services_ssh_dns.py` -> pass (`14 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_safe_apply.py tests/test_vyos_driver_wrapper.py tests/test_vyos_service_safe_apply.py tests/test_ethernet_vlan_batch_ops.py tests/test_system_services_ssh_dns.py tests/test_containers_automation_v1.py` -> pass (`24 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_app.py` -> pass (`1 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
-- `cd frontend && npm run -s build` -> pass
-- `cd frontend && npm run -s smoke:runtime` -> pass
-- `cd frontend && npm run -s lint` -> pass with existing warning debt (0 errors)
-- Runtime redeploy completed for UI:
-  - restarted `vm-ui` on `0.0.0.0:3000`
-  - restarted `vm-api` on `0.0.0.0:8000`
-  - health checks: frontend root -> `307` (expected redirect), backend `/docs` -> `200`
+- `cd /home/redhot/VyOS/VyManager && python3 scripts/generate_config_coverage_matrix.py` -> pass (`129 pages discovered`)
 
 ### Key Implementation Notes
-- Added `PUT /vyos/system/config` in `backend/routers/system.py`.
-- Added backend validation for timezone tokens and system config update operations.
-- Added backend tests:
-  - `test_update_system_config_emits_expected_operations`
-  - `test_update_system_config_rejects_invalid_timezone`
-- Added frontend API method `systemService.updateConfig`.
-- Added new page `frontend/src/app/system/options/page.tsx`:
-  - editable system identity form
-  - setup wizard launch card
-  - system coverage/navigation card
-- Sidebar IA updates:
-  - moved NTP/LLDP/mDNS into `Services`
-  - moved DHCP Server into `Services` and removed duplicate from `Network`
-  - kept `System -> Options & Coverage` as SSH entry point
-- Added single-service view mode for `/system/services` (`view=single`) so sidebar service shortcuts do not show the tab strip.
-- Ordered Services entries A-Z in sidebar and in the full `/system/services` tab strip:
-  - `DHCP Relay`, `DHCP Server`, `DNS Forwarder`, `DNS Resolver`, `Dynamic DNS`, `LLDP`, `mDNS Repeater`, `NTP`
-- Removed redundant shortcuts from `System -> Options & Coverage` (Logs/Users/Containers and other duplicated service links).
-- Kept DNS server ownership in DNS Resolver flow; System Options now preserves existing name-servers during save.
-- Firewall Zones now includes top-right guided wizard flow and one-time localStorage marker.
-- Firewall Policies includes direct links to Network/Zone wizards.
-- Added full VLAN/QinQ UI model in `network/interfaces`:
-  - list now includes `vif`, `vif-s`, and nested `vif-c`
-  - VLAN cards show type labels and service tag for QinQ customer subinterfaces
-  - delete action is wired via new `DeleteVLANModal`
-- Reworked `ComprehensiveVLANModal`:
-  - create mode supports VLAN type selection (`802.1Q`, `QinQ service`, `QinQ customer`)
-  - correct operation mapping per type for create/edit (`vif` vs `vif-s` vs `vif-c`)
-  - duplicate detection and VLAN tag validation (`1..4094`)
-  - optional auto-create for missing service VLAN during QinQ customer creation
-- Added backend support for missing delete operations:
-  - `delete_vif_s`
-  - `delete_vif_c`
-- Hardened ethernet batch endpoint error semantics:
-  - now re-raises `HTTPException` instead of converting to generic 500
-- Added backend tests for new VLAN batch behaviors:
-  - `test_batch_delete_vif_s_operation`
-  - `test_batch_delete_vif_c_operation`
-  - `test_batch_delete_vif_c_rejects_invalid_payload`
+- Added `backend/safe_apply.py`:
+  - centralized risk detection for config operations
+  - emulated commit-confirm workflow (snapshot -> apply -> probe -> rollback on failure)
+  - env-driven controls: `SAFE_APPLY_*`
+- Extended `backend/vyos_service.py` with `apply_operations(...)`:
+  - central safe write path
+  - `execute_batch()` and `configure_batch()` now route through it
+  - successful writes invalidate cached full config
+- Added `backend/vyos_driver.py`:
+  - unified thin wrapper around `VyOSService` (preserves existing contracts)
+- Updated `backend/session_vyos_service.py`:
+  - added `get_session_vyos_driver(request)`
+  - added driver cache keyed by instance ID
+  - clear-cache functions now clear service + driver caches
+- Routed direct write calls through service safe path in:
+  - `backend/routers/system.py`
+  - `backend/routers/containers.py`
+  - `backend/routers/ipsec.py`
+  - `backend/routers/firewall/zones.py`
+- Added discovery documentation:
+  - `VYOS_INTEGRATION_DISCOVERY.md`
+- Added docs coverage generator + outputs:
+  - `scripts/generate_config_coverage_matrix.py`
+  - `CONFIG_COVERAGE_MATRIX.md`
+  - `CONFIG_COVERAGE_MATRIX.json`
+- Added backend tests for Phase 0 abstractions:
+  - `backend/tests/test_safe_apply.py`
+  - `backend/tests/test_vyos_driver_wrapper.py`
+  - `backend/tests/test_vyos_service_safe_apply.py`
 
 ## Risks / Open Questions
-- Playwright browser smoke is blocked by missing system dependencies on this host (`libnspr4.so`), so end-to-end UI automation is not currently a reliable gate.
-- Frontend lint remains warning-heavy from legacy code; this cycle introduced no lint errors.
+- Emulated commit-confirm is the best available method in current API surface; native commit-confirm capability should be rechecked against future VyOS API docs.
+- Coverage matrix is heuristic and may over-detect coverage for similarly named domains; domain-level verification remains required.
+- Playwright browser smoke is still blocked by missing host dependency (`libnspr4.so`).
 
 ## TODO Backlog (Short)
-- DHCP server UX: complete pfSense-like interface-first flow and verify lease behavior on live interfaces.
-- Firewall zones education page: add dedicated “How zones work” reference page and link from zones.
-- Continue DNS scope (resolver/authoritative/reverse lookup polish).
-- Extend VLAN modal to include dedicated delete/reset controls for DHCP/IPv6 subsettings (currently additive set only).
-- Add frontend unit tests for VLAN modal operation mapping once test harness for component forms is in place.
+- Use `CONFIG_COVERAGE_MATRIX.md` to execute domain slices in documentation order.
+- Add explicit domain-level verification notes for each completed matrix section.
+- Add frontend/operator visibility for Safe Apply outcomes (show rollback + probe details in UI).
+- Install Playwright dependencies and enable browser smoke as a quality gate.
 
 ## Agent Handoff Notes
-- Start `vm-api` only with backend environment loaded (`source backend/.env`) or session/site APIs can fail with `503`.
-- `System -> Options` is now a real page and depends on `PUT /vyos/system/config`.
-- Keep using `formatInterfaceDisplayName` helper for consistent `Description (ethX)` naming in non-edit description contexts.
-- For VLAN deletes:
-  - use `delete_vif` for `vif`
-  - use `delete_vif_s` for `vif-s`
-  - use `delete_vif_c` with `s_vlan,c_vlan` for `vif-c`
+- Prefer `service.apply_operations(...)` for all writes to ensure safety policy is enforced.
+- For new parity endpoints, consume `get_session_vyos_driver(request)` when adding new integrations; keep existing service contracts intact.
+- Regenerate coverage inventory with:
+  - `python3 scripts/generate_config_coverage_matrix.py`

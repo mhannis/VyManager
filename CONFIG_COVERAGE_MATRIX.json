@@ -1,0 +1,1167 @@
+{
+  "generated_at": "2026-02-14T15:51:04Z",
+  "source": "https://docs.vyos.io/en/latest/configuration/",
+  "items": [
+    {
+      "index": 1,
+      "url": "https://docs.vyos.io/en/latest/configuration/container/index.html",
+      "title": "Container",
+      "cli_scope": "container",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 2,
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/bridge.html",
+      "title": "Bridge Firewall Configuration",
+      "cli_scope": "firewall bridge",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 3,
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/flowtables.html",
+      "title": "Flowtables Firewall Configuration",
+      "cli_scope": "firewall flowtables",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 4,
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/global-options.html",
+      "title": "Global Options Firewall Configuration",
+      "cli_scope": "firewall global options",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 5,
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/groups.html",
+      "title": "Firewall groups",
+      "cli_scope": "firewall groups",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 6,
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/index.html",
+      "title": "Firewall",
+      "cli_scope": "firewall",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 7,
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/ipv4.html",
+      "title": "IPv4 Firewall Configuration",
+      "cli_scope": "firewall ipv4",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 8,
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/ipv6.html",
+      "title": "IPv6 Firewall Configuration",
+      "cli_scope": "firewall ipv6",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 9,
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/zone.html",
+      "title": "Zone Based Firewall",
+      "cli_scope": "firewall zone",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 10,
+      "url": "https://docs.vyos.io/en/latest/configuration/highavailability/index.html",
+      "title": "High availability",
+      "cli_scope": "highavailability",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 11,
+      "url": "https://docs.vyos.io/en/latest/configuration/index.html",
+      "title": "Configuration Guide",
+      "cli_scope": "configuration",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 12,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/bonding.html",
+      "title": "Bond / link aggregation",
+      "cli_scope": "interfaces bonding",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 13,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/bridge.html",
+      "title": "Bridge",
+      "cli_scope": "interfaces bridge",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 14,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/dummy.html",
+      "title": "Dummy",
+      "cli_scope": "interfaces dummy",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 15,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/ethernet.html",
+      "title": "Ethernet",
+      "cli_scope": "interfaces ethernet",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 16,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/geneve.html",
+      "title": "GENEVE",
+      "cli_scope": "interfaces geneve",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 17,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/index.html",
+      "title": "Interfaces",
+      "cli_scope": "interfaces",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 18,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/l2tpv3.html",
+      "title": "L2TPv3",
+      "cli_scope": "interfaces l2tpv3",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 19,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/loopback.html",
+      "title": "Loopback",
+      "cli_scope": "interfaces loopback",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 20,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/macsec.html",
+      "title": "MACsec",
+      "cli_scope": "interfaces macsec",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 21,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/openvpn-examples.html",
+      "title": "Site-to-Site",
+      "cli_scope": "interfaces openvpn examples",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 22,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/openvpn.html",
+      "title": "OpenVPN",
+      "cli_scope": "interfaces openvpn",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 23,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/pppoe.html",
+      "title": "PPPoE",
+      "cli_scope": "interfaces pppoe",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 24,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/pseudo-ethernet.html",
+      "title": "MACVLAN - Pseudo Ethernet",
+      "cli_scope": "interfaces pseudo ethernet",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 25,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/sstp-client.html",
+      "title": "SSTP Client",
+      "cli_scope": "interfaces sstp client",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 26,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/tunnel.html",
+      "title": "Tunnel",
+      "cli_scope": "interfaces tunnel",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 27,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/virtual-ethernet.html",
+      "title": "Virtual Ethernet",
+      "cli_scope": "interfaces virtual ethernet",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 28,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/vti.html",
+      "title": "VTI - Virtual Tunnel Interface",
+      "cli_scope": "interfaces vti",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 29,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/vxlan.html",
+      "title": "VXLAN",
+      "cli_scope": "interfaces vxlan",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 30,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/wireguard.html",
+      "title": "WireGuard",
+      "cli_scope": "interfaces wireguard",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 31,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/wireless.html",
+      "title": "WLAN/WIFI - Wireless LAN",
+      "cli_scope": "interfaces wireless",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 32,
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/wwan.html",
+      "title": "WWAN - Wireless Wide-Area-Network",
+      "cli_scope": "interfaces wwan",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 33,
+      "url": "https://docs.vyos.io/en/latest/configuration/loadbalancing/haproxy.html",
+      "title": "Haproxy",
+      "cli_scope": "loadbalancing haproxy",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 34,
+      "url": "https://docs.vyos.io/en/latest/configuration/loadbalancing/index.html",
+      "title": "Load-balancing",
+      "cli_scope": "loadbalancing",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 35,
+      "url": "https://docs.vyos.io/en/latest/configuration/loadbalancing/wan.html",
+      "title": "WAN load balancing",
+      "cli_scope": "loadbalancing wan",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 36,
+      "url": "https://docs.vyos.io/en/latest/configuration/nat/cgnat.html",
+      "title": "CGNAT",
+      "cli_scope": "nat cgnat",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 37,
+      "url": "https://docs.vyos.io/en/latest/configuration/nat/index.html",
+      "title": "NAT",
+      "cli_scope": "nat",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 38,
+      "url": "https://docs.vyos.io/en/latest/configuration/nat/nat44.html",
+      "title": "NAT44",
+      "cli_scope": "nat nat44",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 39,
+      "url": "https://docs.vyos.io/en/latest/configuration/nat/nat64.html",
+      "title": "NAT64",
+      "cli_scope": "nat nat64",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 40,
+      "url": "https://docs.vyos.io/en/latest/configuration/nat/nat66.html",
+      "title": "NAT66(NPTv6)",
+      "cli_scope": "nat nat66",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 41,
+      "url": "https://docs.vyos.io/en/latest/configuration/pki/index.html",
+      "title": "PKI",
+      "cli_scope": "pki",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 42,
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/access-list.html",
+      "title": "Access List Policy",
+      "cli_scope": "policy access list",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 43,
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/as-path-list.html",
+      "title": "BGP - AS Path Policy",
+      "cli_scope": "policy as path list",
+      "backend_detected": true,
+      "frontend_detected": false,
+      "status": "BACKEND_ONLY"
+    },
+    {
+      "index": 44,
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/community-list.html",
+      "title": "BGP - Community List",
+      "cli_scope": "policy community list",
+      "backend_detected": true,
+      "frontend_detected": false,
+      "status": "BACKEND_ONLY"
+    },
+    {
+      "index": 45,
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/examples.html",
+      "title": "BGP Example",
+      "cli_scope": "policy examples",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 46,
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/extcommunity-list.html",
+      "title": "BGP - Extended Community List",
+      "cli_scope": "policy extcommunity list",
+      "backend_detected": true,
+      "frontend_detected": false,
+      "status": "BACKEND_ONLY"
+    },
+    {
+      "index": 47,
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/index.html",
+      "title": "Policy",
+      "cli_scope": "policy",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 48,
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/large-community-list.html",
+      "title": "BGP - Large Community List",
+      "cli_scope": "policy large community list",
+      "backend_detected": true,
+      "frontend_detected": false,
+      "status": "BACKEND_ONLY"
+    },
+    {
+      "index": 49,
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/local-route.html",
+      "title": "Local Route Policy",
+      "cli_scope": "policy local route",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 50,
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/prefix-list.html",
+      "title": "Prefix List Policy",
+      "cli_scope": "policy prefix list",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 51,
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/route-map.html",
+      "title": "Route Map Policy",
+      "cli_scope": "policy route map",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 52,
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/route.html",
+      "title": "Route and Route6 Policy",
+      "cli_scope": "policy route",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 53,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/arp.html",
+      "title": "ARP",
+      "cli_scope": "protocols arp",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 54,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/babel.html",
+      "title": "Babel",
+      "cli_scope": "protocols babel",
+      "backend_detected": true,
+      "frontend_detected": false,
+      "status": "BACKEND_ONLY"
+    },
+    {
+      "index": 55,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/bfd.html",
+      "title": "BFD",
+      "cli_scope": "protocols bfd",
+      "backend_detected": true,
+      "frontend_detected": false,
+      "status": "BACKEND_ONLY"
+    },
+    {
+      "index": 56,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/bgp.html",
+      "title": "BGP",
+      "cli_scope": "protocols bgp",
+      "backend_detected": true,
+      "frontend_detected": false,
+      "status": "BACKEND_ONLY"
+    },
+    {
+      "index": 57,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/failover.html",
+      "title": "Failover",
+      "cli_scope": "protocols failover",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 58,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/igmp-proxy.html",
+      "title": "IGMP Proxy",
+      "cli_scope": "protocols igmp proxy",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 59,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/index.html",
+      "title": "Protocols",
+      "cli_scope": "protocols",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 60,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/isis.html",
+      "title": "IS-IS",
+      "cli_scope": "protocols isis",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 61,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/mpls.html",
+      "title": "MPLS",
+      "cli_scope": "protocols mpls",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 62,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/multicast.html",
+      "title": "Multicast",
+      "cli_scope": "protocols multicast",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 63,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/openfabric.html",
+      "title": "OpenFabric",
+      "cli_scope": "protocols openfabric",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 64,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/ospf.html",
+      "title": "OSPF",
+      "cli_scope": "protocols ospf",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 65,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/pim.html",
+      "title": "PIM \u2013 Protocol Independent Multicast",
+      "cli_scope": "protocols pim",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 66,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/pim6.html",
+      "title": "PIM6 - Protocol Independent Multicast for IPv6",
+      "cli_scope": "protocols pim6",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 67,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/rip.html",
+      "title": "RIP",
+      "cli_scope": "protocols rip",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 68,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/rpki.html",
+      "title": "RPKI",
+      "cli_scope": "protocols rpki",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 69,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/segment-routing.html",
+      "title": "Segment Routing",
+      "cli_scope": "protocols segment routing",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 70,
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/static.html",
+      "title": "Static",
+      "cli_scope": "protocols static",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 71,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/broadcast-relay.html",
+      "title": "UDP Broadcast Relay",
+      "cli_scope": "service broadcast relay",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 72,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/config-sync.html",
+      "title": "Config Sync",
+      "cli_scope": "service config sync",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 73,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/conntrack-sync.html",
+      "title": "Conntrack Sync",
+      "cli_scope": "service conntrack sync",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 74,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/console-server.html",
+      "title": "Console Server",
+      "cli_scope": "service console server",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 75,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/dhcp-relay.html",
+      "title": "DHCP Relay",
+      "cli_scope": "service dhcp relay",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 76,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/dhcp-server.html",
+      "title": "DHCP Server",
+      "cli_scope": "service dhcp server",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 77,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/dns.html",
+      "title": "DNS Forwarding",
+      "cli_scope": "service dns",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 78,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/eventhandler.html",
+      "title": "Event Handler",
+      "cli_scope": "service eventhandler",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 79,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/https.html",
+      "title": "HTTP API",
+      "cli_scope": "service https",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 80,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/index.html",
+      "title": "Service",
+      "cli_scope": "service",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 81,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/ipoe-server.html",
+      "title": "IPoE Server",
+      "cli_scope": "service ipoe server",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 82,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/lldp.html",
+      "title": "LLDP",
+      "cli_scope": "service lldp",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 83,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/mdns.html",
+      "title": "mDNS Repeater",
+      "cli_scope": "service mdns",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 84,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/monitoring.html",
+      "title": "Monitoring",
+      "cli_scope": "service monitoring",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 85,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/ntp.html",
+      "title": "NTP",
+      "cli_scope": "service ntp",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 86,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/pppoe-server.html",
+      "title": "PPPoE Server",
+      "cli_scope": "service pppoe server",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 87,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/router-advert.html",
+      "title": "Router Advertisements",
+      "cli_scope": "service router advert",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 88,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/salt-minion.html",
+      "title": "Salt-Minion",
+      "cli_scope": "service salt minion",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 89,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/snmp.html",
+      "title": "SNMP",
+      "cli_scope": "service snmp",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 90,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/ssh.html",
+      "title": "SSH",
+      "cli_scope": "service ssh",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 91,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/suricata.html",
+      "title": "suricata",
+      "cli_scope": "service suricata",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 92,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/tftp-server.html",
+      "title": "TFTP Server",
+      "cli_scope": "service tftp server",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 93,
+      "url": "https://docs.vyos.io/en/latest/configuration/service/webproxy.html",
+      "title": "Webproxy",
+      "cli_scope": "service webproxy",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 94,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/acceleration.html",
+      "title": "Acceleration",
+      "cli_scope": "system acceleration",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 95,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/conntrack.html",
+      "title": "Conntrack",
+      "cli_scope": "system conntrack",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 96,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/console.html",
+      "title": "Serial Console",
+      "cli_scope": "system console",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 97,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/default-route.html",
+      "title": "Default Gateway/Route",
+      "cli_scope": "system default route",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 98,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/flow-accounting.html",
+      "title": "Flow Accounting",
+      "cli_scope": "system flow accounting",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 99,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/frr.html",
+      "title": "FRR",
+      "cli_scope": "system frr",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 100,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/host-name.html",
+      "title": "Host Information",
+      "cli_scope": "system host name",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 101,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/index.html",
+      "title": "System",
+      "cli_scope": "system",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 102,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/ip.html",
+      "title": "IP",
+      "cli_scope": "system ip",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 103,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/ipv6.html",
+      "title": "IPv6",
+      "cli_scope": "system ipv6",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 104,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/lcd.html",
+      "title": "System Display (LCD)",
+      "cli_scope": "system lcd",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 105,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/login.html",
+      "title": "Login/user management",
+      "cli_scope": "system login",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 106,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/name-server.html",
+      "title": "System DNS",
+      "cli_scope": "system name server",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 107,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/option.html",
+      "title": "Option",
+      "cli_scope": "system option",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 108,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/proxy.html",
+      "title": "System Proxy",
+      "cli_scope": "system proxy",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 109,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/sflow.html",
+      "title": "sFlow",
+      "cli_scope": "system sflow",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 110,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/sysctl.html",
+      "title": "Sysctl",
+      "cli_scope": "system sysctl",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 111,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/syslog.html",
+      "title": "Syslog",
+      "cli_scope": "system syslog",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 112,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/task-scheduler.html",
+      "title": "Task Scheduler",
+      "cli_scope": "system task scheduler",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 113,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/time-zone.html",
+      "title": "Time Zone",
+      "cli_scope": "system time zone",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 114,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/updates.html",
+      "title": "Updates",
+      "cli_scope": "system updates",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 115,
+      "url": "https://docs.vyos.io/en/latest/configuration/system/watchdog.html",
+      "title": "Watchdog",
+      "cli_scope": "system watchdog",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 116,
+      "url": "https://docs.vyos.io/en/latest/configuration/trafficpolicy/index.html",
+      "title": "Traffic Policy",
+      "cli_scope": "trafficpolicy",
+      "backend_detected": false,
+      "frontend_detected": false,
+      "status": "MISSING"
+    },
+    {
+      "index": 117,
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/dmvpn.html",
+      "title": "DMVPN",
+      "cli_scope": "vpn dmvpn",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 118,
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/index.html",
+      "title": "VPN",
+      "cli_scope": "vpn",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 119,
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/ipsec/index.html",
+      "title": "IPsec",
+      "cli_scope": "vpn ipsec",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 120,
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/ipsec/ipsec_general.html",
+      "title": "IPsec General Information",
+      "cli_scope": "vpn ipsec ipsec_general",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 121,
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/ipsec/remoteaccess_ipsec.html",
+      "title": "IPSec IKEv2 Remote Access VPN",
+      "cli_scope": "vpn ipsec remoteaccess_ipsec",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 122,
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/ipsec/site2site_ipsec.html",
+      "title": "IPsec Site-to-Site VPN",
+      "cli_scope": "vpn ipsec site2site_ipsec",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 123,
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/ipsec/troubleshooting_ipsec.html",
+      "title": "Troubleshooting Site-to-Site VPN IPsec",
+      "cli_scope": "vpn ipsec troubleshooting_ipsec",
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
+    },
+    {
+      "index": 124,
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/l2tp.html",
+      "title": "L2TP",
+      "cli_scope": "vpn l2tp",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 125,
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/openconnect.html",
+      "title": "OpenConnect",
+      "cli_scope": "vpn openconnect",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 126,
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/pptp.html",
+      "title": "PPTP-Server",
+      "cli_scope": "vpn pptp",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 127,
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/rsa-keys.html",
+      "title": "RSA-Keys",
+      "cli_scope": "vpn rsa keys",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 128,
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/sstp.html",
+      "title": "SSTP Server",
+      "cli_scope": "vpn sstp",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    },
+    {
+      "index": 129,
+      "url": "https://docs.vyos.io/en/latest/configuration/vrf/index.html",
+      "title": "VRF",
+      "cli_scope": "vrf",
+      "backend_detected": false,
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
+    }
+  ]
+}

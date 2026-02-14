@@ -1758,7 +1758,7 @@ async def update_system_config(request: Request, body: SystemConfigRequest) -> S
             operations.append({"op": "set", "path": ["system", "name-server", name_server]})
 
         if operations:
-            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            response = await run_in_threadpool(service.apply_operations, operations)
             if response.status != 200:
                 raise HTTPException(
                     status_code=500,
@@ -2109,7 +2109,7 @@ async def update_ntp_config(request: Request, body: NtpServiceConfigRequest) -> 
                 )
 
         if operations:
-            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            response = await run_in_threadpool(service.apply_operations, operations)
             if response.status != 200:
                 raise HTTPException(
                     status_code=500,
@@ -2179,7 +2179,7 @@ async def update_ssh_config(request: Request, body: SshServiceConfigRequest) -> 
                 operations.append({"op": "delete", "path": ["service", "ssh", "disable-password-authentication"]})
 
         if operations:
-            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            response = await run_in_threadpool(service.apply_operations, operations)
             if response.status != 200:
                 raise HTTPException(
                     status_code=500,
@@ -2348,7 +2348,7 @@ async def update_dns_config(request: Request, body: DnsServiceConfigRequest) -> 
                     )
 
         if operations:
-            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            response = await run_in_threadpool(service.apply_operations, operations)
             if response.status != 200:
                 raise HTTPException(
                     status_code=500,
@@ -2454,7 +2454,7 @@ async def update_dynamic_dns_config(request: Request, body: DynamicDnsConfigRequ
                     operations.append({"op": "set", "path": [*base_path, "server", entry.server]})
 
         if operations:
-            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            response = await run_in_threadpool(service.apply_operations, operations)
             if response.status != 200:
                 raise HTTPException(
                     status_code=500,
@@ -2542,7 +2542,7 @@ async def update_dhcp_relay_config(request: Request, body: DhcpRelayConfigReques
                 operations.append({"op": "set", "path": ["service", "dhcp-relay", "server", server]})
 
         if operations:
-            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            response = await run_in_threadpool(service.apply_operations, operations)
             if response.status != 200:
                 raise HTTPException(
                     status_code=500,
@@ -2755,7 +2755,7 @@ async def create_local_user(request: Request, body: LocalUserCreateRequest) -> L
                 {"op": "set", "path": ["system", "login", "user", username, "disable"]}
             )
 
-        response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+        response = await run_in_threadpool(service.apply_operations, operations)
         if response.status != 200:
             raise HTTPException(
                 status_code=500,
@@ -2944,7 +2944,7 @@ async def update_local_user(
                 )
 
         if operations:
-            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            response = await run_in_threadpool(service.apply_operations, operations)
             if response.status != 200:
                 raise HTTPException(
                     status_code=500,
@@ -2973,8 +2973,7 @@ async def delete_local_user(request: Request, username: str) -> LocalUserOperati
     try:
         service = get_session_vyos_service(request)
         response = await run_in_threadpool(
-            service.device.configure_multiple_op,
-            op_path=[{"op": "delete", "path": ["system", "login", "user", user_name]}],
+            service.apply_operations, [{"op": "delete", "path": ["system", "login", "user", user_name]}],
         )
         if response.status != 200:
             raise HTTPException(
@@ -3120,7 +3119,7 @@ async def update_lldp_config(request: Request, body: LldpServiceConfigRequest) -
                             )
 
         if operations:
-            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            response = await run_in_threadpool(service.apply_operations, operations)
             if response.status != 200:
                 raise HTTPException(status_code=500, detail=response.error or "Unknown VyOS error")
 
@@ -3274,7 +3273,7 @@ async def update_mdns_config(request: Request, body: MdnsRepeaterConfigRequest) 
                 )
 
         if operations:
-            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            response = await run_in_threadpool(service.apply_operations, operations)
             if response.status != 200:
                 raise HTTPException(status_code=500, detail=response.error or "Unknown VyOS error")
 
@@ -3352,7 +3351,7 @@ async def update_qat_config(request: Request, body: QatConfigRequest) -> QatConf
             operations.append({"op": "delete", "path": ["system", "acceleration", "qat"]})
 
         if operations:
-            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            response = await run_in_threadpool(service.apply_operations, operations)
             if response.status != 200:
                 raise HTTPException(status_code=500, detail=response.error or "Unknown VyOS error")
 
@@ -3537,7 +3536,7 @@ async def update_vpp_config(request: Request, body: VppSettingsConfigRequest) ->
                         operations.append({"op": "delete", "path": ["vpp", "settings", "statseg", key]})
 
         if operations:
-            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            response = await run_in_threadpool(service.apply_operations, operations)
             if response.status != 200:
                 raise HTTPException(status_code=500, detail=response.error or "Unknown VyOS error")
 

@@ -1,15 +1,17 @@
-feature_id: vlan-robust-handling-v1
-status: in_review
-title: Robust VLAN/QinQ Handling Across Network Interfaces
+feature_id: parity-phase0-foundation
+status: in_progress
+title: Parity Program Phase 0 Foundation (Driver + Safe Apply + Coverage Matrix)
 branch: feature/containers-automation-v1
 commits:
   - working-tree-not-committed
 notes:
-  - Added backend batch operation support for `delete_vif_s` and `delete_vif_c`.
-  - Updated ethernet batch endpoint to preserve explicit `HTTPException` status (400 validation errors are no longer masked as 500).
-  - Reworked VLAN modal to support `vif`, `vif-s`, and `vif-c` create/edit with operation-family-aware payloads.
-  - Added QinQ customer flow support with optional auto-create of missing service VLAN.
-  - Expanded interface VLAN listing to include nested `vif-c` entries and clear VLAN type badges.
-  - Implemented VLAN delete action in UI through `DeleteVLANModal` for all supported VLAN types.
-  - Added backend tests for new VLAN delete operations and malformed payload validation.
-  - Validated with backend pytest + frontend typecheck/build/lint/runtime smoke and restarted `vm-api`/`vm-ui`.
+  - Added `safe_apply.py` with emulated commit-confirm (snapshot/apply/probe/rollback) for risky config paths.
+  - Added `VyOSService.apply_operations(...)` and routed batch/config write flows through it.
+  - Added `vyos_driver.py` thin wrapper around `VyOSService` to preserve contracts while unifying integration surface.
+  - Added `get_session_vyos_driver(request)` with per-instance driver cache in `session_vyos_service.py`.
+  - Replaced direct router writes to `device.configure_multiple_op` with `service.apply_operations` in system/containers/ipsec/zones routers.
+  - Generated docs-driven inventory:
+    - `CONFIG_COVERAGE_MATRIX.md`
+    - `CONFIG_COVERAGE_MATRIX.json`
+  - Added `VYOS_INTEGRATION_DISCOVERY.md` documenting current integration and Phase 0 architecture.
+  - Added/updated backend tests; targeted suite currently passes.

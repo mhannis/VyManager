@@ -1,18 +1,18 @@
-timestamp: 2026-02-14T14:37:50Z
-failing_command: cd /home/redhot/VyOS/VyManager && PYTHONPATH=backend backend/.venv/bin/pytest -q backend/tests/test_ethernet_vlan_batch_ops.py backend/tests/test_system_services_ssh_dns.py
-error_summary: A new VLAN batch validation test expected HTTP 400 for malformed `delete_vif_c` input, but endpoint returned HTTP 500 because `HTTPException` was swallowed by a broad `except Exception` block.
+timestamp: 2026-02-14T15:52:40Z
+failing_command: cd /home/redhot/VyOS/VyManager/backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_safe_apply.py tests/test_vyos_driver_wrapper.py tests/test_vyos_service_safe_apply.py tests/test_ethernet_vlan_batch_ops.py tests/test_system_services_ssh_dns.py tests/test_containers_automation_v1.py
+error_summary: 9 tests failed after routing writes through `service.apply_operations(...)` because the existing test doubles in system/container tests do not implement the new method.
 
 relevant_output:
-..F...........                                                           [100%]
-=================================== FAILURES ===================================
-_______________ test_batch_delete_vif_c_rejects_invalid_payload ________________
-...
->       assert response.status_code == 400
-E       assert 500 == 400
-E        +  where 500 = <Response [500 Internal Server Error]>.status_code
-...
-FAILED backend/tests/test_ethernet_vlan_batch_ops.py::test_batch_delete_vif_c_rejects_invalid_payload
-1 failed, 13 passed in 0.81s
+FAILED tests/test_system_services_ssh_dns.py::test_update_ssh_config_emits_expected_operations
+FAILED tests/test_system_services_ssh_dns.py::test_update_system_config_emits_expected_operations
+FAILED tests/test_system_services_ssh_dns.py::test_update_dns_config_emits_forwarding_and_host_override_ops
+FAILED tests/test_system_services_ssh_dns.py::test_update_dynamic_dns_preserves_existing_password_when_omitted
+FAILED tests/test_system_services_ssh_dns.py::test_update_dhcp_relay_config_emits_expected_operations
+FAILED tests/test_system_services_ssh_dns.py::test_update_dynamic_dns_disable_ignores_invalid_entry_payload
+FAILED tests/test_system_services_ssh_dns.py::test_update_dhcp_relay_disable_ignores_invalid_payload
+FAILED tests/test_containers_automation_v1.py::test_bootstrap_enables_ssh_and_installs_key
+FAILED tests/test_containers_automation_v1.py::test_install_pulls_image_creates_dirs_and_commits_config
+9 failed, 15 passed in 1.90s
 
-suspected_cause: `configure_interface_batch` catches all exceptions and converts them to 500, including `HTTPException`.
-next_step: Add explicit `except HTTPException: raise` in `backend/routers/interfaces/ethernet.py`, then rerun backend tests.
+suspected_cause: `DummyService` fixtures expose `device.configure_multiple_op` only and lack `apply_operations`.
+next_step: add thin compatibility `apply_operations()` to those test doubles or adapt calls via a shared fallback helper.

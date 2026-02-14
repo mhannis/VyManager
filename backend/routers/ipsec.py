@@ -496,7 +496,7 @@ async def _run_configure_or_500(service: Any, operations: List[Dict[str, Any]], 
     if not operations:
         return
 
-    response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+    response = await run_in_threadpool(service.apply_operations, operations)
     if response.status == 200:
         return
 
