@@ -1,58 +1,60 @@
 {
-  "feature_id": "vpn-batch-remaining-2026-02-14",
-  "title": "VPN backlog batch: DMVPN/OpenConnect/PPTP/SSTP/Overview",
+  "feature_id": "routing-form-batch-2026-02-14",
+  "title": "Routing form-driven batch: ISIS/OpenFabric/MPLS and protocol UX cleanup",
   "status": "done",
   "acceptance_criteria": [
-    "Backend routers exist for openconnect, pptp, sstp, dmvpn, and vpn overview while preserving existing API contracts.",
-    "Form-driven VPN pages exist for /vpn, /vpn/dmvpn, /vpn/openconnect, /vpn/pptp, and /vpn/sstp with no free-form command text areas.",
-    "VPN sidebar includes links for all new pages.",
-    "Backend tests, frontend typecheck/build, runtime smoke, and browser smoke pass on localhost.",
-    "Coverage artifacts regenerate with VPN domain moving to fully implemented status."
+    "Routing pages for ISIS, OpenFabric, and MPLS are form-driven with explicit field-level CRUD workflows.",
+    "Routing UX no longer falls back to generic in-progress placeholders for unselected states.",
+    "Protocol selector pages remove redundant/invalid entries and keep navigation coherent.",
+    "Backend app has required service-wrapper modules present for imported routers (dns/lldp/mdns/ntp/ssh).",
+    "Typecheck, backend protocol/service tests, build, runtime smoke, and browser smoke pass."
   ],
   "assumptions": [
-    "DMVPN implementation focuses on tunnel/NHRP/IPsec-profile workflows documented in VyOS docs and does not attempt to replace full IPsec policy editing.",
-    "Unrelated pre-existing dirty files in the worktree remain untouched.",
-    "OpenConnect/PPTP/SSTP pages prioritize common deployment paths first and can be expanded with more advanced RADIUS/PPP branches in follow-up slices."
+    "This batch focuses on protocol UX depth and stability rather than introducing new protocol families.",
+    "Unrelated pre-existing dirty files outside this staged slice remain untouched.",
+    "Fixture seeding scripts are for dev validation and not required in production runtime paths."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "Backend",
-      "status": "done",
-      "files": [
-        "backend/app.py",
-        "backend/routers/vpn_openconnect/openconnect.py",
-        "backend/routers/vpn_pptp/pptp.py",
-        "backend/routers/vpn_sstp/sstp.py",
-        "backend/routers/dmvpn/dmvpn.py",
-        "backend/routers/vpn/vpn.py"
-      ],
-      "notes": "Added scoped backend routers for the remaining VPN backlog pages."
-    },
-    {
-      "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/vpn/page.tsx",
-        "frontend/src/app/vpn/dmvpn/page.tsx",
-        "frontend/src/app/vpn/openconnect/page.tsx",
-        "frontend/src/app/vpn/pptp/page.tsx",
-        "frontend/src/app/vpn/sstp/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx"
+        "frontend/src/components/routing/IsisContent.tsx",
+        "frontend/src/components/routing/OpenfabricContent.tsx",
+        "frontend/src/components/routing/MplsContent.tsx",
+        "frontend/src/components/routing/RipContent.tsx",
+        "frontend/src/components/routing/OspfContent.tsx",
+        "frontend/src/components/routing/IgmpProxyContent.tsx"
       ],
-      "notes": "Implemented form-first VPN pages and navigation updates."
+      "notes": "Implemented robust form-first routing protocol editors and selector UX refinements."
+    },
+    {
+      "id": "T2",
+      "owner_role": "Backend",
+      "status": "done",
+      "files": [
+        "backend/routers/_service_wrapper.py",
+        "backend/routers/dns/dns.py",
+        "backend/routers/lldp/lldp.py",
+        "backend/routers/mdns/mdns.py",
+        "backend/routers/ntp/ntp.py",
+        "backend/routers/ssh/ssh.py"
+      ],
+      "notes": "Added missing wrapper modules required by existing backend imports and service endpoints."
     },
     {
       "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_vpn_wrapper_capabilities.py",
-        "frontend/scripts/check-runtime.sh",
-        "frontend/scripts/smoke-ui.mjs"
+        "scripts/seed_ospf_fixture.py",
+        "scripts/seed_rip_fixture.py",
+        "scripts/seed_openfabric_fixture.py",
+        "scripts/seed_mpls_fixture.py",
+        "scripts/seed_igmp_proxy_fixture.py"
       ],
-      "notes": "Extended backend scope tests and smoke route coverage for the new VPN pages."
+      "notes": "Added protocol seed scripts for deterministic live validation during QA cycles."
     },
     {
       "id": "T4",
@@ -60,37 +62,32 @@
       "status": "done",
       "files": [
         "CONFIG_COVERAGE_MATRIX.json",
-        "CONFIG_COVERAGE_MATRIX.md",
-        "CONFIG_COVERAGE_PHASE1.json",
-        "CONFIG_COVERAGE_PHASE1.md",
-        "PARITY_BACKLOG.json",
-        "PARITY_BACKLOG.md"
+        "CONFIG_COVERAGE_PHASE1.json"
       ],
-      "notes": "Regenerated parity matrix/backlog after VPN batch completion."
+      "notes": "Regenerated docs coverage artifacts after routing/service wrapper updates."
     },
     {
       "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/routers/dmvpn/dmvpn.py",
-        "frontend/src/app/vpn/dmvpn/page.tsx",
-        "frontend/src/app/vpn/openconnect/page.tsx",
-        "frontend/src/app/vpn/pptp/page.tsx",
-        "frontend/src/app/vpn/sstp/page.tsx"
+        "frontend/src/app/routing/unicast-protocols/page.tsx",
+        "frontend/src/app/routing/infrastructure/page.tsx",
+        "frontend/src/app/routing/multicast/page.tsx",
+        "frontend/src/components/routing/ProtocolSimpleListEditor.tsx"
       ],
-      "notes": "Manual review completed; command scope guards and API contract compatibility confirmed."
+      "notes": "Manual review complete for route selection behavior and no-placeholder UX policy."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_vpn_wrapper_capabilities.py tests/test_app.py && cd ../frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_app.py && cd ../frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Parity implementation (post-VPN completion moving to next domain)",
+      "purpose": "Parity implementation (routing protocol UX hardening)",
       "status": "active"
     }
   ]

@@ -54,70 +54,73 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Complete all remaining VPN backlog entries as form-first features.
-- Completed this cycle: implemented `DMVPN`, `VPN index`, `OpenConnect`, `PPTP-Server`, and `SSTP Server`.
-- Completed this cycle: VPN domain moved to `12 implemented / 0 partial / 0 not_started`.
-- Next: continue parity from the next highest-priority non-VPN backlog domain.
+- Harden routing protocol UX by replacing remaining lightweight editors with full form-driven pages.
+- Completed this cycle: upgraded ISIS, OpenFabric, MPLS, RIP, OSPF, IGMP Proxy, ARP, and RPKI routing pages and selector flows.
+- Completed this cycle: pushed routing batch commit `996398a`.
+- Next: continue parity by expanding remaining non-routing domains with the same form-first pattern.
 
 ## Current Feature Spec
-Feature: **VPN backlog completion batch (DMVPN/OpenConnect/PPTP/SSTP/Overview)**
+Feature: **Routing form-driven batch (ISIS/OpenFabric/MPLS + selector cleanup)**
 
 Acceptance criteria:
-- Backend exposes dedicated endpoints:
-  - `/vyos/vpn/*`
-  - `/vyos/vpn-dmvpn/*`
-  - `/vyos/vpn-openconnect/*`
-  - `/vyos/vpn-pptp/*`
-  - `/vyos/vpn-sstp/*`
-- VPN section includes form-driven pages for `DMVPN`, `OpenConnect`, `PPTP`, `SSTP`, and top-level `VPN Overview` (no free-form CLI text input).
-- Sidebar `VPN` navigation includes all new pages.
+- Routing protocols no longer rely on generic placeholders for core workflows.
+- ISIS/OpenFabric/MPLS are presented as field-driven forms with structured save/load cycles.
+- Selector pages (`unicast`, `infrastructure`, `multicast`) avoid dead entries and show explicit selection prompts when no protocol is selected.
+- Backend service wrapper modules imported by `app.py` are tracked in git and available in clean checkouts.
 - End-to-end validation (`pytest`, `tsc`, `build`, restart, runtime smoke, browser smoke) passes.
-- Coverage artifacts reflect progress (`vpn` improved from 7/5/0 to 12/0/0 implemented/partial/not_started).
+- Coverage artifacts regenerate without errors after the routing batch.
 
 Assumptions:
-- DMVPN UI intentionally focuses on tunnel + NHRP + IPsec profile bind workflow from the official docs.
+- Routing pages prioritize the highest-impact command trees first; advanced edge knobs remain additive follow-ups.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: VPN completion batch implemented, validated, committed, and pushed (`c0cac8d`).
+- Status: routing form-driven batch implemented, validated, committed, and pushed (`996398a`).
 - Working tree is dirty with unrelated pre-existing changes outside this hotfix.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `backend/app.py`
-- `backend/routers/vpn/__init__.py`
-- `backend/routers/vpn/vpn.py`
-- `backend/routers/dmvpn/__init__.py`
-- `backend/routers/dmvpn/dmvpn.py`
-- `backend/routers/vpn_openconnect/__init__.py`
-- `backend/routers/vpn_openconnect/openconnect.py`
-- `backend/routers/vpn_pptp/__init__.py`
-- `backend/routers/vpn_pptp/pptp.py`
-- `backend/routers/vpn_sstp/__init__.py`
-- `backend/routers/vpn_sstp/sstp.py`
-- `backend/tests/test_vpn_wrapper_capabilities.py`
-- `frontend/src/lib/api/vpn-overview.ts`
-- `frontend/src/lib/api/vpn-dmvpn.ts`
-- `frontend/src/lib/api/vpn-openconnect.ts`
-- `frontend/src/lib/api/vpn-pptp.ts`
-- `frontend/src/lib/api/vpn-sstp.ts`
-- `frontend/src/app/vpn/page.tsx`
-- `frontend/src/app/vpn/dmvpn/page.tsx`
-- `frontend/src/app/vpn/openconnect/page.tsx`
-- `frontend/src/app/vpn/pptp/page.tsx`
-- `frontend/src/app/vpn/sstp/page.tsx`
-- `frontend/src/components/layout/Sidebar.tsx`
-- `frontend/scripts/smoke-ui.mjs`
-- `frontend/scripts/check-runtime.sh`
+- `backend/routers/_service_wrapper.py`
+- `backend/routers/dns/__init__.py`
+- `backend/routers/dns/dns.py`
+- `backend/routers/lldp/__init__.py`
+- `backend/routers/lldp/lldp.py`
+- `backend/routers/mdns/__init__.py`
+- `backend/routers/mdns/mdns.py`
+- `backend/routers/ntp/__init__.py`
+- `backend/routers/ntp/ntp.py`
+- `backend/routers/ssh/__init__.py`
+- `backend/routers/ssh/ssh.py`
+- `frontend/src/app/routing/infrastructure/page.tsx`
+- `frontend/src/app/routing/multicast/page.tsx`
+- `frontend/src/app/routing/protocols/page.tsx`
+- `frontend/src/app/routing/static-failover/layout.tsx`
+- `frontend/src/app/routing/unicast-protocols/page.tsx`
+- `frontend/src/app/routing/unicast-protocols/static/page.tsx`
+- `frontend/src/components/routing/ArpProtocolContent.tsx`
+- `frontend/src/components/routing/IgmpProxyContent.tsx`
+- `frontend/src/components/routing/IsisContent.tsx`
+- `frontend/src/components/routing/MplsContent.tsx`
+- `frontend/src/components/routing/OpenfabricContent.tsx`
+- `frontend/src/components/routing/OspfContent.tsx`
+- `frontend/src/components/routing/Pim6Content.tsx`
+- `frontend/src/components/routing/PimContent.tsx`
+- `frontend/src/components/routing/ProtocolSimpleListEditor.tsx`
+- `frontend/src/components/routing/RipContent.tsx`
+- `frontend/src/components/routing/RpkiContent.tsx`
+- `scripts/seed_igmp_proxy_fixture.py`
+- `scripts/seed_mpls_fixture.py`
+- `scripts/seed_openfabric_fixture.py`
+- `scripts/seed_ospf_fixture.py`
+- `scripts/seed_rip_fixture.py`
 - `CONFIG_COVERAGE_MATRIX.json`
 - `CONFIG_COVERAGE_MATRIX.md`
 - `CONFIG_COVERAGE_PHASE1.json`
 - `CONFIG_COVERAGE_PHASE1.md`
-- `PARITY_BACKLOG.json`
-- `PARITY_BACKLOG.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_vpn_wrapper_capabilities.py tests/test_app.py` -> pass (`21 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_app.py` -> pass (`39 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_service_wrapper_capabilities.py tests/test_app.py` -> pass (`55 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s build` -> pass
 - Restarted runtime API/UI sessions and verified listeners:
@@ -135,10 +138,10 @@ Assumptions:
 - Browser smoke currently depends on host-specific Playwright shared libs path; this should be standardized in dev bootstrap.
 - SNMPv3 configuration and HTTPS GraphQL/certificate controls are not exposed yet.
 - PPPoE/IPoE tabs currently prioritize common operator paths; advanced branches should be added as follow-up.
-- DMVPN and remote-access VPN pages cover documented core flows, but advanced RADIUS/PPP knobs can still be expanded.
+- Some advanced per-protocol tuning options are still candidate follow-ups after this routing UX hardening pass.
 
 ## TODO Backlog (next queue)
-- Begin the next non-VPN parity slice from `PARITY_BACKLOG.json` priority order.
+- Continue remaining parity slices with form-first UX for non-routing domains.
 - Keep runtime gate sequence mandatory for each slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes

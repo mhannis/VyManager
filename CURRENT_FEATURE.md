@@ -1,12 +1,12 @@
-feature_id: vpn-batch-remaining-2026-02-14
+feature_id: routing-form-batch-2026-02-14
 status: done
-title: VPN backlog batch - DMVPN/OpenConnect/PPTP/SSTP/Overview
+title: Routing form-driven batch - ISIS/OpenFabric/MPLS/IGMP/RIP/OSPF refinements
 branch: feature/containers-automation-v1
 commits:
-  - c0cac8d
+  - 996398a
 notes:
-  - Added backend wrapper endpoints for `/vyos/vpn-openconnect`, `/vyos/vpn-pptp`, and `/vyos/vpn-sstp`.
-  - Added DMVPN backend router at `/vyos/vpn-dmvpn` with scoped command validation for tunnel/NHRP/IPsec-profile operations.
-  - Added VPN overview backend router at `/vyos/vpn` (`/capabilities` + `/overview`) to complete docs-index parity signal.
-  - Added form-driven pages: `/vpn`, `/vpn/dmvpn`, `/vpn/openconnect`, `/vpn/pptp`, `/vpn/sstp`.
-  - Updated VPN sidebar and smoke routes; regenerated parity artifacts with VPN domain now fully implemented.
+  - Promoted major routing protocol pages from placeholder/simple editors to full form-driven CRUD UX.
+  - Added robust forms for ISIS, OpenFabric, MPLS, IGMP Proxy, RIP, OSPF, and improved ARP/RPKI interaction panes.
+  - Cleaned selector pages to avoid dead options and replaced fallback placeholder panes with explicit selection prompts.
+  - Added reusable `ProtocolSimpleListEditor` and fixture seeding scripts for rapid QA population/teardown.
+  - Added missing service wrapper modules (`dns/lldp/mdns/ntp/ssh`) required by backend imports and service pages.

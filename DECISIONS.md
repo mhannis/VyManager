@@ -110,3 +110,6 @@
 - 2026-02-14: Completed the remaining VPN docs backlog in one batch by adding dedicated routers/pages for `openconnect`, `pptp`, `sstp`, `dmvpn`, plus top-level VPN overview; preserved thin-wrapper architecture and existing session/VyOS service contracts.
 - 2026-02-14: DMVPN backend endpoint intentionally accepts only `interfaces tunnel`, `protocols nhrp`, and related `vpn ipsec profile/interface/group` command roots to keep safety boundaries tight while supporting required workflow.
 - 2026-02-14: Runtime validation gate for VPN batch includes explicit route probes for `/vpn`, `/vpn/dmvpn`, `/vpn/openconnect`, `/vpn/pptp`, and `/vpn/sstp` to catch page-level client crashes before handoff.
+- 2026-02-14: Promoted routing protocols (ISIS/OpenFabric/MPLS plus related routing panes) from lightweight editors to form-first pages in one batch to meet the “no CLI-style web UI” direction.
+- 2026-02-14: Added and tracked missing backend service wrapper modules (`_service_wrapper`, `dns`, `lldp`, `mdns`, `ntp`, `ssh`) because `backend/app.py` already imports these routers; leaving them untracked would break clean checkouts.
+- 2026-02-14: Routing selector pages now explicitly remove unsupported/dead protocol options and render neutral selection prompts instead of generic `InProgress` placeholders.
