@@ -13,6 +13,13 @@ from typing import Any, Dict, List, Literal, Optional, Tuple
 import re
 
 from session_vyos_service import get_session_vyos_service
+from utils.ssh_exec import (
+    SshCommandError,
+    SSH_USERNAME_DEFAULT,
+    ensure_ssh_keypair,
+    ssh_mkdir_p,
+    ssh_pull_container_image,
+)
 from fastapi_permissions import require_read_permission, require_write_permission
 from rbac_permissions import FeatureGroup
 
@@ -123,6 +130,21 @@ class ContainerLogsResponse(BaseModel):
     logs: str
     total_lines: int
     returned_lines: int
+
+
+class ContainerBootstrapStatusResponse(BaseModel):
+    ssh_enabled: bool = False
+    ssh_key_installed: bool = False
+    ssh_key_identifier: str = "vymanager"
+    ssh_key_type: Optional[str] = None
+
+
+class ContainerInstallResponse(BaseModel):
+    success: bool
+    container: ContainerSummary
+    image_pulled: bool = False
+    created_volume_paths: List[str] = Field(default_factory=list)
+    pull_output: Optional[str] = None
 
 
 # ========================================================================
@@ -366,29 +388,45 @@ def _infer_container_status(name: str, runtime_output: str, enabled: bool) -> st
     return "not-running"
 
 
-def _build_container_links(host: Optional[str], ports: List[ContainerPortMapping]) -> List[ContainerWebLink]:
+def _build_container_links(
+    host: Optional[str],
+    ports: List[ContainerPortMapping],
+    allow_host_networks: bool,
+    network_address: Optional[str],
+) -> List[ContainerWebLink]:
     if not host:
         return []
+
+    # Port publishing is always exposed on the VyOS host address. Even when a
+    # container is attached to a user-defined network and assigned a static
+    # address, the published port is reachable at the host IP/port.
+    #
+    # We still return `network_address` in the container summary so the UI can
+    # expose it for advanced setups, but we don't use it for link generation.
+    effective_host = host
 
     links: List[ContainerWebLink] = []
     for port in ports:
         if port.protocol.lower() != "tcp":
             continue
 
-        source = port.source
+        # Port publishing is represented as source->destination. When using host
+        # networking (`--net host`), podman ignores port publishing and the
+        # container binds directly to its destination port on the host.
+        host_port = port.destination if allow_host_networks else port.source
         destination = port.destination
-        scheme = "https" if source == 443 or destination == 443 else "http"
-        default_port = (scheme == "http" and source == 80) or (scheme == "https" and source == 443)
+        scheme = "https" if host_port == 443 or destination == 443 else "http"
+        default_port = (scheme == "http" and host_port == 80) or (scheme == "https" and host_port == 443)
         if default_port:
-            url = f"{scheme}://{host}"
+            url = f"{scheme}://{effective_host}"
         else:
-            url = f"{scheme}://{host}:{source}"
+            url = f"{scheme}://{effective_host}:{host_port}"
 
         links.append(
             ContainerWebLink(
-                label=f"{port.name} ({source}->{destination}/{port.protocol})",
+                label=f"{port.name} ({host_port}->{destination}/{port.protocol})",
                 url=url,
-                source_port=source,
+                source_port=host_port,
                 destination_port=destination,
                 protocol=port.protocol,
             )
@@ -438,7 +476,12 @@ def _build_container_overview(
             summary.status = "running"
         else:
             summary.status = _infer_container_status(normalized_name, runtime_output, summary.enabled)
-        summary.links = _build_container_links(host, summary.ports)
+        summary.links = _build_container_links(
+            host,
+            summary.ports,
+            summary.allow_host_networks,
+            summary.network_address,
+        )
         containers.append(summary)
 
     return ContainersOverviewResponse(
@@ -468,6 +511,33 @@ async def _load_container_overview(request: Request, refresh: bool = False) -> T
 
     host = _string_or_none(getattr(service.config, "hostname", None))
     return service, _build_container_overview(full_config, host, runtime_output, images_output)
+
+
+def _bootstrap_status_from_config(full_config: Dict[str, Any], key_identifier: str = "vymanager") -> ContainerBootstrapStatusResponse:
+    service_cfg = full_config.get("service", {}) if isinstance(full_config, dict) else {}
+    ssh_cfg = service_cfg.get("ssh") if isinstance(service_cfg, dict) else None
+    ssh_enabled = isinstance(ssh_cfg, dict)
+
+    key_type = None
+    ssh_key_installed = False
+    system_cfg = full_config.get("system", {}) if isinstance(full_config, dict) else {}
+    login_cfg = system_cfg.get("login", {}) if isinstance(system_cfg, dict) else {}
+    users_cfg = login_cfg.get("user", {}) if isinstance(login_cfg, dict) else {}
+    vyos_user = users_cfg.get("vyos", {}) if isinstance(users_cfg, dict) else {}
+    auth_cfg = vyos_user.get("authentication", {}) if isinstance(vyos_user, dict) else {}
+    pub_cfg = auth_cfg.get("public-keys", {}) if isinstance(auth_cfg, dict) else {}
+    if isinstance(pub_cfg, dict) and key_identifier in pub_cfg:
+        entry = pub_cfg.get(key_identifier, {})
+        if isinstance(entry, dict) and entry.get("key"):
+            ssh_key_installed = True
+            key_type = _string_or_none(entry.get("type"))
+
+    return ContainerBootstrapStatusResponse(
+        ssh_enabled=ssh_enabled,
+        ssh_key_installed=ssh_key_installed,
+        ssh_key_identifier=key_identifier,
+        ssh_key_type=key_type,
+    )
 
 
 def _build_container_set_operations(
@@ -621,6 +691,103 @@ async def get_containers_overview(request: Request, refresh: bool = False) -> Co
         raise HTTPException(status_code=500, detail=f"Failed to load containers overview: {exc}")
 
 
+@router.get("/bootstrap-status", response_model=ContainerBootstrapStatusResponse)
+async def get_container_bootstrap_status(request: Request) -> ContainerBootstrapStatusResponse:
+    """
+    Report whether this VyOS instance is ready for container automation.
+
+    Notes:
+    - Pulling container images is an op-mode `add` command which is not exposed
+      by the VyOS HTTPS API. VyManager uses SSH automation for those steps.
+    - This endpoint is best-effort and reads only configuration state.
+    """
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=False)
+        return _bootstrap_status_from_config(full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to load container bootstrap status: {exc}")
+
+
+@router.post("/bootstrap", response_model=ContainerBootstrapStatusResponse)
+async def bootstrap_container_automation(request: Request) -> ContainerBootstrapStatusResponse:
+    """
+    Enable SSH service and install the VyManager automation public key (idempotent).
+
+    This does NOT pull any images; it only configures prerequisites so the backend
+    can run safe, restricted SSH commands for container operations.
+    """
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        _private_key_path, pub_type, pub_key = await run_in_threadpool(
+            ensure_ssh_keypair, comment="vymanager"
+        )
+
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        status = _bootstrap_status_from_config(full_config)
+
+        operations: List[Dict[str, Any]] = []
+        if not status.ssh_enabled:
+            operations.append({"op": "set", "path": ["service", "ssh"]})
+
+        ident = status.ssh_key_identifier
+        if not status.ssh_key_installed or status.ssh_key_type != pub_type:
+            operations.extend(
+                [
+                    {
+                        "op": "set",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            SSH_USERNAME_DEFAULT,
+                            "authentication",
+                            "public-keys",
+                            ident,
+                            "key",
+                            pub_key,
+                        ],
+                    },
+                    {
+                        "op": "set",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            SSH_USERNAME_DEFAULT,
+                            "authentication",
+                            "public-keys",
+                            ident,
+                            "type",
+                            pub_type,
+                        ],
+                    },
+                ]
+            )
+
+        if operations:
+            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            if response.status != 200:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to bootstrap container automation: {response.error or 'Unknown VyOS error'}",
+                )
+
+        # Refresh and return updated status
+        refreshed = await run_in_threadpool(service.get_full_config, refresh=True)
+        return _bootstrap_status_from_config(refreshed)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to bootstrap container automation: {exc}")
+
+
 @router.put("/{container_name}", response_model=ContainerSummary)
 async def upsert_container(
     request: Request,
@@ -654,10 +821,10 @@ async def upsert_container(
                 status_code=400,
                 detail="allow_host_networks cannot be combined with network",
             )
-        if network and ports:
+        if network_address and not network:
             raise HTTPException(
                 status_code=400,
-                detail="Port publishing cannot be used when container network is configured",
+                detail="network_address requires a network name",
             )
 
         normalized_body = ContainerUpsertRequest(
@@ -688,8 +855,9 @@ async def upsert_container(
         )
         response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
         if response.status != 200:
+            status_code = 400 if response.status == 400 else 500
             raise HTTPException(
-                status_code=500,
+                status_code=status_code,
                 detail=f"Failed to update container '{name}': {response.error or 'Unknown VyOS error'}",
             )
 
@@ -703,6 +871,192 @@ async def upsert_container(
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to update container: {exc}")
+
+
+async def _ensure_container_automation_bootstrap(request: Request) -> ContainerBootstrapStatusResponse:
+    """
+    Ensure SSH is enabled and the VyManager automation public key is installed.
+
+    This is used by install flows that need to run op-mode commands not supported
+    by the VyOS HTTPS API (e.g. `add container image`).
+    """
+    _private_key_path, pub_type, pub_key = await run_in_threadpool(
+        ensure_ssh_keypair, comment="vymanager"
+    )
+    service = get_session_vyos_service(request)
+    full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+    status = _bootstrap_status_from_config(full_config)
+
+    operations: List[Dict[str, Any]] = []
+    if not status.ssh_enabled:
+        operations.append({"op": "set", "path": ["service", "ssh"]})
+
+    ident = status.ssh_key_identifier
+    if not status.ssh_key_installed or status.ssh_key_type != pub_type:
+        operations.extend(
+            [
+                {
+                    "op": "set",
+                    "path": [
+                        "system",
+                        "login",
+                        "user",
+                        SSH_USERNAME_DEFAULT,
+                        "authentication",
+                        "public-keys",
+                        ident,
+                        "key",
+                        pub_key,
+                    ],
+                },
+                {
+                    "op": "set",
+                    "path": [
+                        "system",
+                        "login",
+                        "user",
+                        SSH_USERNAME_DEFAULT,
+                        "authentication",
+                        "public-keys",
+                        ident,
+                        "type",
+                        pub_type,
+                    ],
+                },
+            ]
+        )
+
+    if operations:
+        response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+        if response.status != 200:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to bootstrap container automation: {response.error or 'Unknown VyOS error'}",
+            )
+
+        refreshed = await run_in_threadpool(service.get_full_config, refresh=True)
+        return _bootstrap_status_from_config(refreshed)
+
+    return status
+
+
+@router.post("/{container_name}/install", response_model=ContainerInstallResponse)
+async def install_container(
+    request: Request,
+    container_name: str,
+    body: ContainerUpsertRequest,
+) -> ContainerInstallResponse:
+    """
+    Install a container:
+    - Ensure SSH automation prerequisites are configured
+    - Pull the image via op-mode (`add container image ...`)
+    - Create missing /config/containers/* volume directories
+    - Apply the VyOS container configuration
+    """
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        name = _normalize_name_or_400(container_name)
+        image = body.image.strip()
+        if not image:
+            raise HTTPException(status_code=400, detail="Container image is required")
+
+        allow_host_networks = body.allow_host_networks
+        network = body.network.strip() if body.network else None
+        network_address = body.network_address.strip() if body.network_address else None
+        description = body.description.strip() if body.description else None
+        entrypoint = body.entrypoint.strip() if body.entrypoint else None
+        command = body.command.strip() if body.command else None
+        arguments = body.arguments.strip() if body.arguments else None
+        host_name = body.host_name.strip() if body.host_name else None
+
+        environment = _normalize_environment_or_400(body.environment)
+        ports = _normalize_ports_or_400(body.ports)
+        volumes = _normalize_volumes_or_400(body.volumes)
+
+        if allow_host_networks and network:
+            raise HTTPException(
+                status_code=400,
+                detail="allow_host_networks cannot be combined with network",
+            )
+        if network_address and not network:
+            raise HTTPException(
+                status_code=400,
+                detail="network_address requires a network name",
+            )
+
+        normalized_body = ContainerUpsertRequest(
+            image=image,
+            description=description,
+            entrypoint=entrypoint,
+            command=command,
+            arguments=arguments,
+            host_name=host_name,
+            restart=body.restart,
+            enabled=body.enabled,
+            allow_host_networks=allow_host_networks,
+            network=network,
+            network_address=network_address,
+            environment=environment,
+            ports=ports,
+            volumes=volumes,
+        )
+
+        # Ensure we can run op-mode `add` commands via SSH.
+        await _ensure_container_automation_bootstrap(request)
+
+        service = get_session_vyos_service(request)
+        host = _string_or_none(getattr(service.config, "hostname", None))
+        if not host:
+            raise HTTPException(status_code=500, detail="Unable to resolve SSH host for active instance")
+
+        # Ensure host volume directories exist (restricted to /config/containers/*).
+        volume_paths = [vol.source for vol in volumes if vol.source.startswith("/config/containers/")]
+        if volume_paths:
+            await run_in_threadpool(ssh_mkdir_p, host, volume_paths, prefix="/config/containers/")
+
+        # Pull image before committing; avoids a confusing 'image missing' warning + non-start.
+        pull_result = await run_in_threadpool(ssh_pull_container_image, host, image)
+
+        # Apply container config (same semantics as PUT upsert).
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        existing = name in _extract_container_config(full_config)
+        operations = _build_container_set_operations(
+            name=name,
+            body=normalized_body,
+            replace_existing=existing,
+        )
+        response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+        if response.status != 200:
+            if response.status == 400:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"VyOS rejected container config: {response.error or 'Unknown VyOS error'}",
+                )
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to update container '{name}': {response.error or 'Unknown VyOS error'}",
+            )
+
+        _, overview = await _load_container_overview(request, refresh=True)
+        for container in overview.containers:
+            if container.name == name:
+                return ContainerInstallResponse(
+                    success=True,
+                    container=container,
+                    image_pulled=True,
+                    created_volume_paths=sorted(set(volume_paths)),
+                    pull_output=(pull_result.output or None),
+                )
+
+        raise HTTPException(status_code=500, detail="Container saved but not found in refreshed configuration")
+    except SshCommandError as ssh_exc:
+        # Keep message short; the UI can show full output if needed later.
+        raise HTTPException(status_code=500, detail=f"SSH operation failed: {ssh_exc}")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to install container: {exc}")
 
 
 @router.delete("/{container_name}", response_model=ContainerDeleteResponse)

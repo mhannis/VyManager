@@ -118,6 +118,9 @@ docker-compose.yml
 .vercel
 .history
 .history/
+# Local dev data (DB, ssh keys, etc.)
+.devdata/
+backend/.devdata/
 # Claude Code files
 CLAUDE.md
 .claude/
