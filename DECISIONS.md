@@ -34,3 +34,4 @@
 - 2026-02-14: Removed system name-server editing from `System -> Options` UI to avoid split ownership; DNS server controls stay under DNS Resolver flow, and System Options preserves existing name-servers on save.
 - 2026-02-14: Removed redundant shortcuts from `System -> Options & Coverage` (Logs, Users, Containers, and other duplicated service links).
 - 2026-02-14: Moved `DHCP Server` navigation from `Network` to `Services` and removed the duplicate `Network` entry so service ownership is grouped in one section per Mark request.
+- 2026-02-14: Removed standalone `System -> Acceleration` sidebar entry and exposed acceleration via `System -> Options & Coverage` shortcut to keep system top-level navigation tighter.

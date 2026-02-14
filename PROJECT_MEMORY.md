@@ -63,6 +63,7 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
   - keep `NTP/LLDP/mDNS` under `Services`
   - keep `SSH` under `System -> Options & Coverage`
   - keep `DHCP Server` under `Services` (and not duplicated under `Network`)
+  - keep `Acceleration` access under `System -> Options & Coverage`
   - expose additional system-level controls in `System` via a dedicated options page
   - remove redundant shortcut buttons from `System -> Options & Coverage` (no Logs/Users/Containers there)
   - hide the service tab strip when opening a single service from sidebar shortcuts
@@ -76,6 +77,7 @@ Acceptance criteria:
 - Sidebar places `NTP/LLDP/mDNS` under `Services`.
 - Sidebar places `DHCP Server` under `Services` and removes it from `Network`.
 - Sidebar keeps SSH under `System -> Options & Coverage` flow.
+- Acceleration is accessible via `System -> Options & Coverage` (not as separate System nav item).
 - `System -> Options & Coverage` exists and is functional.
 - System options page allows editing:
   - `system host-name`
