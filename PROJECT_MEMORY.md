@@ -73,6 +73,7 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
+- Latest slice commit: `2563056`
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (slice-owned)
