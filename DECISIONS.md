@@ -33,3 +33,4 @@
 - 2026-02-14: Added `view=single` mode to `/system/services` and updated service links to use it, hiding the horizontal multi-service tab strip for service-specific navigation.
 - 2026-02-14: Removed system name-server editing from `System -> Options` UI to avoid split ownership; DNS server controls stay under DNS Resolver flow, and System Options preserves existing name-servers on save.
 - 2026-02-14: Removed redundant shortcuts from `System -> Options & Coverage` (Logs, Users, Containers, and other duplicated service links).
+- 2026-02-14: Moved `DHCP Server` navigation from `Network` to `Services` and removed the duplicate `Network` entry so service ownership is grouped in one section per Mark request.

@@ -82,11 +82,6 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.INTERFACES
       },
       {
-        title: "DHCP",
-        href: "/network/dhcp",
-        requiredPermission: FeatureGroup.DHCP
-      },
-      {
         title: "VRF",
         href: "/network/vrf",
         requiredPermission: FeatureGroup.VRF
@@ -240,6 +235,11 @@ const navigation: NavItem[] = [
         href: "/system/services?tab=dhcp-relay&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
       },
+      {
+        title: "DHCP Server",
+        href: "/network/dhcp",
+        requiredPermission: FeatureGroup.DHCP,
+      },
     ],
   },
   {
@@ -255,11 +255,6 @@ const navigation: NavItem[] = [
       {
         title: "Options & Coverage",
         href: "/system/options",
-        requiredPermission: FeatureGroup.SYSTEM
-      },
-      {
-        title: "Acceleration",
-        href: "/system/acceleration",
         requiredPermission: FeatureGroup.SYSTEM
       },
       {

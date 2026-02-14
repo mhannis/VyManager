@@ -4,8 +4,8 @@
   "last_updated": "2026-02-14",
   "status": "in_progress",
   "acceptance_criteria": [
-    "Sidebar Services no longer includes DHCP Server to prevent simultaneous Services+Network expansion.",
     "Sidebar places NTP/LLDP/mDNS under Services.",
+    "Sidebar places DHCP Server under Services and removes it from Network.",
     "SSH remains under the System -> Options & Coverage flow.",
     "System Options page exists and allows editing hostname/timezone/domain.",
     "DNS server ownership remains in DNS Resolver flow (not duplicated in System Options).",
@@ -52,7 +52,7 @@
         "frontend/src/app/system/services/page.tsx",
         "frontend/src/lib/api/system.ts"
       ],
-      "notes": "Added System Options page, refined sidebar IA, enabled single-service view mode, and ensured setup wizard entry points are visible in zones/policies/system."
+      "notes": "Added System Options page, refined sidebar IA (including DHCP under Services), enabled single-service view mode, and ensured setup wizard entry points are visible in zones/policies/system."
     },
     {
       "id": "T4",

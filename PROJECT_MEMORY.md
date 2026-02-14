@@ -62,7 +62,7 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Deliver IA polish requested by Mark:
   - keep `NTP/LLDP/mDNS` under `Services`
   - keep `SSH` under `System -> Options & Coverage`
-  - avoid DHCP Server appearing under `Services` (prevent dual-open with `Network`)
+  - keep `DHCP Server` under `Services` (and not duplicated under `Network`)
   - expose additional system-level controls in `System` via a dedicated options page
   - remove redundant shortcut buttons from `System -> Options & Coverage` (no Logs/Users/Containers there)
   - hide the service tab strip when opening a single service from sidebar shortcuts
@@ -73,8 +73,8 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 Feature: **System IA + Guided Setup Cohesion (v2)**
 
 Acceptance criteria:
-- Sidebar `Services` no longer includes DHCP Server to avoid opening `Network` and `Services` at once.
 - Sidebar places `NTP/LLDP/mDNS` under `Services`.
+- Sidebar places `DHCP Server` under `Services` and removes it from `Network`.
 - Sidebar keeps SSH under `System -> Options & Coverage` flow.
 - `System -> Options & Coverage` exists and is functional.
 - System options page allows editing:
@@ -118,7 +118,7 @@ Assumptions:
   - system coverage/navigation card
 - Sidebar IA updates:
   - moved NTP/LLDP/mDNS into `Services`
-  - removed DHCP Server from `Services`
+  - moved DHCP Server into `Services` and removed duplicate from `Network`
   - kept `System -> Options & Coverage` as SSH entry point
 - Added single-service view mode for `/system/services` (`view=single`) so sidebar service shortcuts do not show the tab strip.
 - Removed redundant shortcuts from `System -> Options & Coverage` (Logs/Users/Containers and other duplicated service links).

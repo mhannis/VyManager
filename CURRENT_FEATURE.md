@@ -9,7 +9,7 @@ commits:
 notes:
   - Added backend endpoint `PUT /vyos/system/config` for hostname/timezone/domain/name-server updates.
   - Added new `System -> Options & Coverage` page with editable system identity settings and guided setup launch links.
-  - Sidebar IA updated so NTP/LLDP/mDNS are under `Services`, DHCP Server is not listed under `Services`, and `System -> Options & Coverage` is exposed.
+  - Sidebar IA updated so NTP/LLDP/mDNS are under `Services`, DHCP Server is also under `Services` (and removed from `Network`), and `System -> Options & Coverage` is exposed.
   - Service shortcuts now use single-service mode so `/system/services` does not show the cross-service top tab bar.
   - SSH stays available via `System -> Options & Coverage`; redundant options shortcuts (Logs/Users/Containers) were removed.
   - DNS server ownership stays in DNS Resolver flow; System Options no longer edits name-servers directly.
