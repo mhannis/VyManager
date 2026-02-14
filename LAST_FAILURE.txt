@@ -1,9 +1,9 @@
-timestamp: 2026-02-14T03:24:18Z
+timestamp: 2026-02-14T13:31:37Z
 failing_command: jq . FEATURE_STATE.json >/dev/null
-error_summary: JSON validation check failed because `jq` is not installed on this host.
+error_summary: JSON validation helper command failed because `jq` is not installed on this host image.
 
 relevant_output:
 /bin/bash: line 1: jq: command not found
 
-suspected_cause: Missing optional CLI dependency.
-next_step: Validate JSON with Python standard library (`python3 -m json.tool FEATURE_STATE.json`).
+suspected_cause: The environment does not include jq by default.
+next_step: Validate JSON with Python (`python3 -m json.tool FEATURE_STATE.json`) or install jq.

@@ -24,3 +24,8 @@
 - 2026-02-14: Removed Power Mgmt placeholder tab from System Services at Mark's request (unsupported on current VyOS API surface).
 - 2026-02-14: Dynamic DNS update semantics now enforce uniqueness by `(interface, provider)` and preserve existing provider password when blank password is submitted.
 - 2026-02-14: DDNS/DHCP relay disable operations were changed to skip payload entry validation and directly delete service subtrees, preventing disable failures caused by stale invalid form data.
+- 2026-02-14: Standardized local runtime refresh after feature delivery to avoid stale UI/backend processes: run backend tests + frontend build, then restart tmux sessions (`vm-api`, `vm-ui`) and verify listeners on ports `8000/3000`.
+- 2026-02-14: `vm-api` must be started with backend environment loaded (`source backend/.env` or equivalent). Restarting uvicorn without env drops `DATABASE_URL`, causing `/session/sites` and related auth/session endpoints to return `503 Database not available`.
+- 2026-02-14: Added `PUT /vyos/system/config` to support GUI-driven updates for `system host-name`, `system time-zone`, `system domain-name`, and `system name-server` list from the new `System -> Options` page.
+- 2026-02-14: Sidebar IA adjusted so DHCP Server is not listed under `Services` (prevents dual-open confusion with `Network`), while SSH/NTP/LLDP/mDNS remain under `System`.
+- 2026-02-14: `System -> Options & Coverage` now acts as the high-level onboarding hub linking Network Wizard, Zone Wizard, and Firewall Policies for base setup flow clarity.

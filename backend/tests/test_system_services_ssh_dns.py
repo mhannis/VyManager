@@ -106,6 +106,57 @@ def test_update_ssh_config_emits_expected_operations(monkeypatch, app, allow_per
     assert ("service", "ssh", "disable-password-authentication") in op_paths
 
 
+def test_update_system_config_emits_expected_operations(monkeypatch, app, allow_permissions):
+    service = DummyService(
+        full_config={
+            "system": {
+                "host-name": "vyos-old",
+                "time-zone": "UTC",
+                "domain-name": "old.local",
+                "name-server": {"1.1.1.1": {}},
+            }
+        }
+    )
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    body = {
+        "hostname": "vyos-new",
+        "timezone": "America/New_York",
+        "domain_name": "lab.local",
+        "name_servers": ["9.9.9.9", "1.1.1.1"],
+    }
+
+    resp = client.put("/vyos/system/config", json=body)
+    assert resp.status_code == 200
+    assert service.device.configure_calls, "Expected configure operation call"
+
+    operations = service.device.configure_calls[-1]
+    op_paths = [tuple(op.get("path") or []) for op in operations]
+
+    assert ("system", "host-name", "vyos-new") in op_paths
+    assert ("system", "time-zone", "America/New_York") in op_paths
+    assert ("system", "domain-name", "lab.local") in op_paths
+    assert ("system", "name-server", "9.9.9.9") in op_paths
+
+
+def test_update_system_config_rejects_invalid_timezone(monkeypatch, app, allow_permissions):
+    service = DummyService(full_config={"system": {}})
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    body = {
+        "hostname": "vyos-new",
+        "timezone": "America/New York",  # contains whitespace; invalid token
+        "domain_name": "lab.local",
+        "name_servers": ["9.9.9.9"],
+    }
+
+    resp = client.put("/vyos/system/config", json=body)
+    assert resp.status_code == 400
+    assert "Invalid timezone" in resp.json().get("detail", "")
+
+
 def test_update_dns_config_emits_forwarding_and_host_override_ops(monkeypatch, app, allow_permissions):
     service = DummyService(full_config={"service": {}, "system": {}})
     monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)

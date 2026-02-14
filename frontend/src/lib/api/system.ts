@@ -23,6 +23,13 @@ export interface SystemConfig {
   raw_config: Record<string, unknown>;
 }
 
+export interface SystemConfigUpdateRequest {
+  hostname: string | null;
+  timezone: string | null;
+  name_servers: string[];
+  domain_name: string | null;
+}
+
 export interface SystemDashboardSummary {
   hostname: string | null;
   version: string | null;
@@ -377,6 +384,13 @@ class SystemService {
     return apiClient.get<SystemConfig>("/vyos/system/config", {
       refresh: refresh.toString(),
     });
+  }
+
+  /**
+   * Update system identity/timezone/DNS defaults.
+   */
+  async updateConfig(payload: SystemConfigUpdateRequest): Promise<SystemConfig> {
+    return apiClient.put<SystemConfig>("/vyos/system/config", payload);
   }
 
   /**

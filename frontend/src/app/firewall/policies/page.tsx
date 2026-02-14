@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -535,6 +536,14 @@ export default function FirewallPoliciesPage() {
                 <p className="text-xs text-muted-foreground">
                   {totalRules} rule{totalRules !== 1 ? "s" : ""}
                 </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button asChild size="sm" variant="outline">
+                    <Link href="/network/setup-wizard">Network Wizard</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href="/firewall/zones">Zone Wizard</Link>
+                  </Button>
+                </div>
               </div>
             </div>
 

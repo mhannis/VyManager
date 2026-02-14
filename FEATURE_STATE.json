@@ -1,23 +1,21 @@
 {
-  "feature_id": "services-ia-and-system-telemetry-v1",
-  "title": "Service IA Restructure + System Services Follow-through",
+  "feature_id": "system-ia-guided-setup-v2",
+  "title": "System IA Cohesion + Options Coverage + Guided Setup Entry Points",
   "last_updated": "2026-02-14",
   "status": "in_progress",
   "acceptance_criteria": [
-    "Global interface display uses Description (ethX) when description is available, excluding interface-description edit surfaces.",
-    "IPsec site-to-site wizard dialog is wide enough for readable proposal fields.",
-    "System Information dashboard card shows CPU temperature when available from VyOS.",
-    "Services are promoted in navigation with direct links to per-service views.",
-    "System Services page supports deep-linking via query tab values.",
-    "Dynamic DNS and DHCP Relay are configurable from GUI with backend read/update routes.",
-    "Power Mgmt placeholder tab is removed from System Services.",
-    "DDNS duplicate interface/provider entries are rejected and existing passwords are preserved on blank-password updates.",
-    "Disable operations for DDNS and DHCP relay succeed without validating stale payload entries."
+    "Sidebar Services no longer includes DHCP Server to prevent simultaneous Services+Network expansion.",
+    "SSH remains under System navigation.",
+    "System Options page exists and allows editing hostname/timezone/domain/system name-servers.",
+    "System Options page provides clear setup-wizard entry points for WAN/LAN/firewall onboarding.",
+    "Firewall Zones guided setup is a top-right modal button intended for one-time use but re-runnable.",
+    "Firewall Policies page includes direct links to Network Wizard and Zone Wizard.",
+    "Runtime build/start validation passes and site remains reachable after deploy."
   ],
   "assumptions": [
-    "VyOS does not expose FreeBSD powerd controls in current service/API surface.",
-    "CPU temperature is best-effort and may be unavailable depending on hardware/virtualization.",
-    "DNS resolver behavior is represented by the same VyOS DNS service currently used by DNS forwarder controls."
+    "Network Setup Wizard remains the primary initial bootstrap path for new users.",
+    "Existing token validator is sufficient for system name-server entries in this codebase.",
+    "Playwright browser smoke remains blocked on this host until OS dependencies are installed."
   ],
   "tasks": [
     {
@@ -28,7 +26,7 @@
         "PROJECT_MEMORY.md",
         "CURRENT_FEATURE.md"
       ],
-      "notes": "Mapped Mark's IA + telemetry + services follow-through requests into implementable increments."
+      "notes": "Mapped Mark's IA request into concrete acceptance criteria for sidebar, system options, and wizard entry points."
     },
     {
       "id": "T2",
@@ -37,20 +35,20 @@
       "files": [
         "backend/routers/system.py"
       ],
-      "notes": "Implemented DDNS/DHCP relay config routes, DDNS secret preservation, duplicate protection, and disable-path validation fixes."
+      "notes": "Implemented PUT /vyos/system/config and timezone/system-setting validation."
     },
     {
       "id": "T3",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/system/services/page.tsx",
-        "frontend/src/components/system/DnsServiceTab.tsx",
-        "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-        "frontend/src/components/system/DhcpRelayServiceTab.tsx",
+        "frontend/src/app/system/options/page.tsx",
+        "frontend/src/components/layout/Sidebar.tsx",
+        "frontend/src/app/firewall/zones/page.tsx",
+        "frontend/src/app/firewall/policies/page.tsx",
         "frontend/src/lib/api/system.ts"
       ],
-      "notes": "Replaced placeholders with working tabs, mapped DNS resolver tab to real DNS config, removed Power Mgmt placeholder, and applied interface display labels in service interface pickers."
+      "notes": "Added System Options page, refined sidebar IA, and ensured setup wizard entry points are visible in zones/policies/system."
     },
     {
       "id": "T4",
@@ -59,35 +57,34 @@
       "files": [
         "backend/tests/test_system_services_ssh_dns.py"
       ],
-      "notes": "Added DDNS/DHCP relay route tests, duplicate rejection coverage, and disable edge-case coverage."
+      "notes": "Added regression tests for system config update operations and timezone validation."
     },
     {
       "id": "T5",
       "owner_role": "Build",
       "status": "done",
       "files": [
-        "AGENT_REPORTS/build_backend_validation_20260214.md",
-        "AGENT_REPORTS/build_frontend_validation_20260214.md"
+        "LAST_FAILURE.txt"
       ],
-      "notes": "Backend tests pass (25 passed). Frontend typecheck/build/lint pass (lint warning debt unchanged)."
+      "notes": "Ran backend tests + frontend typecheck/lint/build + runtime smoke; browser smoke failed due missing libnspr4.so (tracked)."
     },
     {
       "id": "T6",
-      "owner_role": "Reviewer",
+      "owner_role": "Build",
       "status": "done",
       "files": [
-        "AGENT_REPORTS/review_services_ddns_dhcprelay_20260214.md"
+        "PROJECT_MEMORY.md"
       ],
-      "notes": "Reviewer APPROVED after addressing disable-path and duplicate-entry issues."
+      "notes": "Restarted vm-ui/vm-api and verified listeners/HTTP probes after deploy."
     },
     {
       "id": "T7",
       "owner_role": "Planner",
-      "status": "todo",
+      "status": "doing",
       "files": [
         "PROJECT_MEMORY.md"
       ],
-      "notes": "Next increment planning: DHCP UX overhaul, firewall-zone guide/help page, and remaining DNS/service requests from Mark backlog."
+      "notes": "Next increment: DHCP UX behavior and firewall zones education/help page."
     }
   ],
   "commands": {
@@ -100,7 +97,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Service IA + system services implementation",
+      "purpose": "System IA + setup-guidance implementation",
       "status": "active"
     }
   ]

@@ -206,26 +206,6 @@ const navigation: NavItem[] = [
     icon: Wrench,
     children: [
       {
-        title: "NTP",
-        href: "/system/services?tab=ntp",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "LLDP",
-        href: "/system/services?tab=lldp",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "mDNS Repeater",
-        href: "/system/services?tab=mdns",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "SSH",
-        href: "/system/services?tab=ssh",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
         title: "DNS Forwarder",
         href: "/system/services?tab=dns-forwarder",
         requiredPermission: FeatureGroup.SYSTEM,
@@ -239,11 +219,6 @@ const navigation: NavItem[] = [
         title: "Dynamic DNS",
         href: "/system/services?tab=dynamic-dns",
         requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "DHCP Server",
-        href: "/network/dhcp",
-        requiredPermission: FeatureGroup.DHCP,
       },
       {
         title: "DHCP Relay",
@@ -262,6 +237,31 @@ const navigation: NavItem[] = [
     title: "System",
     icon: Server,
     children: [
+      {
+        title: "SSH",
+        href: "/system/services?tab=ssh",
+        requiredPermission: FeatureGroup.SYSTEM
+      },
+      {
+        title: "NTP",
+        href: "/system/services?tab=ntp",
+        requiredPermission: FeatureGroup.SYSTEM
+      },
+      {
+        title: "LLDP",
+        href: "/system/services?tab=lldp",
+        requiredPermission: FeatureGroup.SYSTEM
+      },
+      {
+        title: "mDNS Repeater",
+        href: "/system/services?tab=mdns",
+        requiredPermission: FeatureGroup.SYSTEM
+      },
+      {
+        title: "Options & Coverage",
+        href: "/system/options",
+        requiredPermission: FeatureGroup.SYSTEM
+      },
       {
         title: "Acceleration",
         href: "/system/acceleration",

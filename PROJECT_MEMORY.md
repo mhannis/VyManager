@@ -59,78 +59,78 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Frontend lint has warning-only legacy debt; avoid introducing lint errors
 
 ## Current Objective
-- Complete System Services follow-through for the promoted Services IA:
-  - replace Dynamic DNS and DHCP Relay placeholders with working configuration tabs
-  - map DNS Resolver tab to real DNS service configuration (same VyOS backend surface)
-  - remove Power Mgmt placeholder tab per Mark request
-  - keep interface selectors labeled as `Description (ethX)` where descriptions are known
+- Deliver IA polish requested by Mark:
+  - keep SSH/NTP/LLDP/mDNS under `System`
+  - avoid DHCP Server appearing under `Services` (prevent dual-open with `Network`)
+  - expose additional system-level controls in `System` via a dedicated options page
+  - keep zone guided setup as a top-right, one-time wizard entry point
+  - keep clear onboarding path for WAN/LAN setup using wizards
 
 ## Current Feature Spec
-Feature: **Service IA + System Telemetry Polish (v1)**
+Feature: **System IA + Guided Setup Cohesion (v2)**
 
 Acceptance criteria:
-- Interface options/cards show `Description (ethX)` wherever description data exists (excluding interface-description editing UI).
-- Site-to-site IPsec wizard dialog is wide enough and proposal fields are readable.
-- System Services can be deep-linked by service via URL tab parameter.
-- Sidebar exposes services at higher level (NTP/LLDP/mDNS/SSH/DNS forwarder/resolver/DDNS/DHCP server/DHCP relay).
-- System dashboard summary includes best-effort CPU temperature and card displays it when present.
-- Dynamic DNS and DHCP Relay tabs are fully configurable from GUI (read/update via backend routes).
-- Dynamic DNS preserves existing secrets when password is left blank and rejects duplicate interface/provider mappings.
-- Disabling Dynamic DNS or DHCP Relay succeeds without validating stale entry payload fields.
-- Power management placeholder tab is removed.
+- Sidebar `Services` no longer includes DHCP Server to avoid opening `Network` and `Services` at once.
+- Sidebar keeps SSH under `System`.
+- `System -> Options & Coverage` exists and is functional.
+- System options page allows editing:
+  - `system host-name`
+  - `system time-zone`
+  - `system domain-name`
+  - `system name-server` list
+- System options page links users to setup flow (Network Wizard -> Zone Wizard -> Policies).
+- Firewall Zones guided setup is a top-right button and runs as modal one-time wizard (re-runnable).
+- Firewall Policies page provides direct links to setup wizards.
 
 Assumptions:
-- VyOS does not expose a FreeBSD-style `powerd` service configuration endpoint in current API surface.
-- DNS Resolver uses the same underlying VyOS DNS service (`service dns forwarding`) in this build.
-- CPU temperature availability depends on hardware + command support (`show hardware temperature` / fallback probes).
+- Existing `network/setup-wizard` remains the primary base bootstrap workflow.
+- `system name-server` tokens can be validated with the existing safe token validator in this codebase.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Working tree: dirty (multiple feature files + new smoke scripts)
+- Working tree: dirty (includes pre-existing unrelated changes)
 - Host toolchain: node `v20.20.0`, npm `10.8.2`, python `3.12.3`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q` -> `25 passed`
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q` -> `27 passed`
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
+- `cd frontend && npm run -s lint` -> pass with existing warning debt (0 errors)
 - `cd frontend && npm run -s build` -> pass
-- `cd frontend && npm run -s lint` -> pass with existing warning debt (no new errors)
-- code review pass: `APPROVED` (`AGENT_REPORTS/review_services_ddns_dhcprelay_20260214.md`)
+- `cd frontend && npm run -s smoke:runtime` -> pass
+- `cd frontend && npm run -s smoke:ui` -> fail (missing host lib `libnspr4.so`; tracked in `LAST_FAILURE.txt`)
+- Runtime redeploy completed:
+  - restarted `vm-ui` on `0.0.0.0:3000`
+  - restarted `vm-api` with `.env` sourced on `0.0.0.0:8000`
+  - health checks: `/docs` -> `200`, frontend root -> `307` (expected redirect), `/session/sites` -> `401` (expected unauthenticated)
 
 ### Key Implementation Notes
-- Added best-effort CPU temperature parsing in `backend/routers/system.py` and exposed `cpu_temperature_celsius` on dashboard summary API.
-- Added backend unit tests for temperature parser in `backend/tests/test_system_dashboard_temperature.py`.
-- Updated `SystemInformationCard` to display CPU temperature badge when available.
-- Extended `System Services` page with URL-driven tab deep linking (`?tab=`), wrapped query handling in `Suspense` for Next.js prerender safety.
-- Added higher-level `Services` navigation group in sidebar and removed duplicate nested System->Services entry.
-- Replaced Dynamic DNS and DHCP Relay placeholders with fully functional tabs and API wiring.
-- DNS Resolver tab now uses the real DNS service form in resolver-focused mode text instead of placeholder content.
-- Removed Power Mgmt placeholder tab from System Services.
-- Applied interface label formatter across DHCP/setup wizard, dashboard interface cards, flowtable/bridge/policy selectors, containers, and IPsec wizard.
-- Enlarged IPsec site-to-site wizard modal and added explicit labels for proposal fields.
-- Added Dynamic DNS backend safeguards:
-  - preserve existing provider password when UI submits blank password
-  - reject duplicate `(interface, provider)` entries
-  - allow disable operations without validating entry payload
-- Added DHCP relay disable-path behavior to skip entry validation and cleanly delete service subtree.
-- Added backend tests for Dynamic DNS + DHCP Relay get/update and disable edge cases.
+- Added `PUT /vyos/system/config` in `backend/routers/system.py`.
+- Added backend validation for timezone tokens and system config update operations.
+- Added backend tests:
+  - `test_update_system_config_emits_expected_operations`
+  - `test_update_system_config_rejects_invalid_timezone`
+- Added frontend API method `systemService.updateConfig`.
+- Added new page `frontend/src/app/system/options/page.tsx`:
+  - editable system identity form
+  - setup wizard launch card
+  - system coverage/navigation card
+- Sidebar IA updates:
+  - moved SSH/NTP/LLDP/mDNS to `System`
+  - removed DHCP Server from `Services`
+  - added `System -> Options & Coverage`
+- Firewall Zones now includes top-right guided wizard flow and one-time localStorage marker.
+- Firewall Policies includes direct links to Network/Zone wizards.
 
 ## Risks / Open Questions
-- Browser smoke gate cannot execute on this machine until OS dependencies are installed (`sudo npx playwright install-deps`).
-- CPU temperature parsing is best-effort and may return null on platforms/virtualized targets without exposed sensors.
-- Frontend lint baseline remains warning-heavy (legacy debt), though no new lint errors were introduced.
+- Playwright browser smoke is blocked by missing system dependencies on this host (`libnspr4.so`), so end-to-end UI automation is not currently a reliable gate.
+- Frontend lint remains warning-heavy from legacy code; this cycle introduced no lint errors.
 
 ## TODO Backlog (Short)
-- Continue DNS scope requested by Mark:
-  - evaluate dedicated resolver mode controls if VyOS surface differs from forwarding model
-  - confirm reverse lookup UX defaults and guardrails
-- Continue network/firewall UX scope:
-  - DHCP page behavior aligned to pfSense-style interface-first flow
-  - firewall zones education/help page + guided mode link separation
-- Continue service rollout requested by Mark (dynamic DNS complete; remaining service pages pending).
+- DHCP server UX: complete pfSense-like interface-first flow and verify lease behavior on live interfaces.
+- Firewall zones education page: add dedicated “How zones work” reference page and link from zones.
+- Continue DNS scope (resolver/authoritative/reverse lookup polish).
 
 ## Agent Handoff Notes
-- Next.js build can fail when `useSearchParams` is used at page scope without `Suspense`; keep query consumers inside suspense-wrapped client boundaries.
-- Keep using `formatInterfaceDisplayName` from `frontend/src/lib/utils.ts` for interface labels to enforce consistency.
-- `powerd` expectation should be treated as unsupported for current VyOS API surface unless docs/API evidence emerges.
-- For Dynamic DNS updates, backend treats `(interface, provider)` as unique and preserves existing password secrets when password input is blank.
-- For Dynamic DNS and DHCP Relay disable operations, backend now deletes the service subtree without validating payload entry fields.
+- Start `vm-api` only with backend environment loaded (`source backend/.env`) or session/site APIs can fail with `503`.
+- `System -> Options` is now a real page and depends on `PUT /vyos/system/config`.
+- Keep using `formatInterfaceDisplayName` helper for consistent `Description (ethX)` naming in non-edit description contexts.

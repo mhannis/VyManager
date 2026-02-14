@@ -434,6 +434,7 @@ def _model_fields_set(model: BaseModel) -> set[str]:
 RE_LOCAL_USERNAME = re.compile(r"^[A-Za-z_][A-Za-z0-9._-]{0,31}$")
 RE_LOCAL_LEVEL = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 RE_HOSTNAME_TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,252}$")
+RE_TIMEZONE_TOKEN = re.compile(r"^[A-Za-z0-9._+-]+(?:/[A-Za-z0-9._+-]+)*$")
 
 
 # ========================================================================
@@ -458,6 +459,14 @@ class SystemConfig(BaseModel):
     name_servers: list[str] = Field(default_factory=list)
     domain_name: Optional[str] = None
     raw_config: Dict[str, Any] = Field(default_factory=dict)
+
+
+class SystemConfigRequest(BaseModel):
+    """Mutable subset of system configuration exposed in GUI."""
+    hostname: Optional[str] = None
+    timezone: Optional[str] = None
+    name_servers: list[str] = Field(default_factory=list)
+    domain_name: Optional[str] = None
 
 
 class SystemDashboardSummary(BaseModel):
@@ -965,6 +974,15 @@ def _normalize_hostname_or_400(value: str, field_name: str = "hostname") -> str:
         raise HTTPException(status_code=400, detail=f"{field_name} is required")
     if not RE_HOSTNAME_TOKEN.match(text):
         raise HTTPException(status_code=400, detail=f"Invalid {field_name}: {text}")
+    return text
+
+
+def _normalize_timezone_or_400(value: str) -> str:
+    text = value.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="timezone is required")
+    if not RE_TIMEZONE_TOKEN.match(text):
+        raise HTTPException(status_code=400, detail=f"Invalid timezone: {text}")
     return text
 
 
@@ -1673,6 +1691,95 @@ async def get_system_config(request: Request, refresh: bool = False) -> SystemCo
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving system config: {str(e)}")
+
+
+@router.put("/config", response_model=SystemConfig)
+async def update_system_config(request: Request, body: SystemConfigRequest) -> SystemConfig:
+    """
+    Update mutable system identity settings.
+
+    Supports:
+    - system host-name
+    - system time-zone
+    - system name-server (list)
+    - system domain-name
+    """
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        desired_hostname = _string_or_none(body.hostname)
+        desired_timezone = _string_or_none(body.timezone)
+        desired_domain = _string_or_none(body.domain_name)
+        desired_name_servers = _normalize_unique_strings(body.name_servers)
+
+        if desired_hostname:
+            desired_hostname = _normalize_hostname_or_400(desired_hostname, field_name="hostname")
+        if desired_timezone:
+            desired_timezone = _normalize_timezone_or_400(desired_timezone)
+        if desired_domain:
+            desired_domain = _normalize_hostname_or_400(desired_domain, field_name="domain name")
+
+        for name_server in desired_name_servers:
+            _normalize_token_or_400(name_server, field_name="name server")
+
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        current_config = full_config.get("system", {})
+        current_name_servers = _extract_tag_values(current_config, ["name-server"])
+
+        operations: List[Dict[str, Any]] = []
+
+        current_hostname = _string_or_none(current_config.get("host-name"))
+        if desired_hostname != current_hostname:
+            if desired_hostname:
+                operations.append({"op": "set", "path": ["system", "host-name", desired_hostname]})
+            elif current_hostname:
+                operations.append({"op": "delete", "path": ["system", "host-name"]})
+
+        current_timezone = _string_or_none(current_config.get("time-zone"))
+        if desired_timezone != current_timezone:
+            if desired_timezone:
+                operations.append({"op": "set", "path": ["system", "time-zone", desired_timezone]})
+            elif current_timezone:
+                operations.append({"op": "delete", "path": ["system", "time-zone"]})
+
+        current_domain = _string_or_none(current_config.get("domain-name"))
+        if desired_domain != current_domain:
+            if desired_domain:
+                operations.append({"op": "set", "path": ["system", "domain-name", desired_domain]})
+            elif current_domain:
+                operations.append({"op": "delete", "path": ["system", "domain-name"]})
+
+        current_name_server_set = set(current_name_servers)
+        desired_name_server_set = set(desired_name_servers)
+        for name_server in sorted(current_name_server_set - desired_name_server_set):
+            operations.append({"op": "delete", "path": ["system", "name-server", name_server]})
+        for name_server in sorted(desired_name_server_set - current_name_server_set):
+            operations.append({"op": "set", "path": ["system", "name-server", name_server]})
+
+        if operations:
+            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            if response.status != 200:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to update system configuration: {response.error or 'Unknown VyOS error'}",
+                )
+
+        updated_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        updated_system = updated_config.get("system", {})
+        updated_name_servers = _extract_tag_values(updated_system, ["name-server"])
+
+        return SystemConfig(
+            hostname=_string_or_none(updated_system.get("host-name")),
+            timezone=_string_or_none(updated_system.get("time-zone")),
+            name_servers=updated_name_servers,
+            domain_name=_string_or_none(updated_system.get("domain-name")),
+            raw_config=updated_system if isinstance(updated_system, dict) else {},
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating system config: {str(e)}")
 
 
 # ========================================================================

@@ -1,12 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -24,10 +34,13 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { zonesService, type FirewallZone, type ZonePolicyUpdate } from "@/lib/api/zones";
+import { showService } from "@/lib/api/show";
+import { ethernetService } from "@/lib/api/ethernet";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 import {
   AlertCircle,
+  BookOpen,
   Plus,
   RefreshCw,
   Save,
@@ -37,6 +50,13 @@ import {
 } from "lucide-react";
 
 type DefaultAction = "accept" | "drop" | "reject";
+const GUIDED_SETUP_STORAGE_KEY = "vymanager.firewall.zones.guidedSetupUsed";
+
+interface InterfaceOption {
+  name: string;
+  description: string | null;
+  label: string;
+}
 
 function parseCsvList(value: string): string[] {
   const out: string[] = [];
@@ -66,6 +86,9 @@ export default function FirewallZonesPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [interfaceOptions, setInterfaceOptions] = useState<InterfaceOption[]>([]);
+  const [guidedWizardOpen, setGuidedWizardOpen] = useState(false);
+  const [guidedSetupUsed, setGuidedSetupUsed] = useState(false);
 
   const [zones, setZones] = useState<Record<string, FirewallZone>>({});
   const [selectedZoneName, setSelectedZoneName] = useState<string>("");
@@ -83,20 +106,71 @@ export default function FirewallZonesPage() {
   const [editDefaultAction, setEditDefaultAction] = useState<DefaultAction>("drop");
   const [editInterfaces, setEditInterfaces] = useState("");
   const [editPolicies, setEditPolicies] = useState("LAN_FROM:LAN-IN");
+  const [guidedWanInterface, setGuidedWanInterface] = useState("");
+  const [guidedLanInterfaces, setGuidedLanInterfaces] = useState<string[]>([]);
+  const [guidedCreatePolicies, setGuidedCreatePolicies] = useState(true);
+  const [guidedLanToWanRuleset, setGuidedLanToWanRuleset] = useState("LAN-TO-WAN");
+  const [guidedWanToLanRuleset, setGuidedWanToLanRuleset] = useState("WAN-TO-LAN");
 
   const sortedZoneNames = useMemo(() => Object.keys(zones).sort(), [zones]);
   const selectedZone = zones[selectedZoneName] || null;
+  const interfaceLabelByName = useMemo(() => {
+    const labels: Record<string, string> = {};
+    for (const option of interfaceOptions) {
+      labels[option.name] = option.label;
+    }
+    return labels;
+  }, [interfaceOptions]);
 
   const loadData = async () => {
     try {
       setError(null);
       setRefreshing(true);
-      const [configData, policyData] = await Promise.all([
+      const [configData, policyData, interfaceData, ethernetConfig] = await Promise.all([
         zonesService.getConfig(),
         zonesService.getPolicies(),
+        showService.getAllInterfaces().catch(() => null),
+        ethernetService.getConfig().catch(() => null),
       ]);
       setZones(configData.zones || {});
       setPolicies(policyData || []);
+
+      const interfaceNames = new Set<string>();
+      if (interfaceData?.interfaces) {
+        for (const entry of interfaceData.interfaces) {
+          const name = entry.name?.trim();
+          if (name) interfaceNames.add(name);
+        }
+      }
+      if (ethernetConfig?.interfaces) {
+        for (const entry of ethernetConfig.interfaces) {
+          const name = entry.name?.trim();
+          if (name) interfaceNames.add(name);
+        }
+      }
+
+      const descriptionByName: Record<string, string | null> = {};
+      if (ethernetConfig?.interfaces) {
+        for (const entry of ethernetConfig.interfaces) {
+          const name = entry.name?.trim();
+          if (!name) continue;
+          descriptionByName[name] = entry.description?.trim() || null;
+        }
+      }
+
+      const options: InterfaceOption[] = Array.from(interfaceNames)
+        .filter((name) => name !== "lo")
+        .sort((left, right) => left.localeCompare(right))
+        .map((name) => {
+          const description = descriptionByName[name] ?? null;
+          return {
+            name,
+            description,
+            label: description ? `${description} (${name})` : name,
+          };
+        });
+
+      setInterfaceOptions(options);
 
       const names = Object.keys(configData.zones || {}).sort();
       if (names.length === 0) {
@@ -128,6 +202,28 @@ export default function FirewallZonesPage() {
     setEditInterfaces((selectedZone.interfaces || []).join(", "));
     setEditPolicies(policyLines);
   }, [selectedZoneName, selectedZone]);
+
+  useEffect(() => {
+    if (interfaceOptions.length === 0) return;
+    const hasCurrentWan = interfaceOptions.some((option) => option.name === guidedWanInterface);
+    if (!guidedWanInterface || !hasCurrentWan) {
+      setGuidedWanInterface(interfaceOptions[0].name);
+    }
+  }, [guidedWanInterface, interfaceOptions]);
+
+  useEffect(() => {
+    if (!guidedWanInterface) return;
+    setGuidedLanInterfaces((previous) => previous.filter((name) => name !== guidedWanInterface));
+  }, [guidedWanInterface]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      setGuidedSetupUsed(window.localStorage.getItem(GUIDED_SETUP_STORAGE_KEY) === "1");
+    } catch {
+      setGuidedSetupUsed(false);
+    }
+  }, []);
 
   const parsePolicyTextarea = (raw: string): ZonePolicyUpdate[] => {
     const lines = raw
@@ -235,6 +331,67 @@ export default function FirewallZonesPage() {
     }
   };
 
+  const applyGuidedPreset = async () => {
+    if (!canEdit) return;
+    if (!guidedWanInterface.trim()) {
+      setError("Select a WAN interface for guided setup.");
+      return;
+    }
+    if (guidedLanInterfaces.length === 0) {
+      setError("Select at least one LAN interface for guided setup.");
+      return;
+    }
+    if (guidedLanInterfaces.includes(guidedWanInterface)) {
+      setError("WAN interface cannot also be in LAN interfaces.");
+      return;
+    }
+
+    const wanPolicies = guidedCreatePolicies && guidedLanToWanRuleset.trim()
+      ? [{ from_zone: "LAN", firewall_ruleset: guidedLanToWanRuleset.trim() }]
+      : [];
+    const lanPolicies = guidedCreatePolicies && guidedWanToLanRuleset.trim()
+      ? [{ from_zone: "WAN", firewall_ruleset: guidedWanToLanRuleset.trim() }]
+      : [];
+
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await zonesService.upsertZone("WAN", {
+        description: "Guided preset WAN zone",
+        default_action: "drop",
+        interfaces: [guidedWanInterface],
+        from_policies: wanPolicies,
+      });
+      await zonesService.upsertZone("LAN", {
+        description: "Guided preset LAN zone",
+        default_action: "drop",
+        interfaces: guidedLanInterfaces,
+        from_policies: lanPolicies,
+      });
+      await loadData();
+      setSelectedZoneName("WAN");
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.setItem(GUIDED_SETUP_STORAGE_KEY, "1");
+          setGuidedSetupUsed(true);
+        } catch {
+          // Ignore storage failures.
+        }
+      }
+      setGuidedWizardOpen(false);
+      setSuccess(
+        guidedCreatePolicies
+          ? "Guided WAN/LAN preset applied. Review firewall rulesets and adjust policies as needed."
+          : "Guided WAN/LAN zones applied. Add from-zone firewall policies next."
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to apply guided preset.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6 p-6">
@@ -245,10 +402,22 @@ export default function FirewallZonesPage() {
               Configure zone-based firewall boundaries and inter-zone policies.
             </p>
           </div>
-          <Button variant="outline" onClick={loadData} disabled={refreshing}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild variant="outline">
+              <Link href="/network/setup-wizard">
+                <BookOpen className="mr-2 h-4 w-4" />
+                Network Wizard
+              </Link>
+            </Button>
+            <Button onClick={() => setGuidedWizardOpen(true)}>
+              <Shield className="mr-2 h-4 w-4" />
+              {guidedSetupUsed ? "Re-run Zone Wizard" : "Zone Guided Setup"}
+            </Button>
+            <Button variant="outline" onClick={loadData} disabled={refreshing}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -290,6 +459,127 @@ export default function FirewallZonesPage() {
             {success}
           </div>
         )}
+
+        <Dialog open={guidedWizardOpen} onOpenChange={setGuidedWizardOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                Zone Guided Setup
+              </DialogTitle>
+              <DialogDescription>
+                One-time quick-start for WAN/LAN zoning. Most deployments use this once, then tune zones and policies manually.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="grid gap-4 xl:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>WAN Interface</Label>
+                  <Select value={guidedWanInterface || undefined} onValueChange={setGuidedWanInterface}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select WAN interface" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {interfaceOptions.length === 0 ? (
+                        <SelectItem value="__none" disabled>
+                          No interfaces discovered
+                        </SelectItem>
+                      ) : (
+                        interfaceOptions.map((option) => (
+                          <SelectItem key={`guided-wan-${option.name}`} value={option.name}>
+                            {option.label}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>LAN Interfaces</Label>
+                  <div className="rounded-md border p-3 max-h-[180px] overflow-y-auto space-y-2">
+                    {interfaceOptions
+                      .filter((option) => option.name !== guidedWanInterface)
+                      .map((option) => (
+                        <label
+                          key={`guided-lan-${option.name}`}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <Checkbox
+                            checked={guidedLanInterfaces.includes(option.name)}
+                            disabled={!canEdit || saving}
+                            onCheckedChange={(checked) => {
+                              setGuidedLanInterfaces((previous) => {
+                                const has = previous.includes(option.name);
+                                if (checked === true && !has) return [...previous, option.name];
+                                if (checked !== true && has) return previous.filter((name) => name !== option.name);
+                                return previous;
+                              });
+                            }}
+                          />
+                          <span>{option.label}</span>
+                        </label>
+                      ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="guided-create-policies"
+                  checked={guidedCreatePolicies}
+                  onCheckedChange={(checked) => setGuidedCreatePolicies(checked === true)}
+                  disabled={!canEdit || saving}
+                />
+                <Label htmlFor="guided-create-policies">
+                  Create WAN/LAN from-zone mappings during preset apply
+                </Label>
+              </div>
+
+              {guidedCreatePolicies && (
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>LAN -&gt; WAN Ruleset Name</Label>
+                    <Input
+                      value={guidedLanToWanRuleset}
+                      onChange={(event) => setGuidedLanToWanRuleset(event.target.value)}
+                      placeholder="LAN-TO-WAN"
+                      disabled={!canEdit || saving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>WAN -&gt; LAN Ruleset Name</Label>
+                    <Input
+                      value={guidedWanToLanRuleset}
+                      onChange={(event) => setGuidedWanToLanRuleset(event.target.value)}
+                      placeholder="WAN-TO-LAN"
+                      disabled={!canEdit || saving}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="gap-2 sm:justify-between">
+              <Button
+                variant="outline"
+                disabled={!canEdit || saving}
+                onClick={() => {
+                  setCreateZoneName("LAN");
+                  setCreateDefaultAction("drop");
+                  setCreatePolicies("WAN:WAN-TO-LAN");
+                  setGuidedWizardOpen(false);
+                }}
+              >
+                Prefill Manual Form
+              </Button>
+              <Button onClick={applyGuidedPreset} disabled={!canEdit || saving}>
+                <Plus className="mr-2 h-4 w-4" />
+                Apply WAN/LAN Preset
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid gap-4 xl:grid-cols-2">
           <Card>
@@ -482,7 +772,7 @@ export default function FirewallZonesPage() {
                           <div className="mt-1 flex flex-wrap gap-1">
                             {zone.interfaces.map((iface) => (
                               <Badge variant="secondary" key={`${zoneName}-${iface}`} className="font-mono">
-                                {iface}
+                                {interfaceLabelByName[iface] || iface}
                               </Badge>
                             ))}
                           </div>
