@@ -10,3 +10,4 @@
 - 2026-02-14: VyOS container docs show that port publishing can be used with user-defined container networks; removed backend/frontend validation that incorrectly rejected `network` + `port` combinations.
 - 2026-02-14: Store dev SSH automation material under `backend/.devdata/ssh/` (gitignored) so it persists in Docker dev where only `backend/` is bind-mounted; backend Dockerfile installs `openssh-client`.
 - 2026-02-14: SSH automation hardening: reject `.`/`..` dot-segments in any host path passed to the backend volume mkdir helper to prevent directory traversal outside `/config/containers/`.
+- 2026-02-14: Hardened `System -> Containers` UI against partial/mixed backend payloads and browser storage failures by treating list fields as best-effort arrays and wrapping localStorage access in try/catch; this avoids runtime crashes during page load.

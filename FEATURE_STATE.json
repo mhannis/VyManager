@@ -2,14 +2,15 @@
   "feature_id": "containers-automation-v1",
   "title": "Container Management Automation (Bootstrap + Install) (v1)",
   "last_updated": "2026-02-14",
-  "status": "in_review",
+  "status": "in_progress",
   "acceptance_criteria": [
     "System -> Containers shows a Setup Required screen until SSH is enabled and the VyManager automation key is installed.",
     "The Setup action is idempotent and applies: `set service ssh` and installs a public key under `system login user vyos authentication public-keys vymanager`.",
     "The Install action pulls the container image via SSH (`add container image ...`), creates missing `/config/containers/*` host paths for volumes, then commits the container configuration via the VyOS HTTPS API.",
     "Template usage does not auto-install; users can Populate, edit settings, then click Install explicitly.",
     "Container web links can be opened using a user-selected host/interface IP (default prefers private static interface addresses over the instance host).",
-    "Automated backend tests exist for bootstrap + install happy paths."
+    "Automated backend tests exist for bootstrap + install happy paths.",
+    "System -> Containers must not crash if the backend returns missing/null arrays for containers, links, ports, volumes, or environment fields."
   ],
   "assumptions": [
     "VyOS HTTPS API does not support op-mode `add` commands; SSH is allowed for automation on the target instances.",
@@ -74,6 +75,15 @@
         "DECISIONS.md"
       ],
       "notes": "Update docs + verification steps and prep PR summary."
+    },
+    {
+      "id": "T7",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/containers/page.tsx"
+      ],
+      "notes": "Added defensive array guards and localStorage safety to prevent client-side exceptions on containers page load."
     }
   ],
   "commands": {
@@ -116,4 +126,3 @@
     }
   ]
 }
-

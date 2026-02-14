@@ -1,9 +1,17 @@
-timestamp: 2026-02-13T13:40:34-05:00
-failing_command: cd /home/redhot/VyOS/VyManager/frontend && npm exec next start --hostname 0.0.0.0 --port 3000
-error_summary: Next.js treated `0.0.0.0` as a positional project directory, so startup failed. This was due to argument forwarding behavior of `npm exec`.
+timestamp: 2026-02-14T01:06:00-05:00
+failing_command: cd /home/redhot/VyOS/VyManager/frontend && npx -y -p playwright node - <<'NODE' ... require('playwright') ... NODE
+error_summary: Browser automation bootstrap failed while attempting to capture the exact containers-page runtime stack. `npx -p playwright` did not expose the module to `node` in this environment, resulting in a module resolution error.
 
 last_output:
-Invalid project directory provided, no such directory: /home/redhot/VyOS/VyManager/frontend/0.0.0.0
+Error: Cannot find module 'playwright'
+Require stack:
+- /home/redhot/VyOS/VyManager/frontend/[stdin]
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+    at Module._load (node:internal/modules/cjs/loader:1038:27)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at [stdin]:1:22
+Node.js v20.20.0
 
-suspected_cause: `npm exec` consumed/handled the flags; `0.0.0.0` reached `next start` as a positional argument.
-next_step: Start via `npm run start -- --hostname 0.0.0.0 --port 3000` (or pass args after `--` when using `npm exec`).
+suspected_cause: `npx -p playwright node ...` did not inject the package into Node's module resolution path for this shell invocation.
+next_step: Continue with deterministic static hardening + compile/lint/build verification, then validate live page after frontend restart.

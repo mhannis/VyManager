@@ -98,7 +98,7 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Keep endpoints best-effort for `show` parsing: return structured data + `warnings[]` rather than failing hard when output formats vary.
 
 ## Current Objective
-- Ship Container Management automation (bootstrap + install + link host selection) so Pi-hole and other templates install reliably.
+- Stabilize `System -> Containers` load path (client-side exception) after containers automation rollout.
 
 ## Current Feature Spec
 - **Container Management Automation (v1)**
@@ -117,7 +117,7 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1` (based on `origin/dev`)
-- Worktree status: clean
+- Worktree status: dirty (`frontend/src/app/system/containers/page.tsx`)
 - Host toolchain (dev box): node `v20.20.0`, npm `10.8.2`, python `3.12.3`.
 - Dev services are typically run in `tmux`:
   - `vm-api`: backend (`uvicorn` on `0.0.0.0:8000`)
@@ -131,6 +131,12 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
     - `2764416` Containers UI: bootstrap gate, install button, link host selection
     - `b0601d4` SSH: block path traversal for container volume mkdir
     - `74e7060` Containers UI: prefer non-management IP for link host default
+  - Containers crash hardening (pending commit):
+    - `frontend/src/app/system/containers/page.tsx`
+    - Defensive handling for missing/malformed arrays in container payloads
+    - LocalStorage access wrapped in try/catch to avoid runtime exceptions
+    - Verified with `npx tsc --noEmit`, `npm run -s lint` (warnings only), `npm run -s build`
+    - Restarted frontend in tmux session `vm-ui` with `npm run -s start -- --hostname 0.0.0.0 --port 3000`
   - Orchestrator memory files: commits `ccbe26e`, `0e2cf5a` (adds `ORCHESTRATOR.md`, `PROJECT_MEMORY.md`, `CURRENT_FEATURE.md`, `DECISIONS.md`)
  - Unfinished work:
    - DHCP fixes are stashed locally (`git stash list`) and not yet on a branch/PR.
@@ -148,3 +154,4 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Backend uses session-based active instance; most endpoints fail with `{error:\"No active instance\"}` until connected.
 - For fast page loads, frontend `apiClient` dedupes in-flight GET requests and caches GET responses briefly (default 4s).
 - If a newly-added dashboard card doesn’t appear in the “Add Card” list, verify you’re not running `vymanager-prod` beta images; switch to `container/vymanager-dev/env-file-docker-compose.yml` or rebuild your own images.
+- Containers page should now tolerate mixed backend versions or partial payloads by treating `containers/ports/links/environment/volumes` as best-effort arrays instead of assuming strict shape.

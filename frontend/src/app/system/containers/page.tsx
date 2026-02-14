@@ -23,6 +23,7 @@ import {
   containersService,
   type ContainerBootstrapStatusResponse,
   type ContainerEnvironmentVar,
+  type ContainerWebLink,
   type ContainerPortMapping,
   type ContainerSummary,
   type ContainerUpsertRequest,
@@ -304,6 +305,10 @@ function buildWebUrl(host: string, sourcePort: number, destinationPort: number):
   return isDefaultPort ? `${scheme}://${host}` : `${scheme}://${host}:${port}`;
 }
 
+function ensureArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 function toDraft(container: ContainerSummary): ContainerDraft {
   return {
     name: container.name,
@@ -318,9 +323,9 @@ function toDraft(container: ContainerSummary): ContainerDraft {
     allow_host_networks: container.allow_host_networks,
     network: container.network ?? "",
     network_address: container.network_address ?? "",
-    environment: container.environment.map((item) => ({ ...item })),
-    ports: container.ports.map((item) => ({ ...item })),
-    volumes: container.volumes.map((item) => ({ ...item })),
+    environment: ensureArray<ContainerEnvironmentVar>(container.environment).map((item) => ({ ...item })),
+    ports: ensureArray<ContainerPortMapping>(container.ports).map((item) => ({ ...item })),
+    volumes: ensureArray<ContainerVolumeMapping>(container.volumes).map((item) => ({ ...item })),
   };
 }
 
@@ -656,7 +661,11 @@ export default function SystemContainersPage() {
 
   const selectedContainer = useMemo(() => {
     if (!overview || !selectedContainerName) return null;
-    return overview.containers.find((container) => container.name === selectedContainerName) ?? null;
+    return (
+      ensureArray<ContainerSummary>(overview.containers).find(
+        (container) => container.name === selectedContainerName
+      ) ?? null
+    );
   }, [overview, selectedContainerName]);
 
   const selectedLanSegment = useMemo(() => {
@@ -777,7 +786,12 @@ export default function SystemContainersPage() {
         return previous;
       }
 
-      const stored = window.localStorage.getItem(storageKey);
+      let stored: string | null = null;
+      try {
+        stored = window.localStorage.getItem(storageKey);
+      } catch {
+        stored = null;
+      }
       if (stored && linkHostOptions.some((option) => option.id === stored)) {
         return stored;
       }
@@ -798,7 +812,11 @@ export default function SystemContainersPage() {
     const instanceHost = overview?.connection_host?.trim();
     if (!instanceHost || !selectedLinkHostId) return;
     const storageKey = `vymanager.containers.linkHost:${instanceHost}`;
-    window.localStorage.setItem(storageKey, selectedLinkHostId);
+    try {
+      window.localStorage.setItem(storageKey, selectedLinkHostId);
+    } catch {
+      // Ignore storage failures; selection still works for this session.
+    }
   }, [overview?.connection_host, selectedLinkHostId]);
 
   useEffect(() => {
@@ -1026,6 +1044,7 @@ export default function SystemContainersPage() {
   const containerAutomationReady = Boolean(
     bootstrapStatus?.ssh_enabled && bootstrapStatus?.ssh_key_installed
   );
+  const containers = ensureArray<ContainerSummary>(overview?.containers);
 
   if (loadingBootstrap) {
     return (
@@ -1226,14 +1245,16 @@ export default function SystemContainersPage() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Loading containers...
                 </div>
-              ) : !overview || overview.containers.length === 0 ? (
+              ) : !overview || containers.length === 0 ? (
                 <div className="text-sm text-muted-foreground">
                   No containers configured yet.
                 </div>
               ) : (
-                overview.containers.map((container) => {
+                containers.map((container) => {
                   const isSelected = selectedContainerName === container.name;
                   const busy = actionTarget === container.name;
+                  const containerPorts = ensureArray<ContainerPortMapping>(container.ports);
+                  const containerLinks = ensureArray<ContainerWebLink>(container.links);
                   return (
                     <div
                       key={container.name}
@@ -1261,9 +1282,9 @@ export default function SystemContainersPage() {
                         <p className="text-xs text-muted-foreground">{container.description}</p>
                       )}
 
-                      {container.ports.length > 0 && (
+                      {containerPorts.length > 0 && (
                         <div className="flex flex-wrap gap-1">
-                          {container.ports.map((port) => (
+                          {containerPorts.map((port) => (
                             <Badge key={port.name} variant="secondary" className="text-xs">
                               {`${port.name}: ${port.source}->${port.destination}/${port.protocol}`}
                             </Badge>
@@ -1271,9 +1292,9 @@ export default function SystemContainersPage() {
                         </div>
                       )}
 
-                      {container.links.length > 0 && (
+                      {containerLinks.length > 0 && (
                         <div className="flex flex-wrap gap-2">
-                          {container.links.map((link) => (
+                          {containerLinks.map((link) => (
                             <a
                               key={`${container.name}-${link.label}-${link.url}`}
                               href={
