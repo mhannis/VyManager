@@ -3,7 +3,7 @@ status: done
 title: VPN slice - RSA Keys
 branch: feature/containers-automation-v1
 commits:
-  - uncommitted
+  - 4b855db
 notes:
   - Added backend wrapper endpoints for `/vyos/vpn-rsa-keys`.
   - Added form-driven page at `/vpn/rsa-keys` to manage RSA key aliases and key material.
