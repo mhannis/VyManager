@@ -55,49 +55,63 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 
 ## Current Objective
 - Continue services-domain parity with form-driven pages (no free-form CLI input).
-- Completed this cycle: implemented `HTTP API`, `SNMP`, and `TFTP Server` service tabs with backend service wrappers and scoped batch writes.
-- Completed this cycle: expanded runtime/browser smoke defaults to include the new service tabs.
-- Completed this cycle: regenerated coverage artifacts after improving service-wrapper token detection.
-- Next: continue services-domain backlog reduction (remaining partials: 11).
+- Completed this cycle: implemented additional service tabs for `Broadcast Relay`, `Conntrack Sync`, `Console Server`, `Salt Minion`, and `Suricata`.
+- Completed this cycle: added backend wrappers and tests for the new services and expanded smoke coverage routes.
+- Completed this cycle: regenerated coverage artifacts; services domain improved to `17 implemented / 6 partial / 0 not_started`.
+- Next: continue services-domain backlog reduction on remaining partial pages.
 
 ## Current Feature Spec
-Feature: **Services slice: HTTPS API + SNMP + TFTP Server**
+Feature: **Services slice batch 2: Broadcast Relay + Conntrack Sync + Console Server + Salt Minion + Suricata**
 
 Acceptance criteria:
 - Backend exposes dedicated wrappers:
-  - `/vyos/service-https/*`
-  - `/vyos/service-snmp/*`
-  - `/vyos/service-tftp-server/*`
-- System Services page has form-driven tabs for:
-  - HTTP API listener/config
-  - SNMP v2 communities/traps/listeners
-  - TFTP server directory/listeners/upload toggle
-- Sidebar `Services` navigation includes new entries and remains A-Z ordered.
+  - `/vyos/service-broadcast-relay/*`
+  - `/vyos/service-conntrack-sync/*`
+  - `/vyos/service-console-server/*`
+  - `/vyos/service-salt-minion/*`
+  - `/vyos/service-suricata/*`
+- System Services page has form-driven tabs for all five service domains.
+- Sidebar `Services` navigation includes the new entries and remains A-Z ordered.
 - End-to-end validation (`pytest`, `tsc`, `build`, restart, runtime smoke, browser smoke) passes.
-- Coverage artifacts reflect progress (`services` improved from 9/14/0 to 12/11/0 implemented/partial/not_started).
+- Coverage artifacts reflect progress (`services` improved from 12/11/0 to 17/6/0 implemented/partial/not_started).
 
 Assumptions:
-- SNMPv3 advanced options (users/groups/views/script extensions) remain a follow-up slice.
+- Advanced option coverage for several services (for example, Suricata logging and conntrack helper edge cases) remains a follow-up slice.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: services slice implemented in working tree (not yet committed in this cycle).
+- Status: services batch 2 implemented in working tree (not yet committed in this cycle).
 - Working tree is dirty with unrelated pre-existing changes outside this hotfix.
 
 ### Files Touched This Cycle (hotfix-owned)
 - `backend/app.py`
+- `backend/routers/broadcast_relay_service/__init__.py`
+- `backend/routers/broadcast_relay_service/broadcast_relay_service.py`
+- `backend/routers/conntrack_sync_service/__init__.py`
+- `backend/routers/conntrack_sync_service/conntrack_sync_service.py`
 - `backend/routers/https_service/__init__.py`
 - `backend/routers/https_service/https_service.py`
 - `backend/routers/snmp_service/__init__.py`
 - `backend/routers/snmp_service/snmp_service.py`
 - `backend/routers/tftp_server_service/__init__.py`
 - `backend/routers/tftp_server_service/tftp_server_service.py`
+- `backend/routers/console_server_service/__init__.py`
+- `backend/routers/console_server_service/console_server_service.py`
+- `backend/routers/salt_minion_service/__init__.py`
+- `backend/routers/salt_minion_service/salt_minion_service.py`
+- `backend/routers/suricata_service/__init__.py`
+- `backend/routers/suricata_service/suricata_service.py`
 - `backend/tests/test_service_wrapper_capabilities.py`
 - `frontend/src/lib/api/service-wrappers.ts`
+- `frontend/src/components/system/BroadcastRelayServiceTab.tsx`
+- `frontend/src/components/system/ConntrackSyncServiceTab.tsx`
+- `frontend/src/components/system/ConsoleServerServiceTab.tsx`
 - `frontend/src/components/system/serviceTabHelpers.ts`
 - `frontend/src/components/system/HttpsServiceTab.tsx`
+- `frontend/src/components/system/SaltMinionServiceTab.tsx`
 - `frontend/src/components/system/SnmpServiceTab.tsx`
+- `frontend/src/components/system/SuricataServiceTab.tsx`
 - `frontend/src/components/system/TftpServiceTab.tsx`
 - `frontend/src/app/system/services/page.tsx`
 - `frontend/src/components/layout/Sidebar.tsx`
@@ -112,7 +126,7 @@ Assumptions:
 - `PARITY_BACKLOG.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_service_wrapper_capabilities.py tests/test_app.py` -> pass (`25 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_service_wrapper_capabilities.py tests/test_app.py` -> pass (`40 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s build` -> pass
 - Restarted runtime API/UI sessions and verified listeners:
@@ -129,10 +143,11 @@ Assumptions:
 - Frontend lint warning debt remains high outside this slice.
 - Browser smoke currently depends on host-specific Playwright shared libs path; this should be standardized in dev bootstrap.
 - SNMPv3 configuration and HTTPS GraphQL/certificate controls are not exposed yet.
+- PPPoE/IPoE/Monitoring/Webproxy/Event-Handler remain unimplemented in services domain.
 
 ## TODO Backlog (next queue)
 - Continue services parity slices with robust form-first UX.
-- Candidates next: `broadcast-relay`, `conntrack-sync`, `console-server`, `eventhandler`, `salt-minion`.
+- Candidates next: `eventhandler`, `monitoring`, `webproxy`, `pppoe-server`, `ipoe-server`, `service index`.
 - For each new slice: keep runtime gate sequence mandatory (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
@@ -162,3 +177,6 @@ Assumptions:
 - Added service-wrapper routers for `https`, `snmp`, and `tftp-server`; wrappers enforce command scope under their exact `service <name>` trees.
 - Added form-driven service tabs for HTTP API, SNMP, and TFTP under `System -> Services`; these pages do not expose free-form CLI input.
 - Coverage crawler now recognizes service-wrapper naming conventions (`<service>_service` and `service_<service>`) so matrix status reflects backend support for service pages.
+- Added service-wrapper routers and form tabs for `broadcast-relay`, `conntrack-sync`, `console-server`, `salt-minion`, and `suricata`.
+- Services sidebar and tab-strip now include these new service pages while preserving A-Z ordering.
+- Smoke route defaults were expanded again to directly probe each newly added service tab route in single-service mode.

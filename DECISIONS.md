@@ -96,3 +96,6 @@
 - 2026-02-14: Added service-wrapper routers for `https`, `snmp`, and `tftp-server` using the existing thin `build_service_router(...)` abstraction; this preserves API contract style while extending services-domain coverage.
 - 2026-02-14: Implemented form-first service tabs for HTTP API, SNMP, and TFTP under `/system/services` and avoided free-form CLI input for these domains.
 - 2026-02-14: Coverage crawler now treats service wrapper naming patterns (`<service>_service` and `service_<service>`) as backend signals, allowing service docs pages like SNMP/HTTPS/TFTP to move from `FRONTEND_ONLY` to `DETECTED`.
+- 2026-02-14: Added service-wrapper routers for `broadcast-relay`, `conntrack-sync`, `console-server`, `salt-minion`, and `suricata` using the same thin wrapper pattern and permission model.
+- 2026-02-14: Added form-first service tabs for Broadcast Relay, Conntrack Sync, Console Server, Salt Minion, and Suricata under `/system/services` with no free-form CLI text entry.
+- 2026-02-14: Expanded smoke gates to include all new service tabs in single-view routes to catch service-page runtime regressions before handoff.

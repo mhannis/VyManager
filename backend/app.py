@@ -62,6 +62,11 @@ from routers.mdns import mdns as mdns_service_router
 from routers.https_service import https_service as https_service_router
 from routers.snmp_service import snmp_service as snmp_service_router
 from routers.tftp_server_service import tftp_server_service as tftp_server_service_router
+from routers.console_server_service import console_server_service as console_server_service_router
+from routers.salt_minion_service import salt_minion_service as salt_minion_service_router
+from routers.suricata_service import suricata_service as suricata_service_router
+from routers.broadcast_relay_service import broadcast_relay_service as broadcast_relay_service_router
+from routers.conntrack_sync_service import conntrack_sync_service as conntrack_sync_service_router
 from routers import system
 from routers import power as power_router
 from routers.config import config as config_router
@@ -330,6 +335,11 @@ app.include_router(mdns_service_router.router)
 app.include_router(https_service_router.router)
 app.include_router(snmp_service_router.router)
 app.include_router(tftp_server_service_router.router)
+app.include_router(console_server_service_router.router)
+app.include_router(salt_minion_service_router.router)
+app.include_router(suricata_service_router.router)
+app.include_router(broadcast_relay_service_router.router)
+app.include_router(conntrack_sync_service_router.router)
 app.include_router(system.router)
 app.include_router(power_router.router)
 app.include_router(config_router.router)

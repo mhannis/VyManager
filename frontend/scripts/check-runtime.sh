@@ -21,8 +21,13 @@ critical_routes=(
   "/routing/unicast-protocols/openfabric"
   "/routing/infrastructure/mpls"
   "/routing/multicast/igmp-proxy"
+  "/system/services?tab=broadcast-relay&view=single"
+  "/system/services?tab=console-server&view=single"
+  "/system/services?tab=conntrack-sync&view=single"
   "/system/services?tab=https-api&view=single"
+  "/system/services?tab=salt-minion&view=single"
   "/system/services?tab=snmp&view=single"
+  "/system/services?tab=suricata&view=single"
   "/system/services?tab=tftp-server&view=single"
   "/services/dhcp-server"
 )

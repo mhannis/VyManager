@@ -1,5 +1,5 @@
 {
-  "source_matrix_generated_at": "2026-02-14T21:47:57Z",
+  "source_matrix_generated_at": "2026-02-14T22:04:54Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -3591,8 +3591,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/broadcast-relay.html",
       "cli_scope": "service broadcast relay",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -3611,12 +3611,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -3647,12 +3652,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -3663,8 +3673,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/conntrack-sync.html",
       "cli_scope": "service conntrack sync",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -3683,12 +3693,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -3699,8 +3714,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/console-server.html",
       "cli_scope": "service console server",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -3719,12 +3734,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -3755,12 +3775,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -3791,12 +3816,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -3827,12 +3857,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -3863,12 +3898,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -3899,12 +3939,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -3935,12 +3980,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -3971,12 +4021,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4007,12 +4062,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4043,12 +4103,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4079,12 +4144,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4115,12 +4185,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4151,12 +4226,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4187,12 +4267,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4203,8 +4288,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/salt-minion.html",
       "cli_scope": "service salt minion",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -4223,12 +4308,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4259,12 +4349,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4295,12 +4390,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4311,8 +4411,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/suricata.html",
       "cli_scope": "service suricata",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -4331,12 +4431,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4367,12 +4472,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4403,12 +4513,17 @@
           "frontend/src/components/services/EditDHCPServerModal.tsx",
           "frontend/src/components/services/EditRangeModal.tsx",
           "frontend/src/components/services/EditStaticMappingModal.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
           "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4435,6 +4550,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4442,8 +4560,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4470,6 +4590,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4477,8 +4600,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4505,6 +4630,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4512,8 +4640,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4540,6 +4670,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4547,8 +4680,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4575,6 +4710,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4582,8 +4720,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4610,6 +4750,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4617,8 +4760,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4645,6 +4790,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4652,8 +4800,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4680,6 +4830,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4687,8 +4840,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4715,6 +4870,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4722,8 +4880,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4750,6 +4910,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4757,8 +4920,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4785,6 +4950,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4792,8 +4960,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4820,6 +4990,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4827,8 +5000,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4855,6 +5030,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4862,8 +5040,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4890,6 +5070,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4897,8 +5080,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4925,6 +5110,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4932,8 +5120,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4960,6 +5150,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -4967,8 +5160,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -4995,6 +5190,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -5002,8 +5200,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -5030,6 +5230,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -5037,8 +5240,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -5065,6 +5270,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -5072,8 +5280,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -5100,6 +5310,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -5107,8 +5320,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -5135,6 +5350,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -5142,8 +5360,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
@@ -5170,6 +5390,9 @@
           "frontend/src/app/system/options/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
+          "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+          "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+          "frontend/src/components/system/ConsoleServerServiceTab.tsx",
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
@@ -5177,8 +5400,10 @@
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
+          "frontend/src/components/system/SaltMinionServiceTab.tsx",
           "frontend/src/components/system/SnmpServiceTab.tsx",
           "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/SuricataServiceTab.tsx",
           "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }

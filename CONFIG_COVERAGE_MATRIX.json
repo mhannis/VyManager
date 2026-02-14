@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-14T21:47:57Z",
+  "generated_at": "2026-02-14T22:04:54Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -637,9 +637,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/broadcast-relay.html",
       "title": "UDP Broadcast Relay",
       "cli_scope": "service broadcast relay",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 72,
@@ -655,18 +655,18 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/conntrack-sync.html",
       "title": "Conntrack Sync",
       "cli_scope": "service conntrack sync",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 74,
       "url": "https://docs.vyos.io/en/latest/configuration/service/console-server.html",
       "title": "Console Server",
       "cli_scope": "service console server",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 75,
@@ -790,9 +790,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/salt-minion.html",
       "title": "Salt-Minion",
       "cli_scope": "service salt minion",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 89,
@@ -817,9 +817,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/suricata.html",
       "title": "suricata",
       "cli_scope": "service suricata",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 92,

@@ -61,6 +61,80 @@ class ServiceWrappersApi {
   async configureTftp(operations: string[]): Promise<ServiceWrapperBatchResponse> {
     return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-tftp-server/batch", { operations });
   }
+
+  async getConsoleServerCapabilities(): Promise<ServiceWrapperCapabilities> {
+    return apiClient.get<ServiceWrapperCapabilities>("/vyos/service-console-server/capabilities");
+  }
+
+  async getConsoleServerConfig(refresh: boolean = false): Promise<ServiceWrapperConfigResponse> {
+    return apiClient.get<ServiceWrapperConfigResponse>("/vyos/service-console-server/config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async configureConsoleServer(operations: string[]): Promise<ServiceWrapperBatchResponse> {
+    return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-console-server/batch", { operations });
+  }
+
+  async getSaltMinionCapabilities(): Promise<ServiceWrapperCapabilities> {
+    return apiClient.get<ServiceWrapperCapabilities>("/vyos/service-salt-minion/capabilities");
+  }
+
+  async getSaltMinionConfig(refresh: boolean = false): Promise<ServiceWrapperConfigResponse> {
+    return apiClient.get<ServiceWrapperConfigResponse>("/vyos/service-salt-minion/config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async configureSaltMinion(operations: string[]): Promise<ServiceWrapperBatchResponse> {
+    return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-salt-minion/batch", { operations });
+  }
+
+  async getSuricataCapabilities(): Promise<ServiceWrapperCapabilities> {
+    return apiClient.get<ServiceWrapperCapabilities>("/vyos/service-suricata/capabilities");
+  }
+
+  async getSuricataConfig(refresh: boolean = false): Promise<ServiceWrapperConfigResponse> {
+    return apiClient.get<ServiceWrapperConfigResponse>("/vyos/service-suricata/config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async configureSuricata(operations: string[]): Promise<ServiceWrapperBatchResponse> {
+    return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-suricata/batch", { operations });
+  }
+
+  async getBroadcastRelayCapabilities(): Promise<ServiceWrapperCapabilities> {
+    return apiClient.get<ServiceWrapperCapabilities>("/vyos/service-broadcast-relay/capabilities");
+  }
+
+  async getBroadcastRelayConfig(refresh: boolean = false): Promise<ServiceWrapperConfigResponse> {
+    return apiClient.get<ServiceWrapperConfigResponse>("/vyos/service-broadcast-relay/config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async configureBroadcastRelay(operations: string[]): Promise<ServiceWrapperBatchResponse> {
+    return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-broadcast-relay/batch", {
+      operations,
+    });
+  }
+
+  async getConntrackSyncCapabilities(): Promise<ServiceWrapperCapabilities> {
+    return apiClient.get<ServiceWrapperCapabilities>("/vyos/service-conntrack-sync/capabilities");
+  }
+
+  async getConntrackSyncConfig(refresh: boolean = false): Promise<ServiceWrapperConfigResponse> {
+    return apiClient.get<ServiceWrapperConfigResponse>("/vyos/service-conntrack-sync/config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async configureConntrackSync(operations: string[]): Promise<ServiceWrapperBatchResponse> {
+    return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-conntrack-sync/batch", {
+      operations,
+    });
+  }
 }
 
 export const serviceWrappersApi = new ServiceWrappersApi();

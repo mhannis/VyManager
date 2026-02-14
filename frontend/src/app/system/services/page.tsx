@@ -69,6 +69,11 @@ import { DhcpRelayServiceTab } from "@/components/system/DhcpRelayServiceTab";
 import { HttpsServiceTab } from "@/components/system/HttpsServiceTab";
 import { SnmpServiceTab } from "@/components/system/SnmpServiceTab";
 import { TftpServiceTab } from "@/components/system/TftpServiceTab";
+import { ConsoleServerServiceTab } from "@/components/system/ConsoleServerServiceTab";
+import { SaltMinionServiceTab } from "@/components/system/SaltMinionServiceTab";
+import { SuricataServiceTab } from "@/components/system/SuricataServiceTab";
+import { BroadcastRelayServiceTab } from "@/components/system/BroadcastRelayServiceTab";
+import { ConntrackSyncServiceTab } from "@/components/system/ConntrackSyncServiceTab";
 import { formatInterfaceDisplayName } from "@/lib/utils";
 
 const EMPTY_SERVER: NtpServerConfig = {
@@ -90,12 +95,17 @@ const LLDP_MODE_OPTIONS: { value: LldpInterfaceMode; label: string }[] = [
 ];
 
 type ServiceTab =
+  | "broadcast-relay"
+  | "console-server"
+  | "conntrack-sync"
   | "ntp"
   | "lldp"
   | "mdns"
   | "ssh"
+  | "salt-minion"
   | "https-api"
   | "snmp"
+  | "suricata"
   | "tftp-server"
   | "dns-forwarder"
   | "dns-resolver"
@@ -107,8 +117,13 @@ const SERVICE_TAB_VALUES: ServiceTab[] = [
   "lldp",
   "mdns",
   "ssh",
+  "broadcast-relay",
+  "console-server",
+  "conntrack-sync",
+  "salt-minion",
   "https-api",
   "snmp",
+  "suricata",
   "tftp-server",
   "dns-forwarder",
   "dns-resolver",
@@ -121,8 +136,13 @@ const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
   lldp: "LLDP",
   mdns: "mDNS Repeater",
   ssh: "SSH",
+  "broadcast-relay": "Broadcast Relay",
+  "console-server": "Console Server",
+  "conntrack-sync": "Conntrack Sync",
+  "salt-minion": "Salt Minion",
   "https-api": "HTTP API",
   snmp: "SNMP",
+  suricata: "Suricata",
   "tftp-server": "TFTP Server",
   "dns-forwarder": "DNS Forwarder",
   "dns-resolver": "DNS Resolver",
@@ -717,6 +737,9 @@ function SystemServicesPageContent() {
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           {!singleServiceView && (
             <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
+              <TabsTrigger value="broadcast-relay">Broadcast Relay</TabsTrigger>
+              <TabsTrigger value="console-server">Console Server</TabsTrigger>
+              <TabsTrigger value="conntrack-sync">Conntrack Sync</TabsTrigger>
               <TabsTrigger value="dhcp-relay">DHCP Relay</TabsTrigger>
               <TabsTrigger value="dns-forwarder">DNS Forwarder</TabsTrigger>
               <TabsTrigger value="dns-resolver">DNS Resolver</TabsTrigger>
@@ -725,8 +748,10 @@ function SystemServicesPageContent() {
               <TabsTrigger value="lldp">LLDP</TabsTrigger>
               <TabsTrigger value="mdns">mDNS Repeater</TabsTrigger>
               <TabsTrigger value="ntp">NTP</TabsTrigger>
+              <TabsTrigger value="salt-minion">Salt Minion</TabsTrigger>
               <TabsTrigger value="snmp">SNMP</TabsTrigger>
               <TabsTrigger value="ssh">SSH</TabsTrigger>
+              <TabsTrigger value="suricata">Suricata</TabsTrigger>
               <TabsTrigger value="tftp-server">TFTP Server</TabsTrigger>
             </TabsList>
           )}
@@ -1576,10 +1601,42 @@ function SystemServicesPageContent() {
             />
           </TabsContent>
 
+          <TabsContent value="console-server" className="space-y-6">
+            <ConsoleServerServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "console-server"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
+          <TabsContent value="broadcast-relay" className="space-y-6">
+            <BroadcastRelayServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "broadcast-relay"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
+          <TabsContent value="conntrack-sync" className="space-y-6">
+            <ConntrackSyncServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "conntrack-sync"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
           <TabsContent value="snmp" className="space-y-6">
             <SnmpServiceTab
               canEdit={canEditSystem}
               active={activeTab === "snmp"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
+          <TabsContent value="salt-minion" className="space-y-6">
+            <SaltMinionServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "salt-minion"}
               refreshNonce={serviceRefreshNonce}
             />
           </TabsContent>
@@ -1599,6 +1656,14 @@ function SystemServicesPageContent() {
             <TftpServiceTab
               canEdit={canEditSystem}
               active={activeTab === "tftp-server"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
+          <TabsContent value="suricata" className="space-y-6">
+            <SuricataServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "suricata"}
               refreshNonce={serviceRefreshNonce}
             />
           </TabsContent>

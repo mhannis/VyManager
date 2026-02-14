@@ -11,6 +11,11 @@ import routers.mdns.mdns as mdns_router
 import routers.https_service.https_service as https_router
 import routers.snmp_service.snmp_service as snmp_router
 import routers.tftp_server_service.tftp_server_service as tftp_router
+import routers.console_server_service.console_server_service as console_server_router
+import routers.salt_minion_service.salt_minion_service as salt_minion_router
+import routers.suricata_service.suricata_service as suricata_router
+import routers.broadcast_relay_service.broadcast_relay_service as broadcast_relay_router
+import routers.conntrack_sync_service.conntrack_sync_service as conntrack_sync_router
 import routers._service_wrapper as service_wrapper_module
 
 
@@ -23,6 +28,11 @@ ROUTER_MODULES = (
     https_router,
     snmp_router,
     tftp_router,
+    console_server_router,
+    salt_minion_router,
+    suricata_router,
+    broadcast_relay_router,
+    conntrack_sync_router,
 )
 
 
@@ -71,6 +81,33 @@ class DummyService:
                 "tftp-server": {
                     "directory": "/config/tftpboot",
                 },
+                "console-server": {
+                    "device": {
+                        "ttyUSB0": {
+                            "alias": "core-switch",
+                        }
+                    }
+                },
+                "salt-minion": {
+                    "master": "192.168.10.5",
+                },
+                "suricata": {
+                    "interface": {
+                        "eth1": {},
+                    }
+                },
+                "broadcast-relay": {
+                    "id": {
+                        "1": {
+                            "port": {
+                                "1900": {},
+                            },
+                        },
+                    },
+                },
+                "conntrack-sync": {
+                    "listen-address": "192.0.2.10",
+                },
             }
         }
 
@@ -93,6 +130,11 @@ def app():
     app.include_router(https_router.router)
     app.include_router(snmp_router.router)
     app.include_router(tftp_router.router)
+    app.include_router(console_server_router.router)
+    app.include_router(salt_minion_router.router)
+    app.include_router(suricata_router.router)
+    app.include_router(broadcast_relay_router.router)
+    app.include_router(conntrack_sync_router.router)
     return app
 
 
@@ -127,6 +169,11 @@ def mock_service(monkeypatch):
         "/vyos/service-https/capabilities",
         "/vyos/service-snmp/capabilities",
         "/vyos/service-tftp-server/capabilities",
+        "/vyos/service-console-server/capabilities",
+        "/vyos/service-salt-minion/capabilities",
+        "/vyos/service-suricata/capabilities",
+        "/vyos/service-broadcast-relay/capabilities",
+        "/vyos/service-conntrack-sync/capabilities",
     ],
 )
 def test_service_wrapper_capabilities_payload(app, allow_permissions, mock_service, path):
@@ -151,6 +198,11 @@ def test_service_wrapper_capabilities_payload(app, allow_permissions, mock_servi
         ("/vyos/service-https/config", "port"),
         ("/vyos/service-snmp/config", "community"),
         ("/vyos/service-tftp-server/config", "directory"),
+        ("/vyos/service-console-server/config", "device"),
+        ("/vyos/service-salt-minion/config", "master"),
+        ("/vyos/service-suricata/config", "interface"),
+        ("/vyos/service-broadcast-relay/config", "id"),
+        ("/vyos/service-conntrack-sync/config", "listen-address"),
     ],
 )
 def test_service_wrapper_config_payload(app, allow_permissions, mock_service, path, expected_marker):
@@ -205,6 +257,31 @@ def test_service_wrapper_config_payload(app, allow_permissions, mock_service, pa
             "/vyos/service-tftp-server/batch",
             "set service tftp-server directory /config/tftp",
             "set service snmp location dc1",
+        ),
+        (
+            "/vyos/service-console-server/batch",
+            "set service console-server device ttyUSB0 speed 9600",
+            "set service suricata interface eth1",
+        ),
+        (
+            "/vyos/service-salt-minion/batch",
+            "set service salt-minion master 192.0.2.10",
+            "set service console-server device ttyUSB0 speed 9600",
+        ),
+        (
+            "/vyos/service-suricata/batch",
+            "set service suricata interface eth2",
+            "set service salt-minion master 192.0.2.2",
+        ),
+        (
+            "/vyos/service-broadcast-relay/batch",
+            "set service broadcast-relay id 1 port 1900",
+            "set service conntrack-sync listen-address 192.0.2.2",
+        ),
+        (
+            "/vyos/service-conntrack-sync/batch",
+            "set service conntrack-sync listen-address 192.0.2.10",
+            "set service broadcast-relay id 1 port 1900",
         ),
     ],
 )

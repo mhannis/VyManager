@@ -1,14 +1,14 @@
 # CONFIG_COVERAGE_MATRIX
 
-Generated: `2026-02-14T21:47:57Z`
+Generated: `2026-02-14T22:04:54Z`
 Source: `https://docs.vyos.io/en/latest/configuration/`
 
 ## Status Summary
 
 - Total documentation pages discovered: **129**
-- `DETECTED` (backend + frontend signal): **101**
+- `DETECTED` (backend + frontend signal): **106**
 - `BACKEND_ONLY`: **0**
-- `FRONTEND_ONLY`: **24**
+- `FRONTEND_ONLY`: **19**
 - `MISSING`: **4**
 
 ## Notes
@@ -91,10 +91,10 @@ Source: `https://docs.vyos.io/en/latest/configuration/`
 | 68 | [RPKI](https://docs.vyos.io/en/latest/configuration/protocols/rpki.html) | `protocols rpki` | Y | Y | `DETECTED` |
 | 69 | [Segment Routing](https://docs.vyos.io/en/latest/configuration/protocols/segment-routing.html) | `protocols segment routing` | Y | Y | `DETECTED` |
 | 70 | [Static](https://docs.vyos.io/en/latest/configuration/protocols/static.html) | `protocols static` | Y | Y | `DETECTED` |
-| 71 | [UDP Broadcast Relay](https://docs.vyos.io/en/latest/configuration/service/broadcast-relay.html) | `service broadcast relay` | N | Y | `FRONTEND_ONLY` |
+| 71 | [UDP Broadcast Relay](https://docs.vyos.io/en/latest/configuration/service/broadcast-relay.html) | `service broadcast relay` | Y | Y | `DETECTED` |
 | 72 | [Config Sync](https://docs.vyos.io/en/latest/configuration/service/config-sync.html) | `service config sync` | Y | Y | `DETECTED` |
-| 73 | [Conntrack Sync](https://docs.vyos.io/en/latest/configuration/service/conntrack-sync.html) | `service conntrack sync` | N | Y | `FRONTEND_ONLY` |
-| 74 | [Console Server](https://docs.vyos.io/en/latest/configuration/service/console-server.html) | `service console server` | N | Y | `FRONTEND_ONLY` |
+| 73 | [Conntrack Sync](https://docs.vyos.io/en/latest/configuration/service/conntrack-sync.html) | `service conntrack sync` | Y | Y | `DETECTED` |
+| 74 | [Console Server](https://docs.vyos.io/en/latest/configuration/service/console-server.html) | `service console server` | Y | Y | `DETECTED` |
 | 75 | [DHCP Relay](https://docs.vyos.io/en/latest/configuration/service/dhcp-relay.html) | `service dhcp relay` | Y | Y | `DETECTED` |
 | 76 | [DHCP Server](https://docs.vyos.io/en/latest/configuration/service/dhcp-server.html) | `service dhcp server` | Y | Y | `DETECTED` |
 | 77 | [DNS Forwarding](https://docs.vyos.io/en/latest/configuration/service/dns.html) | `service dns` | Y | Y | `DETECTED` |
@@ -108,10 +108,10 @@ Source: `https://docs.vyos.io/en/latest/configuration/`
 | 85 | [NTP](https://docs.vyos.io/en/latest/configuration/service/ntp.html) | `service ntp` | Y | Y | `DETECTED` |
 | 86 | [PPPoE Server](https://docs.vyos.io/en/latest/configuration/service/pppoe-server.html) | `service pppoe server` | N | Y | `FRONTEND_ONLY` |
 | 87 | [Router Advertisements](https://docs.vyos.io/en/latest/configuration/service/router-advert.html) | `service router advert` | Y | Y | `DETECTED` |
-| 88 | [Salt-Minion](https://docs.vyos.io/en/latest/configuration/service/salt-minion.html) | `service salt minion` | N | Y | `FRONTEND_ONLY` |
+| 88 | [Salt-Minion](https://docs.vyos.io/en/latest/configuration/service/salt-minion.html) | `service salt minion` | Y | Y | `DETECTED` |
 | 89 | [SNMP](https://docs.vyos.io/en/latest/configuration/service/snmp.html) | `service snmp` | Y | Y | `DETECTED` |
 | 90 | [SSH](https://docs.vyos.io/en/latest/configuration/service/ssh.html) | `service ssh` | Y | Y | `DETECTED` |
-| 91 | [suricata](https://docs.vyos.io/en/latest/configuration/service/suricata.html) | `service suricata` | N | Y | `FRONTEND_ONLY` |
+| 91 | [suricata](https://docs.vyos.io/en/latest/configuration/service/suricata.html) | `service suricata` | Y | Y | `DETECTED` |
 | 92 | [TFTP Server](https://docs.vyos.io/en/latest/configuration/service/tftp-server.html) | `service tftp server` | Y | Y | `DETECTED` |
 | 93 | [Webproxy](https://docs.vyos.io/en/latest/configuration/service/webproxy.html) | `service webproxy` | N | Y | `FRONTEND_ONLY` |
 | 94 | [Acceleration](https://docs.vyos.io/en/latest/configuration/system/acceleration.html) | `system acceleration` | Y | Y | `DETECTED` |

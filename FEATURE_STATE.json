@@ -1,17 +1,17 @@
 {
-  "feature_id": "services-https-snmp-tftp-2026-02-14",
-  "title": "Services slice: HTTP API, SNMP, and TFTP Server",
+  "feature_id": "services-batch-2-2026-02-14",
+  "title": "Services slice: Broadcast Relay, Conntrack Sync, Console Server, Salt Minion, Suricata",
   "status": "done",
   "acceptance_criteria": [
-    "Backend service wrappers exist for https, snmp, and tftp-server with capabilities/config/batch endpoints.",
-    "System Services has form-driven tabs for HTTP API, SNMP, and TFTP Server without free-form CLI input.",
-    "Services sidebar includes HTTP API, SNMP, and TFTP Server links in A-Z order.",
-    "Runtime/browser smoke includes new service tabs and passes.",
-    "Coverage artifacts regenerate and show services backlog improvement."
+    "Backend wrappers exist for broadcast-relay, conntrack-sync, console-server, salt-minion, and suricata.",
+    "System Services page exposes form-driven tabs for all five services without free-form CLI entry.",
+    "Services sidebar includes links for the five services in A-Z order.",
+    "Runtime smoke and browser smoke include all five tab routes and pass.",
+    "Coverage artifacts regenerate and show services domain progress (17 implemented, 6 partial)."
   ],
   "assumptions": [
-    "SNMPv3 advanced options are a follow-up slice.",
-    "Current wrappers continue to use command-string batch payloads under strict service subtree validation.",
+    "Advanced options for these services remain follow-up work (for example, Suricata EVE logging and some conntrack helper options).",
+    "Wrapper endpoints continue to use command-string batch payloads with strict subtree validation.",
     "Unrelated dirty worktree files remain untouched."
   ],
   "tasks": [
@@ -21,15 +21,19 @@
       "status": "done",
       "files": [
         "backend/app.py",
-        "backend/routers/https_service/__init__.py",
-        "backend/routers/https_service/https_service.py",
-        "backend/routers/snmp_service/__init__.py",
-        "backend/routers/snmp_service/snmp_service.py",
-        "backend/routers/tftp_server_service/__init__.py",
-        "backend/routers/tftp_server_service/tftp_server_service.py",
+        "backend/routers/broadcast_relay_service/__init__.py",
+        "backend/routers/broadcast_relay_service/broadcast_relay_service.py",
+        "backend/routers/conntrack_sync_service/__init__.py",
+        "backend/routers/conntrack_sync_service/conntrack_sync_service.py",
+        "backend/routers/console_server_service/__init__.py",
+        "backend/routers/console_server_service/console_server_service.py",
+        "backend/routers/salt_minion_service/__init__.py",
+        "backend/routers/salt_minion_service/salt_minion_service.py",
+        "backend/routers/suricata_service/__init__.py",
+        "backend/routers/suricata_service/suricata_service.py",
         "backend/tests/test_service_wrapper_capabilities.py"
       ],
-      "notes": "Added wrappers and tests for three new service domains."
+      "notes": "Extended service wrapper coverage and tests for five additional service domains."
     },
     {
       "id": "T2",
@@ -37,14 +41,15 @@
       "status": "done",
       "files": [
         "frontend/src/lib/api/service-wrappers.ts",
-        "frontend/src/components/system/serviceTabHelpers.ts",
-        "frontend/src/components/system/HttpsServiceTab.tsx",
-        "frontend/src/components/system/SnmpServiceTab.tsx",
-        "frontend/src/components/system/TftpServiceTab.tsx",
+        "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+        "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+        "frontend/src/components/system/ConsoleServerServiceTab.tsx",
+        "frontend/src/components/system/SaltMinionServiceTab.tsx",
+        "frontend/src/components/system/SuricataServiceTab.tsx",
         "frontend/src/app/system/services/page.tsx",
         "frontend/src/components/layout/Sidebar.tsx"
       ],
-      "notes": "Implemented form-driven service tabs and wired navigation."
+      "notes": "Added five new service tabs and navigation entries."
     },
     {
       "id": "T3",
@@ -54,19 +59,18 @@
         "frontend/scripts/smoke-ui.mjs",
         "frontend/scripts/check-runtime.sh"
       ],
-      "notes": "Expanded smoke routes to include new service pages and validated runtime/browser smoke."
+      "notes": "Smoke coverage expanded for all new service tab routes."
     },
     {
       "id": "T4",
       "owner_role": "Planner",
       "status": "done",
       "files": [
-        "scripts/generate_config_coverage_matrix.py",
         "CONFIG_COVERAGE_MATRIX.json",
         "CONFIG_COVERAGE_PHASE1.json",
         "PARITY_BACKLOG.json"
       ],
-      "notes": "Updated crawler service-wrapper detection and regenerated parity artifacts."
+      "notes": "Regenerated parity artifacts and confirmed services backlog reduction."
     },
     {
       "id": "T5",
@@ -75,10 +79,11 @@
       "files": [
         "backend/app.py",
         "backend/tests/test_service_wrapper_capabilities.py",
-        "frontend/src/components/system/HttpsServiceTab.tsx",
-        "frontend/src/components/system/SnmpServiceTab.tsx",
-        "frontend/src/components/system/TftpServiceTab.tsx",
-        "frontend/src/app/system/services/page.tsx"
+        "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
+        "frontend/src/components/system/ConntrackSyncServiceTab.tsx",
+        "frontend/src/components/system/ConsoleServerServiceTab.tsx",
+        "frontend/src/components/system/SaltMinionServiceTab.tsx",
+        "frontend/src/components/system/SuricataServiceTab.tsx"
       ],
       "notes": "Manual reviewer pass complete; no API contract breakages introduced."
     }

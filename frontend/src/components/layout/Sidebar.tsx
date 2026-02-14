@@ -216,6 +216,21 @@ const navigation: NavItem[] = [
     icon: Wrench,
     children: [
       {
+        title: "Broadcast Relay",
+        href: "/system/services?tab=broadcast-relay&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "Console Server",
+        href: "/system/services?tab=console-server&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "Conntrack Sync",
+        href: "/system/services?tab=conntrack-sync&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
         title: "DHCP Relay",
         href: "/system/services?tab=dhcp-relay&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
@@ -261,8 +276,18 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
+        title: "Salt Minion",
+        href: "/system/services?tab=salt-minion&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
         title: "SNMP",
         href: "/system/services?tab=snmp&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "Suricata",
+        href: "/system/services?tab=suricata&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
