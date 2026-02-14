@@ -1,82 +1,63 @@
 import { apiClient } from "./client";
 
-// OSPF MD5 authentication key
-export interface OSPFMD5Key {
-  key_id: string;
-  "md5-key"?: string | null; // Hidden in output
+export interface OspfNetwork {
+  prefix: string;
+  area: string;
 }
 
-// OSPF interface authentication
-export interface OSPFInterfaceAuthentication {
-  md5?: Record<string, Record<string, OSPFMD5Key>> | null;
-  "plaintext-password"?: string | null;
+export interface OspfInterface {
+  interface: string;
+  network_type?: string | null;
+  cost?: number | null;
+  passive: boolean;
 }
 
-// OSPF interface-specific configuration
-export interface OSPFInterface {
-  interface_name: string;
-  authentication?: OSPFInterfaceAuthentication | null;
-  cost?: string | null;
-  "dead-interval"?: string | null;
-  "hello-interval"?: string | null;
-  network?: string | null; // Network type (broadcast, point-to-point, etc.)
-  priority?: string | null;
-  "retransmit-interval"?: string | null;
-  "transmit-delay"?: string | null;
-}
-
-// OSPF area configuration
-export interface OSPFArea {
-  area_id: string;
-  authentication?: string | null; // Authentication type (plaintext, md5)
-  networks: string[]; // Networks in this area
-}
-
-// OSPF parameters
-export interface OSPFParameters {
-  "router-id"?: string | null;
-  "abr-type"?: string | null;
-}
-
-// OSPF route redistribution
-export interface OSPFRedistribute {
-  connected?: Record<string, any> | null;
-  static?: Record<string, any> | null;
-  bgp?: Record<string, any> | null;
-}
-
-// Complete OSPF configuration
-export interface OSPFConfig {
+export interface OspfConfig {
   router_id?: string | null;
-  areas: Record<string, OSPFArea>;
-  interfaces: Record<string, OSPFInterface>;
-  parameters?: OSPFParameters | null;
-  redistribute?: OSPFRedistribute | null;
-  "passive-interface": string[]; // Passive interfaces
+  areas: string[];
+  networks: OspfNetwork[];
+  interfaces: OspfInterface[];
+  parameters: {
+    abr_type?: string | null;
+    log_adjacency_changes: boolean;
+  };
 }
 
-// Summary of an OSPF area for display
-export interface OSPFAreaSummary {
-  area_id: string;
-  authentication?: string | null;
-  network_count: number;
-  networks: string[];
+export interface OspfConfigResponse {
+  ospf: Record<string, unknown>;
 }
 
-class OSPFService {
-  /**
-   * Get complete OSPF configuration
-   */
-  async getConfig(): Promise<OSPFConfig> {
-    return apiClient.get<OSPFConfig>("/routing/ospf/config");
+export interface OspfCapabilities {
+  version: string;
+  features: Record<string, boolean | { supported: boolean; description: string }>;
+  instance_name?: string;
+  instance_id?: string;
+}
+
+export interface ProtocolBatchRequest {
+  operations: string[];
+}
+
+export interface VyOSResponse {
+  success: boolean;
+  data?: Record<string, unknown> | null;
+  error?: string | null;
+}
+
+class OspfService {
+  async getCapabilities(): Promise<OspfCapabilities> {
+    return apiClient.get<OspfCapabilities>("/vyos/ospf/capabilities");
   }
 
-  /**
-   * Get all OSPF areas as a flat list
-   */
-  async getAreas(): Promise<OSPFAreaSummary[]> {
-    return apiClient.get<OSPFAreaSummary[]>("/routing/ospf/areas");
+  async getConfig(refresh = false): Promise<OspfConfigResponse> {
+    return apiClient.get<OspfConfigResponse>("/vyos/ospf/config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async batchConfigure(request: ProtocolBatchRequest): Promise<VyOSResponse> {
+    return apiClient.post<VyOSResponse>("/vyos/ospf/batch", request);
   }
 }
 
-export const ospfService = new OSPFService();
+export const ospfService = new OspfService();

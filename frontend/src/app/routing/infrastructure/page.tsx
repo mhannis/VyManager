@@ -3,6 +3,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { InProgress } from "@/components/layout/InProgress";
 import { BfdContent } from "@/components/bfd/BfdContent";
+import { ArpProtocolContent } from "@/components/routing/ArpProtocolContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Settings, ChevronRight, Activity, Box, Waypoints, Globe, Shield } from "lucide-react";
@@ -11,9 +12,10 @@ import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 
-type InfraType = "bfd" | "mpls" | "segment-routing" | "nhrp" | "rpki";
+type InfraType = "arp" | "bfd" | "mpls" | "segment-routing" | "nhrp" | "rpki";
 
 const allInfrastructure = [
+  { id: "arp" as InfraType, name: "ARP", description: "Address Resolution Protocol entries", icon: Globe, permission: FeatureGroup.STATIC_ROUTES },
   { id: "bfd" as InfraType, name: "BFD", description: "Bidirectional Forwarding Detection", icon: Activity, permission: FeatureGroup.BFD },
   { id: "mpls" as InfraType, name: "MPLS", description: "Multiprotocol Label Switching", icon: Box, permission: FeatureGroup.MPLS },
   { id: "segment-routing" as InfraType, name: "Segment Routing", description: "Source routing with segments", icon: Waypoints, permission: FeatureGroup.SEGMENT_ROUTING },
@@ -122,6 +124,8 @@ export default function InfrastructurePage() {
         <div className="flex-1">
           {selectedInfra === "bfd" ? (
             <BfdContent />
+          ) : selectedInfra === "arp" ? (
+            <ArpProtocolContent />
           ) : (
             <InProgress />
           )}

@@ -41,6 +41,28 @@ class VyOSResponse(BaseModel):
     error: Optional[str] = None
 
 
+def _validate_operations(operations: List[str]) -> None:
+    if len(operations) > 200:
+        raise HTTPException(status_code=400, detail="Too many operations in a single request")
+
+    allowed_prefixes = (
+        "set protocols static arp ",
+        "delete protocols static arp ",
+    )
+
+    for command in operations:
+        cleaned = command.strip()
+        if not cleaned:
+            raise HTTPException(status_code=400, detail="Operations must not contain empty commands")
+        if len(cleaned) > 512:
+            raise HTTPException(status_code=400, detail="Operation command exceeds maximum length")
+        if not cleaned.startswith(allowed_prefixes):
+            raise HTTPException(
+                status_code=400,
+                detail="ARP batch only allows commands under 'protocols static arp'",
+            )
+
+
 @router.get("/capabilities", response_model=ArpCapabilitiesResponse)
 async def get_arp_capabilities(request: Request):
     await require_read_permission(request, FeatureGroup.STATIC_ROUTES)
@@ -89,6 +111,7 @@ async def arp_batch_configure(request: Request, body: ArpBatchRequest):
 
     if not body.operations:
         raise HTTPException(status_code=400, detail="No operations provided")
+    _validate_operations(body.operations)
 
     try:
         service = get_session_vyos_service(request)

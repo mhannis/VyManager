@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-14T16:52:29Z",
+  "generated_at": "2026-02-14T17:16:29Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -475,9 +475,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/arp.html",
       "title": "ARP",
       "cli_scope": "protocols arp",
-      "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 54,
@@ -520,9 +520,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/igmp-proxy.html",
       "title": "IGMP Proxy",
       "cli_scope": "protocols igmp proxy",
-      "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 59,
@@ -538,9 +538,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/isis.html",
       "title": "IS-IS",
       "cli_scope": "protocols isis",
-      "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 61,
@@ -574,9 +574,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/ospf.html",
       "title": "OSPF",
       "cli_scope": "protocols ospf",
-      "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 65,
@@ -601,9 +601,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/rip.html",
       "title": "RIP",
       "cli_scope": "protocols rip",
-      "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 68,

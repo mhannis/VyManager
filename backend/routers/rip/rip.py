@@ -41,6 +41,28 @@ class VyOSResponse(BaseModel):
     error: Optional[str] = None
 
 
+def _validate_operations(operations: List[str]) -> None:
+    if len(operations) > 200:
+        raise HTTPException(status_code=400, detail="Too many operations in a single request")
+
+    allowed_prefixes = (
+        "set protocols rip ",
+        "delete protocols rip ",
+    )
+
+    for command in operations:
+        cleaned = command.strip()
+        if not cleaned:
+            raise HTTPException(status_code=400, detail="Operations must not contain empty commands")
+        if len(cleaned) > 512:
+            raise HTTPException(status_code=400, detail="Operation command exceeds maximum length")
+        if not cleaned.startswith(allowed_prefixes):
+            raise HTTPException(
+                status_code=400,
+                detail="RIP batch only allows commands under 'protocols rip'",
+            )
+
+
 @router.get("/capabilities", response_model=RipCapabilitiesResponse)
 async def get_rip_capabilities(request: Request):
     await require_read_permission(request, FeatureGroup.RIP)
@@ -89,6 +111,7 @@ async def rip_batch_configure(request: Request, body: RipBatchRequest):
 
     if not body.operations:
         raise HTTPException(status_code=400, detail="No operations provided")
+    _validate_operations(body.operations)
 
     try:
         service = get_session_vyos_service(request)

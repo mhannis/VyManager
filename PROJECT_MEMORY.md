@@ -14,7 +14,7 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Frontend: `npm` (`frontend/package-lock.json`)
 - Backend: `pip` + venv (`backend/.venv`)
 
-### Canonical Commands
+### Build / Test / Lint Commands
 - Backend dev: `cd backend && python3 -m uvicorn app:app --reload --host 0.0.0.0 --port 8000 --proxy-headers`
 - Frontend dev: `cd frontend && npm run dev`
 - Frontend prod start: `cd frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000`
@@ -35,14 +35,9 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Backend: `8000`
 - Postgres: `5432`
 
-### Runtime Notes
-- `vm-ui` tmux session runs Next server.
-- `vm-api` tmux session runs FastAPI backend.
-- tmux server can disappear in this environment; recreate both sessions before runtime verification.
-
 ## Architecture Notes
 - Frontend app: `frontend/src/app/*`
-- Frontend proxy: `frontend/src/app/api/vyos/[...path]/route.ts`
+- Frontend API proxy: `frontend/src/app/api/vyos/[...path]/route.ts`
 - Backend entry: `backend/app.py`
 - Session/auth middleware: `backend/middleware/auth.py`, `backend/middleware/session.py`
 - Session service accessors:
@@ -55,73 +50,92 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Thin wrappers around existing backend services; preserve API contracts.
 - Prefer additive edits; do not rewrite working backend layers.
 - Ship in small slices with tests and memory updates.
-- Frontend lint has warning debt; `0 errors` is enforced.
-- Protocols execution cadence: complete **3-5 protocol backlog items per run** before the next report.
+- Frontend lint has warning debt; `0 errors` is required.
+- Protocol cadence: complete **3-5 protocol backlog items per run** before reporting.
 
 ## Current Objective
-- Continue autonomous parity execution against `https://docs.vyos.io/en/latest/configuration/`.
-- Phase 1 + Phase 2 infra is complete.
-- Policy domain is now marked complete in the parity backlog.
-- Next active implementation domain: `protocols`.
+- Continue Phase 3 parity execution on `protocols` domain.
+- Deliver protocol slices in batches while keeping runtime stable.
 
 ## Current Feature Spec
-Feature: **Policy Domain Completion + Capability Endpoint Standardization**
+Feature: **Protocols batch slice (ARP + OSPF + RIP + IS-IS + IGMP Proxy)**
 
 Acceptance criteria:
-- Remaining policy capability endpoints use shared loader abstraction.
-- Policy docs index/examples are represented in GUI.
-- Policy domain has no uncovered items in `PARITY_BACKLOG.md`.
-- Regression tests cover all policy BGP list capability endpoints.
+- Add backend routers for ARP/OSPF/RIP/IS-IS/IGMP Proxy with:
+  - `GET /capabilities`
+  - `GET /config`
+  - `POST /batch`
+- Expose frontend protocol editors in Routing pages for same 5 protocols.
+- Regenerate matrix/backlog and reduce protocols uncovered count by this batch.
+- Run backend tests + frontend typecheck/build/lint/runtime checks.
 
 Assumptions:
-- Policy index/examples are documentation-oriented and considered complete with frontend representation.
-- Existing policy CRUD pages remain authoritative for configuration operations.
+- Batch operations are command-string based (`operations: string[]`) and executed via `service.configure_batch(...)`.
+- Initial UI for these protocols can be command-driven while deeper forms are built in later slices.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Working tree: dirty (contains unrelated pre-existing edits not touched this cycle)
+- New backend commit in this cycle: `cc385d6`.
+- Working tree is dirty with unrelated pre-existing files outside this slice.
 
-### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_policy_capabilities.py tests/test_safe_apply.py tests/test_vyos_driver_wrapper.py tests/test_vyos_service_safe_apply.py tests/test_ethernet_vlan_batch_ops.py tests/test_system_services_ssh_dns.py tests/test_containers_automation_v1.py` -> pass (`30 passed`)
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_app.py` -> pass (`1 passed`)
-- `cd frontend && npx tsc --noEmit --pretty false` -> pass
-- `cd frontend && npm run -s build` -> pass
-- `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
-- `cd frontend && npm run -s smoke:runtime` -> pass
-- `python3 scripts/generate_config_coverage_matrix.py` -> pass
-- `python3 scripts/generate_phase1_backlog.py` -> pass
-
-### Key Implementation Notes (Latest)
-- Standardized remaining policy BGP capability endpoints to shared helper:
-  - `backend/routers/as_path_list/as_path_list.py`
-  - `backend/routers/community_list/community_list.py`
-  - `backend/routers/extcommunity_list/extcommunity_list.py`
-  - `backend/routers/large_community_list/large_community_list.py`
-- Expanded capability regression tests:
-  - `backend/tests/test_policy_capabilities.py`
-- Added policy docs representation pages:
-  - `frontend/src/app/policies/page.tsx`
-  - `frontend/src/app/policies/examples/page.tsx`
-  - `frontend/src/components/layout/Sidebar.tsx` (Overview + Examples links)
-- Improved docs crawler alias handling for irregular pluralization:
-  - `scripts/generate_config_coverage_matrix.py` (`policy <-> policies`, `service <-> services`)
-- Updated generated parity artifacts:
+### Files Touched This Cycle (slice-owned)
+- Backend:
+  - `backend/routers/arp/arp.py`
+  - `backend/routers/ospf/ospf.py`
+  - `backend/routers/rip/rip.py`
+  - `backend/routers/isis/isis.py`
+  - `backend/routers/igmp_proxy/igmp_proxy.py`
+  - `backend/tests/test_protocol_capabilities.py`
+- Frontend:
+  - `frontend/src/components/routing/ProtocolCommandContent.tsx`
+  - `frontend/src/components/routing/ArpProtocolContent.tsx`
+  - `frontend/src/components/routing/OspfContent.tsx`
+  - `frontend/src/components/routing/RipContent.tsx`
+  - `frontend/src/components/routing/IsisContent.tsx`
+  - `frontend/src/components/routing/IgmpProxyContent.tsx`
+  - `frontend/src/app/routing/unicast-protocols/page.tsx`
+  - `frontend/src/app/routing/multicast/page.tsx`
+  - `frontend/src/app/routing/infrastructure/page.tsx`
+  - `frontend/src/app/routing/unicast-protocols/ospf/page.tsx`
+  - `frontend/src/app/routing/unicast-protocols/rip/page.tsx`
+  - `frontend/src/app/routing/unicast-protocols/isis/page.tsx`
+  - `frontend/src/app/routing/multicast/igmp-proxy/page.tsx`
+  - `frontend/src/app/routing/infrastructure/arp/page.tsx`
+  - `frontend/src/lib/api/arp.ts`
+  - `frontend/src/lib/api/ospf.ts`
+  - `frontend/src/lib/api/rip.ts`
+  - `frontend/src/lib/api/isis.ts`
+  - `frontend/src/lib/api/igmp-proxy.ts`
+- Generated artifacts:
   - `CONFIG_COVERAGE_MATRIX.md/.json`
   - `CONFIG_COVERAGE_PHASE1.md/.json`
   - `PARITY_BACKLOG.md/.json`
-- Current backlog state: policy moved to completed; protocols is top-priority remaining domain.
+
+### Validation This Cycle
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_policy_capabilities.py tests/test_safe_apply.py tests/test_vyos_driver_wrapper.py tests/test_vyos_service_safe_apply.py tests/test_ethernet_vlan_batch_ops.py tests/test_system_services_ssh_dns.py tests/test_containers_automation_v1.py tests/test_app.py` -> pass (`41 passed`)
+- `cd frontend && npx tsc --noEmit --pretty false` -> pass
+- `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
+- `cd frontend && npm run -s build` -> pass
+- `cd frontend && npm run -s smoke:runtime` -> pass
+- `python3 scripts/generate_config_coverage_matrix.py` -> pass
+- `python3 scripts/generate_phase1_backlog.py` -> pass
+- Reviewer pass: `APPROVED` (no blocking findings) after protocol batch scope hardening.
+
+### Backlog Delta
+- `protocols` domain moved from:
+  - implemented `0`, partial `5`, not_started `13`
+- to:
+  - implemented `5`, partial `5`, not_started `8`
 
 ## Risks / Open Questions
-- Playwright browser smoke remains blocked on host dependency (`libnspr4.so`).
-- Large existing lint warning debt still present outside this slice.
+- Frontend lint warning debt remains high outside this slice.
+- Protocol UIs are command-driven MVPs; richer form-based editors are still needed.
 
-## TODO Backlog (Short)
-- Execute next vertical slice: protocols (`protocols` domain has highest risk+breadth now).
-- Start with foundational protocol pages: static, OSPF, BGP, IGMP proxy scaffolding + backend contracts.
-- Add domain-level parity verification notes (GUI action -> expected CLI -> operational check).
+## TODO Backlog (next protocol queue)
+- Remaining protocols not started: `failover`, `protocols index`, `mpls`, `openfabric`, `pim`, `pim6`, `rpki`, `static`.
+- Remaining partial protocols: `babel`, `bfd`, `bgp`, `multicast`, `segment-routing`.
 
 ## Agent Handoff Notes
-- Use `backend/utils/router_helpers.py::load_vyos_capabilities` for all capability endpoints.
-- Keep policy docs pages as conceptual coverage for docs index/examples.
-- Use `PARITY_BACKLOG.md` as active execution queue.
-- Always re-establish `vm-api` and `vm-ui` sessions before runtime verification if tmux server resets.
+- Backend routers in this slice intentionally use thin wrappers and now enforce protocol-scoped command prefix guards per endpoint.
+- Frontend protocol cards use shared `ProtocolCommandContent` to reduce repeated page logic.
+- Keep protocol batch cadence at 3-5 items per run until protocols breadth is 0.

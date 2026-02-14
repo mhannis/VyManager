@@ -1,7 +1,7 @@
 {
-  "feature_id": "parity-phase3-protocols-slice",
-  "title": "Phase 3 continuation: protocols domain implementation",
-  "last_updated": "2026-02-14T17:00:00Z",
+  "feature_id": "parity-phase3-protocols-batch-01",
+  "title": "Protocols slice batch: ARP + OSPF + RIP + IS-IS + IGMP Proxy",
+  "last_updated": "2026-02-14T17:31:00Z",
   "status": "in_progress",
   "execution_policy": {
     "protocol_items_per_report_min": 3,
@@ -9,16 +9,15 @@
     "reporting_rule": "During protocols backlog execution, complete 3-5 items before issuing the next human-facing report."
   },
   "acceptance_criteria": [
-    "Policy domain has no uncovered pages in PARITY_BACKLOG.md.",
-    "All policy BGP capability endpoints use shared loader abstraction.",
-    "Policy index/examples docs sections are represented in GUI.",
-    "Policy capability regression tests pass.",
-    "Next domain execution started from protocols backlog."
+    "Backend routers exist for ARP, OSPF, RIP, IS-IS, and IGMP Proxy with capabilities/config/batch endpoints.",
+    "Routing UI has usable protocol editors for those five protocols.",
+    "Coverage artifacts are regenerated and protocols domain breadth decreases.",
+    "Targeted backend tests and frontend validation commands pass."
   ],
   "assumptions": [
-    "Docs-only policy pages (index/examples) are complete when represented in GUI.",
-    "Protocols domain will require incremental backend+frontend scaffolding beyond current placeholders.",
-    "Existing API contracts remain stable while expanding parity."
+    "Protocol batch payload is command-string based (operations: string[]).",
+    "Initial protocol editors can be command-driven MVP surfaces while richer form builders are implemented later.",
+    "Existing unrelated worktree changes remain untouched."
   ],
   "tasks": [
     {
@@ -26,64 +25,64 @@
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/as_path_list/as_path_list.py",
-        "backend/routers/community_list/community_list.py",
-        "backend/routers/extcommunity_list/extcommunity_list.py",
-        "backend/routers/large_community_list/large_community_list.py"
+        "backend/routers/arp/arp.py",
+        "backend/routers/ospf/ospf.py",
+        "backend/routers/rip/rip.py",
+        "backend/routers/isis/isis.py",
+        "backend/routers/igmp_proxy/igmp_proxy.py",
+        "backend/app.py"
       ],
-      "notes": "Migrated remaining policy BGP capability endpoints to shared `load_vyos_capabilities(...)` flow."
+      "notes": "Added thin protocol routers and wired them into app router registration."
     },
     {
       "id": "T2",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_policy_capabilities.py"
+        "backend/tests/test_protocol_capabilities.py"
       ],
-      "notes": "Added coverage tests for as-path/community/extcommunity/large-community capability endpoints."
+      "notes": "Added endpoint tests for new protocol capability/config routes."
     },
     {
       "id": "T3",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/policies/page.tsx",
-        "frontend/src/app/policies/examples/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx"
+        "frontend/src/components/routing/ProtocolCommandContent.tsx",
+        "frontend/src/components/routing/ArpProtocolContent.tsx",
+        "frontend/src/components/routing/OspfContent.tsx",
+        "frontend/src/components/routing/RipContent.tsx",
+        "frontend/src/components/routing/IsisContent.tsx",
+        "frontend/src/components/routing/IgmpProxyContent.tsx",
+        "frontend/src/app/routing/unicast-protocols/page.tsx",
+        "frontend/src/app/routing/multicast/page.tsx",
+        "frontend/src/app/routing/infrastructure/page.tsx"
       ],
-      "notes": "Added policy overview and examples pages and linked them in sidebar navigation."
+      "notes": "Replaced InProgress placeholders with functional command-driven protocol editors."
     },
     {
       "id": "T4",
-      "owner_role": "Planner",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "scripts/generate_config_coverage_matrix.py",
-        "scripts/generate_phase1_backlog.py",
-        "CONFIG_COVERAGE_MATRIX.md",
-        "CONFIG_COVERAGE_MATRIX.json",
-        "CONFIG_COVERAGE_PHASE1.md",
-        "CONFIG_COVERAGE_PHASE1.json",
-        "PARITY_BACKLOG.md",
-        "PARITY_BACKLOG.json"
+        "frontend/src/app/routing/unicast-protocols/ospf/page.tsx",
+        "frontend/src/app/routing/unicast-protocols/rip/page.tsx",
+        "frontend/src/app/routing/unicast-protocols/isis/page.tsx",
+        "frontend/src/app/routing/multicast/igmp-proxy/page.tsx",
+        "frontend/src/app/routing/infrastructure/arp/page.tsx"
       ],
-      "notes": "Updated alias detection and regenerated matrix/backlog; policy moved to completed domain set."
+      "notes": "Added dedicated protocol subpages for discoverability and coverage token detection."
     },
     {
       "id": "T5",
-      "owner_role": "Reviewer",
+      "owner_role": "Planner",
       "status": "done",
       "files": [
-        "backend/routers/as_path_list/as_path_list.py",
-        "backend/routers/community_list/community_list.py",
-        "backend/routers/extcommunity_list/extcommunity_list.py",
-        "backend/routers/large_community_list/large_community_list.py",
-        "frontend/src/app/policies/page.tsx",
-        "frontend/src/app/policies/examples/page.tsx",
-        "scripts/generate_config_coverage_matrix.py",
-        "scripts/generate_phase1_backlog.py"
+        "CONFIG_COVERAGE_MATRIX.json",
+        "CONFIG_COVERAGE_PHASE1.json",
+        "PARITY_BACKLOG.json"
       ],
-      "notes": "Code reviewer result: APPROVED."
+      "notes": "Regenerated coverage artifacts; protocols implemented count increased from 0 to 5."
     },
     {
       "id": "T6",
@@ -93,30 +92,22 @@
         "PARITY_BACKLOG.md",
         "CONFIG_COVERAGE_PHASE1.md"
       ],
-      "notes": "Start protocols domain vertical slices in priority order (static, OSPF, BGP, multicast helpers) and batch 3-5 backlog items before reporting."
+      "notes": "Prepare next 3-5 protocol backlog items: static, mpls, openfabric, pim/pim6, rpki."
     },
     {
       "id": "T7",
-      "owner_role": "Backend",
-      "status": "todo",
+      "owner_role": "Reviewer",
+      "status": "done",
       "files": [
-        "backend/routers/static_routes/static_routes.py",
-        "backend/routers/bgp/bgp.py",
-        "backend/routers/babel/babel.py",
-        "backend/routers/bfd/bfd.py"
+        "backend/routers/arp/arp.py",
+        "backend/routers/ospf/ospf.py",
+        "backend/routers/rip/rip.py",
+        "backend/routers/isis/isis.py",
+        "backend/routers/igmp_proxy/igmp_proxy.py",
+        "frontend/src/components/routing/ProtocolCommandContent.tsx",
+        "frontend/src/components/routing/ArpProtocolContent.tsx"
       ],
-      "notes": "Close protocol gaps by expanding missing docs-specified option coverage and endpoint normalization."
-    },
-    {
-      "id": "T8",
-      "owner_role": "UI",
-      "status": "todo",
-      "files": [
-        "frontend/src/app/routing/unicast-protocols/page.tsx",
-        "frontend/src/app/routing/infrastructure/page.tsx",
-        "frontend/src/app/routing/multicast/page.tsx"
-      ],
-      "notes": "Replace placeholder protocol views with docs-aligned forms and status surfaces."
+      "notes": "Code Reviewer verdict: APPROVED after adding protocol command-scope validation and frontend success/error handling."
     }
   ],
   "commands": {

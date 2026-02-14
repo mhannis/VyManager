@@ -46,6 +46,13 @@ class DummyService:
             }
         }
 
+    def configure_batch(self, commands):
+        return {
+            "success": True,
+            "data": {"commands": commands},
+            "error": None,
+        }
+
 
 @pytest.fixture()
 def app():
@@ -130,3 +137,52 @@ def test_protocol_config_endpoints_return_expected_payload(
     payload = response.json()
     assert config_key in payload
     assert isinstance(payload[config_key], dict)
+
+
+@pytest.mark.parametrize(
+    ("path", "valid_command", "invalid_command"),
+    [
+        (
+            "/vyos/arp/batch",
+            "set protocols static arp interface eth0 address 192.0.2.20 mac 00:11:22:33:44:66",
+            "set interfaces ethernet eth0 address 192.0.2.1/24",
+        ),
+        (
+            "/vyos/ospf/batch",
+            "set protocols ospf parameters router-id 1.1.1.1",
+            "set protocols rip network 10.0.0.0/8",
+        ),
+        (
+            "/vyos/rip/batch",
+            "set protocols rip network 10.0.0.0/8",
+            "set protocols ospf parameters router-id 1.1.1.1",
+        ),
+        (
+            "/vyos/isis/batch",
+            "set protocols isis interface eth0",
+            "set protocols bgp system-as 64512",
+        ),
+        (
+            "/vyos/igmp-proxy/batch",
+            "set protocols igmp-proxy interface eth1 role upstream",
+            "set protocols pim interface eth1",
+        ),
+    ],
+)
+def test_protocol_batch_validates_command_scope(
+    app,
+    allow_permissions,
+    mock_service,
+    path,
+    valid_command,
+    invalid_command,
+):
+    client = TestClient(app)
+
+    response = client.post(path, json={"operations": [valid_command]})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload.get("success") is True
+
+    denied = client.post(path, json={"operations": [invalid_command]})
+    assert denied.status_code == 400

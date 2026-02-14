@@ -4,6 +4,9 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { InProgress } from "@/components/layout/InProgress";
 import { BabelContent } from "@/components/babel/BabelContent";
 import { BgpContent } from "@/components/bgp/BgpContent";
+import { OspfContent } from "@/components/routing/OspfContent";
+import { RipContent } from "@/components/routing/RipContent";
+import { IsisContent } from "@/components/routing/IsisContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Network, ChevronRight } from "lucide-react";
@@ -125,6 +128,12 @@ export default function UnicastProtocolsPage() {
             <BgpContent />
           ) : selectedProtocol === "babel" ? (
             <BabelContent />
+          ) : selectedProtocol === "ospf" ? (
+            <OspfContent />
+          ) : selectedProtocol === "rip" ? (
+            <RipContent />
+          ) : selectedProtocol === "isis" ? (
+            <IsisContent />
           ) : (
             <InProgress />
           )}

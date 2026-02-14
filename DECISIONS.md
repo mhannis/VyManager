@@ -58,3 +58,8 @@
 - 2026-02-14: Coverage crawler alias map now includes irregular pluralization pairs (`policy<->policies`, `service<->services`) to reduce false `MISSING` classification in docs coverage matrix.
 - 2026-02-14: Phase backlog now treats policy docs index/examples as frontend-representable docs pages (`DOC_ONLY_UI_COVERAGE`) and marks them complete when UI exists.
 - 2026-02-14: Protocol domain reporting cadence set by Mark: batch 3-5 protocol backlog items in each run before reporting status.
+- 2026-02-14: Implemented protocol slice batch for ARP, OSPF, RIP, IS-IS, and IGMP Proxy using thin backend wrappers (`get_full_config` + `configure_batch`) to preserve existing service architecture and API contracts.
+- 2026-02-14: Standardized new protocol batch APIs on command-string payload shape (`operations: string[]`) to avoid introducing new backend command mappers during parity expansion.
+- 2026-02-14: Added command-driven protocol editor UI (`ProtocolCommandContent`) as an MVP acceleration pattern for rapid coverage across remaining protocol pages.
+- 2026-02-14: Coverage regeneration order must be sequential: run `generate_config_coverage_matrix.py` first, then `generate_phase1_backlog.py`; running them concurrently can produce stale phase1 statuses.
+- 2026-02-14: Protocol batch endpoints now enforce protocol-scoped command prefixes and size/length guards to prevent cross-feature command execution with narrower RBAC permissions.

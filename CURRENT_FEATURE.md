@@ -1,14 +1,18 @@
-feature_id: parity-phase3-protocols-slice
+feature_id: parity-phase3-protocols-batch-01
 status: in_progress
-title: Phase 3 Protocols Domain Execution (after policy completion)
+title: Phase 3 Protocols Batch (ARP, OSPF, RIP, IS-IS, IGMP Proxy)
 branch: feature/containers-automation-v1
 commits:
-  - f41cbfc
-  - aa46d37
+  - cc385d6
+  - 7229af3
+  - 6370175
 notes:
-  - Policy domain slice completed and moved to completed domains in `PARITY_BACKLOG.md`.
-  - Standardized remaining BGP policy capability endpoints to shared helper (`load_vyos_capabilities`).
-  - Added policy overview/examples pages to represent docs index/examples in GUI.
-  - Extended policy capability endpoint regression tests.
-  - Next active slice is `protocols` per `PARITY_BACKLOG.md` priority order.
-  - Execution cadence for protocols: complete 3-5 backlog items before the next report.
+  - Completed a 5-item protocol batch before reporting, per execution policy.
+  - Added backend protocol routers and tests for ARP/OSPF/RIP/IS-IS/IGMP Proxy.
+  - Hardened protocol batch endpoints with per-protocol command-scope validation to prevent cross-feature command execution.
+  - Added frontend protocol editors and route wiring (unicast, multicast, infrastructure).
+  - Frontend protocol editor now surfaces backend batch failure responses instead of always showing success.
+  - Added dedicated protocol subpages: /routing/unicast-protocols/{ospf,rip,isis}, /routing/multicast/igmp-proxy, /routing/infrastructure/arp.
+  - Regenerated coverage artifacts; protocols backlog now: implemented 5, partial 5, not_started 8.
+  - Reviewer verdict: APPROVED.
+  - Next batch target: static + mpls + openfabric + pim/pim6 + rpki.
