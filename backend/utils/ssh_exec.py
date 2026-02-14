@@ -133,6 +133,11 @@ def validate_abs_path_or_raise(path: str, *, prefix: Optional[str] = None) -> st
         raise ValueError("Path is required")
     if not _RE_ABS_PATH_SAFE.match(clean):
         raise ValueError("Invalid path format")
+    # Prevent path traversal. We intentionally do not attempt to normalize paths
+    # against the remote filesystem; instead we reject any dot segments.
+    parts = [part for part in clean.split("/") if part]
+    if any(part in {".", ".."} for part in parts):
+        raise ValueError("Path traversal is not allowed")
     if prefix and not clean.startswith(prefix):
         raise ValueError(f"Path must start with {prefix}")
     return clean
