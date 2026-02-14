@@ -54,37 +54,36 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Close remaining services-domain partials with form-driven pages and wrapper-backed APIs.
-- Completed this cycle: implemented `Monitoring`, `Webproxy`, `PPPoE Server`, and `IPoE Server` backend wrappers and GUI tabs.
-- Completed this cycle: extended service wrapper tests, services navigation, and runtime/browser smoke route coverage for the four new tabs.
-- Completed this cycle: regenerated parity artifacts; services domain is now `23 implemented / 0 partial / 0 not_started`.
-- Next: continue parity execution in the next non-complete domain (`vpn`).
+- Continue parity execution in the `vpn` domain after services completion.
+- Completed this cycle: added a dedicated VPN RSA Keys vertical slice (backend wrapper + UI page + tests + smoke coverage).
+- Completed this cycle: services domain remains complete at `23/0/0`; vpn domain improved to `6 implemented / 6 partial / 0 not_started`.
+- Next: continue form-driven VPN slices (`l2tp`, `pptp`, `sstp`, `openconnect`, `dmvpn`, and vpn index).
 
 ## Current Feature Spec
-Feature: **Services slice batch 4: Monitoring + Webproxy + PPPoE + IPoE**
+Feature: **VPN slice batch 1: RSA Keys**
 
 Acceptance criteria:
-- Backend exposes dedicated wrappers:
-  - `/vyos/service-monitoring/*`
-  - `/vyos/service-webproxy/*`
-  - `/vyos/service-pppoe-server/*`
-  - `/vyos/service-ipoe-server/*`
-- System Services page includes form-driven tabs for all four services (no free-form CLI input fields).
-- Sidebar `Services` navigation includes these services and remains A-Z ordered.
+- Backend exposes a dedicated wrapper:
+  - `/vyos/vpn-rsa-keys/*`
+- VPN section includes a form-driven `RSA Keys` page (no free-form CLI text input).
+- Sidebar `VPN` navigation includes the new `RSA Keys` page.
 - End-to-end validation (`pytest`, `tsc`, `build`, restart, runtime smoke, browser smoke) passes.
-- Coverage artifacts reflect progress (`services` improved from 19/4/0 to 23/0/0 implemented/partial/not_started).
+- Coverage artifacts reflect progress (`vpn` improved from 5/7/0 to 6/6/0 implemented/partial/not_started).
 
 Assumptions:
-- Advanced option coverage for monitoring exporters (e.g., blackbox module trees) and PPPoE/IPoE edge trees (full RADIUS dynamic-author, IPv6 pool details) will be expanded in future slices.
+- Remaining VPN docs pages still need full-form coverage beyond RSA key storage.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: services batch 4 implemented in working tree (pending commit in this cycle).
+- Status: services batch 4 committed and pushed (`609bbd1`); vpn rsa-keys slice implemented in working tree (pending commit in this cycle).
 - Working tree is dirty with unrelated pre-existing changes outside this hotfix.
 
 ### Files Touched This Cycle (hotfix-owned)
 - `backend/app.py`
+- `backend/routers/_vpn_wrapper.py`
+- `backend/routers/vpn_rsa_keys/__init__.py`
+- `backend/routers/vpn_rsa_keys/rsa_keys.py`
 - `backend/routers/monitoring_service/__init__.py`
 - `backend/routers/monitoring_service/monitoring_service.py`
 - `backend/routers/webproxy_service/__init__.py`
@@ -94,12 +93,15 @@ Assumptions:
 - `backend/routers/ipoe_server_service/__init__.py`
 - `backend/routers/ipoe_server_service/ipoe_server_service.py`
 - `backend/tests/test_service_wrapper_capabilities.py`
+- `backend/tests/test_vpn_wrapper_capabilities.py`
 - `frontend/src/lib/api/service-wrappers.ts`
+- `frontend/src/lib/api/vpn-rsa-keys.ts`
 - `frontend/src/components/system/MonitoringServiceTab.tsx`
 - `frontend/src/components/system/WebproxyServiceTab.tsx`
 - `frontend/src/components/system/PppoeServerServiceTab.tsx`
 - `frontend/src/components/system/IpoeServerServiceTab.tsx`
 - `frontend/src/app/system/services/page.tsx`
+- `frontend/src/app/vpn/rsa-keys/page.tsx`
 - `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/scripts/smoke-ui.mjs`
 - `frontend/scripts/check-runtime.sh`
@@ -113,6 +115,7 @@ Assumptions:
 ### Validation This Cycle
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_service_wrapper_capabilities.py` -> pass (`54 passed`)
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_app.py` -> pass (`1 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_vpn_wrapper_capabilities.py tests/test_app.py` -> pass (`4 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s build` -> pass
 - Restarted runtime API/UI sessions and verified listeners:
@@ -130,9 +133,10 @@ Assumptions:
 - Browser smoke currently depends on host-specific Playwright shared libs path; this should be standardized in dev bootstrap.
 - SNMPv3 configuration and HTTPS GraphQL/certificate controls are not exposed yet.
 - PPPoE/IPoE tabs currently prioritize common operator paths; advanced branches should be added as follow-up.
+- VPN non-IPsec/non-WireGuard protocols are still partial and require additional form-first editors.
 
 ## TODO Backlog (next queue)
-- Move parity execution to `vpn` domain (currently partial) after services completion.
+- Implement additional VPN pages with dedicated wrappers/forms: `l2tp`, `pptp`, `sstp`, `openconnect`, `dmvpn`, and VPN index.
 - Keep runtime gate sequence mandatory for each slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes

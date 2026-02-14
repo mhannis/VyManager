@@ -1,12 +1,12 @@
-feature_id: services-core-missing-2026-02-14
+feature_id: vpn-rsa-keys-2026-02-14
 status: done
-title: Services slice - Monitoring, Webproxy, PPPoE Server, IPoE Server
+title: VPN slice - RSA Keys
 branch: feature/containers-automation-v1
 commits:
   - uncommitted
 notes:
-  - Added backend wrappers for `/vyos/service-monitoring`, `/vyos/service-webproxy`, `/vyos/service-pppoe-server`, `/vyos/service-ipoe-server`.
-  - Added form-driven tabs in `/system/services` for Monitoring, Webproxy, PPPoE Server, and IPoE Server.
-  - Extended Services sidebar links and smoke routes for the new service tabs.
-  - Expanded backend wrapper capability/config/scope tests for the new service routes.
-  - Regenerated parity artifacts; services domain is now 23/0/0 (implemented/partial/not_started).
+  - Added backend wrapper endpoints for `/vyos/vpn-rsa-keys`.
+  - Added form-driven page at `/vpn/rsa-keys` to manage RSA key aliases and key material.
+  - Added VPN sidebar navigation entry for RSA Keys.
+  - Added backend wrapper scope/config tests and extended smoke routes.
+  - Regenerated parity artifacts; VPN domain improved from 5/7/0 to 6/6/0 implemented/partial/not_started.

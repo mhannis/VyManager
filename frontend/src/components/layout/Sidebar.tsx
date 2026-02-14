@@ -205,6 +205,11 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.IPSEC
       },
       {
+        title: "RSA Keys",
+        href: "/vpn/rsa-keys",
+        requiredPermission: FeatureGroup.VPN
+      },
+      {
         title: "WireGuard",
         href: "/vpn/wireguard",
         requiredPermission: FeatureGroup.WIREGUARD

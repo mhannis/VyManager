@@ -35,6 +35,7 @@ critical_routes=(
   "/system/services?tab=tftp-server&view=single"
   "/system/services?tab=webproxy&view=single"
   "/services/dhcp-server"
+  "/vpn/rsa-keys"
 )
 
 for route in "${critical_routes[@]}"; do

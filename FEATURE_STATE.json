@@ -1,17 +1,17 @@
 {
-  "feature_id": "services-core-missing-2026-02-14",
-  "title": "Services slice: Monitoring, Webproxy, PPPoE Server, IPoE Server",
+  "feature_id": "vpn-rsa-keys-2026-02-14",
+  "title": "VPN slice: RSA Keys",
   "status": "done",
   "acceptance_criteria": [
-    "Backend wrappers exist for monitoring, webproxy, pppoe-server, and ipoe-server with capabilities/config/batch endpoints.",
-    "System Services page exposes form-driven tabs for Monitoring, Webproxy, PPPoE Server, and IPoE Server.",
-    "Services sidebar and service single-view links include the new tabs in A-Z order.",
-    "Backend tests, frontend typecheck/build, runtime smoke, and browser smoke all pass.",
-    "Coverage artifacts regenerate with services domain at 23 implemented, 0 partial, 0 not_started."
+    "Backend wrapper exists for vpn-rsa-keys with capabilities/config/batch endpoints.",
+    "VPN RSA Keys page exists at /vpn/rsa-keys with form-first CRUD for key name/value entries.",
+    "VPN sidebar includes RSA Keys navigation entry.",
+    "Backend tests, frontend typecheck/build, runtime smoke, and browser smoke pass.",
+    "Coverage artifacts regenerate with VPN domain progress from 5/7/0 to 6/6/0."
   ],
   "assumptions": [
-    "Advanced branches of PPPoE/IPoE and monitoring exporters will be expanded in later slices.",
-    "Wrappers continue to use command-string operations under strict service subtree validation.",
+    "Additional VPN protocol pages (l2tp/pptp/sstp/openconnect/dmvpn) are separate upcoming slices.",
+    "Wrapper batch writes remain command-scoped under 'vpn rsa-keys'.",
     "Unrelated dirty worktree files remain untouched."
   ],
   "tasks": [
@@ -21,42 +21,33 @@
       "status": "done",
       "files": [
         "backend/app.py",
-        "backend/routers/monitoring_service/__init__.py",
-        "backend/routers/monitoring_service/monitoring_service.py",
-        "backend/routers/webproxy_service/__init__.py",
-        "backend/routers/webproxy_service/webproxy_service.py",
-        "backend/routers/pppoe_server_service/__init__.py",
-        "backend/routers/pppoe_server_service/pppoe_server_service.py",
-        "backend/routers/ipoe_server_service/__init__.py",
-        "backend/routers/ipoe_server_service/ipoe_server_service.py",
-        "backend/tests/test_service_wrapper_capabilities.py"
+        "backend/routers/_vpn_wrapper.py",
+        "backend/routers/vpn_rsa_keys/__init__.py",
+        "backend/routers/vpn_rsa_keys/rsa_keys.py",
+        "backend/tests/test_vpn_wrapper_capabilities.py"
       ],
-      "notes": "Added wrapper routers and scope tests for the four remaining services pages."
+      "notes": "Added VPN subtree wrapper infrastructure and RSA keys router with scope validation tests."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/service-wrappers.ts",
-        "frontend/src/components/system/MonitoringServiceTab.tsx",
-        "frontend/src/components/system/WebproxyServiceTab.tsx",
-        "frontend/src/components/system/PppoeServerServiceTab.tsx",
-        "frontend/src/components/system/IpoeServerServiceTab.tsx",
-        "frontend/src/app/system/services/page.tsx",
+        "frontend/src/lib/api/vpn-rsa-keys.ts",
+        "frontend/src/app/vpn/rsa-keys/page.tsx",
         "frontend/src/components/layout/Sidebar.tsx"
       ],
-      "notes": "Implemented form-first tabs and navigation wiring for monitoring/webproxy/pppoe/ipoe services."
+      "notes": "Implemented RSA key page and navigation under VPN."
     },
     {
       "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "frontend/scripts/smoke-ui.mjs",
-        "frontend/scripts/check-runtime.sh"
+        "frontend/scripts/check-runtime.sh",
+        "frontend/scripts/smoke-ui.mjs"
       ],
-      "notes": "Added new service routes to runtime and browser smoke coverage."
+      "notes": "Extended runtime/browser smoke coverage with /vpn/rsa-keys route."
     },
     {
       "id": "T4",
@@ -70,34 +61,29 @@
         "PARITY_BACKLOG.json",
         "PARITY_BACKLOG.md"
       ],
-      "notes": "Regenerated matrix/backlog; services domain now reports complete."
+      "notes": "Regenerated matrix and backlog after RSA keys slice."
     },
     {
       "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/routers/monitoring_service/monitoring_service.py",
-        "backend/routers/webproxy_service/webproxy_service.py",
-        "backend/routers/pppoe_server_service/pppoe_server_service.py",
-        "backend/routers/ipoe_server_service/ipoe_server_service.py",
-        "frontend/src/components/system/MonitoringServiceTab.tsx",
-        "frontend/src/components/system/WebproxyServiceTab.tsx",
-        "frontend/src/components/system/PppoeServerServiceTab.tsx",
-        "frontend/src/components/system/IpoeServerServiceTab.tsx"
+        "backend/routers/_vpn_wrapper.py",
+        "backend/routers/vpn_rsa_keys/rsa_keys.py",
+        "frontend/src/app/vpn/rsa-keys/page.tsx"
       ],
-      "notes": "Manual review pass complete; no existing API contracts were changed."
+      "notes": "Manual review complete; no existing API contracts were changed."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_service_wrapper_capabilities.py tests/test_app.py && cd frontend && npx tsc --noEmit --pretty false && cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_vpn_wrapper_capabilities.py tests/test_app.py && cd frontend && npx tsc --noEmit --pretty false && cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Parity implementation (services completion then VPN backlog)",
+      "purpose": "Parity implementation (services complete, continuing VPN backlog)",
       "status": "active"
     }
   ]

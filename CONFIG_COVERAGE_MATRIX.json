@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-14T22:36:34Z",
+  "generated_at": "2026-02-14T22:44:20Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -1141,9 +1141,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/vpn/rsa-keys.html",
       "title": "RSA-Keys",
       "cli_scope": "vpn rsa keys",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 128,

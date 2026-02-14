@@ -1,14 +1,14 @@
 # CONFIG_COVERAGE_MATRIX
 
-Generated: `2026-02-14T22:36:34Z`
+Generated: `2026-02-14T22:44:20Z`
 Source: `https://docs.vyos.io/en/latest/configuration/`
 
 ## Status Summary
 
 - Total documentation pages discovered: **129**
-- `DETECTED` (backend + frontend signal): **111**
+- `DETECTED` (backend + frontend signal): **112**
 - `BACKEND_ONLY`: **0**
-- `FRONTEND_ONLY`: **14**
+- `FRONTEND_ONLY`: **13**
 - `MISSING`: **4**
 
 ## Notes
@@ -147,6 +147,6 @@ Source: `https://docs.vyos.io/en/latest/configuration/`
 | 124 | [L2TP](https://docs.vyos.io/en/latest/configuration/vpn/l2tp.html) | `vpn l2tp` | N | Y | `FRONTEND_ONLY` |
 | 125 | [OpenConnect](https://docs.vyos.io/en/latest/configuration/vpn/openconnect.html) | `vpn openconnect` | N | Y | `FRONTEND_ONLY` |
 | 126 | [PPTP-Server](https://docs.vyos.io/en/latest/configuration/vpn/pptp.html) | `vpn pptp` | N | Y | `FRONTEND_ONLY` |
-| 127 | [RSA-Keys](https://docs.vyos.io/en/latest/configuration/vpn/rsa-keys.html) | `vpn rsa keys` | N | Y | `FRONTEND_ONLY` |
+| 127 | [RSA-Keys](https://docs.vyos.io/en/latest/configuration/vpn/rsa-keys.html) | `vpn rsa keys` | Y | Y | `DETECTED` |
 | 128 | [SSTP Server](https://docs.vyos.io/en/latest/configuration/vpn/sstp.html) | `vpn sstp` | N | Y | `FRONTEND_ONLY` |
 | 129 | [VRF](https://docs.vyos.io/en/latest/configuration/vrf/index.html) | `vrf` | N | Y | `FRONTEND_ONLY` |
