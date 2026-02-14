@@ -121,7 +121,7 @@ export default function SystemOptionsPage() {
                 System Identity
               </CardTitle>
               <CardDescription>
-                Updates `system host-name`, `system time-zone`, `system name-server`, and `system domain-name`.
+                Updates `system host-name`, `system time-zone`, and `system domain-name`.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
