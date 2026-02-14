@@ -101,3 +101,4 @@
 - 2026-02-14: Expanded smoke gates to include all new service tabs in single-view routes to catch service-page runtime regressions before handoff.
 - 2026-02-14: Added service-wrapper router and form-first page for `event-handler` under `/system/services`.
 - 2026-02-14: Coverage crawler aliasing extended for `eventhandler <-> event_handler`, and service-tail alias expansion added for wrapper detection; this resolved event-handler false `FRONTEND_ONLY` matrix output.
+- 2026-02-14: Phase1 classifier now treats `https://docs.vyos.io/en/latest/configuration/service/index.html` as `DOC_ONLY_UI_COVERAGE`; services docs index is considered implemented when the Services UI page exists.

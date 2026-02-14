@@ -1,5 +1,5 @@
 {
-  "source_matrix_generated_at": "2026-02-14T22:13:04Z",
+  "source_matrix_generated_at": "2026-02-14T22:16:07Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -3970,7 +3970,7 @@
       "cli_scope": "service",
       "domain": "services",
       "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",

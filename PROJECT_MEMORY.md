@@ -57,7 +57,7 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Continue services-domain parity with form-driven pages (no free-form CLI input).
 - Completed this cycle: implemented `Event Handler` service wrapper + form-driven tab and wired it into navigation/smoke coverage.
 - Completed this cycle: added backend tests for event-handler wrapper scope and config payload.
-- Completed this cycle: regenerated coverage artifacts; services domain improved to `18 implemented / 5 partial / 0 not_started`.
+- Completed this cycle: regenerated coverage artifacts; services domain improved to `19 implemented / 4 partial / 0 not_started`.
 - Next: continue services-domain backlog reduction on remaining partial pages.
 
 ## Current Feature Spec
@@ -69,7 +69,7 @@ Acceptance criteria:
 - System Services page includes a form-driven Event Handler tab (events, filters, script path/args, environment vars).
 - Sidebar `Services` navigation includes Event Handler and remains A-Z ordered.
 - End-to-end validation (`pytest`, `tsc`, `build`, restart, runtime smoke, browser smoke) passes.
-- Coverage artifacts reflect progress (`services` improved from 17/6/0 to 18/5/0 implemented/partial/not_started).
+- Coverage artifacts reflect progress (`services` improved from 17/6/0 to 19/4/0 implemented/partial/not_started).
 
 Assumptions:
 - Advanced option coverage for several services (for example, Suricata logging and conntrack helper edge cases) remains a follow-up slice.
@@ -146,7 +146,7 @@ Assumptions:
 
 ## TODO Backlog (next queue)
 - Continue services parity slices with robust form-first UX.
-- Candidates next: `monitoring`, `webproxy`, `pppoe-server`, `ipoe-server`, `service index`.
+- Candidates next: `monitoring`, `webproxy`, `pppoe-server`, `ipoe-server`.
 - For each new slice: keep runtime gate sequence mandatory (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
@@ -181,3 +181,4 @@ Assumptions:
 - Smoke route defaults were expanded again to directly probe each newly added service tab route in single-service mode.
 - Added service-wrapper router and form tab for `event-handler`, including nested environment variable editing per event.
 - Coverage crawler aliases now bridge `eventhandler` <-> `event_handler`, and service-wrapper signal generation now uses alias-expanded tails; this fixed `eventhandler` false `FRONTEND_ONLY` classification.
+- Phase1 backlog classifier now treats `service/index.html` as doc-only UI coverage, so the Service docs index is counted implemented when the Services UI exists.

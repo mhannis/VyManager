@@ -223,6 +223,7 @@ DOMAIN_EVIDENCE_PATTERNS = {
 DOC_ONLY_UI_COVERAGE = {
     "https://docs.vyos.io/en/latest/configuration/policy/index.html",
     "https://docs.vyos.io/en/latest/configuration/policy/examples.html",
+    "https://docs.vyos.io/en/latest/configuration/service/index.html",
 }
 
 

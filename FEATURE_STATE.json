@@ -7,10 +7,10 @@
     "System Services page exposes a form-driven Event Handler tab for events, filters, script path/args, and environment variables.",
     "Services sidebar includes Event Handler in A-Z ordering.",
     "Runtime and browser smoke include the Event Handler route and pass.",
-    "Coverage artifacts regenerate and show services domain progress (18 implemented, 5 partial)."
+    "Coverage artifacts regenerate and show services domain progress (19 implemented, 4 partial)."
   ],
   "assumptions": [
-    "Some advanced service pages remain for later slices (monitoring, webproxy, pppoe/ipoe, service index).",
+    "Some advanced service pages remain for later slices (monitoring, webproxy, pppoe/ipoe).",
     "Wrappers continue to use command-string operations under strict service subtree validation.",
     "Unrelated dirty worktree files remain untouched."
   ],
