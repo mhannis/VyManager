@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, Shield, Network, Server, Settings, LayoutDashboard, Route, Lock, LogOut, User, FileText, Building2, Power, PowerOff } from "lucide-react";
+import { ChevronDown, Shield, Network, Server, Settings, LayoutDashboard, Route, Lock, LogOut, User, FileText, Building2, Power, PowerOff, Wrench } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -202,22 +202,69 @@ const navigation: NavItem[] = [
     ],
   },
   {
+    title: "Services",
+    icon: Wrench,
+    children: [
+      {
+        title: "NTP",
+        href: "/system/services?tab=ntp",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "LLDP",
+        href: "/system/services?tab=lldp",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "mDNS Repeater",
+        href: "/system/services?tab=mdns",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "SSH",
+        href: "/system/services?tab=ssh",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "DNS Forwarder",
+        href: "/system/services?tab=dns-forwarder",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "DNS Resolver",
+        href: "/system/services?tab=dns-resolver",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "Dynamic DNS",
+        href: "/system/services?tab=dynamic-dns",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "DHCP Server",
+        href: "/network/dhcp",
+        requiredPermission: FeatureGroup.DHCP,
+      },
+      {
+        title: "DHCP Relay",
+        href: "/system/services?tab=dhcp-relay",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+    ],
+  },
+  {
+    title: "Containers",
+    href: "/system/containers",
+    icon: Building2,
+    requiredPermission: FeatureGroup.SYSTEM,
+  },
+  {
     title: "System",
     icon: Server,
     children: [
       {
-        title: "Services",
-        href: "/system/services",
-        requiredPermission: FeatureGroup.SYSTEM
-      },
-      {
         title: "Acceleration",
         href: "/system/acceleration",
-        requiredPermission: FeatureGroup.SYSTEM
-      },
-      {
-        title: "Containers",
-        href: "/system/containers",
         requiredPermission: FeatureGroup.SYSTEM
       },
       {
@@ -241,11 +288,25 @@ const navigation: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [openOverrides, setOpenOverrides] = useState<Record<string, boolean>>({});
   const { data: session } = useSession();
   const { activeSession, loadSession, disconnectFromInstance } = useSessionStore();
   const { canRead } = usePermissions();
+
+  const isHrefActive = useCallback((href?: string): boolean => {
+    if (!href) return false;
+    const [hrefPath, hrefQuery] = href.split("?");
+    if (pathname !== hrefPath) return false;
+    if (!hrefQuery) return true;
+
+    const requiredParams = new URLSearchParams(hrefQuery);
+    for (const [key, value] of requiredParams.entries()) {
+      if (searchParams.get(key) !== value) return false;
+    }
+    return true;
+  }, [pathname, searchParams]);
 
   // Load active session on mount
   useEffect(() => {
@@ -270,14 +331,14 @@ export function Sidebar() {
     const activeParents: string[] = [];
     navigation.forEach((item) => {
       if (item.children) {
-        const hasActiveChild = item.children.some(child => pathname === child.href);
+        const hasActiveChild = item.children.some((child) => isHrefActive(child.href));
         if (hasActiveChild) {
           activeParents.push(item.title);
         }
       }
     });
     return activeParents;
-  }, [pathname]);
+  }, [isHrefActive]);
 
   const isItemOpen = (title: string) =>
     openOverrides[title] ?? activeParents.includes(title);
@@ -445,8 +506,7 @@ export function Sidebar() {
         <nav className="space-y-1">
           {visibleNavigation.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href ||
-              item.children?.some(child => pathname === child.href);
+            const isActive = isHrefActive(item.href) || item.children?.some((child) => isHrefActive(child.href));
 
             if (item.children) {
               const isOpen = isItemOpen(item.title);
@@ -475,7 +535,7 @@ export function Sidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-1 space-y-1 pl-4">
                     {item.children.map((child) => {
-                      const isChildActive = pathname === child.href;
+                      const isChildActive = isHrefActive(child.href);
                       return (
                         <Link
                           key={child.href}

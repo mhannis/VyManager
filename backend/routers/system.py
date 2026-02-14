@@ -189,6 +189,54 @@ def _parse_cpu_output(output: str) -> Dict[str, Any]:
     }
 
 
+def _parse_temperature_token_to_celsius(token: str) -> Optional[float]:
+    match = re.search(r"(-?[0-9]+(?:\.[0-9]+)?)\s*°?\s*([CF])\b", token, re.IGNORECASE)
+    if not match:
+        return None
+
+    try:
+        value = float(match.group(1))
+    except ValueError:
+        return None
+
+    unit = match.group(2).upper()
+    if unit == "F":
+        value = (value - 32.0) * (5.0 / 9.0)
+    return round(value, 1)
+
+
+def _parse_cpu_temperature_output(output: str) -> Dict[str, Optional[float]]:
+    """
+    Best-effort parser for CPU/package/core temperature from VyOS show output.
+    Returns hottest CPU-related sensor in Celsius when available.
+    """
+    if not output:
+        return {"cpu_temperature_celsius": None}
+
+    cpu_related: List[float] = []
+    fallback: List[float] = []
+
+    for raw_line in output.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        parsed = _parse_temperature_token_to_celsius(line)
+        if parsed is None:
+            continue
+
+        fallback.append(parsed)
+        lower = line.lower()
+        if any(marker in lower for marker in ("cpu", "package", "core", "tdie", "tctl")):
+            cpu_related.append(parsed)
+
+    candidates = cpu_related or fallback
+    if not candidates:
+        return {"cpu_temperature_celsius": None}
+
+    return {"cpu_temperature_celsius": max(candidates)}
+
+
 def _parse_memory_output(output: str) -> Dict[str, Optional[float | int | str]]:
     data = _parse_key_value_lines(output)
 
@@ -375,8 +423,17 @@ def _normalize_unique_strings(values: List[str]) -> List[str]:
     return result
 
 
+def _model_fields_set(model: BaseModel) -> set[str]:
+    """Return explicitly provided fields for both pydantic v1/v2."""
+    raw = getattr(model, "model_fields_set", None)
+    if raw is None:
+        raw = getattr(model, "__fields_set__", set())
+    return set(raw or set())
+
+
 RE_LOCAL_USERNAME = re.compile(r"^[A-Za-z_][A-Za-z0-9._-]{0,31}$")
 RE_LOCAL_LEVEL = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
+RE_HOSTNAME_TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,252}$")
 
 
 # ========================================================================
@@ -423,6 +480,7 @@ class SystemDashboardSummary(BaseModel):
     cpu_models: List[str] = Field(default_factory=list)
     cpu_socket_count: Optional[int] = None
     cpu_cores: Optional[int] = None
+    cpu_temperature_celsius: Optional[float] = None
 
     memory_total_human: Optional[str] = None
     memory_free_human: Optional[str] = None
@@ -504,6 +562,67 @@ class NtpServiceConfigRequest(BaseModel):
     servers: List[NtpServerConfig] = Field(default_factory=list)
     allow_clients: List[str] = Field(default_factory=list)
     listen_addresses: List[str] = Field(default_factory=list)
+
+
+# ========================================================================
+# SSH Service Models
+# ========================================================================
+
+
+class SshServiceConfigResponse(BaseModel):
+    enabled: bool = False
+    port: Optional[int] = None
+    listen_addresses: List[str] = Field(default_factory=list)
+    disable_password_authentication: bool = False
+
+
+class SshServiceConfigRequest(BaseModel):
+    enabled: bool = False
+    port: Optional[int] = 22
+    listen_addresses: List[str] = Field(default_factory=list)
+    disable_password_authentication: bool = False
+
+
+# ========================================================================
+# DNS Service Models
+# ========================================================================
+
+
+class DnsForwardingDomainOverride(BaseModel):
+    domain: str
+    name_servers: List[str] = Field(default_factory=list)
+
+
+class DnsHostOverride(BaseModel):
+    hostname: str
+    addresses: List[str] = Field(default_factory=list)
+    aliases: List[str] = Field(default_factory=list)
+
+
+class DnsServiceConfigResponse(BaseModel):
+    enabled: bool = False
+    local_domain_name: Optional[str] = None
+    listen_addresses: List[str] = Field(default_factory=list)
+    allow_from: List[str] = Field(default_factory=list)
+    name_servers: List[str] = Field(default_factory=list)
+    use_system_name_servers: bool = False
+    cache_size: Optional[int] = None
+    authoritative_domains: List[str] = Field(default_factory=list)
+    domain_overrides: List[DnsForwardingDomainOverride] = Field(default_factory=list)
+    host_overrides: List[DnsHostOverride] = Field(default_factory=list)
+
+
+class DnsServiceConfigRequest(BaseModel):
+    enabled: bool = False
+    local_domain_name: Optional[str] = None
+    listen_addresses: List[str] = Field(default_factory=list)
+    allow_from: List[str] = Field(default_factory=list)
+    name_servers: List[str] = Field(default_factory=list)
+    use_system_name_servers: bool = False
+    cache_size: Optional[int] = None
+    authoritative_domains: List[str] = Field(default_factory=list)
+    domain_overrides: List[DnsForwardingDomainOverride] = Field(default_factory=list)
+    host_overrides: List[DnsHostOverride] = Field(default_factory=list)
 
 
 # ========================================================================
@@ -764,6 +883,93 @@ def _parse_ntp_service_config(full_config: Dict[str, Any]) -> NtpServiceConfigRe
         servers=sorted(servers, key=lambda server: server.address),
         allow_clients=allow_clients,
         listen_addresses=listen_addresses,
+    )
+
+
+def _parse_ssh_service_config(full_config: Dict[str, Any]) -> SshServiceConfigResponse:
+    service_root = _as_dict(full_config.get("service"))
+    ssh_root = service_root.get("ssh")
+
+    if not isinstance(ssh_root, dict):
+        return SshServiceConfigResponse(enabled=False)
+
+    port = _safe_int(ssh_root.get("port"))
+    if port is not None and (port < 1 or port > 65535):
+        port = None
+
+    listen_addresses = _extract_tag_values(ssh_root, ["listen-address"])
+
+    return SshServiceConfigResponse(
+        enabled=True,
+        port=port,
+        listen_addresses=listen_addresses,
+        disable_password_authentication=("disable-password-authentication" in ssh_root),
+    )
+
+
+def _normalize_hostname_or_400(value: str, field_name: str = "hostname") -> str:
+    text = value.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail=f"{field_name} is required")
+    if not RE_HOSTNAME_TOKEN.match(text):
+        raise HTTPException(status_code=400, detail=f"Invalid {field_name}: {text}")
+    return text
+
+
+def _parse_dns_service_config(full_config: Dict[str, Any]) -> DnsServiceConfigResponse:
+    service_root = _as_dict(full_config.get("service"))
+    dns_root = _as_dict(service_root.get("dns"))
+    forwarding_root = dns_root.get("forwarding")
+
+    system_root = _as_dict(full_config.get("system"))
+    local_domain_name = _string_or_none(system_root.get("domain-name"))
+
+    host_mapping_root = _as_dict(_as_dict(system_root.get("static-host-mapping")).get("host-name"))
+    host_overrides: List[DnsHostOverride] = []
+    for host_name, host_data in sorted(host_mapping_root.items(), key=lambda item: str(item[0])):
+        hostname = str(host_name).strip()
+        if not hostname:
+            continue
+        data = _as_dict(host_data)
+        host_overrides.append(
+            DnsHostOverride(
+                hostname=hostname,
+                addresses=_extract_tag_values(data, ["inet"]),
+                aliases=_extract_tag_values(data, ["alias"]),
+            )
+        )
+
+    if not isinstance(forwarding_root, dict):
+        return DnsServiceConfigResponse(
+            enabled=False,
+            local_domain_name=local_domain_name,
+            host_overrides=host_overrides,
+        )
+
+    domain_overrides: List[DnsForwardingDomainOverride] = []
+    raw_domain_overrides = _as_dict(forwarding_root.get("domain"))
+    for domain_name, domain_data in sorted(raw_domain_overrides.items(), key=lambda item: str(item[0])):
+        domain = str(domain_name).strip()
+        if not domain:
+            continue
+        domain_overrides.append(
+            DnsForwardingDomainOverride(
+                domain=domain,
+                name_servers=_extract_tag_values(_as_dict(domain_data), ["name-server"]),
+            )
+        )
+
+    return DnsServiceConfigResponse(
+        enabled=True,
+        local_domain_name=local_domain_name,
+        listen_addresses=_extract_tag_values(forwarding_root, ["listen-address"]),
+        allow_from=_extract_tag_values(forwarding_root, ["allow-from"]),
+        name_servers=_extract_tag_values(forwarding_root, ["name-server"]),
+        use_system_name_servers=("system" in forwarding_root),
+        cache_size=_safe_int(forwarding_root.get("cache-size")),
+        authoritative_domains=_extract_tag_values(forwarding_root, ["authoritative-domain"]),
+        domain_overrides=domain_overrides,
+        host_overrides=host_overrides,
     )
 
 
@@ -1366,6 +1572,28 @@ async def get_dashboard_summary(request: Request, refresh: bool = False) -> Syst
         if memory_output:
             summary = summary.model_copy(update=_parse_memory_output(memory_output))
 
+        temperature_output = ""
+        for command_path in (
+            ["hardware", "temperature"],
+            ["system", "temperature"],
+            ["hardware", "sensors"],
+        ):
+            try:
+                response = await run_in_threadpool(service.device.show, path=command_path)
+            except Exception:
+                continue
+
+            if getattr(response, "status", None) != 200:
+                continue
+
+            candidate = _extract_show_output(getattr(response, "result", ""))
+            if candidate.strip():
+                temperature_output = candidate
+                break
+
+        if temperature_output:
+            summary = summary.model_copy(update=_parse_cpu_temperature_output(temperature_output))
+
         return summary
     except HTTPException:
         raise
@@ -1637,6 +1865,243 @@ async def update_ntp_config(request: Request, body: NtpServiceConfigRequest) -> 
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating NTP configuration: {str(e)}")
+
+
+@router.get("/ssh-config", response_model=SshServiceConfigResponse)
+async def get_ssh_config(request: Request, refresh: bool = False) -> SshServiceConfigResponse:
+    """Get SSH service configuration."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        return _parse_ssh_service_config(full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving SSH configuration: {str(exc)}")
+
+
+@router.put("/ssh-config", response_model=SshServiceConfigResponse)
+async def update_ssh_config(request: Request, body: SshServiceConfigRequest) -> SshServiceConfigResponse:
+    """Update SSH service configuration."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        current = _parse_ssh_service_config(full_config)
+
+        operations: List[Dict[str, Any]] = []
+
+        if not body.enabled:
+            if current.enabled:
+                operations.append({"op": "delete", "path": ["service", "ssh"]})
+        else:
+            operations.append({"op": "set", "path": ["service", "ssh"]})
+
+            port = body.port if body.port is not None else 22
+            if port < 1 or port > 65535:
+                raise HTTPException(status_code=400, detail="SSH port must be between 1 and 65535")
+            if current.port != port:
+                operations.append({"op": "set", "path": ["service", "ssh", "port", str(port)]})
+
+            desired_listen = set(_normalize_unique_strings(body.listen_addresses))
+            current_listen = set(current.listen_addresses)
+            for addr in sorted(current_listen - desired_listen):
+                operations.append({"op": "delete", "path": ["service", "ssh", "listen-address", addr]})
+            for addr in sorted(desired_listen - current_listen):
+                operations.append({"op": "set", "path": ["service", "ssh", "listen-address", addr]})
+
+            if body.disable_password_authentication and not current.disable_password_authentication:
+                operations.append({"op": "set", "path": ["service", "ssh", "disable-password-authentication"]})
+            elif not body.disable_password_authentication and current.disable_password_authentication:
+                operations.append({"op": "delete", "path": ["service", "ssh", "disable-password-authentication"]})
+
+        if operations:
+            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            if response.status != 200:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to update SSH configuration: {response.error or 'Unknown VyOS error'}",
+                )
+
+            await run_in_threadpool(service.get_full_config, refresh=True)
+
+        updated_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        return _parse_ssh_service_config(updated_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating SSH configuration: {str(exc)}")
+
+
+@router.get("/dns-config", response_model=DnsServiceConfigResponse)
+async def get_dns_config(request: Request, refresh: bool = False) -> DnsServiceConfigResponse:
+    """Get DNS forwarding + local authoritative/static-host settings."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        return _parse_dns_service_config(full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving DNS configuration: {str(exc)}")
+
+
+@router.put("/dns-config", response_model=DnsServiceConfigResponse)
+async def update_dns_config(request: Request, body: DnsServiceConfigRequest) -> DnsServiceConfigResponse:
+    """Update DNS forwarding + local authoritative/static-host settings."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        fields_set = _model_fields_set(body)
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        current = _parse_dns_service_config(full_config)
+        raw_forwarding = _as_dict(_as_dict(_as_dict(full_config.get("service")).get("dns")).get("forwarding"))
+        raw_system = _as_dict(full_config.get("system"))
+        raw_hosts = _as_dict(_as_dict(raw_system.get("static-host-mapping")).get("host-name"))
+
+        operations: List[Dict[str, Any]] = []
+        forwarding_fields = {
+            "listen_addresses",
+            "allow_from",
+            "name_servers",
+            "use_system_name_servers",
+            "cache_size",
+            "domain_overrides",
+            "authoritative_domains",
+        }
+        desired_forwarding_enabled = (
+            body.enabled
+            if "enabled" in fields_set
+            else (current.enabled or bool(forwarding_fields & fields_set))
+        )
+
+        # Forwarding service subtree.
+        if not desired_forwarding_enabled:
+            if current.enabled and "enabled" in fields_set:
+                operations.append({"op": "delete", "path": ["service", "dns", "forwarding"]})
+        else:
+            operations.append({"op": "set", "path": ["service", "dns", "forwarding"]})
+
+            if "listen_addresses" in fields_set:
+                desired_listen = set(_normalize_unique_strings(body.listen_addresses))
+                current_listen = set(current.listen_addresses)
+                for addr in sorted(current_listen - desired_listen):
+                    operations.append({"op": "delete", "path": ["service", "dns", "forwarding", "listen-address", addr]})
+                for addr in sorted(desired_listen - current_listen):
+                    operations.append({"op": "set", "path": ["service", "dns", "forwarding", "listen-address", addr]})
+
+            if "allow_from" in fields_set:
+                desired_allow_from = set(_normalize_unique_strings(body.allow_from))
+                current_allow_from = set(current.allow_from)
+                for cidr in sorted(current_allow_from - desired_allow_from):
+                    operations.append({"op": "delete", "path": ["service", "dns", "forwarding", "allow-from", cidr]})
+                for cidr in sorted(desired_allow_from - current_allow_from):
+                    operations.append({"op": "set", "path": ["service", "dns", "forwarding", "allow-from", cidr]})
+
+            if "name_servers" in fields_set:
+                desired_name_servers = set(_normalize_unique_strings(body.name_servers))
+                current_name_servers = set(current.name_servers)
+                for ns in sorted(current_name_servers - desired_name_servers):
+                    operations.append({"op": "delete", "path": ["service", "dns", "forwarding", "name-server", ns]})
+                for ns in sorted(desired_name_servers - current_name_servers):
+                    operations.append({"op": "set", "path": ["service", "dns", "forwarding", "name-server", ns]})
+
+            if "use_system_name_servers" in fields_set:
+                if body.use_system_name_servers and not current.use_system_name_servers:
+                    operations.append({"op": "set", "path": ["service", "dns", "forwarding", "system"]})
+                elif not body.use_system_name_servers and current.use_system_name_servers:
+                    operations.append({"op": "delete", "path": ["service", "dns", "forwarding", "system"]})
+
+            if "cache_size" in fields_set:
+                cache_size = body.cache_size
+                if cache_size is not None and cache_size < 0:
+                    raise HTTPException(status_code=400, detail="cache_size must be >= 0")
+                current_cache = current.cache_size
+                if cache_size is None:
+                    if current_cache is not None:
+                        operations.append({"op": "delete", "path": ["service", "dns", "forwarding", "cache-size"]})
+                elif cache_size != current_cache:
+                    operations.append({"op": "set", "path": ["service", "dns", "forwarding", "cache-size", str(cache_size)]})
+
+            if "domain_overrides" in fields_set:
+                # Replace domain overrides subtree.
+                if isinstance(raw_forwarding.get("domain"), dict):
+                    operations.append({"op": "delete", "path": ["service", "dns", "forwarding", "domain"]})
+                for entry in body.domain_overrides:
+                    domain = _normalize_hostname_or_400(entry.domain, field_name="domain override")
+                    for ns in _normalize_unique_strings(entry.name_servers):
+                        operations.append(
+                            {"op": "set", "path": ["service", "dns", "forwarding", "domain", domain, "name-server", ns]}
+                        )
+
+            if "authoritative_domains" in fields_set:
+                desired_auth_domains = set(_normalize_unique_strings(body.authoritative_domains))
+                current_auth_domains = set(current.authoritative_domains)
+                for domain in sorted(current_auth_domains - desired_auth_domains):
+                    operations.append(
+                        {"op": "delete", "path": ["service", "dns", "forwarding", "authoritative-domain", domain]}
+                    )
+                for domain in sorted(desired_auth_domains - current_auth_domains):
+                    operations.append(
+                        {"op": "set", "path": ["service", "dns", "forwarding", "authoritative-domain", domain]}
+                    )
+
+        # System domain-name.
+        if "local_domain_name" in fields_set:
+            local_domain_name = _string_or_none(body.local_domain_name)
+            if local_domain_name:
+                operations.append({"op": "set", "path": ["system", "domain-name", local_domain_name]})
+            elif _string_or_none(raw_system.get("domain-name")):
+                operations.append({"op": "delete", "path": ["system", "domain-name"]})
+
+        if "host_overrides" in fields_set:
+            # Replace static host mappings (best-effort authoritative overrides).
+            if raw_hosts:
+                operations.append({"op": "delete", "path": ["system", "static-host-mapping", "host-name"]})
+
+            seen_hosts = set()
+            for host in body.host_overrides:
+                hostname = _normalize_hostname_or_400(host.hostname)
+                if hostname in seen_hosts:
+                    continue
+                seen_hosts.add(hostname)
+
+                addresses = _normalize_unique_strings(host.addresses)
+                aliases = _normalize_unique_strings(host.aliases)
+                if not addresses:
+                    continue
+
+                for address in addresses:
+                    operations.append(
+                        {"op": "set", "path": ["system", "static-host-mapping", "host-name", hostname, "inet", address]}
+                    )
+                for alias in aliases:
+                    alias_clean = _normalize_hostname_or_400(alias, field_name=f"alias for {hostname}")
+                    operations.append(
+                        {"op": "set", "path": ["system", "static-host-mapping", "host-name", hostname, "alias", alias_clean]}
+                    )
+
+        if operations:
+            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            if response.status != 200:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to update DNS configuration: {response.error or 'Unknown VyOS error'}",
+                )
+            await run_in_threadpool(service.get_full_config, refresh=True)
+
+        updated = await run_in_threadpool(service.get_full_config, refresh=True)
+        return _parse_dns_service_config(updated)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating DNS configuration: {str(exc)}")
 
 
 @router.get("/logs", response_model=SystemLogsResponse)

@@ -1,157 +1,119 @@
 # PROJECT_MEMORY.md
 
 Last updated: 2026-02-14
-
 Repo: https://github.com/mhannis/VyManager/tree/dev
 
 ## Repo Facts
 
 ### Stack
-- Frontend: Next.js (App Router), React, TypeScript, Tailwind CSS, shadcn/ui, Prisma, better-auth
-- Backend: FastAPI (Python), asyncpg, pytest/pytest-asyncio, httpx
-- VyOS integration: VyOS REST API via vendored `pyvyos` (`backend/pyvyos/*`)
+- Frontend: Next.js App Router, React, TypeScript, Tailwind/shadcn, Prisma, better-auth
+- Backend: FastAPI (Python), asyncpg, pytest/pytest-asyncio
+- VyOS integration: vendored `pyvyos` via REST API in `backend/pyvyos/*`
 
 ### Package Managers
-- Frontend: `npm` (lockfiles present in repo root + `frontend/`)
+- Frontend: `npm` (`frontend/package-lock.json`)
 - Backend: `pip` + venv (`backend/.venv`)
 
-### Common Commands (Local)
-- Monorepo scripts (repo root):
-  - `npm run dev:backend`
-  - `npm run dev:frontend`
-  - `npm run lint:frontend`
-  - `npm run type-check:frontend`
-  - `npm run build`
-- Backend dev:
-  - `cd backend && python3 -m uvicorn app:app --reload --host 0.0.0.0 --port 8000 --proxy-headers`
-- Frontend dev:
-  - `cd frontend && npm run dev`
-- Frontend start (bind to LAN):
-  - `cd frontend && npm run -s build`
-  - `cd frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000`
-- Backend tests:
-  - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q`
-- Frontend typecheck:
-  - `cd frontend && npx tsc --noEmit --pretty false`
-- Frontend lint:
-  - `cd frontend && npm run -s lint` (warnings exist; currently tolerated)
-- Frontend build:
-  - `cd frontend && npm run -s build`
+### Canonical Commands
+- Backend dev: `cd backend && python3 -m uvicorn app:app --reload --host 0.0.0.0 --port 8000 --proxy-headers`
+- Frontend dev: `cd frontend && npm run dev`
+- Frontend prod start: `cd frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000`
+- Backend tests: `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q`
+- Frontend typecheck: `cd frontend && npx tsc --noEmit --pretty false`
+- Frontend lint: `cd frontend && npm run -s lint`
+- Frontend build: `cd frontend && npm run -s build`
+- Runtime smoke (live server): `cd frontend && npm run -s smoke:runtime`
+- Browser smoke (Playwright): `cd frontend && npm run -s smoke:ui`
 
-### Env Vars (Not Exhaustive)
-- Frontend (`frontend/.env`):
-  - `BETTER_AUTH_SECRET` (must be strong in production)
-  - `BACKEND_URL` (server-side API base; browser uses `/api` proxy)
-  - `TRUSTED_ORIGINS`
-  - `DATABASE_URL` (Prisma/better-auth)
-  - `NEXT_PUBLIC_API_GET_CACHE_TTL_MS` (short-lived GET cache for page-load dedupe)
-- Backend (`backend/.env`):
-  - `DATABASE_URL`
-  - `FRONTEND_URL`
-  - Session controls: `AUTH_SESSION_INACTIVITY_TIMEOUT`, `ACTIVE_INSTANCE_INACTIVITY_TIMEOUT`, `SESSION_CLEANUP_INTERVAL`
+### Env Vars (high-signal)
+- Frontend: `BACKEND_URL`, `BETTER_AUTH_SECRET`, `TRUSTED_ORIGINS`, `DATABASE_URL`, `NEXT_PUBLIC_API_GET_CACHE_TTL_MS`
+- Backend: `DATABASE_URL`, `FRONTEND_URL`, `AUTH_SESSION_INACTIVITY_TIMEOUT`, `ACTIVE_INSTANCE_INACTIVITY_TIMEOUT`, `SESSION_CLEANUP_INTERVAL`
 
-### Ports (Typical)
+### Ports
 - Frontend: `3000`
 - Backend: `8000`
 - Postgres: `5432`
 
-### Docker/Compose
-- Compose templates live in:
-  - `container/vymanager-dev/env-file-docker-compose.yml`
-  - `container/vymanager-prod/env-file-docker-compose.yml`
-- `vymanager-prod` uses pre-compiled `ghcr.io/...:beta` images and will **not** include local fork changes (e.g., new dashboard cards) unless you build/publish custom images.
-  - For local development/testing of fork changes, use `vymanager-dev` (builds from source + bind mounts) or run the frontend/backend dev servers directly.
+### Runtime Notes
+- `vm-ui` tmux session runs Next server.
+- `vm-api` tmux session runs FastAPI backend.
+- Crash class seen in production runtime: stale/mismatched Next build artifacts caused client manifest invariant errors despite successful compile.
 
 ## Architecture Notes
-- Frontend lives in `frontend/` and calls `/api/*` route handlers that proxy to backend `/vyos/*`.
-  - Proxy route: `frontend/src/app/api/vyos/[...path]/route.ts`
-  - Rationale: runtime-configurable `BACKEND_URL` (no Next.js rewrites; see `frontend/next.config.ts`).
-- Backend lives in `backend/` (FastAPI app: `backend/app.py`).
-- Auth/session model:
-  - `backend/middleware/auth.py` validates better-auth session cookies against Postgres.
-  - `backend/middleware/session.py` resolves the active VyOS instance and sets `request.state.instance`.
-  - Feature routers call `get_session_vyos_service(request)` to get a cached `VyOSService` bound to the active instance.
-- RBAC:
-  - Feature groups in `backend/rbac_permissions.py`
-  - Gate endpoints with `require_read_permission` / `require_write_permission`.
-- VyOS integration:
-  - Uses `pyvyos` REST API; primary operations are `device.show(path=[...])` and `device.configure_multiple_op(...)`.
-  - Full config is fetched via `service.get_full_config()` which calls `show configuration json pretty` and caches behind a lock.
- - Key backend layout:
-   - Feature endpoints: `backend/routers/**`
-   - Version-aware config generation: `backend/vyos_builders/**` + `backend/vyos_mappers/**`
-- Containers automation:
-  - VyOS HTTPS API does not expose op-mode `add container image ...`, so image pulls + host dir creation are performed via SSH.
-  - Backend endpoints:
-    - `GET /vyos/containers/bootstrap-status`
-    - `POST /vyos/containers/bootstrap`
-    - `POST /vyos/containers/{name}/install`
-  - SSH key material is stored under `backend/.devdata/ssh/` (gitignored); backend Dockerfile installs `openssh-client`.
+- Frontend app under `frontend/src/app/*`
+- Frontend API proxy route: `frontend/src/app/api/vyos/[...path]/route.ts`
+- Backend entry: `backend/app.py`
+- Session/auth middleware: `backend/middleware/auth.py`, `backend/middleware/session.py`
+- Session-scoped VyOS service accessor: `get_session_vyos_service(request)`
+- Permissions:
+  - backend route mapping: `backend/fastapi_permissions.py`
+  - feature groups: `backend/rbac_permissions.py`
+- VyOS operations pattern:
+  - read: `device.show(path=[...])`
+  - write: `device.configure_multiple_op(op_path=[...])`
 
 ## Conventions
-- Prefer additive, small increments that include: implementation + tests + docs + review notes.
-- Orchestration flow includes a HEAVY `Build/Execution` pass (smoke install/build/lint/test) before review/release; record command outcomes and toolchain versions when running on-host validations.
-- Use feature branches for work; avoid committing directly to `main`.
-- Backend tests should be run with `PYTHONPATH=.` (repo currently assumes this).
-- Frontend lint currently emits warnings across the codebase; do not introduce new errors.
-  - ESLint rules are intentionally warning-only for legacy patterns (see `frontend/eslint.config.mjs`).
-- Keep endpoints best-effort for `show` parsing: return structured data + `warnings[]` rather than failing hard when output formats vary.
+- Small, shippable increments with implementation + tests/docs + review pass
+- Prefer additive changes; avoid destructive git history operations
+- Keep endpoints best-effort when parsing VyOS `show` output; return structured data + warnings where applicable
+- Frontend lint has warning-only legacy debt; avoid introducing lint errors
 
 ## Current Objective
-- Stabilize `System -> Containers` load path (client-side exception) after containers automation rollout.
+- Implement requested UX/IA updates:
+  - global interface labels as `Description (ethX)` (except interface-description edit surfaces)
+  - IPsec wizard readability improvements
+  - service navigation at higher level with direct service links
+  - add CPU temperature to dashboard system information card
+  - document/handle power management (`powerd`) expectations on VyOS
 
 ## Current Feature Spec
-- **Container Management Automation (v1)**
-  - Setup gate: `System -> Containers` shows a Setup Required screen until:
-    - `service ssh` is enabled
-    - `system login user vyos authentication public-keys vymanager` is installed
-  - Install flow: UI has an explicit **Install** button that:
-    - pulls the image (`add container image ...`) via SSH
-    - creates missing `/config/containers/*` volume paths via SSH
-    - commits the container config via HTTPS API
-  - Link host selection: UI lets the user choose which interface/host IP to use when opening container web links (default prefers private static interface IPs over the instance host).
-  - Tests: backend pytest covers `/bootstrap` and `/install` happy paths with mocked SSH.
-  - Assumptions:
-    - Selecting a link host changes only the URL used to open the service (it does not change which IPs the ports bind to).
-    - Firewall exposure (WAN vs LAN) is handled by firewall/zones configuration and is out-of-scope for v1.
+Feature: **Service IA + System Telemetry Polish (v1)**
+
+Acceptance criteria:
+- Interface options/cards show `Description (ethX)` wherever description data exists (excluding interface-description editing UI).
+- Site-to-site IPsec wizard dialog is wide enough and proposal fields are readable.
+- System Services can be deep-linked by service via URL tab parameter.
+- Sidebar exposes services at higher level (NTP/LLDP/mDNS/SSH/DNS forwarder/resolver/DDNS/DHCP server/DHCP relay).
+- System dashboard summary includes best-effort CPU temperature and card displays it when present.
+
+Assumptions:
+- VyOS does not expose a FreeBSD-style `powerd` service configuration endpoint in current API surface.
+- DNS Resolver/DDNS/DHCP Relay are introduced as navigable placeholders first, then full config pages in subsequent iterations.
+- CPU temperature availability depends on hardware + command support (`show hardware temperature` / fallback probes).
 
 ## Work In Progress
-- Branch: `feature/containers-automation-v1` (based on `origin/dev`)
-- Worktree status: dirty (`frontend/src/app/system/containers/page.tsx`)
-- Host toolchain (dev box): node `v20.20.0`, npm `10.8.2`, python `3.12.3`.
-- Dev services are typically run in `tmux`:
-  - `vm-api`: backend (`uvicorn` on `0.0.0.0:8000`)
-  - `vm-ui`: frontend (`next start` on `0.0.0.0:3000`)
-- Current UI access (LAN): `http://192.168.10.249:3000`
-- Most recently shipped increment:
-  - Gateway dashboard card + endpoint: commit `bfb029d` (adds `GET /vyos/show/gateway-summary` and `GatewayStatusCard`)
-  - Gateway card polish: commit `a273676` (removes redundant Link State and Speed/Duplex display)
-  - Containers automation:
-    - `6d21a51` Containers: add SSH bootstrap + install endpoints
-    - `2764416` Containers UI: bootstrap gate, install button, link host selection
-    - `b0601d4` SSH: block path traversal for container volume mkdir
-    - `74e7060` Containers UI: prefer non-management IP for link host default
-  - Containers crash hardening (pending commit):
-    - `frontend/src/app/system/containers/page.tsx`
-    - Defensive handling for missing/malformed arrays in container payloads
-    - LocalStorage access wrapped in try/catch to avoid runtime exceptions
-    - Verified with `npx tsc --noEmit`, `npm run -s lint` (warnings only), `npm run -s build`
-    - Restarted frontend in tmux session `vm-ui` with `npm run -s start -- --hostname 0.0.0.0 --port 3000`
-  - Orchestrator memory files: commits `ccbe26e`, `0e2cf5a` (adds `ORCHESTRATOR.md`, `PROJECT_MEMORY.md`, `CURRENT_FEATURE.md`, `DECISIONS.md`)
- - Unfinished work:
-   - DHCP fixes are stashed locally (`git stash list`) and not yet on a branch/PR.
+- Branch: `feature/containers-automation-v1`
+- Working tree: dirty (multiple feature files + new smoke scripts)
+- Host toolchain: node `v20.20.0`, npm `10.8.2`, python `3.12.3`
+
+### Validation This Cycle
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q` -> `19 passed`
+- `cd frontend && npx tsc --noEmit --pretty false` -> pass
+- `cd frontend && npm run -s build` -> pass
+- `cd frontend && npm run -s lint` -> pass with existing warning debt (no new errors)
+
+### Key Implementation Notes
+- Added best-effort CPU temperature parsing in `backend/routers/system.py` and exposed `cpu_temperature_celsius` on dashboard summary API.
+- Added backend unit tests for temperature parser in `backend/tests/test_system_dashboard_temperature.py`.
+- Updated `SystemInformationCard` to display CPU temperature badge when available.
+- Extended `System Services` page with URL-driven tab deep linking (`?tab=`), wrapped query handling in `Suspense` for Next.js prerender safety.
+- Added higher-level `Services` navigation group in sidebar and removed duplicate nested System->Services entry.
+- Added placeholder service views for DNS Resolver, Dynamic DNS, DHCP Relay, and Power Management to establish IA now and fill functionality next.
+- Applied interface label formatter across DHCP/setup wizard, dashboard interface cards, flowtable/bridge/policy selectors, containers, and IPsec wizard.
+- Enlarged IPsec site-to-site wizard modal and added explicit labels for proposal fields.
+
+## Risks / Open Questions
+- Browser smoke gate cannot execute on this machine until OS dependencies are installed (`sudo npx playwright install-deps`).
+- CPU temperature parsing is best-effort and may return null on platforms/virtualized targets without exposed sensors.
+- DNS Resolver/DDNS/DHCP Relay remain placeholders and still need full backend/API implementations.
 
 ## TODO Backlog (Short)
-- DHCP UI overhaul (pfSense-style enablement, interface-aware defaults)
-- DNS UI (forwarding + authoritative reverse) (spec pending)
-- Firewall zones UX + wizards/help (spec pending)
-- IPsec site-to-site wizard (spec started in `FEATURE_STATE.json`)
-- Gateway monitoring metrics (RTT/RTTsd/Loss) deferred (needs probe approach)
+- Implement full Dynamic DNS configuration page + backend routes.
+- Implement DHCP Relay configuration page + backend routes.
+- Add dedicated DNS Resolver mode configuration if target VyOS build supports it.
+- Evaluate/implement richer service-specific pages (breaking out from tab container) after IA validation.
 
 ## Agent Handoff Notes
-- Gateway card is best-effort: route parsing varies across VyOS/FRR versions; use `warnings[]` to surface gaps.
-- Gateway monitoring metrics (RTT/RTTsd/Loss) are deferred because VyOS REST `show` does not support `ping`/monitor; would require a new integration approach (external probe/agent).
-- Backend uses session-based active instance; most endpoints fail with `{error:\"No active instance\"}` until connected.
-- For fast page loads, frontend `apiClient` dedupes in-flight GET requests and caches GET responses briefly (default 4s).
-- If a newly-added dashboard card doesn’t appear in the “Add Card” list, verify you’re not running `vymanager-prod` beta images; switch to `container/vymanager-dev/env-file-docker-compose.yml` or rebuild your own images.
-- Containers page should now tolerate mixed backend versions or partial payloads by treating `containers/ports/links/environment/volumes` as best-effort arrays instead of assuming strict shape.
+- Next.js build can fail when `useSearchParams` is used at page scope without `Suspense`; keep query consumers inside suspense-wrapped client boundaries.
+- Keep using `formatInterfaceDisplayName` from `frontend/src/lib/utils.ts` for interface labels to enforce consistency.
+- `powerd` expectation should be treated as unsupported for current VyOS API surface unless docs/API evidence emerges.

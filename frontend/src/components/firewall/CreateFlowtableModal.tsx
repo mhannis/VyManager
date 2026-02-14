@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +25,7 @@ import { AlertCircle, X, Plus } from "lucide-react";
 import { flowtablesService, type Flowtable } from "@/lib/api/firewall-flowtables";
 import { ethernetService } from "@/lib/api/ethernet";
 import type { EthernetInterface } from "@/lib/api/types/ethernet";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 
 interface CreateFlowtableModalProps {
   open: boolean;
@@ -51,6 +52,17 @@ export function CreateFlowtableModal({
   // Available interfaces
   const [availableInterfaces, setAvailableInterfaces] = useState<EthernetInterface[]>([]);
   const [selectedInterface, setSelectedInterface] = useState<string>("");
+
+  const interfaceLabelByName = useMemo(
+    () =>
+      new Map(
+        availableInterfaces.map((iface) => [
+          iface.name,
+          formatInterfaceDisplayName(iface.name, iface.description),
+        ])
+      ),
+    [availableInterfaces]
+  );
 
   // Reset form when modal opens
   useEffect(() => {
@@ -195,12 +207,7 @@ export function CreateFlowtableModal({
                     .filter((iface) => !interfaces.includes(iface.name))
                     .map((iface) => (
                       <SelectItem key={iface.name} value={iface.name}>
-                        {iface.name}
-                        {iface.description && (
-                          <span className="text-muted-foreground ml-2">
-                            - {iface.description}
-                          </span>
-                        )}
+                        {interfaceLabelByName.get(iface.name) ?? iface.name}
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -219,7 +226,7 @@ export function CreateFlowtableModal({
               <div className="flex flex-wrap gap-2 mt-2">
                 {interfaces.map((iface) => (
                   <Badge key={iface} variant="secondary" className="gap-1">
-                    {iface}
+                    {interfaceLabelByName.get(iface) ?? iface}
                     <button
                       type="button"
                       onClick={() => handleRemoveInterface(iface)}

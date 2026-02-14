@@ -27,6 +27,7 @@ import {
   type BridgeCapabilities,
   type InterfaceOption,
 } from "@/lib/api/firewall-bridge";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 
 interface CreateBridgeRuleModalProps {
   open: boolean;
@@ -498,15 +499,12 @@ export function CreateBridgeRuleModal({
                       <SelectContent>
                         <SelectItem value="_none_" textValue="None">None</SelectItem>
                         {availableInterfaces.map((iface) => (
-                          <SelectItem key={iface.name} value={iface.name} textValue={iface.name}>
-                            <div className="flex flex-col">
-                              <span>{iface.name}</span>
-                              {iface.description && (
-                                <span className="text-xs text-muted-foreground">
-                                  {iface.description}
-                                </span>
-                              )}
-                            </div>
+                          <SelectItem
+                            key={iface.name}
+                            value={iface.name}
+                            textValue={`${iface.name} ${iface.description || ""}`}
+                          >
+                            {formatInterfaceDisplayName(iface.name, iface.description)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -524,15 +522,12 @@ export function CreateBridgeRuleModal({
                       <SelectContent>
                         <SelectItem value="_none_" textValue="None">None</SelectItem>
                         {availableInterfaces.map((iface) => (
-                          <SelectItem key={iface.name} value={iface.name} textValue={iface.name}>
-                            <div className="flex flex-col">
-                              <span>{iface.name}</span>
-                              {iface.description && (
-                                <span className="text-xs text-muted-foreground">
-                                  {iface.description}
-                                </span>
-                              )}
-                            </div>
+                          <SelectItem
+                            key={iface.name}
+                            value={iface.name}
+                            textValue={`${iface.name} ${iface.description || ""}`}
+                          >
+                            {formatInterfaceDisplayName(iface.name, iface.description)}
                           </SelectItem>
                         ))}
                       </SelectContent>

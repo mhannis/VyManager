@@ -49,7 +49,7 @@ import {
   Shield,
   WandSparkles,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatInterfaceDisplayName } from "@/lib/utils";
 
 type AddressMode = "dhcp" | "static";
 type WizardStep = 1 | 2 | 3 | 4 | 5;
@@ -1116,7 +1116,7 @@ export default function NetworkSetupWizardPage() {
                               const model = physical?.nic_model ? ` - ${physical.nic_model}` : "";
                               return (
                                 <SelectItem key={iface.name} value={iface.name}>
-                                  {iface.name}
+                                  {formatInterfaceDisplayName(iface.name, iface.description)}
                                   {model} ({link})
                                 </SelectItem>
                               );
@@ -1152,7 +1152,7 @@ export default function NetworkSetupWizardPage() {
                               const model = physical?.nic_model ? ` - ${physical.nic_model}` : "";
                               return (
                                 <SelectItem key={iface.name} value={iface.name}>
-                                  {iface.name}
+                                  {formatInterfaceDisplayName(iface.name, iface.description)}
                                   {model} ({link})
                                 </SelectItem>
                               );
@@ -1192,7 +1192,11 @@ export default function NetworkSetupWizardPage() {
                         <p className="text-xs uppercase tracking-wide text-muted-foreground">
                           Selected WAN
                         </p>
-                        <p className="mt-1 font-mono text-sm">{selectedWan?.name ?? "Not selected"}</p>
+                        <p className="mt-1 font-mono text-sm">
+                          {selectedWan
+                            ? formatInterfaceDisplayName(selectedWan.name, selectedWan.description)
+                            : "Not selected"}
+                        </p>
                         <p className="mt-1 text-xs text-muted-foreground">
                           {selectedWan?.addresses.length
                             ? selectedWan.addresses.join(", ")
@@ -1203,7 +1207,11 @@ export default function NetworkSetupWizardPage() {
                         <p className="text-xs uppercase tracking-wide text-muted-foreground">
                           Selected LAN
                         </p>
-                        <p className="mt-1 font-mono text-sm">{selectedLan?.name ?? "Not selected"}</p>
+                        <p className="mt-1 font-mono text-sm">
+                          {selectedLan
+                            ? formatInterfaceDisplayName(selectedLan.name, selectedLan.description)
+                            : "Not selected"}
+                        </p>
                         <p className="mt-1 text-xs text-muted-foreground">
                           {selectedLan?.addresses.length
                             ? selectedLan.addresses.join(", ")
@@ -1441,14 +1449,20 @@ export default function NetworkSetupWizardPage() {
                         <div>
                           <span className="text-muted-foreground">WAN:</span>{" "}
                           <span className="font-mono">
-                            {wanInterface || "unset"} /{" "}
+                            {selectedWan
+                              ? formatInterfaceDisplayName(selectedWan.name, selectedWan.description)
+                              : wanInterface || "unset"}{" "}
+                            /{" "}
                             {wanMode === "dhcp" ? "DHCP" : wanStaticCidr || "static-unset"}
                           </span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">LAN:</span>{" "}
                           <span className="font-mono">
-                            {lanInterface || "unset"} /{" "}
+                            {selectedLan
+                              ? formatInterfaceDisplayName(selectedLan.name, selectedLan.description)
+                              : lanInterface || "unset"}{" "}
+                            /{" "}
                             {lanMode === "dhcp" ? "DHCP" : lanStaticCidr || "static-unset"}
                           </span>
                         </div>

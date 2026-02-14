@@ -40,6 +40,7 @@ export interface SystemDashboardSummary {
   cpu_models: string[];
   cpu_socket_count: number | null;
   cpu_cores: number | null;
+  cpu_temperature_celsius: number | null;
   memory_total_human: string | null;
   memory_free_human: string | null;
   memory_used_human: string | null;
@@ -109,6 +110,37 @@ export interface NtpConfig {
   servers: NtpServerConfig[];
   allow_clients: string[];
   listen_addresses: string[];
+}
+
+export interface SshConfig {
+  enabled: boolean;
+  port: number | null;
+  listen_addresses: string[];
+  disable_password_authentication: boolean;
+}
+
+export interface DnsForwardingDomainOverride {
+  domain: string;
+  name_servers: string[];
+}
+
+export interface DnsHostOverride {
+  hostname: string;
+  addresses: string[];
+  aliases: string[];
+}
+
+export interface DnsConfig {
+  enabled: boolean;
+  local_domain_name: string | null;
+  listen_addresses: string[];
+  allow_from: string[];
+  name_servers: string[];
+  use_system_name_servers: boolean;
+  cache_size: number | null;
+  authoritative_domains: string[];
+  domain_overrides: DnsForwardingDomainOverride[];
+  host_overrides: DnsHostOverride[];
 }
 
 // ============================================================================
@@ -363,6 +395,38 @@ class SystemService {
    */
   async updateNtpConfig(config: NtpConfig): Promise<NtpConfig> {
     return apiClient.put<NtpConfig>("/vyos/system/ntp-config", config);
+  }
+
+  /**
+   * Get SSH service configuration.
+   */
+  async getSshConfig(refresh: boolean = false): Promise<SshConfig> {
+    return apiClient.get<SshConfig>("/vyos/system/ssh-config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  /**
+   * Update SSH service configuration.
+   */
+  async updateSshConfig(config: SshConfig): Promise<SshConfig> {
+    return apiClient.put<SshConfig>("/vyos/system/ssh-config", config);
+  }
+
+  /**
+   * Get DNS forwarding/authoritative configuration.
+   */
+  async getDnsConfig(refresh: boolean = false): Promise<DnsConfig> {
+    return apiClient.get<DnsConfig>("/vyos/system/dns-config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  /**
+   * Update DNS forwarding/authoritative configuration.
+   */
+  async updateDnsConfig(config: DnsConfig): Promise<DnsConfig> {
+    return apiClient.put<DnsConfig>("/vyos/system/dns-config", config);
   }
 
   /**

@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { showService, type GatewaySummaryResponse } from "@/lib/api/show";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 import { ExternalLink, RefreshCw, Route, Settings, X } from "lucide-react";
 
 interface GatewayStatusCardProps {
@@ -99,6 +100,14 @@ export function GatewayStatusCard({ onRemove, span = 1, onSpanChange }: GatewayS
   const active = summary?.ipv4_default ?? null;
   const configured = summary?.configured_ipv4_default ?? null;
   const iface = summary?.interface ?? null;
+  const activeInterfaceName = active?.interface || iface?.name || "";
+  const egressInterfaceLabel = activeInterfaceName ? formatInterfaceDisplayName(activeInterfaceName, null) : "-";
+  const dhcpInterfacesLabel =
+    configured?.dhcp_interfaces
+      ?.map((interfaceName) =>
+        formatInterfaceDisplayName(interfaceName, null)
+      )
+      .join(", ") || "-";
 
   return (
     <Card>
@@ -205,7 +214,7 @@ export function GatewayStatusCard({ onRemove, span = 1, onSpanChange }: GatewayS
               </div>
               <div className="space-y-1">
                 <p className="text-muted-foreground">Egress Interface</p>
-                <p className="font-medium font-mono text-xs">{displayOrDash(active?.interface || iface?.name)}</p>
+                <p className="font-medium font-mono text-xs">{egressInterfaceLabel}</p>
               </div>
             </div>
 
@@ -230,7 +239,7 @@ export function GatewayStatusCard({ onRemove, span = 1, onSpanChange }: GatewayS
                 {configured.dhcp_interfaces.length > 0 && (
                   <div className="text-xs text-muted-foreground">
                     DHCP interfaces:{" "}
-                    <span className="font-mono">{configured.dhcp_interfaces.join(", ")}</span>
+                    <span className="font-mono">{dhcpInterfacesLabel}</span>
                   </div>
                 )}
                 {configured.description && (

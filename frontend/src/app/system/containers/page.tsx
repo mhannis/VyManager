@@ -47,7 +47,7 @@ import {
   WandSparkles,
   X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatInterfaceDisplayName } from "@/lib/utils";
 
 interface ContainerDraft {
   name: string;
@@ -685,8 +685,7 @@ export default function SystemContainersPage() {
     }
 
     for (const segment of lanSegments) {
-      const description = segment.interfaceDescription?.trim();
-      const labelPrefix = description ? `${description} (${segment.interfaceName})` : segment.interfaceName;
+      const labelPrefix = formatInterfaceDisplayName(segment.interfaceName, segment.interfaceDescription);
       options.push({
         id: `iface:${segment.interfaceName}:${segment.interfaceIp}`,
         label: `${labelPrefix} - ${segment.interfaceIp} (${segment.subnetCidr})`,
@@ -1480,7 +1479,10 @@ export default function SystemContainersPage() {
                         <SelectItem value="none">None</SelectItem>
                         {lanSegments.map((segment) => (
                           <SelectItem key={segment.id} value={segment.id}>
-                            {segment.interfaceName} - {segment.subnetCidr}
+                            {segment.interfaceDescription
+                              ? `${segment.interfaceDescription} (${segment.interfaceName})`
+                              : segment.interfaceName}{" "}
+                            - {segment.subnetCidr}
                           </SelectItem>
                         ))}
                       </SelectContent>

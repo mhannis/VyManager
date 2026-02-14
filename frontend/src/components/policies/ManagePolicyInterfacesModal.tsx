@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle, Network, Loader2 } from "lucide-react";
 import { routeService } from "@/lib/api/route";
 import { apiClient } from "@/lib/api/client";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 
 interface ManagePolicyInterfacesModalProps {
   open: boolean;
@@ -208,18 +209,13 @@ export function ManagePolicyInterfacesModal({
                       htmlFor={`iface-${iface.name}`}
                       className="flex-1 cursor-pointer"
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium">{iface.name}</span>
-                          <span className="text-xs text-muted-foreground ml-2">
-                            ({iface.type})
-                          </span>
-                        </div>
-                        {iface.description && (
-                          <span className="text-xs text-muted-foreground">
-                            {iface.description}
-                          </span>
-                        )}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium truncate">
+                          {formatInterfaceDisplayName(iface.name, iface.description)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          ({iface.type})
+                        </span>
                       </div>
                     </Label>
                   </div>

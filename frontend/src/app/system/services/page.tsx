@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,8 @@ import {
   Trash2,
   Wifi,
 } from "lucide-react";
+import { SshServiceTab } from "@/components/system/SshServiceTab";
+import { DnsServiceTab } from "@/components/system/DnsServiceTab";
 
 const EMPTY_SERVER: NtpServerConfig = {
   address: "",
@@ -79,6 +82,38 @@ const LLDP_MODE_OPTIONS: { value: LldpInterfaceMode; label: string }[] = [
   { value: "disable", label: "Disabled" },
 ];
 
+type ServiceTab =
+  | "ntp"
+  | "lldp"
+  | "mdns"
+  | "ssh"
+  | "dns-forwarder"
+  | "dns-resolver"
+  | "dynamic-dns"
+  | "dhcp-relay"
+  | "power";
+
+const SERVICE_TAB_VALUES: ServiceTab[] = [
+  "ntp",
+  "lldp",
+  "mdns",
+  "ssh",
+  "dns-forwarder",
+  "dns-resolver",
+  "dynamic-dns",
+  "dhcp-relay",
+  "power",
+];
+
+function normalizeServiceTab(raw: string | null): ServiceTab | null {
+  if (!raw) return null;
+  const normalized = raw === "dns" ? "dns-forwarder" : raw;
+  if ((SERVICE_TAB_VALUES as string[]).includes(normalized)) {
+    return normalized as ServiceTab;
+  }
+  return null;
+}
+
 function displayOrDash(value?: string | number | null): string {
   if (value === null || value === undefined || value === "") return "-";
   return String(value);
@@ -96,11 +131,15 @@ function normalizeStringList(values: string[]): string[] {
   return result;
 }
 
-export default function SystemServicesPage() {
+function SystemServicesPageContent() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { canWrite } = usePermissions();
   const canEditSystem = canWrite(FeatureGroup.SYSTEM);
 
-  const [activeTab, setActiveTab] = useState<"ntp" | "lldp" | "mdns">("ntp");
+  const [activeTab, setActiveTab] = useState<ServiceTab>("ntp");
+  const [serviceRefreshNonce, setServiceRefreshNonce] = useState(0);
 
   const [availableInterfaces, setAvailableInterfaces] = useState<string[]>([]);
   const [interfacesLoading, setInterfacesLoading] = useState(true);
@@ -124,8 +163,26 @@ export default function SystemServicesPage() {
   const activeLoading = useMemo(() => {
     if (activeTab === "ntp") return ntpLoading;
     if (activeTab === "lldp") return lldpLoading;
-    return mdnsLoading;
+    if (activeTab === "mdns") return mdnsLoading;
+    return false;
   }, [activeTab, lldpLoading, mdnsLoading, ntpLoading]);
+
+  useEffect(() => {
+    const requested = normalizeServiceTab(searchParams.get("tab"));
+    if (requested && requested !== activeTab) {
+      setActiveTab(requested);
+    }
+  }, [activeTab, searchParams]);
+
+  const handleTabChange = (value: string) => {
+    const tab = normalizeServiceTab(value);
+    if (!tab) return;
+
+    setActiveTab(tab);
+    const next = new URLSearchParams(searchParams.toString());
+    next.set("tab", tab);
+    router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+  };
 
   const loadInterfaces = async () => {
     setInterfacesLoading(true);
@@ -220,7 +277,11 @@ export default function SystemServicesPage() {
       await loadLldpData(true);
       return;
     }
-    await loadMdnsData(true);
+    if (activeTab === "mdns") {
+      await loadMdnsData(true);
+      return;
+    }
+    setServiceRefreshNonce((previous) => previous + 1);
   };
 
   // ============================================================================
@@ -594,11 +655,17 @@ export default function SystemServicesPage() {
           </div>
         )}
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "ntp" | "lldp" | "mdns")}>
-          <TabsList>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
             <TabsTrigger value="ntp">NTP</TabsTrigger>
             <TabsTrigger value="lldp">LLDP</TabsTrigger>
             <TabsTrigger value="mdns">mDNS Repeater</TabsTrigger>
+            <TabsTrigger value="ssh">SSH</TabsTrigger>
+            <TabsTrigger value="dns-forwarder">DNS Forwarder</TabsTrigger>
+            <TabsTrigger value="dns-resolver">DNS Resolver</TabsTrigger>
+            <TabsTrigger value="dynamic-dns">Dynamic DNS</TabsTrigger>
+            <TabsTrigger value="dhcp-relay">DHCP Relay</TabsTrigger>
+            <TabsTrigger value="power">Power Mgmt</TabsTrigger>
           </TabsList>
 
           <TabsContent value="ntp" className="space-y-6">
@@ -1405,8 +1472,90 @@ export default function SystemServicesPage() {
               </Card>
             </div>
           </TabsContent>
+
+          <TabsContent value="ssh" className="space-y-6">
+            <SshServiceTab canEdit={canEditSystem} active={activeTab === "ssh"} refreshNonce={serviceRefreshNonce} />
+          </TabsContent>
+
+          <TabsContent value="dns-forwarder" className="space-y-6">
+            <DnsServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "dns-forwarder"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
+          <TabsContent value="dns-resolver" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>DNS Resolver</CardTitle>
+                <CardDescription>
+                  Resolver mode UI is planned. This build currently supports DNS forwarding and host/domain overrides.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Use <strong>DNS Forwarder</strong> for active DNS service management right now.
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="dynamic-dns" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Dynamic DNS</CardTitle>
+                <CardDescription>
+                  Dynamic DNS configuration page is queued for implementation.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                No DDNS provider configuration is available yet in this GUI.
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="dhcp-relay" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>DHCP Relay</CardTitle>
+                <CardDescription>
+                  DHCP relay configuration page is queued for implementation.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                DHCP server configuration is available now under <strong>Network &gt; DHCP</strong>.
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="power" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Power Management</CardTitle>
+                <CardDescription>
+                  FreeBSD <code>powerd</code> controls are not exposed in current VyOS service configuration APIs.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Reboot and power actions are already available separately; CPU governor/power profile controls are not yet supported here.
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </AppLayout>
+  );
+}
+
+export default function SystemServicesPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppLayout>
+          <div className="p-8 text-sm text-muted-foreground">Loading system services...</div>
+        </AppLayout>
+      }
+    >
+      <SystemServicesPageContent />
+    </Suspense>
   );
 }

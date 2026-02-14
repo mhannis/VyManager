@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,12 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { showService, InterfaceCounter, InterfacePhysical } from "@/lib/api/show";
-import { getInterfaceType, formatBytes, formatNumber } from "@/lib/utils";
+import {
+  getInterfaceType,
+  formatBytes,
+  formatNumber,
+  formatInterfaceDisplayName,
+} from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -191,7 +196,7 @@ const InterfaceRow = ({
                 !hasVifs && iface.isVif ? "ml-6" : !hasVifs ? "ml-6" : ""
               }`}
             >
-              {iface.interface}
+              {formatInterfaceDisplayName(iface.interface, iface.description)}
             </span>
             {hasVifs && (
               <Badge variant="secondary" className="ml-2 text-xs">
@@ -355,6 +360,16 @@ export function InterfaceStatisticsCard({
   const parentInterfaces = interfaces.filter((iface) => !iface.isVif);
   const availableInterfaces = [...new Set(parentInterfaces.map((iface) => iface.interface))].sort(
     (left, right) => left.localeCompare(right)
+  );
+  const interfaceLabelByName = useMemo(
+    () =>
+      new Map(
+        parentInterfaces.map((iface) => [
+          iface.interface,
+          formatInterfaceDisplayName(iface.interface, iface.description),
+        ])
+      ),
+    [parentInterfaces]
   );
 
   const updateInterfaceSelection = (names: string[]) => {
@@ -705,7 +720,7 @@ export function InterfaceStatisticsCard({
                           toggleInterfaceSelection(interfaceName, checked === true)
                         }
                       >
-                        {interfaceName}
+                        {interfaceLabelByName.get(interfaceName) ?? interfaceName}
                       </DropdownMenuCheckboxItem>
                     ))}
                   </>

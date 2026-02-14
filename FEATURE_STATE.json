@@ -1,21 +1,20 @@
 {
-  "feature_id": "containers-automation-v1",
-  "title": "Container Management Automation (Bootstrap + Install) (v1)",
+  "feature_id": "services-ia-and-system-telemetry-v1",
+  "title": "Service IA Restructure + CPU Temperature + Interface Label Consistency",
   "last_updated": "2026-02-14",
   "status": "in_progress",
   "acceptance_criteria": [
-    "System -> Containers shows a Setup Required screen until SSH is enabled and the VyManager automation key is installed.",
-    "The Setup action is idempotent and applies: `set service ssh` and installs a public key under `system login user vyos authentication public-keys vymanager`.",
-    "The Install action pulls the container image via SSH (`add container image ...`), creates missing `/config/containers/*` host paths for volumes, then commits the container configuration via the VyOS HTTPS API.",
-    "Template usage does not auto-install; users can Populate, edit settings, then click Install explicitly.",
-    "Container web links can be opened using a user-selected host/interface IP (default prefers private static interface addresses over the instance host).",
-    "Automated backend tests exist for bootstrap + install happy paths.",
-    "System -> Containers must not crash if the backend returns missing/null arrays for containers, links, ports, volumes, or environment fields."
+    "Global interface display uses Description (ethX) when description is available, excluding interface-description edit surfaces.",
+    "IPsec site-to-site wizard dialog is wide enough for readable proposal fields.",
+    "System Information dashboard card shows CPU temperature when available from VyOS.",
+    "Services are promoted in navigation with direct links to per-service views.",
+    "System Services page supports deep-linking via query tab values.",
+    "DNS Resolver/DDNS/DHCP Relay navigation targets exist as placeholders pending full implementation."
   ],
   "assumptions": [
-    "VyOS HTTPS API does not support op-mode `add` commands; SSH is allowed for automation on the target instances.",
-    "The `vyos` user has passwordless sudo for the limited commands VyManager runs (`mkdir -p` under `/config/containers/` and `vyatta-op-cmd-wrapper add container image`).",
-    "Selecting a host IP for links changes only the URL VyManager opens; it does not change Podman bind behavior or firewall exposure."
+    "VyOS does not expose FreeBSD powerd controls in current service/API surface.",
+    "CPU temperature is best-effort and may be unavailable depending on hardware/virtualization.",
+    "Placeholder pages for DNS Resolver/DDNS/DHCP Relay are acceptable for initial IA rollout."
   ],
   "tasks": [
     {
@@ -23,50 +22,69 @@
       "owner_role": "Analyst",
       "status": "done",
       "files": [
-        "backend/routers/containers.py",
-        "frontend/src/app/system/containers/page.tsx"
+        "PROJECT_MEMORY.md",
+        "CURRENT_FEATURE.md"
       ],
-      "notes": "Spec derived from Mark requests: bootstrap gate + explicit install + link host selection."
+      "notes": "Mapped Mark's IA + telemetry requests into implementable increments."
     },
     {
       "id": "T2",
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/containers.py",
-        "backend/utils/ssh_exec.py",
-        "backend/Dockerfile"
+        "backend/routers/system.py",
+        "backend/tests/test_system_dashboard_temperature.py"
       ],
-      "notes": "Added bootstrap/install endpoints and SSH helper; ensured openssh-client is present in backend image."
+      "notes": "Added CPU temperature parsing/probing to dashboard summary and parser unit tests."
     },
     {
       "id": "T3",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/containers.ts",
-        "frontend/src/app/system/containers/page.tsx"
+        "frontend/src/components/dashboard/SystemInformationCard.tsx",
+        "frontend/src/app/system/services/page.tsx",
+        "frontend/src/components/layout/Sidebar.tsx",
+        "frontend/src/lib/utils.ts",
+        "frontend/src/app/network/setup-wizard/page.tsx",
+        "frontend/src/components/dashboard/InterfaceOverviewCard.tsx",
+        "frontend/src/components/dashboard/InterfaceStatisticsCard.tsx",
+        "frontend/src/components/vpn/ipsec/SiteToSiteWizard.tsx",
+        "frontend/src/app/vpn/ipsec/page.tsx"
       ],
-      "notes": "Added setup-required screen, explicit Install button, and link host selector."
+      "notes": "Implemented service IA updates, CPU temp display, interface label consistency, and IPsec wizard readability fixes."
     },
     {
       "id": "T4",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_containers_automation_v1.py"
+        "backend/tests/test_system_dashboard_temperature.py"
       ],
-      "notes": "Added pytest coverage for /bootstrap and /install with mocked SSH."
+      "notes": "Validated parser behavior and reran backend + frontend checks."
     },
     {
       "id": "T5",
-      "owner_role": "Reviewer",
+      "owner_role": "Test",
       "status": "blocked",
-      "files": [],
-      "notes": "Unable to spawn reviewer agent (tool thread limit reached). Manual review performed; still recommend a second pass before upstreaming."
+      "files": [
+        "frontend/scripts/smoke-ui.mjs"
+      ],
+      "notes": "Browser smoke remains blocked on missing Playwright host dependencies."
     },
     {
       "id": "T6",
+      "owner_role": "Reviewer",
+      "status": "todo",
+      "files": [
+        "backend/routers/system.py",
+        "frontend/src/app/system/services/page.tsx",
+        "frontend/src/components/layout/Sidebar.tsx"
+      ],
+      "notes": "Run focused review for IA assumptions and placeholder scope."
+    },
+    {
+      "id": "T7",
       "owner_role": "Release",
       "status": "todo",
       "files": [
@@ -74,55 +92,21 @@
         "PROJECT_MEMORY.md",
         "DECISIONS.md"
       ],
-      "notes": "Update docs + verification steps and prep PR summary."
-    },
-    {
-      "id": "T7",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/system/containers/page.tsx"
-      ],
-      "notes": "Added defensive array guards and localStorage safety to prevent client-side exceptions on containers page load."
+      "notes": "Prepare handoff notes once reviewer sign-off and optional runtime smoke rerun are complete."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
     "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q",
-    "lint": "cd frontend && npm run -s lint"
+    "lint": "cd frontend && npm run -s lint",
+    "runtime_smoke": "cd frontend && npm run -s smoke:runtime",
+    "browser_smoke": "cd frontend && npm run -s smoke:ui"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Bootstrap + install flow for containers (Pi-hole template) and link host selection",
+      "purpose": "Service IA + system telemetry + open backlog polish",
       "status": "active"
-    },
-    {
-      "name": "stash@{0}",
-      "purpose": "WIP DHCP fixes (default DNS to gateway + set listen-address)",
-      "status": "idle"
-    }
-  ],
-  "backlog": [
-    {
-      "feature_id": "dhcp-ui-v2",
-      "title": "DHCP UI (pfSense-style) (v2)",
-      "status": "spec"
-    },
-    {
-      "feature_id": "dns-ui-v1",
-      "title": "DNS UI (Forwarding + Reverse Overrides) (v1)",
-      "status": "spec"
-    },
-    {
-      "feature_id": "ipsec-s2s-wizard-v1",
-      "title": "IPsec Site-to-Site VPN Wizard (v1)",
-      "status": "spec"
-    },
-    {
-      "feature_id": "ssh-service-ui-v1",
-      "title": "Service UI: SSH Enable/Config (v1)",
-      "status": "spec"
     }
   ]
 }

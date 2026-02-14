@@ -52,7 +52,9 @@ import {
   type DHCPStaticMapping,
   type DHCPRange,
 } from "@/lib/api/dhcp";
-import { cn } from "@/lib/utils";
+import { ethernetService } from "@/lib/api/ethernet";
+import type { EthernetInterface } from "@/lib/api/types/ethernet";
+import { cn, formatInterfaceDisplayName } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { CreateDHCPServerModal } from "@/components/services/CreateDHCPServerModal";
 import { EditDHCPServerModal } from "@/components/services/EditDHCPServerModal";
@@ -72,6 +74,141 @@ function formatLease(seconds: string): string {
   if (days > 0) return `${days}d`;
   if (hours > 0) return `${hours}h`;
   return `${Math.floor(secs / 60)}m`;
+}
+
+interface ParsedIPv4Cidr {
+  ip: string;
+  prefix: number;
+  ipInt: number;
+  networkInt: number;
+  broadcastInt: number;
+}
+
+interface InterfaceSubnetTemplate {
+  id: string;
+  interfaceName: string;
+  description: string | null;
+  interfaceIp: string;
+  subnetCidr: string;
+  rangeStart: string;
+  rangeStop: string;
+  networkName: string;
+}
+
+function parseIPv4(ip: string): number | null {
+  const parts = ip.trim().split(".");
+  if (parts.length !== 4) return null;
+  const numbers = parts.map((part) => Number(part));
+  if (numbers.some((value) => !Number.isInteger(value) || value < 0 || value > 255)) {
+    return null;
+  }
+  return (
+    ((numbers[0] << 24) >>> 0) +
+    ((numbers[1] << 16) >>> 0) +
+    ((numbers[2] << 8) >>> 0) +
+    (numbers[3] >>> 0)
+  ) >>> 0;
+}
+
+function formatIPv4(value: number): string {
+  return [
+    (value >>> 24) & 255,
+    (value >>> 16) & 255,
+    (value >>> 8) & 255,
+    value & 255,
+  ].join(".");
+}
+
+function parseIPv4Cidr(cidr: string): ParsedIPv4Cidr | null {
+  const trimmed = cidr.trim();
+  const [ip, prefixRaw] = trimmed.split("/");
+  if (!ip || !prefixRaw) return null;
+  const prefix = Number(prefixRaw);
+  if (!Number.isInteger(prefix) || prefix < 0 || prefix > 32) return null;
+  const ipInt = parseIPv4(ip);
+  if (ipInt === null) return null;
+  const mask = prefix === 0 ? 0 : ((0xffffffff << (32 - prefix)) >>> 0);
+  const networkInt = (ipInt & mask) >>> 0;
+  const broadcastInt = (networkInt | (~mask >>> 0)) >>> 0;
+  return { ip, prefix, ipInt, networkInt, broadcastInt };
+}
+
+function isPrivateIPv4(ipInt: number): boolean {
+  const first = (ipInt >>> 24) & 255;
+  const second = (ipInt >>> 16) & 255;
+  return (
+    first === 10 ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168)
+  );
+}
+
+function suggestDhcpRange(parsed: ParsedIPv4Cidr): { start: string; stop: string } | null {
+  if (parsed.prefix >= 31) return null;
+  const firstHost = parsed.networkInt + 1;
+  const lastHost = parsed.broadcastInt - 1;
+  if (firstHost >= lastHost) return null;
+
+  let start = parsed.networkInt + 20;
+  let stop = parsed.networkInt + 200;
+  if (start < firstHost) start = firstHost;
+  if (stop > lastHost) stop = lastHost;
+  if (start >= stop) {
+    start = firstHost;
+    stop = lastHost;
+  }
+  if (parsed.ipInt >= start && parsed.ipInt <= stop) {
+    if (parsed.ipInt + 1 <= stop) {
+      start = parsed.ipInt + 1;
+    } else if (parsed.ipInt - 1 >= start) {
+      stop = parsed.ipInt - 1;
+    }
+  }
+  if (start >= stop) return null;
+  return { start: formatIPv4(start), stop: formatIPv4(stop) };
+}
+
+function sanitizeNetworkName(label: string): string {
+  const cleaned = label
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^A-Za-z0-9_-]/g, "")
+    .slice(0, 32);
+  return cleaned || "LAN";
+}
+
+function buildInterfaceTemplates(interfaces: EthernetInterface[]): InterfaceSubnetTemplate[] {
+  const templates: InterfaceSubnetTemplate[] = [];
+  const seen = new Set<string>();
+
+  for (const iface of interfaces) {
+    for (const address of iface.addresses || []) {
+      if (!address || address === "dhcp") continue;
+      const parsed = parseIPv4Cidr(address);
+      if (!parsed || !isPrivateIPv4(parsed.ipInt)) continue;
+
+      const subnetCidr = `${formatIPv4(parsed.networkInt)}/${parsed.prefix}`;
+      const key = `${iface.name}:${subnetCidr}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const suggestion = suggestDhcpRange(parsed);
+      if (!suggestion) continue;
+
+      templates.push({
+        id: key,
+        interfaceName: iface.name,
+        description: iface.description ?? null,
+        interfaceIp: parsed.ip,
+        subnetCidr,
+        rangeStart: suggestion.start,
+        rangeStop: suggestion.stop,
+        networkName: sanitizeNetworkName(iface.description || iface.name || "LAN"),
+      });
+    }
+  }
+
+  return templates.sort((left, right) => left.interfaceName.localeCompare(right.interfaceName));
 }
 
 // Helper function to check if an IP address is within a CIDR subnet
@@ -151,6 +288,20 @@ export default function DHCPPage() {
 
   // Static mapping modal state
   const [addingStaticMapping, setAddingStaticMapping] = useState(false);
+  const [createPrefill, setCreatePrefill] = useState<{
+    network_name?: string;
+    subnet?: string;
+    default_router?: string;
+    lease?: string;
+    domain_name?: string;
+    name_servers?: string[];
+    range_start?: string;
+    range_stop?: string;
+  } | null>(null);
+  const [interfaceTemplates, setInterfaceTemplates] = useState<InterfaceSubnetTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
 
   const fetchConfig = async (refresh: boolean = false) => {
     try {
@@ -190,6 +341,28 @@ export default function DHCPPage() {
     }
   };
 
+  const fetchInterfaceTemplates = async () => {
+    setTemplatesLoading(true);
+    setTemplatesError(null);
+    try {
+      const response = await ethernetService.getConfig();
+      const templates = buildInterfaceTemplates(response.interfaces || []);
+      setInterfaceTemplates(templates);
+      setSelectedTemplateId((previous) => {
+        if (previous && templates.some((template) => template.id === previous)) {
+          return previous;
+        }
+        return templates[0]?.id || "";
+      });
+    } catch (err) {
+      setInterfaceTemplates([]);
+      setSelectedTemplateId("");
+      setTemplatesError(err instanceof Error ? err.message : "Failed to load interface templates.");
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
+
   const handleDeleteRange = async (subnet: string, rangeId: string) => {
     if (!currentNetwork) return;
     try {
@@ -203,7 +376,27 @@ export default function DHCPPage() {
   useEffect(() => {
     fetchConfig();
     fetchLeases();
+    fetchInterfaceTemplates();
   }, []);
+
+  const openCreateServerModal = () => {
+    const template = interfaceTemplates.find((entry) => entry.id === selectedTemplateId);
+    if (template) {
+      setCreatePrefill({
+        network_name: template.networkName,
+        subnet: template.subnetCidr,
+        default_router: template.interfaceIp,
+        name_servers: [template.interfaceIp],
+        lease: "86400",
+        domain_name: "lan",
+        range_start: template.rangeStart,
+        range_stop: template.rangeStop,
+      });
+    } else {
+      setCreatePrefill(null);
+    }
+    setCreateModalOpen(true);
+  };
 
   // Get currently selected network data
   const currentNetwork = config?.shared_networks.find(n => n.name === selectedNetwork) || null;
@@ -348,11 +541,35 @@ export default function DHCPPage() {
             <Button
               className="w-full"
               size="sm"
-              onClick={() => setCreateModalOpen(true)}
+              onClick={openCreateServerModal}
             >
               <Plus className="h-4 w-4 mr-2" />
               New Server
             </Button>
+
+            <div className="mt-3 space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">LAN Segment Template</div>
+              <Select
+                value={selectedTemplateId || "none"}
+                onValueChange={(value) => setSelectedTemplateId(value === "none" ? "" : value)}
+                disabled={templatesLoading}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Select static interface" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No prefill</SelectItem>
+                  {interfaceTemplates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                      {formatInterfaceDisplayName(template.interfaceName, template.description)} - {template.subnetCidr}
+                  </SelectItem>
+                ))}
+                </SelectContent>
+              </Select>
+              {templatesError && (
+                <p className="text-xs text-destructive">{templatesError}</p>
+              )}
+            </div>
           </div>
 
           {/* Network List */}
@@ -1101,7 +1318,7 @@ export default function DHCPPage() {
                 <p className="text-muted-foreground max-w-md">
                   Get started by creating your first DHCP server to manage IP address allocation.
                 </p>
-                <Button onClick={() => setCreateModalOpen(true)}>
+                <Button onClick={openCreateServerModal}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create DHCP Server
                 </Button>
@@ -1117,6 +1334,7 @@ export default function DHCPPage() {
             if (!open) {
               setCreateModalOpen(false);
               setAddingSubnetToNetwork(null);
+              setCreatePrefill(null);
             }
           }}
           onSuccess={() => {
@@ -1125,6 +1343,7 @@ export default function DHCPPage() {
           }}
           capabilities={capabilities}
           existingNetwork={addingSubnetToNetwork || undefined}
+          prefill={addingSubnetToNetwork ? null : createPrefill}
         />
 
         {editingSubnet && (

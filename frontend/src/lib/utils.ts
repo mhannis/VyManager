@@ -60,3 +60,30 @@ export const formatBytes = (bytes: number) => {
 export const formatNumber = (num: number) => {
   return num.toLocaleString();
 };
+
+/**
+ * Display interface names consistently as "Description (ethX)" when description is available.
+ */
+export function formatInterfaceDisplayName(
+  interfaceName: string,
+  description?: string | null
+): string {
+  const trimmedDescription = description?.trim();
+  if (!trimmedDescription) {
+    return interfaceName;
+  }
+  return `${trimmedDescription} (${interfaceName})`;
+}
+
+export function formatInterfaceDisplayNameWithSuffix(
+  interfaceName: string,
+  description?: string | null,
+  suffix?: string | null
+): string {
+  const base = formatInterfaceDisplayName(interfaceName, description);
+  const trimmedSuffix = suffix?.trim();
+  if (!trimmedSuffix) {
+    return base;
+  }
+  return `${base} - ${trimmedSuffix}`;
+}

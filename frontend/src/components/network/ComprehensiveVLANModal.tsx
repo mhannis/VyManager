@@ -23,6 +23,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ethernetService } from "@/lib/api/ethernet";
 import type { EthernetInterface, EthernetCapabilities, VIFConfig, BatchOperation } from "@/lib/api/types/ethernet";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 import { Loader2, X } from "lucide-react";
 
 interface VLANWithParent extends VIFConfig {
@@ -322,8 +323,7 @@ export function ComprehensiveVLANModal({
                       <SelectContent>
                         {interfaces.map((iface) => (
                           <SelectItem key={iface.name} value={iface.name}>
-                            {iface.name}
-                            {iface.description && ` - ${iface.description}`}
+                            {formatInterfaceDisplayName(iface.name, iface.description)}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -1,17 +1,12 @@
-timestamp: 2026-02-14T01:06:00-05:00
-failing_command: cd /home/redhot/VyOS/VyManager/frontend && npx -y -p playwright node - <<'NODE' ... require('playwright') ... NODE
-error_summary: Browser automation bootstrap failed while attempting to capture the exact containers-page runtime stack. `npx -p playwright` did not expose the module to `node` in this environment, resulting in a module resolution error.
+timestamp: 2026-02-14T02:44:40Z
+failing_command: cd /home/redhot/VyOS/VyManager/frontend && npm run -s build
+error_summary: Next.js build failed when pre-rendering `/system/services` because `useSearchParams()` was used without a Suspense boundary in the client page.
 
-last_output:
-Error: Cannot find module 'playwright'
-Require stack:
-- /home/redhot/VyOS/VyManager/frontend/[stdin]
-    at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
-    at Module._load (node:internal/modules/cjs/loader:1038:27)
-    at Module.require (node:internal/modules/cjs/loader:1289:19)
-    at require (node:internal/modules/helpers:182:18)
-    at [stdin]:1:22
-Node.js v20.20.0
+relevant_output:
+⨯ useSearchParams() should be wrapped in a suspense boundary at page "/system/services".
+Error occurred prerendering page "/system/services".
+Export encountered an error on /system/services/page: /system/services, exiting the build.
+⨯ Next.js build worker exited with code: 1 and signal: null
 
-suspected_cause: `npx -p playwright node ...` did not inject the package into Node's module resolution path for this shell invocation.
-next_step: Continue with deterministic static hardening + compile/lint/build verification, then validate live page after frontend restart.
+suspected_cause: Query-param tab routing logic in `system/services/page.tsx` introduced `useSearchParams()` at page scope, which requires Suspense in this Next.js setup.
+next_step: Wrap the search-param consuming component in `<Suspense>` (or move query parsing server-side), then rerun frontend build.

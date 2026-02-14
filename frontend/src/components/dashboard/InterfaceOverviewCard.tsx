@@ -16,6 +16,7 @@ import {
 import { ethernetService } from "@/lib/api/ethernet";
 import { showService, type InterfacePhysical, type InterfaceRuntimeAddress } from "@/lib/api/show";
 import type { EthernetInterface } from "@/lib/api/types/ethernet";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 import {
   Link2,
   RefreshCw,
@@ -179,6 +180,13 @@ export function InterfaceOverviewCard({
 
   const availableInterfaces = useMemo(
     () => [...new Set(rows.map((row) => row.name))].sort((left, right) => left.localeCompare(right)),
+    [rows]
+  );
+  const interfaceLabelByName = useMemo(
+    () =>
+      new Map(
+        rows.map((row) => [row.name, formatInterfaceDisplayName(row.name, row.description)])
+      ),
     [rows]
   );
 
@@ -378,7 +386,7 @@ export function InterfaceOverviewCard({
                           toggleInterfaceSelection(interfaceName, checked === true)
                         }
                       >
-                        {interfaceName}
+                        {interfaceLabelByName.get(interfaceName) ?? interfaceName}
                       </DropdownMenuCheckboxItem>
                     ))}
                   </>
@@ -415,7 +423,9 @@ export function InterfaceOverviewCard({
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-medium">{row.name}</span>
+                        <span className="font-mono font-medium">
+                          {formatInterfaceDisplayName(row.name, row.description)}
+                        </span>
                         {row.role && (
                           <Badge variant={row.role === "WAN" ? "default" : "secondary"}>{row.role}</Badge>
                         )}
@@ -432,9 +442,6 @@ export function InterfaceOverviewCard({
                           {row.linkUp === true ? "Link Up" : row.linkUp === false ? "Link Down" : "Link Unknown"}
                         </Badge>
                       </div>
-                      {row.description && (
-                        <p className="text-xs text-muted-foreground truncate">{row.description}</p>
-                      )}
                       <p className="text-xs text-muted-foreground">
                         Addressing: {row.addressingMode}
                       </p>

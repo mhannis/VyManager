@@ -30,6 +30,10 @@ import { Phase1Dialog } from "@/components/vpn/ipsec/Phase1Dialog";
 import { Phase2Dialog } from "@/components/vpn/ipsec/Phase2Dialog";
 import { VtiDialog } from "@/components/vpn/ipsec/VtiDialog";
 import { PskDialog } from "@/components/vpn/ipsec/PskDialog";
+import {
+  SiteToSiteWizard,
+  type SiteToSiteWizardInterfaceOption,
+} from "@/components/vpn/ipsec/SiteToSiteWizard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 import { ethernetService } from "@/lib/api/ethernet";
@@ -52,6 +56,7 @@ import {
   ShieldOff,
   ShieldQuestion,
   Trash2,
+  Wand2,
 } from "lucide-react";
 
 function valueOrDash(value?: string | null): string {
@@ -110,6 +115,7 @@ export default function IPsecPage() {
   const [config, setConfig] = useState<IPsecConfig | null>(null);
   const [status, setStatus] = useState<IPsecStatus | null>(null);
   const [interfaceNames, setInterfaceNames] = useState<string[]>([]);
+  const [interfaceOptions, setInterfaceOptions] = useState<SiteToSiteWizardInterfaceOption[]>([]);
 
   const [settings, setSettings] = useState<IPsecSettings | null>(null);
   const [settingsInterfaces, setSettingsInterfaces] = useState("");
@@ -152,6 +158,7 @@ export default function IPsecPage() {
   const [pskDialogOpen, setPskDialogOpen] = useState(false);
   const [pskDialogMode, setPskDialogMode] = useState<"create" | "edit">("create");
   const [pskDialogName, setPskDialogName] = useState("");
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   const loadData = async () => {
     setError(null);
@@ -174,13 +181,19 @@ export default function IPsecPage() {
 
       const ethConfig = ethResult.status === "fulfilled" ? (ethResult.value as any) : null;
       if (ethConfig?.interfaces) {
-        setInterfaceNames(
-          ethConfig.interfaces
-            .map((iface: any) => iface.name)
-            .filter(Boolean)
-            .sort()
-        );
+        const options = ethConfig.interfaces
+          .filter((iface: { name?: string }) => Boolean(iface?.name))
+          .map((iface: { name: string; description?: string | null }) => ({
+            name: iface.name,
+            description: iface.description ?? null,
+          }))
+          .sort((left: SiteToSiteWizardInterfaceOption, right: SiteToSiteWizardInterfaceOption) =>
+            left.name.localeCompare(right.name)
+          );
+        setInterfaceOptions(options);
+        setInterfaceNames(options.map((iface: SiteToSiteWizardInterfaceOption) => iface.name));
       } else {
+        setInterfaceOptions([]);
         setInterfaceNames([]);
       }
 
@@ -484,10 +497,16 @@ export default function IPsecPage() {
               pfSense-like tunnel workflow: create Phase 1, then add Phase 2 tunnels.
             </p>
           </div>
-          <Button variant="outline" onClick={loadData} disabled={refreshing}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setWizardOpen(true)} disabled={!canEdit || refreshing}>
+              <Wand2 className="mr-2 h-4 w-4" />
+              Site-to-Site Wizard
+            </Button>
+            <Button variant="outline" onClick={loadData} disabled={refreshing}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-5">
@@ -1402,6 +1421,20 @@ export default function IPsecPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <SiteToSiteWizard
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+          interfaceOptions={interfaceOptions}
+          existingPeerIds={existingPeerIds}
+          existingIkeGroups={ikeGroupNames}
+          existingEspGroups={espGroupNames}
+          existingPskIds={existingPskIds}
+          onSuccess={async (message) => {
+            setSuccess(message);
+            await loadData();
+          }}
+        />
 
         <IkeGroupDialog
           open={ikeDialogOpen}
