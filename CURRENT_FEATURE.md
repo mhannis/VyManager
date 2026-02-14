@@ -6,6 +6,7 @@ commits:
   - ecc2a5b
   - 5bf29bc
   - 36e9a56
+  - 9310ee2
 notes:
   - Added backend endpoint `PUT /vyos/system/config` for hostname/timezone/domain/name-server updates.
   - Added new `System -> Options & Coverage` page with editable system identity settings and guided setup launch links.
