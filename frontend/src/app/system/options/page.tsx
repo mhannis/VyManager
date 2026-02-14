@@ -227,6 +227,9 @@ export default function SystemOptionsPage() {
               <Link href="/system/services?tab=ssh&view=single">SSH Service</Link>
             </Button>
             <Button asChild variant="outline" className="justify-start">
+              <Link href="/system/acceleration">Acceleration (QAT/VPP)</Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-start">
               <a href="https://docs.vyos.io/en/latest/configuration/system/" target="_blank" rel="noreferrer">
                 <BookOpen className="mr-2 h-4 w-4" />
                 VyOS System Docs
