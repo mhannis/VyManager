@@ -18,7 +18,7 @@ const SECTION_LINKS = [
   {
     title: "Static & Failover",
     description: "Static routes and route failover/tracking configuration.",
-    href: "/routing/static-failover",
+    href: "/routing/static-failover/static-routes",
   },
   {
     title: "Infrastructure",

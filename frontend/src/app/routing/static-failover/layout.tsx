@@ -22,7 +22,15 @@ export default function StaticFailoverLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  const isActive = (href: string) => pathname === href;
+  const normalizePath = (path: string) => path.replace(/\/+$/, "") || "/";
+  const isActive = (href: string) => {
+    const normalizedHref = normalizePath(href);
+    const normalizedPathname = normalizePath(pathname);
+    return (
+      normalizedPathname === normalizedHref ||
+      (normalizedHref !== "/" && normalizedPathname.startsWith(`${normalizedHref}/`))
+    );
+  };
 
   return (
     <AppLayout>

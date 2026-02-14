@@ -1,14 +1,12 @@
 "use client";
 
 import { AppLayout } from "@/components/layout/AppLayout";
-import { InProgress } from "@/components/layout/InProgress";
 import { BabelContent } from "@/components/babel/BabelContent";
 import { BgpContent } from "@/components/bgp/BgpContent";
 import { OspfContent } from "@/components/routing/OspfContent";
 import { RipContent } from "@/components/routing/RipContent";
 import { IsisContent } from "@/components/routing/IsisContent";
 import { OpenfabricContent } from "@/components/routing/OpenfabricContent";
-import { StaticProtocolContent } from "@/components/routing/StaticProtocolContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Network, ChevronRight } from "lucide-react";
@@ -17,17 +15,14 @@ import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 
-type ProtocolType = "bgp" | "static" | "ospf" | "ospfv3" | "isis" | "openfabric" | "rip" | "ripng" | "babel";
+type ProtocolType = "bgp" | "ospf" | "isis" | "openfabric" | "rip" | "babel";
 
 const allProtocols = [
   { id: "bgp" as ProtocolType, name: "BGP", description: "Border Gateway Protocol", permission: FeatureGroup.BGP },
-  { id: "static" as ProtocolType, name: "Static", description: "Static protocol routes and attributes", permission: FeatureGroup.STATIC_ROUTES },
   { id: "ospf" as ProtocolType, name: "OSPF", description: "Open Shortest Path First", permission: FeatureGroup.OSPF },
-  { id: "ospfv3" as ProtocolType, name: "OSPFv3", description: "OSPF for IPv6", permission: FeatureGroup.OSPFV3 },
   { id: "isis" as ProtocolType, name: "IS-IS", description: "Intermediate System to Intermediate System", permission: FeatureGroup.ISIS },
   { id: "openfabric" as ProtocolType, name: "OpenFabric", description: "OpenFabric Protocol", permission: FeatureGroup.OPENFABRIC },
   { id: "rip" as ProtocolType, name: "RIP", description: "Routing Information Protocol", permission: FeatureGroup.RIP },
-  { id: "ripng" as ProtocolType, name: "RIPng", description: "RIP Next Generation", permission: FeatureGroup.RIPNG },
   { id: "babel" as ProtocolType, name: "Babel", description: "Babel Routing Protocol", permission: FeatureGroup.BABEL },
 ];
 
@@ -42,9 +37,14 @@ export default function UnicastProtocolsPage() {
 
   const [selectedProtocol, setSelectedProtocol] = useState<ProtocolType | null>(null);
 
-  // Auto-select first available protocol
+  // Auto-select first available protocol and reset invalid selections.
   useEffect(() => {
-    if (protocols.length > 0 && !selectedProtocol) {
+    if (protocols.length === 0) {
+      setSelectedProtocol(null);
+      return;
+    }
+
+    if (!selectedProtocol || !protocols.some((protocol) => protocol.id === selectedProtocol)) {
       setSelectedProtocol(protocols[0].id);
     }
   }, [protocols, selectedProtocol]);
@@ -129,8 +129,6 @@ export default function UnicastProtocolsPage() {
         <div className="flex-1">
           {selectedProtocol === "bgp" ? (
             <BgpContent />
-          ) : selectedProtocol === "static" ? (
-            <StaticProtocolContent />
           ) : selectedProtocol === "babel" ? (
             <BabelContent />
           ) : selectedProtocol === "ospf" ? (
@@ -142,7 +140,9 @@ export default function UnicastProtocolsPage() {
           ) : selectedProtocol === "isis" ? (
             <IsisContent />
           ) : (
-            <InProgress />
+            <div className="flex h-full items-center justify-center p-6 text-sm text-muted-foreground">
+              Select a unicast protocol to begin.
+            </div>
           )}
         </div>
       </div>

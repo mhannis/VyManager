@@ -1,7 +1,6 @@
 "use client";
 
 import { AppLayout } from "@/components/layout/AppLayout";
-import { InProgress } from "@/components/layout/InProgress";
 import { IgmpProxyContent } from "@/components/routing/IgmpProxyContent";
 import { PimContent } from "@/components/routing/PimContent";
 import { Pim6Content } from "@/components/routing/Pim6Content";
@@ -32,9 +31,14 @@ export default function MulticastPage() {
 
   const [selectedMulticast, setSelectedMulticast] = useState<MulticastType | null>(null);
 
-  // Auto-select first available multicast protocol
+  // Auto-select first available protocol and reset invalid selections.
   useEffect(() => {
-    if (multicast.length > 0 && !selectedMulticast) {
+    if (multicast.length === 0) {
+      setSelectedMulticast(null);
+      return;
+    }
+
+    if (!selectedMulticast || !multicast.some((protocol) => protocol.id === selectedMulticast)) {
       setSelectedMulticast(multicast[0].id);
     }
   }, [multicast, selectedMulticast]);
@@ -127,7 +131,9 @@ export default function MulticastPage() {
           ) : selectedMulticast === "pim6" ? (
             <Pim6Content />
           ) : (
-            <InProgress />
+            <div className="flex h-full items-center justify-center p-6 text-sm text-muted-foreground">
+              Select a multicast protocol to begin.
+            </div>
           )}
         </div>
       </div>
