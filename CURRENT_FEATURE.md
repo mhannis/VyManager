@@ -1,18 +1,11 @@
-feature_id: parity-phase3-protocols-batch-03
+feature_id: frontend-runtime-smoke-hardening-2026-02-14
 status: done
-title: Phase 3 Protocols Batch (PIM, PIM6, Protocols index, BGP page, BFD page)
+title: Frontend route-level runtime smoke hardening
 branch: feature/containers-automation-v1
 commits:
-  - 2563056
-  - 4f16851
+  - uncommitted
 notes:
-  - Completed 5 protocol items before reporting, per execution policy.
-  - Added backend routers for PIM and PIM6 plus protocol overview endpoints.
-  - Added protocol overview frontend page at /routing/protocols.
-  - Added PIM and PIM6 views in multicast page and dedicated routes.
-  - Added dedicated routes for BGP and BFD.
-  - Updated sidebar with Routing Overview link.
-  - Expanded protocol tests and fixed validator behavior to allow subtree delete root commands.
-  - Regenerated coverage artifacts; protocols domain now 18 implemented, 0 partial, 0 not_started.
-  - Reviewer verdict: APPROVED.
-  - Next target domain: services.
+  - Expanded `frontend/scripts/smoke-ui.mjs` default routes to cover reported regression pages (routing + DHCP + infrastructure/multicast).
+  - Switched smoke default origin from `127.0.0.1` to `localhost` to avoid origin/cookie mismatches.
+  - Expanded `frontend/scripts/check-runtime.sh` to probe critical routes, not just `/` and `/login`.
+  - Verified runtime flow: build -> restart `vm-ui` -> `smoke:runtime` -> `smoke:ui` all pass.

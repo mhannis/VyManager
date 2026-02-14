@@ -54,82 +54,73 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Protocols domain parity is complete.
-- Move to next priority domain (`services`) and execute 3-5 partial service items per slice.
+- Harden frontend runtime validation so client-side crashes are caught before reporting completion.
+- Completed this cycle: expanded browser smoke defaults to include high-risk routing and DHCP routes.
+- Completed this cycle: switched smoke default origin to `http://localhost:3000` to avoid origin/cookie false negatives.
+- Completed this cycle: reran build + restart + runtime smoke + browser smoke; all checks passed.
+- Next: continue one-function-at-a-time protocol/service parity implementation with this stronger runtime gate.
 
 ## Current Feature Spec
-Feature: **Protocols batch slice (PIM + PIM6 + Protocols index + BGP page + BFD page)**
+Feature: **Frontend runtime smoke hardening for route-level crash detection**
 
 Acceptance criteria:
-- Add backend routers for `pim` and `pim6` with `capabilities/config/batch` endpoints.
-- Add backend protocols overview endpoint (`/vyos/protocols/capabilities`, `/vyos/protocols/config`).
-- Add frontend protocol pages/components for PIM/PIM6 and protocols overview.
-- Add dedicated BGP/BFD routes to close protocol coverage detection gaps.
-- Regenerate coverage/backlog, pass tests/checks, and secure reviewer APPROVED.
+- `frontend/scripts/smoke-ui.mjs` defaults include critical routing/infrastructure/multicast and DHCP pages that previously regressed.
+- `frontend/scripts/smoke-ui.mjs` default base URL is `http://localhost:3000`.
+- `frontend/scripts/check-runtime.sh` probes a critical route set and fails on unexpected statuses.
+- End-to-end validation (`build`, restart `vm-ui`, runtime smoke, browser smoke) passes on the active environment.
 
 Assumptions:
-- Command-driven editors remain valid MVP surfaces for fast parity execution.
-- Existing dirty working tree files outside this slice remain untouched.
+- Playwright system libraries are present through local LD path (`/home/redhot/VyOS/.local-playwright-libs/...`) on this host.
+- Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Latest slice commit: `2563056`
-- Working tree is dirty with unrelated pre-existing changes outside this slice.
+- Status: runtime smoke hardening complete in working tree (not yet committed in this cycle).
+- Working tree is dirty with unrelated pre-existing changes outside this hotfix.
 
-### Files Touched This Cycle (slice-owned)
-- Backend:
-  - `backend/routers/pim/__init__.py`
-  - `backend/routers/pim/pim.py`
-  - `backend/routers/pim6/__init__.py`
-  - `backend/routers/pim6/pim6.py`
-  - `backend/routers/protocols/__init__.py`
-  - `backend/routers/protocols/protocols.py`
-  - `backend/app.py`
-  - `backend/tests/test_protocol_capabilities.py`
-- Frontend:
-  - `frontend/src/lib/api/pim.ts`
-  - `frontend/src/lib/api/pim6.ts`
-  - `frontend/src/lib/api/protocols.ts`
-  - `frontend/src/components/routing/PimContent.tsx`
-  - `frontend/src/components/routing/Pim6Content.tsx`
-  - `frontend/src/app/routing/multicast/page.tsx`
-  - `frontend/src/app/routing/multicast/pim/page.tsx`
-  - `frontend/src/app/routing/multicast/pim6/page.tsx`
-  - `frontend/src/app/routing/protocols/page.tsx`
-  - `frontend/src/app/routing/unicast-protocols/bgp/page.tsx`
-  - `frontend/src/app/routing/infrastructure/bfd/page.tsx`
-  - `frontend/src/components/layout/Sidebar.tsx`
-- Generated artifacts:
-  - `CONFIG_COVERAGE_MATRIX.md/.json`
-  - `CONFIG_COVERAGE_PHASE1.md/.json`
-  - `PARITY_BACKLOG.md/.json`
+### Files Touched This Cycle (hotfix-owned)
+- `frontend/scripts/smoke-ui.mjs`
+- `frontend/scripts/check-runtime.sh`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py` -> pass (`38 passed`)
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_policy_capabilities.py tests/test_safe_apply.py tests/test_vyos_driver_wrapper.py tests/test_vyos_service_safe_apply.py tests/test_ethernet_vlan_batch_ops.py tests/test_system_services_ssh_dns.py tests/test_containers_automation_v1.py tests/test_app.py` -> pass (`31 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
-- `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
 - `cd frontend && npm run -s build` -> pass
-- `cd frontend && npm run -s smoke:runtime` -> pass
-- `python3 scripts/generate_config_coverage_matrix.py && python3 scripts/generate_phase1_backlog.py` -> pass
-- Reviewer pass: `APPROVED` (after one fix to allow `delete protocols pim` / `delete protocols pim6` root operations)
-
-### Backlog Delta
-- `protocols` domain moved from:
-  - implemented `10`, partial `5`, not_started `3`
-- to:
-  - implemented `18`, partial `0`, not_started `0` (domain complete)
+- Restarted runtime UI session and verified listener:
+  - `tmux kill-session -t vm-ui`
+  - `tmux new-session -d -s vm-ui 'cd /home/redhot/VyOS/VyManager/frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000'`
+  - `ss -ltnp | rg ':3000'` -> listening
+- `cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime` -> pass
+- `cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui` -> pass
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
-- Services domain has 19 partial pages; prioritization within services still needed per risk/use.
+- Browser smoke currently depends on host-specific Playwright shared libs path; this should be standardized in dev bootstrap.
 
 ## TODO Backlog (next queue)
-- Next domain: `services`
-- Initial target candidates (partial): `service dns`, `service ssh`, `service ntp`, `service lldp`, `service mdns`
+- Continue protocol/service parity slices with robust form-first UX.
+- For each new slice: keep runtime gate sequence mandatory (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
 - PIM/PIM6 batch validators now allow exact subtree delete (`delete protocols pim`, `delete protocols pim6`) while preserving prefix boundary checks.
 - Added protocols overview API + `/routing/protocols` page for docs index parity and quick navigation.
 - Added dedicated `/routing/unicast-protocols/bgp` and `/routing/infrastructure/bfd` pages to eliminate token-detection false partials.
 - Protocols domain is now fully marked implemented in parity artifacts.
+- Routing IA cleanup applied: removed redundant Static entry from unicast selector and redirected legacy static URL to `/routing/static-failover/static-routes`.
+- Main sidebar now links `Static & Failover` directly to static routes and uses normalized path matching to keep parent/child active for nested or trailing-slash URLs.
+- Infrastructure and multicast selectors no longer fall back to generic `In Progress`; they now show selection prompts when nothing is selected.
+- `ProtocolSimpleListEditor` now includes a `Current Coverage` card with supported settings while keeping the UI form-driven (no CLI text entry).
+- Interface field keys (default `["interface"]`) now render as live dropdowns sourced from `/network/interfaces/config`, with labels formatted as `Description (ethX)`.
+- Flashing fix: `ProtocolSimpleListEditor` initial load now runs once per page key and no longer re-enters full loading state after initial render, preventing quick refresh flicker when parent components rerender.
+- OSPF moved off the generic protocol list editor and now has a dedicated, robust, form-first screen with multi-section CRUD and diff-based batch save behavior.
+- Interface selectors now pull from multiple sources (`ethernet config`, `show interface physical`, and `show all interfaces`) to avoid empty selector lists when one endpoint returns limited data.
+- Safe Apply snapshot-save now retries to `/config/<snapshot-file>` when configured backup directory is missing/unwritable to prevent HTTP 400 pre-check failures.
+- Validation direction from Mark: each feature should include populate/save/load verification and CLI alignment checks (`show configuration commands`) against the corresponding VyOS guide section.
+- Added live seeding utility `scripts/seed_ospf_fixture.py` to populate active-instance OSPF config for QA without manual CLI.
+- VyOS rejected mixed OSPF styles (`area network` plus `interface area`); fixture now uses interface-only area assignment to stay valid.
+- OSPF Areas list now infers areas from interface assignments, so interface-style deployments still show area context even without explicit `area-type` nodes.
+- OSPF fixture now seeds `redistribute connected` to keep Redistribution panel populated during validation.
+- RIP now has a dedicated full-form UX covering major command-tree sections from the VyOS RIP guide (`default-*`, timers, network/interface/neighbor/route, passive-interface, network-distance, distribute-list, redistribute).
+- RIP passive-interface syntax on this target is `set protocols rip passive-interface <name>` and `set protocols rip passive-interface default` (not `... interface ...`).
+- Reviewer-agent spawn was temporarily unavailable due thread cap; this cycle used manual reviewer pass and recorded the agent-limit failure in `LAST_FAILURE.txt`.
+- Frontend smoke defaults now cover the exact high-risk routes that recently regressed (`routing/*`, `services/dhcp-server`, and related infrastructure pages), so route-level runtime crashes are no longer missed by default.
+- Runtime/browser smoke defaults now use `http://localhost:3000`; this avoids invalid-origin/cookie edge cases seen with `127.0.0.1`.

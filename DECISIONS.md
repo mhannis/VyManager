@@ -70,3 +70,26 @@
 - 2026-02-14: PIM/PIM6 batch command validation now accepts exact root operations (`delete protocols pim`, `delete protocols pim6`) with boundary-safe matching to prevent cross-protocol prefix collisions.
 - 2026-02-14: Added dedicated route pages `/routing/unicast-protocols/bgp` and `/routing/infrastructure/bfd` to resolve coverage detector false partials and mark protocol docs pages implemented.
 - 2026-02-14: Protocols domain reached full parity in matrix terms (`implemented: 18`, `partial: 0`, `not_started: 0`); next execution focus moves to services-domain partials.
+- 2026-02-14: Static routing UX is now canonicalized under `Routing -> Static & Failover`; legacy `/routing/unicast-protocols/static` redirects to static/failover and redundant static selector was removed from unicast protocols.
+- 2026-02-14: Routing selector pages should not surface generic `In Progress` when no concrete form exists; removed placeholder-only entries and replaced fallback panes with neutral selection prompts.
+- 2026-02-14: To prevent left-nav/breadcrumb mismatches on nested routing paths, route-active checks now normalize trailing slashes and support nested path matches.
+- 2026-02-14: Protocol pages that use `ProtocolSimpleListEditor` now explicitly show supported setting scope and exact command templates so users can see what is currently implemented vs not yet exposed.
+- 2026-02-14: Interface fields in protocol editors now use live interface dropdowns and display labels with `Description (ethX)` via shared formatter to keep interface identity consistent across the UI.
+- 2026-02-14: Fixed protocol page flicker by preventing `ProtocolSimpleListEditor` from re-running initial load on routine parent rerenders and by avoiding full-screen loading state after initial data hydration.
+- 2026-02-14: Adopted strict one-function-at-a-time protocol implementation model: complete each protocol page as a robust form-driven feature before moving to the next protocol.
+- 2026-02-14: OSPF was promoted from generic list-editor subset to a dedicated full-form UX with global parameters, area/network management, interface tuning, and redistribution controls.
+- 2026-02-14: Removed protocol command-template display from UI to avoid CLI-like UX and keep operator workflow fully form-based.
+- 2026-02-14: Protocol interface selectors now merge three backend sources (`/vyos/ethernet/config`, `/vyos/show/interface-physical`, `/vyos/show/all-interfaces`) so forms remain usable even when one source is incomplete.
+- 2026-02-14: Safe Apply snapshot creation now retries from configured `SAFE_APPLY_BACKUP_DIR` to `/config/<snapshot-file>` when save fails with missing-directory/write-file errors, preventing pre-check failures on systems without `/config/.vymanager-safe-apply`.
+- 2026-02-14: Validation standard tightened: each implemented feature should include populate/save/load verification and expected CLI-alignment checks against the VyOS config guide, not just build/typecheck.
+- 2026-02-14: Added `scripts/seed_ospf_fixture.py` to seed live OSPF test data on the currently active instance using DB-resolved credentials.
+- 2026-02-14: OSPF fixture uses interface-based area assignment only; VyOS rejects mixing `area network` and `interface area` styles in the same config.
+- 2026-02-14: OSPF UI now infers areas from interface assignments when `area-type` is not explicitly configured, avoiding empty Areas section in interface-style deployments.
+- 2026-02-14: OSPF fixture baseline now includes `redistribute connected` so Redistribution panel is populated for live page validation.
+- 2026-02-14: Added `--clear` to `scripts/seed_ospf_fixture.py` so test OSPF config can be removed immediately after validation.
+- 2026-02-14: RIP protocol page was upgraded from a simple network-only list editor to a dedicated full-form editor with diff-based save behavior aligned to the VyOS RIP command tree.
+- 2026-02-14: On this VyOS target, valid passive RIP syntax is `set protocols rip passive-interface default` and `set protocols rip passive-interface <interface>`; forms/fixtures were adjusted accordingly.
+- 2026-02-14: Reviewer-agent dispatch can fail when session thread cap is reached; use manual reviewer pass for current slice and rerun agent review when slots become available.
+- 2026-02-14: Browser smoke defaults were expanded to include high-risk routing and DHCP routes (`/routing/*`, `/services/dhcp-server`, `/network/dhcp`) after user-reported route-level client crashes were missed by narrower probes.
+- 2026-02-14: Frontend smoke defaults now use `http://localhost:3000` instead of `127.0.0.1` to avoid origin/cookie mismatches during automated login and route probing.
+- 2026-02-14: Runtime smoke now probes a critical route list rather than only `/` and `/login`, catching broken route handlers earlier in pre-handoff validation.

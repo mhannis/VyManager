@@ -1,126 +1,69 @@
 {
-  "feature_id": "parity-phase3-protocols-batch-03",
-  "title": "Protocols slice batch: PIM + PIM6 + Protocols index + BGP/BFD dedicated pages",
-  "last_updated": "2026-02-14T18:10:00Z",
+  "feature_id": "frontend-runtime-smoke-hardening-2026-02-14",
+  "title": "Frontend route-level runtime smoke hardening",
   "status": "done",
-  "execution_policy": {
-    "protocol_items_per_report_min": 3,
-    "protocol_items_per_report_max": 5,
-    "reporting_rule": "During protocols backlog execution, complete 3-5 items before issuing the next human-facing report."
-  },
   "acceptance_criteria": [
-    "Backend routers exist for PIM and PIM6 with capabilities/config/batch endpoints.",
-    "Backend protocols index endpoints exist for capabilities/config.",
-    "Routing UI has PIM/PIM6 protocol editors and a protocols overview page.",
-    "Dedicated routes exist for BGP and BFD protocol pages.",
-    "Coverage artifacts are regenerated and protocols domain is fully implemented.",
-    "Targeted backend tests and frontend validation commands pass.",
-    "Code reviewer signs off APPROVED."
+    "Browser smoke defaults include high-risk routing, infrastructure, multicast, and DHCP routes that previously regressed.",
+    "Smoke defaults use http://localhost:3000 to avoid origin/cookie false negatives.",
+    "Runtime smoke probes a critical route set and fails on unexpected statuses.",
+    "Frontend validation flow (build, restart vm-ui, smoke:runtime, smoke:ui) passes end-to-end."
   ],
   "assumptions": [
-    "Protocol batch payload remains command-string based (operations: string[]).",
-    "Command-driven protocol editors are acceptable MVP parity surfaces.",
-    "Existing unrelated worktree changes remain untouched."
+    "Playwright shared libraries are available on this host via LD_LIBRARY_PATH.",
+    "vm-ui tmux session is the canonical runtime process for frontend validation."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "Backend",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "backend/routers/pim/__init__.py",
-        "backend/routers/pim/pim.py",
-        "backend/routers/pim6/__init__.py",
-        "backend/routers/pim6/pim6.py",
-        "backend/routers/protocols/__init__.py",
-        "backend/routers/protocols/protocols.py",
-        "backend/app.py"
+        "frontend/scripts/smoke-ui.mjs",
+        "frontend/scripts/check-runtime.sh"
       ],
-      "notes": "Added PIM/PIM6 routers and protocols overview router; wired routers into app."
+      "notes": "Expanded default route coverage and normalized smoke origin to localhost."
     },
     {
       "id": "T2",
-      "owner_role": "UI",
+      "owner_role": "Build/Execution",
       "status": "done",
-      "files": [
-        "frontend/src/components/routing/PimContent.tsx",
-        "frontend/src/components/routing/Pim6Content.tsx",
-        "frontend/src/app/routing/multicast/page.tsx",
-        "frontend/src/app/routing/multicast/pim/page.tsx",
-        "frontend/src/app/routing/multicast/pim6/page.tsx",
-        "frontend/src/app/routing/protocols/page.tsx",
-        "frontend/src/app/routing/unicast-protocols/bgp/page.tsx",
-        "frontend/src/app/routing/infrastructure/bfd/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx"
-      ],
-      "notes": "Added protocol surfaces and routing overview navigation."
+      "files": [],
+      "notes": "Ran typecheck, build, restarted vm-ui, and executed runtime + browser smoke successfully."
     },
     {
       "id": "T3",
-      "owner_role": "UI",
+      "owner_role": "Test",
       "status": "done",
-      "files": [
-        "frontend/src/lib/api/pim.ts",
-        "frontend/src/lib/api/pim6.ts",
-        "frontend/src/lib/api/protocols.ts"
-      ],
-      "notes": "Added frontend API clients for new protocol endpoints."
+      "files": [],
+      "notes": "Validated that browser smoke catches client-side crashes and now covers user-reported regression routes."
     },
     {
       "id": "T4",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/test_protocol_capabilities.py"
-      ],
-      "notes": "Expanded capability/config/batch tests for PIM/PIM6/protocols index and covered root delete commands."
+      "owner_role": "Planner",
+      "status": "todo",
+      "files": [],
+      "notes": "Continue one-function-at-a-time parity slices, reusing the hardened runtime gate before every handoff."
     },
     {
       "id": "T5",
-      "owner_role": "Planner",
-      "status": "done",
-      "files": [
-        "CONFIG_COVERAGE_MATRIX.json",
-        "CONFIG_COVERAGE_PHASE1.json",
-        "PARITY_BACKLOG.json"
-      ],
-      "notes": "Regenerated coverage artifacts; protocols domain now complete (18/18 implemented)."
-    },
-    {
-      "id": "T6",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/routers/pim/pim.py",
-        "backend/routers/pim6/pim6.py",
-        "backend/tests/test_protocol_capabilities.py"
+        "frontend/scripts/smoke-ui.mjs",
+        "frontend/scripts/check-runtime.sh"
       ],
-      "notes": "Final reviewer verdict APPROVED after validating base delete command support with scoped prefix checks."
-    },
-    {
-      "id": "N1",
-      "owner_role": "Planner",
-      "status": "todo",
-      "files": [
-        "CONFIG_COVERAGE_PHASE1.json",
-        "PARITY_BACKLOG.json"
-      ],
-      "notes": "Next slice target: services domain partial items (dns/ssh/ntp/lldp/mdns first batch)."
+      "notes": "Manual review complete for scope; no API contract changes."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q",
-    "lint": "cd frontend && npm run -s lint",
-    "typecheck": "cd frontend && npx tsc --noEmit --pretty false",
-    "runtime_smoke": "cd frontend && npm run -s smoke:runtime",
-    "matrix": "python3 scripts/generate_config_coverage_matrix.py",
-    "phase1_backlog": "python3 scripts/generate_phase1_backlog.py"
+    "test": "cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
+    "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Continuous parity execution",
+      "purpose": "Routing/services parity implementation with runtime smoke gating",
       "status": "active"
     }
   ]
