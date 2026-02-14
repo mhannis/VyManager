@@ -185,6 +185,10 @@ def detect_domain_coverage(
     aliases = {
         "container": {"containers"},
         "containers": {"container"},
+        "policy": {"policies"},
+        "policies": {"policy"},
+        "service": {"services"},
+        "services": {"service"},
         "zone": {"zones"},
         "zones": {"zone"},
         "loadbalancing": {"load_balancing"},

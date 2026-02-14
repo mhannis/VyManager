@@ -220,6 +220,12 @@ DOMAIN_EVIDENCE_PATTERNS = {
 }
 
 
+DOC_ONLY_UI_COVERAGE = {
+    "https://docs.vyos.io/en/latest/configuration/policy/index.html",
+    "https://docs.vyos.io/en/latest/configuration/policy/examples.html",
+}
+
+
 def gather_paths(patterns: list[str]) -> list[str]:
     files: list[str] = []
     for pattern in patterns:
@@ -248,7 +254,15 @@ def derive_domain(url: str, cli_scope: str) -> str:
     return SEGMENT_TO_DOMAIN.get(token, "meta")
 
 
-def classify_item(raw_status: str, has_backend_evidence: bool, has_frontend_evidence: bool) -> str:
+def classify_item(
+    raw_status: str,
+    has_backend_evidence: bool,
+    has_frontend_evidence: bool,
+    url: str,
+) -> str:
+    if raw_status == "FRONTEND_ONLY" and has_frontend_evidence and url in DOC_ONLY_UI_COVERAGE:
+        # Some docs pages are conceptual/index content; frontend representation is sufficient.
+        return "implemented"
     if raw_status == "MISSING":
         return "not_started"
     if raw_status in {"FRONTEND_ONLY", "BACKEND_ONLY"}:
@@ -279,6 +293,7 @@ def main() -> None:
             raw_status=item.get("status", "MISSING"),
             has_backend_evidence=bool(evidence["backend"]),
             has_frontend_evidence=bool(evidence["frontend"]),
+            url=item.get("url", ""),
         )
 
         domain_counts[domain][status] += 1

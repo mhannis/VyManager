@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-14T15:51:04Z",
+  "generated_at": "2026-02-14T16:52:29Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -386,8 +386,8 @@
       "title": "BGP - AS Path Policy",
       "cli_scope": "policy as path list",
       "backend_detected": true,
-      "frontend_detected": false,
-      "status": "BACKEND_ONLY"
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 44,
@@ -395,8 +395,8 @@
       "title": "BGP - Community List",
       "cli_scope": "policy community list",
       "backend_detected": true,
-      "frontend_detected": false,
-      "status": "BACKEND_ONLY"
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 45,
@@ -404,8 +404,8 @@
       "title": "BGP Example",
       "cli_scope": "policy examples",
       "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
     },
     {
       "index": 46,
@@ -413,8 +413,8 @@
       "title": "BGP - Extended Community List",
       "cli_scope": "policy extcommunity list",
       "backend_detected": true,
-      "frontend_detected": false,
-      "status": "BACKEND_ONLY"
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 47,
@@ -422,8 +422,8 @@
       "title": "Policy",
       "cli_scope": "policy",
       "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "frontend_detected": true,
+      "status": "FRONTEND_ONLY"
     },
     {
       "index": 48,
@@ -431,8 +431,8 @@
       "title": "BGP - Large Community List",
       "cli_scope": "policy large community list",
       "backend_detected": true,
-      "frontend_detected": false,
-      "status": "BACKEND_ONLY"
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 49,

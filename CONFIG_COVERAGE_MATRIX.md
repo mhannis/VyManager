@@ -1,15 +1,15 @@
 # CONFIG_COVERAGE_MATRIX
 
-Generated: `2026-02-14T15:51:04Z`
+Generated: `2026-02-14T16:52:29Z`
 Source: `https://docs.vyos.io/en/latest/configuration/`
 
 ## Status Summary
 
 - Total documentation pages discovered: **129**
-- `DETECTED` (backend + frontend signal): **71**
-- `BACKEND_ONLY`: **7**
-- `FRONTEND_ONLY`: **32**
-- `MISSING`: **19**
+- `DETECTED` (backend + frontend signal): **75**
+- `BACKEND_ONLY`: **3**
+- `FRONTEND_ONLY`: **34**
+- `MISSING`: **17**
 
 ## Notes
 
@@ -63,12 +63,12 @@ Source: `https://docs.vyos.io/en/latest/configuration/`
 | 40 | [NAT66(NPTv6)](https://docs.vyos.io/en/latest/configuration/nat/nat66.html) | `nat nat66` | Y | Y | `DETECTED` |
 | 41 | [PKI](https://docs.vyos.io/en/latest/configuration/pki/index.html) | `pki` | N | N | `MISSING` |
 | 42 | [Access List Policy](https://docs.vyos.io/en/latest/configuration/policy/access-list.html) | `policy access list` | Y | Y | `DETECTED` |
-| 43 | [BGP - AS Path Policy](https://docs.vyos.io/en/latest/configuration/policy/as-path-list.html) | `policy as path list` | Y | N | `BACKEND_ONLY` |
-| 44 | [BGP - Community List](https://docs.vyos.io/en/latest/configuration/policy/community-list.html) | `policy community list` | Y | N | `BACKEND_ONLY` |
-| 45 | [BGP Example](https://docs.vyos.io/en/latest/configuration/policy/examples.html) | `policy examples` | N | N | `MISSING` |
-| 46 | [BGP - Extended Community List](https://docs.vyos.io/en/latest/configuration/policy/extcommunity-list.html) | `policy extcommunity list` | Y | N | `BACKEND_ONLY` |
-| 47 | [Policy](https://docs.vyos.io/en/latest/configuration/policy/index.html) | `policy` | N | N | `MISSING` |
-| 48 | [BGP - Large Community List](https://docs.vyos.io/en/latest/configuration/policy/large-community-list.html) | `policy large community list` | Y | N | `BACKEND_ONLY` |
+| 43 | [BGP - AS Path Policy](https://docs.vyos.io/en/latest/configuration/policy/as-path-list.html) | `policy as path list` | Y | Y | `DETECTED` |
+| 44 | [BGP - Community List](https://docs.vyos.io/en/latest/configuration/policy/community-list.html) | `policy community list` | Y | Y | `DETECTED` |
+| 45 | [BGP Example](https://docs.vyos.io/en/latest/configuration/policy/examples.html) | `policy examples` | N | Y | `FRONTEND_ONLY` |
+| 46 | [BGP - Extended Community List](https://docs.vyos.io/en/latest/configuration/policy/extcommunity-list.html) | `policy extcommunity list` | Y | Y | `DETECTED` |
+| 47 | [Policy](https://docs.vyos.io/en/latest/configuration/policy/index.html) | `policy` | N | Y | `FRONTEND_ONLY` |
+| 48 | [BGP - Large Community List](https://docs.vyos.io/en/latest/configuration/policy/large-community-list.html) | `policy large community list` | Y | Y | `DETECTED` |
 | 49 | [Local Route Policy](https://docs.vyos.io/en/latest/configuration/policy/local-route.html) | `policy local route` | Y | Y | `DETECTED` |
 | 50 | [Prefix List Policy](https://docs.vyos.io/en/latest/configuration/policy/prefix-list.html) | `policy prefix list` | Y | Y | `DETECTED` |
 | 51 | [Route Map Policy](https://docs.vyos.io/en/latest/configuration/policy/route-map.html) | `policy route map` | Y | Y | `DETECTED` |

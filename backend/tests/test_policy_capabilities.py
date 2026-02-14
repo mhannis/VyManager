@@ -5,6 +5,10 @@ import pytest
 
 import routers.local_route.local_route as local_route_router
 import routers.route_map.route_map as route_map_router
+import routers.as_path_list.as_path_list as as_path_list_router
+import routers.community_list.community_list as community_list_router
+import routers.extcommunity_list.extcommunity_list as extcommunity_list_router
+import routers.large_community_list.large_community_list as large_community_list_router
 import utils.router_helpers as router_helpers
 
 
@@ -18,6 +22,10 @@ def app():
     app = FastAPI()
     app.include_router(route_map_router.router)
     app.include_router(local_route_router.router)
+    app.include_router(as_path_list_router.router)
+    app.include_router(community_list_router.router)
+    app.include_router(extcommunity_list_router.router)
+    app.include_router(large_community_list_router.router)
     return app
 
 
@@ -52,3 +60,28 @@ def test_local_route_capabilities_loads_successfully(app, allow_permissions, moc
     payload = response.json()
     assert payload.get("version") == "1.5"
     assert "features" in payload
+
+
+@pytest.mark.parametrize(
+    ("path", "expected_key"),
+    [
+        ("/vyos/as-path-list/capabilities", "features"),
+        ("/vyos/community-list/capabilities", "features"),
+        ("/vyos/extcommunity-list/capabilities", "features"),
+        ("/vyos/large-community-list/capabilities", "features"),
+    ],
+)
+def test_bgp_policy_capability_endpoints_load_successfully(
+    app,
+    allow_permissions,
+    mock_service,
+    path,
+    expected_key,
+):
+    client = TestClient(app)
+    response = client.get(path)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload.get("version") == "1.5"
+    assert expected_key in payload

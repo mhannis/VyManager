@@ -134,6 +134,11 @@ const navigation: NavItem[] = [
     icon: FileText,
     children: [
       {
+        title: "Overview",
+        href: "/policies",
+        requiredPermission: FeatureGroup.ACCESS_LIST
+      },
+      {
         title: "Access List",
         href: "/policies/access-list",
         requiredPermission: FeatureGroup.ACCESS_LIST
@@ -178,6 +183,11 @@ const navigation: NavItem[] = [
         href: "/policies/bgp-large-community",
         requiredPermission: FeatureGroup.BGP_LARGE_COMMUNITY
       },
+      {
+        title: "Examples",
+        href: "/policies/examples",
+        requiredPermission: FeatureGroup.ACCESS_LIST
+      },
     ],
   },
   {
@@ -201,19 +211,14 @@ const navigation: NavItem[] = [
     icon: Wrench,
     children: [
       {
-        title: "NTP",
-        href: "/system/services?tab=ntp&view=single",
+        title: "DHCP Relay",
+        href: "/system/services?tab=dhcp-relay&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
-        title: "LLDP",
-        href: "/system/services?tab=lldp&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "mDNS Repeater",
-        href: "/system/services?tab=mdns&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
+        title: "DHCP Server",
+        href: "/network/dhcp",
+        requiredPermission: FeatureGroup.DHCP,
       },
       {
         title: "DNS Forwarder",
@@ -231,14 +236,19 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
-        title: "DHCP Relay",
-        href: "/system/services?tab=dhcp-relay&view=single",
+        title: "LLDP",
+        href: "/system/services?tab=lldp&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
-        title: "DHCP Server",
-        href: "/network/dhcp",
-        requiredPermission: FeatureGroup.DHCP,
+        title: "mDNS Repeater",
+        href: "/system/services?tab=mdns&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "NTP",
+        href: "/system/services?tab=ntp&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
       },
     ],
   },

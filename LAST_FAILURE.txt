@@ -1,9 +1,10 @@
-timestamp: 2026-02-14T16:36:00Z
-failing_command: tmux send-keys ... && ss -ltnp | rg ':8000|:3000'
-error_summary: Post-restart listener check command returned exit code 1 because the final `rg` filter found no matches within the wait window (or exited non-zero with no matches). This does not necessarily indicate service startup failure; explicit session/log checks are required.
+timestamp: 2026-02-14T16:57:00Z
+failing_command: tmux send-keys restart sequence for vm-api/vm-ui + ss listener grep
+error_summary: Restart command exited non-zero because the listener verification filter did not find expected `:8000`/`:3000` matches in the immediate check window.
 
 relevant_output:
-(no stdout; command exited 1)
+vm-api: 1 windows (created Sat Feb 14 11:27:12 2026)
+vm-ui: 1 windows (created Sat Feb 14 11:27:12 2026)
 
-suspected_cause: Startup race or no port match during immediate check.
-next_step: Inspect tmux pane output directly and run `ss -ltnp` without filtering, then verify runtime endpoints.
+suspected_cause: startup race or one/both processes not fully started yet.
+next_step: inspect tmux pane output for vm-api/vm-ui and verify listeners without grep race.

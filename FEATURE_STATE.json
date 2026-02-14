@@ -1,88 +1,84 @@
 {
-  "feature_id": "parity-phase1-phase2-policy-foundation",
-  "title": "Phase 1 classification + Phase 2 reusable policy abstractions",
-  "last_updated": "2026-02-14T16:40:00Z",
+  "feature_id": "parity-phase3-protocols-slice",
+  "title": "Phase 3 continuation: protocols domain implementation",
+  "last_updated": "2026-02-14T17:00:00Z",
   "status": "in_progress",
   "acceptance_criteria": [
-    "Coverage matrix entries are marked implemented/partial/not_started with evidence file paths.",
-    "A prioritized backlog is produced using foundational risk, breadth, and reuse potential.",
-    "Policy reorder banners are standardized behind one shared component.",
-    "Prefix-list create/add/edit dialogs share validation logic.",
-    "Capabilities endpoint loading is standardized for policy routers.",
-    "Route-map and local-route capability endpoints no longer crash.",
-    "Regression tests cover route-map/local-route capability endpoints."
+    "Policy domain has no uncovered pages in PARITY_BACKLOG.md.",
+    "All policy BGP capability endpoints use shared loader abstraction.",
+    "Policy index/examples docs sections are represented in GUI.",
+    "Policy capability regression tests pass.",
+    "Next domain execution started from protocols backlog."
   ],
   "assumptions": [
-    "Phase1 status classification is implementation-level and not full option-level parity verification.",
-    "Builder capability payloads are domain-specific; tests should check stable keys rather than identical schemas.",
-    "Existing API contracts and endpoint paths must remain unchanged."
+    "Docs-only policy pages (index/examples) are complete when represented in GUI.",
+    "Protocols domain will require incremental backend+frontend scaffolding beyond current placeholders.",
+    "Existing API contracts remain stable while expanding parity."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "Planner",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "scripts/generate_phase1_backlog.py",
-        "CONFIG_COVERAGE_PHASE1.json",
-        "CONFIG_COVERAGE_PHASE1.md",
-        "PARITY_BACKLOG.json",
-        "PARITY_BACKLOG.md"
+        "backend/routers/as_path_list/as_path_list.py",
+        "backend/routers/community_list/community_list.py",
+        "backend/routers/extcommunity_list/extcommunity_list.py",
+        "backend/routers/large_community_list/large_community_list.py"
       ],
-      "notes": "Generated Phase1 coverage classification and backlog from the docs crawl matrix + repo scan evidence."
+      "notes": "Migrated remaining policy BGP capability endpoints to shared `load_vyos_capabilities(...)` flow."
     },
     {
       "id": "T2",
-      "owner_role": "UI",
+      "owner_role": "Test",
       "status": "done",
       "files": [
-        "frontend/src/components/policies/PolicyReorderBanner.tsx",
-        "frontend/src/components/policies/AccessListReorderBanner.tsx",
-        "frontend/src/components/policies/PrefixListReorderBanner.tsx",
-        "frontend/src/components/policies/RouteMapReorderBanner.tsx",
-        "frontend/src/components/policies/RouteReorderBanner.tsx",
-        "frontend/src/components/policies/LocalRouteReorderBanner.tsx",
-        "frontend/src/components/policies/AsPathListReorderBanner.tsx",
-        "frontend/src/components/policies/CommunityListReorderBanner.tsx",
-        "frontend/src/components/policies/ExtCommunityListReorderBanner.tsx",
-        "frontend/src/components/policies/LargeCommunityListReorderBanner.tsx"
+        "backend/tests/test_policy_capabilities.py"
       ],
-      "notes": "Standardized repeated reorder banner UI into one shared abstraction while preserving existing component contracts."
+      "notes": "Added coverage tests for as-path/community/extcommunity/large-community capability endpoints."
     },
     {
       "id": "T3",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/policies/utils/prefixListValidators.ts",
-        "frontend/src/components/policies/CreatePrefixListModal.tsx",
-        "frontend/src/components/policies/AddPrefixListRuleModal.tsx",
-        "frontend/src/components/policies/EditPrefixListRuleModal.tsx"
+        "frontend/src/app/policies/page.tsx",
+        "frontend/src/app/policies/examples/page.tsx",
+        "frontend/src/components/layout/Sidebar.tsx"
       ],
-      "notes": "Consolidated prefix-list CIDR/GE/LE validation logic into shared utility."
+      "notes": "Added policy overview and examples pages and linked them in sidebar navigation."
     },
     {
       "id": "T4",
-      "owner_role": "Backend",
+      "owner_role": "Planner",
       "status": "done",
       "files": [
-        "backend/utils/router_helpers.py",
-        "backend/routers/access_list/access_list.py",
-        "backend/routers/prefix_list/prefix_list.py",
-        "backend/routers/route/route.py",
-        "backend/routers/route_map/route_map.py",
-        "backend/routers/local_route/local_route.py"
+        "scripts/generate_config_coverage_matrix.py",
+        "scripts/generate_phase1_backlog.py",
+        "CONFIG_COVERAGE_MATRIX.md",
+        "CONFIG_COVERAGE_MATRIX.json",
+        "CONFIG_COVERAGE_PHASE1.md",
+        "CONFIG_COVERAGE_PHASE1.json",
+        "PARITY_BACKLOG.md",
+        "PARITY_BACKLOG.json"
       ],
-      "notes": "Added shared capability loader and fixed undefined request variable regressions in route-map/local-route capability handlers."
+      "notes": "Updated alias detection and regenerated matrix/backlog; policy moved to completed domain set."
     },
     {
       "id": "T5",
-      "owner_role": "Test",
+      "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/tests/test_policy_capabilities.py"
+        "backend/routers/as_path_list/as_path_list.py",
+        "backend/routers/community_list/community_list.py",
+        "backend/routers/extcommunity_list/extcommunity_list.py",
+        "backend/routers/large_community_list/large_community_list.py",
+        "frontend/src/app/policies/page.tsx",
+        "frontend/src/app/policies/examples/page.tsx",
+        "scripts/generate_config_coverage_matrix.py",
+        "scripts/generate_phase1_backlog.py"
       ],
-      "notes": "Added route-map/local-route capability regression tests."
+      "notes": "Code reviewer result: APPROVED."
     },
     {
       "id": "T6",
@@ -92,30 +88,30 @@
         "PARITY_BACKLOG.md",
         "CONFIG_COVERAGE_PHASE1.md"
       ],
-      "notes": "Execute Phase3 vertical slices from backlog starting with remaining policy domain gaps, then protocols and services."
+      "notes": "Start protocols domain vertical slices in priority order (static, OSPF, BGP, multicast helpers)."
     },
     {
       "id": "T7",
       "owner_role": "Backend",
       "status": "todo",
       "files": [
-        "backend/routers/as_path_list/as_path_list.py",
-        "backend/routers/community_list/community_list.py",
-        "backend/routers/extcommunity_list/extcommunity_list.py",
-        "backend/routers/large_community_list/large_community_list.py"
+        "backend/routers/static_routes/static_routes.py",
+        "backend/routers/bgp/bgp.py",
+        "backend/routers/babel/babel.py",
+        "backend/routers/bfd/bfd.py"
       ],
-      "notes": "Complete policy pages marked partial by adding missing parity endpoints/options and validation where needed."
+      "notes": "Close protocol gaps by expanding missing docs-specified option coverage and endpoint normalization."
     },
     {
       "id": "T8",
       "owner_role": "UI",
       "status": "todo",
       "files": [
-        "frontend/src/app/routing/infrastructure/page.tsx",
         "frontend/src/app/routing/unicast-protocols/page.tsx",
+        "frontend/src/app/routing/infrastructure/page.tsx",
         "frontend/src/app/routing/multicast/page.tsx"
       ],
-      "notes": "Start protocols slice using shared rule-editor/form patterns and remove known setState-in-effect performance issues as part of implementation hardening."
+      "notes": "Replace placeholder protocol views with docs-aligned forms and status surfaces."
     }
   ],
   "commands": {
@@ -130,7 +126,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Parity execution with phase-by-phase slices",
+      "purpose": "Continuous parity execution",
       "status": "active"
     }
   ]

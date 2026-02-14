@@ -53,3 +53,7 @@
 - 2026-02-14: Added backend shared capability loader `load_vyos_capabilities(...)` in `backend/utils/router_helpers.py` and migrated policy routers to it; this fixed route-map/local-route capability endpoint crashes caused by undefined `http_request` variables.
 - 2026-02-14: Added `backend/tests/test_policy_capabilities.py` to lock in route-map/local-route capability endpoint behavior and prevent regression.
 - 2026-02-14: If `tmux` server is absent, both `vm-api` and `vm-ui` can be down even when code/tests pass; runtime validation now includes recreating sessions and confirming listeners on `:8000` and `:3000`.
+- 2026-02-14: Completed policy domain execution by adding dedicated GUI representation for policy overview and policy examples at `/policies` and `/policies/examples`.
+- 2026-02-14: Standardized remaining BGP policy capability endpoints (`as-path-list`, `community-list`, `extcommunity-list`, `large-community-list`) to shared `load_vyos_capabilities(...)` helper for consistency and lower regression risk.
+- 2026-02-14: Coverage crawler alias map now includes irregular pluralization pairs (`policy<->policies`, `service<->services`) to reduce false `MISSING` classification in docs coverage matrix.
+- 2026-02-14: Phase backlog now treats policy docs index/examples as frontend-representable docs pages (`DOC_ONLY_UI_COVERAGE`) and marks them complete when UI exists.

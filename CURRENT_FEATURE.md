@@ -1,13 +1,13 @@
-feature_id: parity-phase1-phase2-policy-foundation
+feature_id: parity-phase3-protocols-slice
 status: in_progress
-title: Parity Program Phase 1/2 Foundations + Policy Domain Stabilization
+title: Phase 3 Protocols Domain Execution (after policy completion)
 branch: feature/containers-automation-v1
 commits:
   - f41cbfc
+  - aa46d37
 notes:
-  - Phase 1 completed: generated coverage classification and prioritized backlog artifacts (`CONFIG_COVERAGE_PHASE1.*`, `PARITY_BACKLOG.*`).
-  - Phase 2 completed: standardized policy reorder banners and prefix-list validation utilities.
-  - Backend capability endpoint flow standardized via `backend/utils/router_helpers.py` and applied to access-list/prefix-list/route/route-map/local-route routers.
-  - Fixed route-map/local-route capability crash caused by undefined `http_request` variable.
-  - Added regression tests in `backend/tests/test_policy_capabilities.py`.
-  - Runtime sessions were recreated and verified (`vm-api` on :8000, `vm-ui` on :3000).
+  - Policy domain slice completed and moved to completed domains in `PARITY_BACKLOG.md`.
+  - Standardized remaining BGP policy capability endpoints to shared helper (`load_vyos_capabilities`).
+  - Added policy overview/examples pages to represent docs index/examples in GUI.
+  - Extended policy capability endpoint regression tests.
+  - Next active slice is `protocols` per `PARITY_BACKLOG.md` priority order.
