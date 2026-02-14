@@ -785,6 +785,9 @@ export default function SystemContainersPage() {
       // Default to the first detected LAN segment (private static interface),
       // otherwise fall back to the instance host.
       const defaultOption =
+        linkHostOptions.find(
+          (option) => option.id.startsWith("iface:") && option.host !== instanceHost
+        ) ??
         linkHostOptions.find((option) => option.id.startsWith("iface:")) ??
         linkHostOptions[0];
       return defaultOption?.id ?? previous;
