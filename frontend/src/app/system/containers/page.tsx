@@ -21,6 +21,7 @@ import { ethernetService } from "@/lib/api/ethernet";
 import { FeatureGroup } from "@/lib/api/user-management";
 import {
   containersService,
+  type ContainerBootstrapStatusResponse,
   type ContainerEnvironmentVar,
   type ContainerPortMapping,
   type ContainerSummary,
@@ -93,6 +94,12 @@ interface ContainerTemplateDefinition {
   docsUrl: string;
   lanHint: string;
   buildDraft: (context: ContainerTemplateContext) => ContainerDraft;
+}
+
+interface ContainerLinkHostOption {
+  id: string;
+  label: string;
+  host: string;
 }
 
 const EMPTY_DRAFT: ContainerDraft = {
@@ -288,6 +295,15 @@ function normalizeDraftToPayload(draft: ContainerDraft): ContainerUpsertRequest 
   };
 }
 
+function buildWebUrl(host: string, sourcePort: number, destinationPort: number): string {
+  const port = Number(sourcePort);
+  const destination = Number(destinationPort);
+  const scheme = port === 443 || destination === 443 ? "https" : "http";
+  const isDefaultPort =
+    (scheme === "http" && port === 80) || (scheme === "https" && port === 443);
+  return isDefaultPort ? `${scheme}://${host}` : `${scheme}://${host}:${port}`;
+}
+
 function toDraft(container: ContainerSummary): ContainerDraft {
   return {
     name: container.name,
@@ -355,9 +371,6 @@ function getValidationError(draft: ContainerDraft): string | null {
 
   if (draft.allow_host_networks && draft.network.trim()) {
     return "Host networking cannot be combined with custom container network.";
-  }
-  if (draft.network.trim() && draft.ports.length > 0) {
-    return "Port publishing cannot be used when a custom container network is configured.";
   }
   if (draft.network_address.trim() && !draft.network.trim()) {
     return "Set a network name before setting a network address.";
@@ -608,6 +621,11 @@ export default function SystemContainersPage() {
   const canEditSystem = canWrite(FeatureGroup.SYSTEM);
 
   const localTimezone = useMemo(() => detectBrowserTimezone(), []);
+  const [bootstrapStatus, setBootstrapStatus] = useState<ContainerBootstrapStatusResponse | null>(null);
+  const [loadingBootstrap, setLoadingBootstrap] = useState(true);
+  const [bootstrapping, setBootstrapping] = useState(false);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+
   const [overview, setOverview] = useState<ContainersOverviewResponse | null>(null);
   const [draft, setDraft] = useState<ContainerDraft>({ ...EMPTY_DRAFT });
   const [selectedContainerName, setSelectedContainerName] = useState<string | null>(null);
@@ -621,9 +639,11 @@ export default function SystemContainersPage() {
   const [serviceLanIp, setServiceLanIp] = useState("");
   const [loadingLanSegments, setLoadingLanSegments] = useState(false);
   const [lanSegmentsError, setLanSegmentsError] = useState<string | null>(null);
+  const [selectedLinkHostId, setSelectedLinkHostId] = useState<string>("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [installing, setInstalling] = useState(false);
   const [actionTarget, setActionTarget] = useState<string | null>(null);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
@@ -643,6 +663,36 @@ export default function SystemContainersPage() {
     if (!selectedLanSegmentId) return null;
     return lanSegments.find((segment) => segment.id === selectedLanSegmentId) ?? null;
   }, [lanSegments, selectedLanSegmentId]);
+
+  const linkHostOptions = useMemo<ContainerLinkHostOption[]>(() => {
+    const options: ContainerLinkHostOption[] = [];
+    const instanceHost = overview?.connection_host?.trim();
+    if (instanceHost) {
+      options.push({
+        id: `instance:${instanceHost}`,
+        label: `Instance Host (${instanceHost})`,
+        host: instanceHost,
+      });
+    }
+
+    for (const segment of lanSegments) {
+      const description = segment.interfaceDescription?.trim();
+      const labelPrefix = description ? `${description} (${segment.interfaceName})` : segment.interfaceName;
+      options.push({
+        id: `iface:${segment.interfaceName}:${segment.interfaceIp}`,
+        label: `${labelPrefix} - ${segment.interfaceIp} (${segment.subnetCidr})`,
+        host: segment.interfaceIp,
+      });
+    }
+
+    return options;
+  }, [lanSegments, overview?.connection_host]);
+
+  const selectedLinkHost = useMemo(() => {
+    if (!linkHostOptions.length) return overview?.connection_host?.trim() ?? "";
+    const match = linkHostOptions.find((option) => option.id === selectedLinkHostId);
+    return match?.host ?? linkHostOptions[0]?.host ?? overview?.connection_host?.trim() ?? "";
+  }, [linkHostOptions, overview?.connection_host, selectedLinkHostId]);
 
   const lanIpValidationIssue = useMemo(() => {
     if (!selectedLanSegment || !serviceLanIp.trim()) return null;
@@ -675,6 +725,20 @@ export default function SystemContainersPage() {
     }
   }, []);
 
+  const loadBootstrapStatus = useCallback(async () => {
+    setLoadingBootstrap(true);
+    setBootstrapError(null);
+    try {
+      const status = await containersService.getBootstrapStatus();
+      setBootstrapStatus(status);
+    } catch (err) {
+      setBootstrapStatus(null);
+      setBootstrapError(err instanceof Error ? err.message : "Failed to load container automation status.");
+    } finally {
+      setLoadingBootstrap(false);
+    }
+  }, []);
+
   const loadLanSegments = useCallback(async () => {
     setLoadingLanSegments(true);
     setLanSegmentsError(null);
@@ -698,9 +762,41 @@ export default function SystemContainersPage() {
   }, []);
 
   useEffect(() => {
+    loadBootstrapStatus();
     loadOverview(true);
     loadLanSegments();
-  }, [loadLanSegments, loadOverview]);
+  }, [loadBootstrapStatus, loadLanSegments, loadOverview]);
+
+  useEffect(() => {
+    const instanceHost = overview?.connection_host?.trim();
+    if (!instanceHost || linkHostOptions.length === 0) return;
+
+    const storageKey = `vymanager.containers.linkHost:${instanceHost}`;
+    setSelectedLinkHostId((previous) => {
+      if (previous && linkHostOptions.some((option) => option.id === previous)) {
+        return previous;
+      }
+
+      const stored = window.localStorage.getItem(storageKey);
+      if (stored && linkHostOptions.some((option) => option.id === stored)) {
+        return stored;
+      }
+
+      // Default to the first detected LAN segment (private static interface),
+      // otherwise fall back to the instance host.
+      const defaultOption =
+        linkHostOptions.find((option) => option.id.startsWith("iface:")) ??
+        linkHostOptions[0];
+      return defaultOption?.id ?? previous;
+    });
+  }, [linkHostOptions, overview?.connection_host]);
+
+  useEffect(() => {
+    const instanceHost = overview?.connection_host?.trim();
+    if (!instanceHost || !selectedLinkHostId) return;
+    const storageKey = `vymanager.containers.linkHost:${instanceHost}`;
+    window.localStorage.setItem(storageKey, selectedLinkHostId);
+  }, [overview?.connection_host, selectedLinkHostId]);
 
   useEffect(() => {
     if (!selectedLanSegment) {
@@ -757,20 +853,33 @@ export default function SystemContainersPage() {
     }
   };
 
-  const applyTemplate = async (installImmediately: boolean) => {
-    if (!selectedTemplate) return;
+  const runBootstrapAutomation = async () => {
+    if (!canEditSystem) {
+      setBootstrapError("You currently have read-only access for System features.");
+      return;
+    }
 
-    const nextDraft = selectedTemplate.buildDraft({ timezone: localTimezone });
-    setSelectedContainerName(null);
-    setDraft(nextDraft);
+    setBootstrapping(true);
+    setBootstrapError(null);
     setError(null);
+    setSuccess(null);
+    try {
+      const status = await containersService.bootstrapAutomation();
+      setBootstrapStatus(status);
+      await loadOverview(true);
+      setSuccess("Container automation is ready.");
+    } catch (err) {
+      setBootstrapError(err instanceof Error ? err.message : "Failed to enable container automation.");
+    } finally {
+      setBootstrapping(false);
+    }
+  };
 
-    if (!installImmediately) {
-      const helperNote =
-        selectedLanSegment && serviceLanIp.trim()
-          ? ` LAN helper suggestion: ${serviceLanIp.trim()} on ${selectedLanSegment.subnetCidr}.`
-          : "";
-      setSuccess(`${selectedTemplate.name} template loaded.${helperNote}`);
+  const installContainer = async (candidateDraft: ContainerDraft = draft) => {
+    const validationError = getValidationError(candidateDraft);
+    if (validationError) {
+      setError(validationError);
+      setSuccess(null);
       return;
     }
 
@@ -780,7 +889,39 @@ export default function SystemContainersPage() {
       return;
     }
 
-    await saveContainer(nextDraft);
+    setInstalling(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const name = candidateDraft.name.trim();
+      const response = await containersService.installContainer(name, normalizeDraftToPayload(candidateDraft));
+      await loadOverview(true);
+      setSelectedContainerName(name);
+      setDraft(toDraft(response.container));
+
+      const createdPaths = response.created_volume_paths.length
+        ? ` Created ${response.created_volume_paths.length} host path(s).`
+        : "";
+      setSuccess(`Container ${name} installed.${createdPaths}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to install container.");
+    } finally {
+      setInstalling(false);
+    }
+  };
+
+  const applyTemplate = async () => {
+    if (!selectedTemplate) return;
+
+    const nextDraft = selectedTemplate.buildDraft({ timezone: localTimezone });
+    setSelectedContainerName(null);
+    setDraft(nextDraft);
+    setError(null);
+    const helperNote =
+      selectedLanSegment && serviceLanIp.trim()
+        ? ` LAN helper suggestion: ${serviceLanIp.trim()} on ${selectedLanSegment.subnetCidr}.`
+        : "";
+    setSuccess(`${selectedTemplate.name} template loaded.${helperNote} Review settings, then click Install.`);
   };
 
   const applyLanHelperIp = () => {
@@ -879,6 +1020,122 @@ export default function SystemContainersPage() {
     });
   };
 
+  const containerAutomationReady = Boolean(
+    bootstrapStatus?.ssh_enabled && bootstrapStatus?.ssh_key_installed
+  );
+
+  if (loadingBootstrap) {
+    return (
+      <AppLayout>
+        <div className="p-8 space-y-4">
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Server className="h-8 w-8" />
+            Container Management
+          </h1>
+          <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading container automation status...
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!containerAutomationReady) {
+    return (
+      <AppLayout>
+        <div className="p-8 space-y-6 max-w-3xl">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Server className="h-8 w-8" />
+              Container Management
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Container installs require one-time setup on the VyOS instance.
+            </p>
+            {overview?.connection_host && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Instance host: <span className="font-mono">{overview.connection_host}</span>
+              </p>
+            )}
+          </div>
+
+          {bootstrapError && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 mt-0.5" />
+              <span>{bootstrapError}</span>
+            </div>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Setup Required</CardTitle>
+              <CardDescription>
+                VyOS HTTPS API cannot pull container images. VyManager uses SSH automation for safe, restricted install steps.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-md border p-3 space-y-1">
+                  <div className="text-xs text-muted-foreground">SSH Service</div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={bootstrapStatus?.ssh_enabled ? "default" : "secondary"}>
+                      {bootstrapStatus?.ssh_enabled ? "Enabled" : "Disabled"}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">service ssh</span>
+                  </div>
+                </div>
+                <div className="rounded-md border p-3 space-y-1">
+                  <div className="text-xs text-muted-foreground">Automation Key</div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={bootstrapStatus?.ssh_key_installed ? "default" : "secondary"}>
+                      {bootstrapStatus?.ssh_key_installed ? "Installed" : "Missing"}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {bootstrapStatus?.ssh_key_identifier ?? "vymanager"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={runBootstrapAutomation}
+                  disabled={!canEditSystem || bootstrapping}
+                >
+                  {bootstrapping ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
+                  {bootstrapping ? "Applying Setup..." : "Enable Container Automation"}
+                </Button>
+                <Button variant="outline" onClick={loadBootstrapStatus} disabled={bootstrapping}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Status
+                </Button>
+              </div>
+
+              {!canEditSystem && (
+                <p className="text-xs text-muted-foreground">
+                  You currently have read-only access for System features.
+                </p>
+              )}
+
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>This applies:</p>
+                <p className="font-mono">set service ssh</p>
+                <p className="font-mono">
+                  set system login user vyos authentication public-keys vymanager (key)
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="p-8 space-y-6">
@@ -896,6 +1153,27 @@ export default function SystemContainersPage() {
                 Instance host: <span className="font-mono">{overview.connection_host}</span>
               </p>
             )}
+            {linkHostOptions.length > 0 && (
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <span className="text-xs text-muted-foreground">Open links using</span>
+                <Select
+                  value={selectedLinkHostId}
+                  onValueChange={setSelectedLinkHostId}
+                  disabled={saving || installing || loadingLanSegments}
+                >
+                  <SelectTrigger className="h-8 w-full sm:w-[420px]">
+                    <SelectValue placeholder="Select a host address" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {linkHostOptions.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -904,12 +1182,12 @@ export default function SystemContainersPage() {
                 loadOverview(true);
                 loadLanSegments();
               }}
-              disabled={loading || saving || loadingLanSegments}
+              disabled={loading || saving || installing || loadingLanSegments}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
-            <Button variant="outline" onClick={resetDraft} disabled={saving}>
+            <Button variant="outline" onClick={resetDraft} disabled={saving || installing}>
               <Plus className="h-4 w-4 mr-2" />
               New Container
             </Button>
@@ -995,7 +1273,11 @@ export default function SystemContainersPage() {
                           {container.links.map((link) => (
                             <a
                               key={`${container.name}-${link.label}-${link.url}`}
-                              href={link.url}
+                              href={
+                                selectedLinkHost
+                                  ? buildWebUrl(selectedLinkHost, link.source_port, link.destination_port)
+                                  : link.url
+                              }
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
@@ -1095,13 +1377,13 @@ export default function SystemContainersPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="rounded-md border bg-muted/20 p-4 space-y-4">
-                <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-end">
+                <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
                   <div className="space-y-2">
                     <Label>Template Catalog</Label>
                     <Select
                       value={selectedTemplateId}
                       onValueChange={setSelectedTemplateId}
-                      disabled={saving}
+                      disabled={saving || installing}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -1115,16 +1397,9 @@ export default function SystemContainersPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button variant="outline" onClick={() => applyTemplate(false)} disabled={saving}>
+                  <Button variant="outline" onClick={applyTemplate} disabled={saving || installing}>
                     <WandSparkles className="h-4 w-4 mr-2" />
                     Populate
-                  </Button>
-                  <Button
-                    onClick={() => applyTemplate(true)}
-                    disabled={!canEditSystem || saving}
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Populate + Install
                   </Button>
                 </div>
 
@@ -1606,11 +1881,19 @@ export default function SystemContainersPage() {
               )}
 
               <div className="flex flex-wrap gap-2">
-                <Button onClick={() => saveContainer()} disabled={!canEditSystem || saving}>
+                <Button onClick={() => installContainer()} disabled={!canEditSystem || saving || installing}>
+                  {installing ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Play className="h-4 w-4 mr-2" />
+                  )}
+                  {installing ? "Installing..." : "Install Container"}
+                </Button>
+                <Button variant="outline" onClick={() => saveContainer()} disabled={!canEditSystem || saving || installing}>
                   <Save className="h-4 w-4 mr-2" />
                   {saving ? "Saving..." : "Save Container"}
                 </Button>
-                <Button variant="outline" onClick={resetDraft} disabled={saving}>
+                <Button variant="outline" onClick={resetDraft} disabled={saving || installing}>
                   Reset
                 </Button>
               </div>

@@ -100,6 +100,21 @@ export interface ContainerLogsResponse {
   returned_lines: number;
 }
 
+export interface ContainerBootstrapStatusResponse {
+  ssh_enabled: boolean;
+  ssh_key_installed: boolean;
+  ssh_key_identifier: string;
+  ssh_key_type: string | null;
+}
+
+export interface ContainerInstallResponse {
+  success: boolean;
+  container: ContainerSummary;
+  image_pulled: boolean;
+  created_volume_paths: string[];
+  pull_output: string | null;
+}
+
 class ContainersService {
   async getOverview(refresh: boolean = false): Promise<ContainersOverviewResponse> {
     return apiClient.get<ContainersOverviewResponse>("/vyos/containers/overview", {
@@ -107,11 +122,26 @@ class ContainersService {
     });
   }
 
+  async getBootstrapStatus(): Promise<ContainerBootstrapStatusResponse> {
+    return apiClient.get<ContainerBootstrapStatusResponse>("/vyos/containers/bootstrap-status");
+  }
+
+  async bootstrapAutomation(): Promise<ContainerBootstrapStatusResponse> {
+    return apiClient.post<ContainerBootstrapStatusResponse>("/vyos/containers/bootstrap");
+  }
+
   async upsertContainer(
     name: string,
     body: ContainerUpsertRequest
   ): Promise<ContainerSummary> {
     return apiClient.put<ContainerSummary>(`/vyos/containers/${encodeURIComponent(name)}`, body);
+  }
+
+  async installContainer(name: string, body: ContainerUpsertRequest): Promise<ContainerInstallResponse> {
+    return apiClient.post<ContainerInstallResponse>(
+      `/vyos/containers/${encodeURIComponent(name)}/install`,
+      body
+    );
   }
 
   async deleteContainer(name: string): Promise<ContainerDeleteResponse> {
