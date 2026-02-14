@@ -39,6 +39,11 @@ from routers.wireguard import wireguard
 from routers.babel import babel
 from routers.bfd import bfd
 from routers.bgp import bgp
+from routers.arp import arp
+from routers.ospf import ospf
+from routers.rip import rip
+from routers.isis import isis
+from routers.igmp_proxy import igmp_proxy
 from routers import system
 from routers import power as power_router
 from routers.config import config as config_router
@@ -283,6 +288,11 @@ app.include_router(ipsec_router.router)
 app.include_router(babel.router)
 app.include_router(bfd.router)
 app.include_router(bgp.router)
+app.include_router(arp.router)
+app.include_router(ospf.router)
+app.include_router(rip.router)
+app.include_router(isis.router)
+app.include_router(igmp_proxy.router)
 app.include_router(system.router)
 app.include_router(power_router.router)
 app.include_router(config_router.router)
