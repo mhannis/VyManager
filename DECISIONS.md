@@ -19,3 +19,8 @@
 - 2026-02-14: Added CPU temperature as best-effort dashboard metric by probing multiple show commands (`show hardware temperature`, `show system temperature`, fallback `show hardware sensors`) and parsing C/F values to Celsius.
 - 2026-02-14: Added higher-level Services navigation group with direct service links; `System Services` now supports URL tab deep links and includes placeholders for DNS Resolver, Dynamic DNS, DHCP Relay, and Power Mgmt pending full backend implementation.
 - 2026-02-14: `powerd`-style CPU governor control treated as unsupported in current VyOS API/config integration unless explicit platform/docs evidence is provided.
+- 2026-02-14: Replaced System Services placeholders for Dynamic DNS and DHCP Relay with full read/write GUI tabs backed by `/vyos/system/dynamic-dns-config` and `/vyos/system/dhcp-relay-config`.
+- 2026-02-14: DNS Resolver tab now intentionally reuses existing DNS service configuration UI because current VyOS surface in this project exposes resolver/forwarding controls through the same DNS service model.
+- 2026-02-14: Removed Power Mgmt placeholder tab from System Services at Mark's request (unsupported on current VyOS API surface).
+- 2026-02-14: Dynamic DNS update semantics now enforce uniqueness by `(interface, provider)` and preserve existing provider password when blank password is submitted.
+- 2026-02-14: DDNS/DHCP relay disable operations were changed to skip payload entry validation and directly delete service subtrees, preventing disable failures caused by stale invalid form data.

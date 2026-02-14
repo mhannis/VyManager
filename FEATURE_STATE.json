@@ -1,6 +1,6 @@
 {
   "feature_id": "services-ia-and-system-telemetry-v1",
-  "title": "Service IA Restructure + CPU Temperature + Interface Label Consistency",
+  "title": "Service IA Restructure + System Services Follow-through",
   "last_updated": "2026-02-14",
   "status": "in_progress",
   "acceptance_criteria": [
@@ -9,12 +9,15 @@
     "System Information dashboard card shows CPU temperature when available from VyOS.",
     "Services are promoted in navigation with direct links to per-service views.",
     "System Services page supports deep-linking via query tab values.",
-    "DNS Resolver/DDNS/DHCP Relay navigation targets exist as placeholders pending full implementation."
+    "Dynamic DNS and DHCP Relay are configurable from GUI with backend read/update routes.",
+    "Power Mgmt placeholder tab is removed from System Services.",
+    "DDNS duplicate interface/provider entries are rejected and existing passwords are preserved on blank-password updates.",
+    "Disable operations for DDNS and DHCP relay succeed without validating stale payload entries."
   ],
   "assumptions": [
     "VyOS does not expose FreeBSD powerd controls in current service/API surface.",
     "CPU temperature is best-effort and may be unavailable depending on hardware/virtualization.",
-    "Placeholder pages for DNS Resolver/DDNS/DHCP Relay are acceptable for initial IA rollout."
+    "DNS resolver behavior is represented by the same VyOS DNS service currently used by DNS forwarder controls."
   ],
   "tasks": [
     {
@@ -25,74 +28,66 @@
         "PROJECT_MEMORY.md",
         "CURRENT_FEATURE.md"
       ],
-      "notes": "Mapped Mark's IA + telemetry requests into implementable increments."
+      "notes": "Mapped Mark's IA + telemetry + services follow-through requests into implementable increments."
     },
     {
       "id": "T2",
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/system.py",
-        "backend/tests/test_system_dashboard_temperature.py"
+        "backend/routers/system.py"
       ],
-      "notes": "Added CPU temperature parsing/probing to dashboard summary and parser unit tests."
+      "notes": "Implemented DDNS/DHCP relay config routes, DDNS secret preservation, duplicate protection, and disable-path validation fixes."
     },
     {
       "id": "T3",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/dashboard/SystemInformationCard.tsx",
         "frontend/src/app/system/services/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx",
-        "frontend/src/lib/utils.ts",
-        "frontend/src/app/network/setup-wizard/page.tsx",
-        "frontend/src/components/dashboard/InterfaceOverviewCard.tsx",
-        "frontend/src/components/dashboard/InterfaceStatisticsCard.tsx",
-        "frontend/src/components/vpn/ipsec/SiteToSiteWizard.tsx",
-        "frontend/src/app/vpn/ipsec/page.tsx"
+        "frontend/src/components/system/DnsServiceTab.tsx",
+        "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+        "frontend/src/components/system/DhcpRelayServiceTab.tsx",
+        "frontend/src/lib/api/system.ts"
       ],
-      "notes": "Implemented service IA updates, CPU temp display, interface label consistency, and IPsec wizard readability fixes."
+      "notes": "Replaced placeholders with working tabs, mapped DNS resolver tab to real DNS config, removed Power Mgmt placeholder, and applied interface display labels in service interface pickers."
     },
     {
       "id": "T4",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_system_dashboard_temperature.py"
+        "backend/tests/test_system_services_ssh_dns.py"
       ],
-      "notes": "Validated parser behavior and reran backend + frontend checks."
+      "notes": "Added DDNS/DHCP relay route tests, duplicate rejection coverage, and disable edge-case coverage."
     },
     {
       "id": "T5",
-      "owner_role": "Test",
-      "status": "blocked",
+      "owner_role": "Build",
+      "status": "done",
       "files": [
-        "frontend/scripts/smoke-ui.mjs"
+        "AGENT_REPORTS/build_backend_validation_20260214.md",
+        "AGENT_REPORTS/build_frontend_validation_20260214.md"
       ],
-      "notes": "Browser smoke remains blocked on missing Playwright host dependencies."
+      "notes": "Backend tests pass (25 passed). Frontend typecheck/build/lint pass (lint warning debt unchanged)."
     },
     {
       "id": "T6",
       "owner_role": "Reviewer",
-      "status": "todo",
+      "status": "done",
       "files": [
-        "backend/routers/system.py",
-        "frontend/src/app/system/services/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx"
+        "AGENT_REPORTS/review_services_ddns_dhcprelay_20260214.md"
       ],
-      "notes": "Run focused review for IA assumptions and placeholder scope."
+      "notes": "Reviewer APPROVED after addressing disable-path and duplicate-entry issues."
     },
     {
       "id": "T7",
-      "owner_role": "Release",
+      "owner_role": "Planner",
       "status": "todo",
       "files": [
-        "AGENT_HANDOFF.md",
-        "PROJECT_MEMORY.md",
-        "DECISIONS.md"
+        "PROJECT_MEMORY.md"
       ],
-      "notes": "Prepare handoff notes once reviewer sign-off and optional runtime smoke rerun are complete."
+      "notes": "Next increment planning: DHCP UX overhaul, firewall-zone guide/help page, and remaining DNS/service requests from Mark backlog."
     }
   ],
   "commands": {
@@ -105,7 +100,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Service IA + system telemetry + open backlog polish",
+      "purpose": "Service IA + system services implementation",
       "status": "active"
     }
   ]

@@ -1,12 +1,9 @@
-timestamp: 2026-02-14T02:44:40Z
-failing_command: cd /home/redhot/VyOS/VyManager/frontend && npm run -s build
-error_summary: Next.js build failed when pre-rendering `/system/services` because `useSearchParams()` was used without a Suspense boundary in the client page.
+timestamp: 2026-02-14T03:24:18Z
+failing_command: jq . FEATURE_STATE.json >/dev/null
+error_summary: JSON validation check failed because `jq` is not installed on this host.
 
 relevant_output:
-⨯ useSearchParams() should be wrapped in a suspense boundary at page "/system/services".
-Error occurred prerendering page "/system/services".
-Export encountered an error on /system/services/page: /system/services, exiting the build.
-⨯ Next.js build worker exited with code: 1 and signal: null
+/bin/bash: line 1: jq: command not found
 
-suspected_cause: Query-param tab routing logic in `system/services/page.tsx` introduced `useSearchParams()` at page scope, which requires Suspense in this Next.js setup.
-next_step: Wrap the search-param consuming component in `<Suspense>` (or move query parsing server-side), then rerun frontend build.
+suspected_cause: Missing optional CLI dependency.
+next_step: Validate JSON with Python standard library (`python3 -m json.tool FEATURE_STATE.json`).

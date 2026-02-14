@@ -59,12 +59,11 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Frontend lint has warning-only legacy debt; avoid introducing lint errors
 
 ## Current Objective
-- Implement requested UX/IA updates:
-  - global interface labels as `Description (ethX)` (except interface-description edit surfaces)
-  - IPsec wizard readability improvements
-  - service navigation at higher level with direct service links
-  - add CPU temperature to dashboard system information card
-  - document/handle power management (`powerd`) expectations on VyOS
+- Complete System Services follow-through for the promoted Services IA:
+  - replace Dynamic DNS and DHCP Relay placeholders with working configuration tabs
+  - map DNS Resolver tab to real DNS service configuration (same VyOS backend surface)
+  - remove Power Mgmt placeholder tab per Mark request
+  - keep interface selectors labeled as `Description (ethX)` where descriptions are known
 
 ## Current Feature Spec
 Feature: **Service IA + System Telemetry Polish (v1)**
@@ -75,10 +74,14 @@ Acceptance criteria:
 - System Services can be deep-linked by service via URL tab parameter.
 - Sidebar exposes services at higher level (NTP/LLDP/mDNS/SSH/DNS forwarder/resolver/DDNS/DHCP server/DHCP relay).
 - System dashboard summary includes best-effort CPU temperature and card displays it when present.
+- Dynamic DNS and DHCP Relay tabs are fully configurable from GUI (read/update via backend routes).
+- Dynamic DNS preserves existing secrets when password is left blank and rejects duplicate interface/provider mappings.
+- Disabling Dynamic DNS or DHCP Relay succeeds without validating stale entry payload fields.
+- Power management placeholder tab is removed.
 
 Assumptions:
 - VyOS does not expose a FreeBSD-style `powerd` service configuration endpoint in current API surface.
-- DNS Resolver/DDNS/DHCP Relay are introduced as navigable placeholders first, then full config pages in subsequent iterations.
+- DNS Resolver uses the same underlying VyOS DNS service (`service dns forwarding`) in this build.
 - CPU temperature availability depends on hardware + command support (`show hardware temperature` / fallback probes).
 
 ## Work In Progress
@@ -87,10 +90,11 @@ Assumptions:
 - Host toolchain: node `v20.20.0`, npm `10.8.2`, python `3.12.3`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q` -> `19 passed`
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q` -> `25 passed`
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s build` -> pass
 - `cd frontend && npm run -s lint` -> pass with existing warning debt (no new errors)
+- code review pass: `APPROVED` (`AGENT_REPORTS/review_services_ddns_dhcprelay_20260214.md`)
 
 ### Key Implementation Notes
 - Added best-effort CPU temperature parsing in `backend/routers/system.py` and exposed `cpu_temperature_celsius` on dashboard summary API.
@@ -98,22 +102,35 @@ Assumptions:
 - Updated `SystemInformationCard` to display CPU temperature badge when available.
 - Extended `System Services` page with URL-driven tab deep linking (`?tab=`), wrapped query handling in `Suspense` for Next.js prerender safety.
 - Added higher-level `Services` navigation group in sidebar and removed duplicate nested System->Services entry.
-- Added placeholder service views for DNS Resolver, Dynamic DNS, DHCP Relay, and Power Management to establish IA now and fill functionality next.
+- Replaced Dynamic DNS and DHCP Relay placeholders with fully functional tabs and API wiring.
+- DNS Resolver tab now uses the real DNS service form in resolver-focused mode text instead of placeholder content.
+- Removed Power Mgmt placeholder tab from System Services.
 - Applied interface label formatter across DHCP/setup wizard, dashboard interface cards, flowtable/bridge/policy selectors, containers, and IPsec wizard.
 - Enlarged IPsec site-to-site wizard modal and added explicit labels for proposal fields.
+- Added Dynamic DNS backend safeguards:
+  - preserve existing provider password when UI submits blank password
+  - reject duplicate `(interface, provider)` entries
+  - allow disable operations without validating entry payload
+- Added DHCP relay disable-path behavior to skip entry validation and cleanly delete service subtree.
+- Added backend tests for Dynamic DNS + DHCP Relay get/update and disable edge cases.
 
 ## Risks / Open Questions
 - Browser smoke gate cannot execute on this machine until OS dependencies are installed (`sudo npx playwright install-deps`).
 - CPU temperature parsing is best-effort and may return null on platforms/virtualized targets without exposed sensors.
-- DNS Resolver/DDNS/DHCP Relay remain placeholders and still need full backend/API implementations.
+- Frontend lint baseline remains warning-heavy (legacy debt), though no new lint errors were introduced.
 
 ## TODO Backlog (Short)
-- Implement full Dynamic DNS configuration page + backend routes.
-- Implement DHCP Relay configuration page + backend routes.
-- Add dedicated DNS Resolver mode configuration if target VyOS build supports it.
-- Evaluate/implement richer service-specific pages (breaking out from tab container) after IA validation.
+- Continue DNS scope requested by Mark:
+  - evaluate dedicated resolver mode controls if VyOS surface differs from forwarding model
+  - confirm reverse lookup UX defaults and guardrails
+- Continue network/firewall UX scope:
+  - DHCP page behavior aligned to pfSense-style interface-first flow
+  - firewall zones education/help page + guided mode link separation
+- Continue service rollout requested by Mark (dynamic DNS complete; remaining service pages pending).
 
 ## Agent Handoff Notes
 - Next.js build can fail when `useSearchParams` is used at page scope without `Suspense`; keep query consumers inside suspense-wrapped client boundaries.
 - Keep using `formatInterfaceDisplayName` from `frontend/src/lib/utils.ts` for interface labels to enforce consistency.
 - `powerd` expectation should be treated as unsupported for current VyOS API surface unless docs/API evidence emerges.
+- For Dynamic DNS updates, backend treats `(interface, provider)` as unique and preserves existing password secrets when password input is blank.
+- For Dynamic DNS and DHCP Relay disable operations, backend now deletes the service subtree without validating payload entry fields.

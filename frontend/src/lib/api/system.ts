@@ -143,6 +143,29 @@ export interface DnsConfig {
   host_overrides: DnsHostOverride[];
 }
 
+export interface DynamicDnsEntry {
+  interface: string;
+  service: string;
+  host_name: string | null;
+  login: string | null;
+  password?: string | null;
+  has_password?: boolean;
+  server: string | null;
+}
+
+export interface DynamicDnsConfig {
+  configured: boolean;
+  enabled: boolean;
+  entries: DynamicDnsEntry[];
+}
+
+export interface DhcpRelayConfig {
+  configured: boolean;
+  enabled: boolean;
+  interfaces: string[];
+  servers: string[];
+}
+
 // ============================================================================
 // LLDP
 // ============================================================================
@@ -427,6 +450,38 @@ class SystemService {
    */
   async updateDnsConfig(config: DnsConfig): Promise<DnsConfig> {
     return apiClient.put<DnsConfig>("/vyos/system/dns-config", config);
+  }
+
+  /**
+   * Get Dynamic DNS configuration.
+   */
+  async getDynamicDnsConfig(refresh: boolean = false): Promise<DynamicDnsConfig> {
+    return apiClient.get<DynamicDnsConfig>("/vyos/system/dynamic-dns-config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  /**
+   * Update Dynamic DNS configuration.
+   */
+  async updateDynamicDnsConfig(config: DynamicDnsConfig): Promise<DynamicDnsConfig> {
+    return apiClient.put<DynamicDnsConfig>("/vyos/system/dynamic-dns-config", config);
+  }
+
+  /**
+   * Get DHCP relay configuration.
+   */
+  async getDhcpRelayConfig(refresh: boolean = false): Promise<DhcpRelayConfig> {
+    return apiClient.get<DhcpRelayConfig>("/vyos/system/dhcp-relay-config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  /**
+   * Update DHCP relay configuration.
+   */
+  async updateDhcpRelayConfig(config: DhcpRelayConfig): Promise<DhcpRelayConfig> {
+    return apiClient.put<DhcpRelayConfig>("/vyos/system/dhcp-relay-config", config);
   }
 
   /**

@@ -626,6 +626,58 @@ class DnsServiceConfigRequest(BaseModel):
 
 
 # ========================================================================
+# Dynamic DNS Models
+# ========================================================================
+
+
+class DynamicDnsEntry(BaseModel):
+    interface: str
+    service: str
+    host_name: Optional[str] = None
+    login: Optional[str] = None
+    password: Optional[str] = None
+    server: Optional[str] = None
+
+
+class DynamicDnsEntryResponse(BaseModel):
+    interface: str
+    service: str
+    host_name: Optional[str] = None
+    login: Optional[str] = None
+    has_password: bool = False
+    server: Optional[str] = None
+
+
+class DynamicDnsConfigResponse(BaseModel):
+    configured: bool = False
+    enabled: bool = False
+    entries: List[DynamicDnsEntryResponse] = Field(default_factory=list)
+
+
+class DynamicDnsConfigRequest(BaseModel):
+    enabled: bool = False
+    entries: List[DynamicDnsEntry] = Field(default_factory=list)
+
+
+# ========================================================================
+# DHCP Relay Models
+# ========================================================================
+
+
+class DhcpRelayConfigResponse(BaseModel):
+    configured: bool = False
+    enabled: bool = False
+    interfaces: List[str] = Field(default_factory=list)
+    servers: List[str] = Field(default_factory=list)
+
+
+class DhcpRelayConfigRequest(BaseModel):
+    enabled: bool = False
+    interfaces: List[str] = Field(default_factory=list)
+    servers: List[str] = Field(default_factory=list)
+
+
+# ========================================================================
 # LLDP Service Models
 # ========================================================================
 
@@ -973,11 +1025,112 @@ def _parse_dns_service_config(full_config: Dict[str, Any]) -> DnsServiceConfigRe
     )
 
 
+def _parse_dynamic_dns_config(full_config: Dict[str, Any]) -> DynamicDnsConfigResponse:
+    service_root = _as_dict(full_config.get("service"))
+    dns_root = _as_dict(service_root.get("dns"))
+    dynamic_root = _as_dict(dns_root.get("dynamic"))
+    interface_root = dynamic_root.get("interface")
+
+    if not isinstance(interface_root, dict):
+        return DynamicDnsConfigResponse(configured=False, enabled=False, entries=[])
+
+    entries: List[DynamicDnsEntryResponse] = []
+
+    for interface_name, interface_data in sorted(interface_root.items(), key=lambda item: str(item[0])):
+        iface = _string_or_none(interface_name)
+        if not iface:
+            continue
+
+        iface_dict = _as_dict(interface_data)
+        services = _as_dict(iface_dict.get("service"))
+        for service_name, service_data in sorted(services.items(), key=lambda item: str(item[0])):
+            provider = _string_or_none(service_name)
+            if not provider:
+                continue
+
+            config = _as_dict(service_data)
+            entries.append(
+                DynamicDnsEntryResponse(
+                    interface=iface,
+                    service=provider,
+                    host_name=_string_or_none(config.get("host-name")),
+                    login=_string_or_none(config.get("login")),
+                    has_password=("password" in config),
+                    server=_string_or_none(config.get("server")),
+                )
+            )
+
+    return DynamicDnsConfigResponse(
+        configured=bool(interface_root),
+        enabled=bool(entries),
+        entries=entries,
+    )
+
+
+def _extract_dynamic_dns_passwords(full_config: Dict[str, Any]) -> Dict[Tuple[str, str], str]:
+    """
+    Extract existing dynamic DNS passwords keyed by (interface, provider).
+    This allows PUT updates to preserve provider secrets when the client leaves password blank.
+    """
+    service_root = _as_dict(full_config.get("service"))
+    dns_root = _as_dict(service_root.get("dns"))
+    dynamic_root = _as_dict(dns_root.get("dynamic"))
+    interface_root = _as_dict(dynamic_root.get("interface"))
+
+    existing_passwords: Dict[Tuple[str, str], str] = {}
+    for interface_name, interface_data in interface_root.items():
+        iface = _string_or_none(interface_name)
+        if not iface:
+            continue
+
+        services = _as_dict(_as_dict(interface_data).get("service"))
+        for service_name, service_data in services.items():
+            provider = _string_or_none(service_name)
+            if not provider:
+                continue
+
+            config = _as_dict(service_data)
+            password = _string_or_none(config.get("password"))
+            if not password:
+                continue
+
+            existing_passwords[(iface, provider)] = password
+
+    return existing_passwords
+
+
+def _parse_dhcp_relay_config(full_config: Dict[str, Any]) -> DhcpRelayConfigResponse:
+    service_root = _as_dict(full_config.get("service"))
+    relay_root = service_root.get("dhcp-relay")
+    if not isinstance(relay_root, dict):
+        return DhcpRelayConfigResponse(configured=False, enabled=False, interfaces=[], servers=[])
+
+    interfaces = _extract_tag_values(relay_root, ["interface"])
+    servers = _extract_tag_values(relay_root, ["server"])
+
+    enabled = bool(interfaces) and bool(servers)
+    return DhcpRelayConfigResponse(
+        configured=bool(relay_root),
+        enabled=enabled,
+        interfaces=interfaces,
+        servers=servers,
+    )
+
+
 RE_INTERFACE_NAME = re.compile(r"^[A-Za-z0-9._:-]+$")
 
 
 def _normalize_interface_name_or_400(name: str, field_name: str = "interface") -> str:
     cleaned = name.strip()
+    if not cleaned:
+        raise HTTPException(status_code=400, detail=f"{field_name} is required")
+    if not RE_INTERFACE_NAME.match(cleaned):
+        raise HTTPException(status_code=400, detail=f"Invalid {field_name}: {cleaned}")
+    return cleaned
+
+
+def _normalize_token_or_400(value: str, field_name: str) -> str:
+    cleaned = value.strip()
     if not cleaned:
         raise HTTPException(status_code=400, detail=f"{field_name} is required")
     if not RE_INTERFACE_NAME.match(cleaned):
@@ -2102,6 +2255,200 @@ async def update_dns_config(request: Request, body: DnsServiceConfigRequest) -> 
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error updating DNS configuration: {str(exc)}")
+
+
+@router.get("/dynamic-dns-config", response_model=DynamicDnsConfigResponse)
+async def get_dynamic_dns_config(request: Request, refresh: bool = False) -> DynamicDnsConfigResponse:
+    """Get Dynamic DNS service configuration."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        return _parse_dynamic_dns_config(full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving Dynamic DNS configuration: {str(exc)}")
+
+
+@router.put("/dynamic-dns-config", response_model=DynamicDnsConfigResponse)
+async def update_dynamic_dns_config(request: Request, body: DynamicDnsConfigRequest) -> DynamicDnsConfigResponse:
+    """Update Dynamic DNS service configuration."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        current = _parse_dynamic_dns_config(full_config)
+        existing_passwords = _extract_dynamic_dns_passwords(full_config)
+
+        operations: List[Dict[str, Any]] = []
+        if not body.enabled:
+            if current.configured:
+                operations.append({"op": "delete", "path": ["service", "dns", "dynamic"]})
+        else:
+            entries: List[DynamicDnsEntry] = []
+            seen_keys: set[tuple[str, str]] = set()
+            for entry in body.entries:
+                interface_name = _normalize_interface_name_or_400(entry.interface, field_name="dynamic DNS interface")
+                provider = _normalize_token_or_400(entry.service, field_name="dynamic DNS service")
+                host_name = _string_or_none(entry.host_name)
+                login = _string_or_none(entry.login)
+                dedupe_key = (interface_name, provider)
+                password = _string_or_none(entry.password) or existing_passwords.get(dedupe_key)
+                server = _string_or_none(entry.server)
+                if dedupe_key in seen_keys:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Duplicate Dynamic DNS entry for interface '{interface_name}' and service '{provider}'.",
+                    )
+                seen_keys.add(dedupe_key)
+
+                entries.append(
+                    DynamicDnsEntry(
+                        interface=interface_name,
+                        service=provider,
+                        host_name=host_name,
+                        login=login,
+                        password=password,
+                        server=server,
+                    )
+                )
+
+            if not entries:
+                raise HTTPException(
+                    status_code=400,
+                    detail="At least one Dynamic DNS entry is required when Dynamic DNS is enabled.",
+                )
+
+            operations.append({"op": "set", "path": ["service", "dns", "dynamic"]})
+            if current.configured:
+                operations.append({"op": "delete", "path": ["service", "dns", "dynamic", "interface"]})
+
+            for entry in entries:
+                base_path = [
+                    "service",
+                    "dns",
+                    "dynamic",
+                    "interface",
+                    entry.interface,
+                    "service",
+                    entry.service,
+                ]
+                operations.append({"op": "set", "path": base_path})
+                if entry.host_name:
+                    operations.append({"op": "set", "path": [*base_path, "host-name", entry.host_name]})
+                if entry.login:
+                    operations.append({"op": "set", "path": [*base_path, "login", entry.login]})
+                if entry.password:
+                    operations.append({"op": "set", "path": [*base_path, "password", entry.password]})
+                if entry.server:
+                    operations.append({"op": "set", "path": [*base_path, "server", entry.server]})
+
+        if operations:
+            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            if response.status != 200:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to update Dynamic DNS configuration: {response.error or 'Unknown VyOS error'}",
+                )
+            await run_in_threadpool(service.get_full_config, refresh=True)
+
+        updated = await run_in_threadpool(service.get_full_config, refresh=True)
+        return _parse_dynamic_dns_config(updated)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating Dynamic DNS configuration: {str(exc)}")
+
+
+@router.get("/dhcp-relay-config", response_model=DhcpRelayConfigResponse)
+async def get_dhcp_relay_config(request: Request, refresh: bool = False) -> DhcpRelayConfigResponse:
+    """Get DHCP relay service configuration."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        return _parse_dhcp_relay_config(full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving DHCP relay configuration: {str(exc)}")
+
+
+@router.put("/dhcp-relay-config", response_model=DhcpRelayConfigResponse)
+async def update_dhcp_relay_config(request: Request, body: DhcpRelayConfigRequest) -> DhcpRelayConfigResponse:
+    """Update DHCP relay service configuration."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        current = _parse_dhcp_relay_config(full_config)
+
+        operations: List[Dict[str, Any]] = []
+        if not body.enabled:
+            if current.configured:
+                operations.append({"op": "delete", "path": ["service", "dhcp-relay"]})
+        else:
+            desired_interfaces = sorted(
+                {
+                    _normalize_interface_name_or_400(interface_name, field_name="DHCP relay interface")
+                    for interface_name in body.interfaces
+                    if _string_or_none(interface_name)
+                }
+            )
+            desired_servers = sorted(
+                {
+                    _normalize_token_or_400(server, field_name="DHCP relay server")
+                    for server in body.servers
+                    if _string_or_none(server)
+                }
+            )
+
+            if not desired_interfaces:
+                raise HTTPException(
+                    status_code=400,
+                    detail="At least one interface is required when DHCP relay is enabled.",
+                )
+            if not desired_servers:
+                raise HTTPException(
+                    status_code=400,
+                    detail="At least one server is required when DHCP relay is enabled.",
+                )
+
+            operations.append({"op": "set", "path": ["service", "dhcp-relay"]})
+
+            current_interfaces = set(current.interfaces)
+            current_servers = set(current.servers)
+
+            for interface_name in sorted(current_interfaces - set(desired_interfaces)):
+                operations.append({"op": "delete", "path": ["service", "dhcp-relay", "interface", interface_name]})
+            for interface_name in sorted(set(desired_interfaces) - current_interfaces):
+                operations.append({"op": "set", "path": ["service", "dhcp-relay", "interface", interface_name]})
+
+            for server in sorted(current_servers - set(desired_servers)):
+                operations.append({"op": "delete", "path": ["service", "dhcp-relay", "server", server]})
+            for server in sorted(set(desired_servers) - current_servers):
+                operations.append({"op": "set", "path": ["service", "dhcp-relay", "server", server]})
+
+        if operations:
+            response = await run_in_threadpool(service.device.configure_multiple_op, op_path=operations)
+            if response.status != 200:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to update DHCP relay configuration: {response.error or 'Unknown VyOS error'}",
+                )
+            await run_in_threadpool(service.get_full_config, refresh=True)
+
+        updated = await run_in_threadpool(service.get_full_config, refresh=True)
+        return _parse_dhcp_relay_config(updated)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating DHCP relay configuration: {str(exc)}")
 
 
 @router.get("/logs", response_model=SystemLogsResponse)

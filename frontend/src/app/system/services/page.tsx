@@ -37,6 +37,7 @@ import {
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 import { showService } from "@/lib/api/show";
+import { interfacesService } from "@/lib/api/interfaces";
 import {
   systemService,
   type LldpConfig,
@@ -63,6 +64,9 @@ import {
 } from "lucide-react";
 import { SshServiceTab } from "@/components/system/SshServiceTab";
 import { DnsServiceTab } from "@/components/system/DnsServiceTab";
+import { DynamicDnsServiceTab } from "@/components/system/DynamicDnsServiceTab";
+import { DhcpRelayServiceTab } from "@/components/system/DhcpRelayServiceTab";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 
 const EMPTY_SERVER: NtpServerConfig = {
   address: "",
@@ -90,8 +94,7 @@ type ServiceTab =
   | "dns-forwarder"
   | "dns-resolver"
   | "dynamic-dns"
-  | "dhcp-relay"
-  | "power";
+  | "dhcp-relay";
 
 const SERVICE_TAB_VALUES: ServiceTab[] = [
   "ntp",
@@ -102,7 +105,6 @@ const SERVICE_TAB_VALUES: ServiceTab[] = [
   "dns-resolver",
   "dynamic-dns",
   "dhcp-relay",
-  "power",
 ];
 
 function normalizeServiceTab(raw: string | null): ServiceTab | null {
@@ -142,6 +144,7 @@ function SystemServicesPageContent() {
   const [serviceRefreshNonce, setServiceRefreshNonce] = useState(0);
 
   const [availableInterfaces, setAvailableInterfaces] = useState<string[]>([]);
+  const [interfaceDisplayLabels, setInterfaceDisplayLabels] = useState<Record<string, string>>({});
   const [interfacesLoading, setInterfacesLoading] = useState(true);
 
   const [config, setConfig] = useState<NtpConfig | null>(null);
@@ -187,13 +190,43 @@ function SystemServicesPageContent() {
   const loadInterfaces = async () => {
     setInterfacesLoading(true);
     try {
-      const counters = await showService.getInterfaceCounters();
-      const names = Array.from(new Set(counters.interfaces.map((item) => item.interface)))
-        .filter((name) => !!name && name !== "lo")
+      const [countersResult, interfacesResult] = await Promise.allSettled([
+        showService.getInterfaceCounters(),
+        interfacesService.getConfig(),
+      ]);
+
+      const namesSet = new Set<string>();
+      if (countersResult.status === "fulfilled") {
+        for (const item of countersResult.value.interfaces) {
+          const name = (item.interface || "").trim();
+          if (name) namesSet.add(name);
+        }
+      }
+
+      const descriptionByName: Record<string, string | null> = {};
+      if (interfacesResult.status === "fulfilled") {
+        for (const entry of interfacesResult.value.interfaces) {
+          const name = (entry.name || "").trim();
+          if (!name) continue;
+          namesSet.add(name);
+          descriptionByName[name] = entry.description ?? null;
+        }
+      }
+
+      const names = Array.from(namesSet)
+        .filter((name) => name !== "lo")
         .sort((left, right) => left.localeCompare(right));
+
+      const labels: Record<string, string> = {};
+      for (const name of names) {
+        labels[name] = formatInterfaceDisplayName(name, descriptionByName[name] ?? null);
+      }
+
       setAvailableInterfaces(names);
+      setInterfaceDisplayLabels(labels);
     } catch {
       setAvailableInterfaces([]);
+      setInterfaceDisplayLabels({});
     } finally {
       setInterfacesLoading(false);
     }
@@ -665,7 +698,6 @@ function SystemServicesPageContent() {
             <TabsTrigger value="dns-resolver">DNS Resolver</TabsTrigger>
             <TabsTrigger value="dynamic-dns">Dynamic DNS</TabsTrigger>
             <TabsTrigger value="dhcp-relay">DHCP Relay</TabsTrigger>
-            <TabsTrigger value="power">Power Mgmt</TabsTrigger>
           </TabsList>
 
           <TabsContent value="ntp" className="space-y-6">
@@ -1019,12 +1051,12 @@ function SystemServicesPageContent() {
                                   <div className="px-2 py-1.5 text-xs text-muted-foreground">No interfaces found.</div>
                                 ) : (
                                   availableInterfaces.map((iface) => (
-                                    <DropdownMenuCheckboxItem
-                                      key={iface}
-                                      checked={lldpSelectedInterfaces.includes(iface)}
-                                      onCheckedChange={(checked) => toggleLldpInterface(iface, checked)}
-                                    >
-                                      {iface}
+                                  <DropdownMenuCheckboxItem
+                                    key={iface}
+                                    checked={lldpSelectedInterfaces.includes(iface)}
+                                    onCheckedChange={(checked) => toggleLldpInterface(iface, checked)}
+                                  >
+                                      {interfaceDisplayLabels[iface] ?? iface}
                                     </DropdownMenuCheckboxItem>
                                   ))
                                 )}
@@ -1286,7 +1318,7 @@ function SystemServicesPageContent() {
                                     checked={mdnsSelectedInterfaces.includes(iface)}
                                     onCheckedChange={(checked) => toggleMdnsInterface(iface, checked)}
                                   >
-                                    {iface}
+                                    {interfaceDisplayLabels[iface] ?? iface}
                                   </DropdownMenuCheckboxItem>
                                 ))
                               )}
@@ -1486,59 +1518,34 @@ function SystemServicesPageContent() {
           </TabsContent>
 
           <TabsContent value="dns-resolver" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>DNS Resolver</CardTitle>
-                <CardDescription>
-                  Resolver mode UI is planned. This build currently supports DNS forwarding and host/domain overrides.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                Use <strong>DNS Forwarder</strong> for active DNS service management right now.
-              </CardContent>
-            </Card>
+            <DnsServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "dns-resolver"}
+              refreshNonce={serviceRefreshNonce}
+              mode="resolver"
+            />
           </TabsContent>
 
           <TabsContent value="dynamic-dns" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Dynamic DNS</CardTitle>
-                <CardDescription>
-                  Dynamic DNS configuration page is queued for implementation.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                No DDNS provider configuration is available yet in this GUI.
-              </CardContent>
-            </Card>
+            <DynamicDnsServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "dynamic-dns"}
+              refreshNonce={serviceRefreshNonce}
+              interfaces={availableInterfaces}
+              interfaceLabels={interfaceDisplayLabels}
+              interfacesLoading={interfacesLoading}
+            />
           </TabsContent>
 
           <TabsContent value="dhcp-relay" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>DHCP Relay</CardTitle>
-                <CardDescription>
-                  DHCP relay configuration page is queued for implementation.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                DHCP server configuration is available now under <strong>Network &gt; DHCP</strong>.
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="power" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Power Management</CardTitle>
-                <CardDescription>
-                  FreeBSD <code>powerd</code> controls are not exposed in current VyOS service configuration APIs.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                Reboot and power actions are already available separately; CPU governor/power profile controls are not yet supported here.
-              </CardContent>
-            </Card>
+            <DhcpRelayServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "dhcp-relay"}
+              refreshNonce={serviceRefreshNonce}
+              interfaces={availableInterfaces}
+              interfaceLabels={interfaceDisplayLabels}
+              interfacesLoading={interfacesLoading}
+            />
           </TabsContent>
         </Tabs>
       </div>
