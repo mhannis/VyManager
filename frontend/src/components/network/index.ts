@@ -14,3 +14,4 @@ export { EditEthernetModal } from "./EditEthernetModal";
 export { DeleteEthernetModal } from "./DeleteEthernetModal";
 export { ComprehensiveEthernetModal } from "./ComprehensiveEthernetModal";
 export { ComprehensiveVLANModal } from "./ComprehensiveVLANModal";
+export { DeleteVLANModal } from "./DeleteVLANModal";

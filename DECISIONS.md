@@ -35,3 +35,7 @@
 - 2026-02-14: Removed redundant shortcuts from `System -> Options & Coverage` (Logs, Users, Containers, and other duplicated service links).
 - 2026-02-14: Moved `DHCP Server` navigation from `Network` to `Services` and removed the duplicate `Network` entry so service ownership is grouped in one section per Mark request.
 - 2026-02-14: Removed standalone `System -> Acceleration` sidebar entry and exposed acceleration via `System -> Options & Coverage` shortcut to keep system top-level navigation tighter.
+- 2026-02-14: Standardized Services ordering to A-Z in both sidebar and `/system/services` tab strip: DHCP Relay, DHCP Server, DNS Forwarder, DNS Resolver, Dynamic DNS, LLDP, mDNS Repeater, NTP.
+- 2026-02-14: Implemented full VLAN/QinQ handling in Network Interfaces UI: listing now includes `vif`, `vif-s`, and nested `vif-c`; create/edit flows map to correct operation families; delete flow is now wired from cards.
+- 2026-02-14: Added backend ethernet batch support for `delete_vif_s` and `delete_vif_c` operations and corresponding regression tests.
+- 2026-02-14: Fixed ethernet batch error semantics by re-raising `HTTPException`; malformed operation payloads now return expected `400` instead of being converted to `500`.

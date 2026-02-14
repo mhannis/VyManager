@@ -1,24 +1,20 @@
 {
-  "feature_id": "system-ia-guided-setup-v2",
-  "title": "System IA Cohesion + Options Coverage + Guided Setup Entry Points",
+  "feature_id": "vlan-robust-handling-v1",
+  "title": "Robust VLAN/QinQ Handling Across Network Interfaces",
   "last_updated": "2026-02-14",
-  "status": "in_progress",
+  "status": "in_review",
   "acceptance_criteria": [
-    "Sidebar places NTP/LLDP/mDNS under Services.",
-    "Sidebar places DHCP Server under Services and removes it from Network.",
-    "SSH remains under the System -> Options & Coverage flow.",
-    "Acceleration is available under System -> Options & Coverage.",
-    "System Options page exists and allows editing hostname/timezone/domain.",
-    "DNS server ownership remains in DNS Resolver flow (not duplicated in System Options).",
-    "System Options page provides clear setup-wizard entry points for WAN/LAN/firewall onboarding.",
-    "Firewall Zones guided setup is a top-right modal button intended for one-time use but re-runnable.",
-    "Firewall Policies page includes direct links to Network Wizard and Zone Wizard.",
-    "Service shortcuts open without the horizontal multi-service tab strip.",
-    "Runtime build/start validation passes and site remains reachable after deploy."
+    "Create flow supports standard VLAN (vif), QinQ service VLAN (vif-s), and QinQ customer VLAN (vif-c).",
+    "Edit flow applies the correct operation family for each VLAN type.",
+    "Delete flow is available from the interface UI for all VLAN types.",
+    "Nested vif-c entries are visible in the VLAN list and clearly labeled.",
+    "Backend supports delete_vif_s and delete_vif_c operations.",
+    "Malformed VLAN delete payloads return client validation errors (HTTP 400), not generic 500 errors.",
+    "Frontend build/runtime checks pass and services are restarted on :3000/:8000."
   ],
   "assumptions": [
-    "Network Setup Wizard remains the primary initial bootstrap path for new users.",
-    "System Options saves should preserve existing system name-servers while DNS configuration is managed via DNS Resolver.",
+    "Current router/mappers remain the source of truth for vif/vif-s/vif-c command semantics.",
+    "QinQ customer VLAN creation may auto-create missing service VLAN when selected.",
     "Playwright browser smoke remains blocked on this host until OS dependencies are installed."
   ],
   "tasks": [
@@ -30,39 +26,39 @@
         "PROJECT_MEMORY.md",
         "CURRENT_FEATURE.md"
       ],
-      "notes": "Mapped Mark's IA request into concrete acceptance criteria for sidebar, system options, and wizard entry points."
+      "notes": "Translated user request into concrete VLAN/QinQ acceptance criteria with backend and UI coverage."
     },
     {
       "id": "T2",
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/system.py"
+        "backend/vyos_builders/interfaces/ethernet.py",
+        "backend/routers/interfaces/ethernet.py"
       ],
-      "notes": "Implemented PUT /vyos/system/config and timezone/system-setting validation."
+      "notes": "Implemented `delete_vif_s`/`delete_vif_c` and fixed error propagation by re-raising HTTPException."
     },
     {
       "id": "T3",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/system/options/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx",
-        "frontend/src/app/firewall/zones/page.tsx",
-        "frontend/src/app/firewall/policies/page.tsx",
-        "frontend/src/app/system/services/page.tsx",
-        "frontend/src/lib/api/system.ts"
+        "frontend/src/app/network/interfaces/page.tsx",
+        "frontend/src/components/network/ComprehensiveVLANModal.tsx",
+        "frontend/src/components/network/DeleteVLANModal.tsx",
+        "frontend/src/lib/api/types/ethernet.ts",
+        "frontend/src/components/network/index.ts"
       ],
-      "notes": "Added System Options page, refined sidebar IA (including DHCP under Services and acceleration under Options), enabled single-service view mode, and ensured setup wizard entry points are visible in zones/policies/system."
+      "notes": "Implemented robust VLAN/QinQ create/edit/delete UX and added nested vif-c visibility."
     },
     {
       "id": "T4",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_system_services_ssh_dns.py"
+        "backend/tests/test_ethernet_vlan_batch_ops.py"
       ],
-      "notes": "Added regression tests for system config update operations and timezone validation."
+      "notes": "Added targeted backend regression tests for new VLAN delete operations and invalid payload handling."
     },
     {
       "id": "T5",
@@ -71,25 +67,7 @@
       "files": [
         "LAST_FAILURE.txt"
       ],
-      "notes": "Ran frontend typecheck/lint/build/runtime smoke; browser smoke remains blocked by missing host libs."
-    },
-    {
-      "id": "T6",
-      "owner_role": "Build",
-      "status": "done",
-      "files": [
-        "PROJECT_MEMORY.md"
-      ],
-      "notes": "Restarted vm-ui and verified listeners/HTTP probes after deploy."
-    },
-    {
-      "id": "T7",
-      "owner_role": "Planner",
-      "status": "doing",
-      "files": [
-        "PROJECT_MEMORY.md"
-      ],
-      "notes": "Next increment: DHCP UX behavior and firewall zones education/help page."
+      "notes": "Ran backend pytest and frontend typecheck/build/lint/runtime smoke; restarted vm-api and vm-ui successfully."
     }
   ],
   "commands": {
@@ -102,7 +80,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "System IA + setup-guidance implementation",
+      "purpose": "VLAN/QinQ implementation and validation",
       "status": "active"
     }
   ]

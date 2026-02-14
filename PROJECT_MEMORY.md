@@ -59,39 +59,27 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Frontend lint has warning-only legacy debt; avoid introducing lint errors
 
 ## Current Objective
-- Deliver IA polish requested by Mark:
-  - keep `NTP/LLDP/mDNS` under `Services`
-  - keep `SSH` under `System -> Options & Coverage`
-  - keep `DHCP Server` under `Services` (and not duplicated under `Network`)
-  - keep `Acceleration` access under `System -> Options & Coverage`
-  - expose additional system-level controls in `System` via a dedicated options page
-  - remove redundant shortcut buttons from `System -> Options & Coverage` (no Logs/Users/Containers there)
-  - hide the service tab strip when opening a single service from sidebar shortcuts
-  - keep zone guided setup as a top-right, one-time wizard entry point
-  - keep clear onboarding path for WAN/LAN setup using wizards
+- Deliver robust VLAN handling across create/edit/delete flows:
+  - support `802.1Q` (`vif`)
+  - support QinQ service VLAN (`vif-s`)
+  - support QinQ customer VLAN (`vif-c`)
+  - expose delete actions in UI (VLAN cards) with correct backend operations
+  - ensure invalid VLAN payloads return correct client errors (400, not 500)
 
 ## Current Feature Spec
-Feature: **System IA + Guided Setup Cohesion (v2)**
+Feature: **Robust VLAN Handling (v1)**
 
 Acceptance criteria:
-- Sidebar places `NTP/LLDP/mDNS` under `Services`.
-- Sidebar places `DHCP Server` under `Services` and removes it from `Network`.
-- Sidebar keeps SSH under `System -> Options & Coverage` flow.
-- Acceleration is accessible via `System -> Options & Coverage` (not as separate System nav item).
-- `System -> Options & Coverage` exists and is functional.
-- System options page allows editing:
-  - `system host-name`
-  - `system time-zone`
-  - `system domain-name`
-- System options page does not duplicate DNS name-server editing; DNS server controls stay in DNS Resolver.
-- System options page links users to setup flow (Network Wizard -> Zone Wizard -> Policies).
-- Firewall Zones guided setup is a top-right button and runs as modal one-time wizard (re-runnable).
-- Firewall Policies page provides direct links to setup wizards.
-- Opening service pages from sidebar does not show the horizontal multi-service tab strip.
+- VLAN create modal supports selecting VLAN type (`802.1Q`, `QinQ service`, `QinQ customer`).
+- VLAN list includes `vif`, `vif-s`, and nested `vif-c` entries with clear labels.
+- VLAN edit applies correct operation families for each type (`set_vif_*`, `set_vif_s_*`, `set_vif_c_*`).
+- VLAN delete works from UI for all supported types.
+- Backend supports `delete_vif_s` and `delete_vif_c` operations.
+- Ethernet batch endpoint preserves explicit `HTTPException` status codes from validation failures.
 
 Assumptions:
-- Existing `network/setup-wizard` remains the primary base bootstrap workflow.
-- System options saves preserve existing system name-servers while DNS server ownership remains in DNS Resolver UI.
+- `set_vif_c` may be used with optional auto-create of missing `vif-s` service VLAN.
+- Current `vif`/`vif-s`/`vif-c` read models (description/address/mtu/mac/vrf/disable) remain the source of truth.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
@@ -99,13 +87,15 @@ Assumptions:
 - Host toolchain: node `v20.20.0`, npm `10.8.2`, python `3.12.3`
 
 ### Validation This Cycle
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q backend/tests/test_ethernet_vlan_batch_ops.py backend/tests/test_system_services_ssh_dns.py` -> pass (`14 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s build` -> pass
 - `cd frontend && npm run -s smoke:runtime` -> pass
 - `cd frontend && npm run -s lint` -> pass with existing warning debt (0 errors)
 - Runtime redeploy completed for UI:
   - restarted `vm-ui` on `0.0.0.0:3000`
-  - health checks: frontend root -> `307` (expected redirect), `/docs` -> `200`
+  - restarted `vm-api` on `0.0.0.0:8000`
+  - health checks: frontend root -> `307` (expected redirect), backend `/docs` -> `200`
 
 ### Key Implementation Notes
 - Added `PUT /vyos/system/config` in `backend/routers/system.py`.
@@ -123,10 +113,30 @@ Assumptions:
   - moved DHCP Server into `Services` and removed duplicate from `Network`
   - kept `System -> Options & Coverage` as SSH entry point
 - Added single-service view mode for `/system/services` (`view=single`) so sidebar service shortcuts do not show the tab strip.
+- Ordered Services entries A-Z in sidebar and in the full `/system/services` tab strip:
+  - `DHCP Relay`, `DHCP Server`, `DNS Forwarder`, `DNS Resolver`, `Dynamic DNS`, `LLDP`, `mDNS Repeater`, `NTP`
 - Removed redundant shortcuts from `System -> Options & Coverage` (Logs/Users/Containers and other duplicated service links).
 - Kept DNS server ownership in DNS Resolver flow; System Options now preserves existing name-servers during save.
 - Firewall Zones now includes top-right guided wizard flow and one-time localStorage marker.
 - Firewall Policies includes direct links to Network/Zone wizards.
+- Added full VLAN/QinQ UI model in `network/interfaces`:
+  - list now includes `vif`, `vif-s`, and nested `vif-c`
+  - VLAN cards show type labels and service tag for QinQ customer subinterfaces
+  - delete action is wired via new `DeleteVLANModal`
+- Reworked `ComprehensiveVLANModal`:
+  - create mode supports VLAN type selection (`802.1Q`, `QinQ service`, `QinQ customer`)
+  - correct operation mapping per type for create/edit (`vif` vs `vif-s` vs `vif-c`)
+  - duplicate detection and VLAN tag validation (`1..4094`)
+  - optional auto-create for missing service VLAN during QinQ customer creation
+- Added backend support for missing delete operations:
+  - `delete_vif_s`
+  - `delete_vif_c`
+- Hardened ethernet batch endpoint error semantics:
+  - now re-raises `HTTPException` instead of converting to generic 500
+- Added backend tests for new VLAN batch behaviors:
+  - `test_batch_delete_vif_s_operation`
+  - `test_batch_delete_vif_c_operation`
+  - `test_batch_delete_vif_c_rejects_invalid_payload`
 
 ## Risks / Open Questions
 - Playwright browser smoke is blocked by missing system dependencies on this host (`libnspr4.so`), so end-to-end UI automation is not currently a reliable gate.
@@ -136,8 +146,14 @@ Assumptions:
 - DHCP server UX: complete pfSense-like interface-first flow and verify lease behavior on live interfaces.
 - Firewall zones education page: add dedicated “How zones work” reference page and link from zones.
 - Continue DNS scope (resolver/authoritative/reverse lookup polish).
+- Extend VLAN modal to include dedicated delete/reset controls for DHCP/IPv6 subsettings (currently additive set only).
+- Add frontend unit tests for VLAN modal operation mapping once test harness for component forms is in place.
 
 ## Agent Handoff Notes
 - Start `vm-api` only with backend environment loaded (`source backend/.env`) or session/site APIs can fail with `503`.
 - `System -> Options` is now a real page and depends on `PUT /vyos/system/config`.
 - Keep using `formatInterfaceDisplayName` helper for consistent `Description (ethX)` naming in non-edit description contexts.
+- For VLAN deletes:
+  - use `delete_vif` for `vif`
+  - use `delete_vif_s` for `vif-s`
+  - use `delete_vif_c` with `s_vlan,c_vlan` for `vif-c`

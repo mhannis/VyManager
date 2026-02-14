@@ -551,6 +551,7 @@ async def get_ethernet_capabilities(request: Request) -> Dict[str, Any]:
                 ],
                 "vlan_vif_s": [
                     "set_vif_s",
+                    "delete_vif_s",
                     "set_vif_s_address",
                     "delete_vif_s_address",
                     "set_vif_s_description",
@@ -570,6 +571,7 @@ async def get_ethernet_capabilities(request: Request) -> Dict[str, Any]:
                 ],
                 "vlan_vif_c": [
                     "set_vif_c",
+                    "delete_vif_c",
                     "set_vif_c_address",
                     "delete_vif_c_address",
                     "set_vif_c_description",
@@ -759,7 +761,9 @@ async def configure_interface_batch(http_request: Request, request: InterfaceBat
     | `set_vif` | Yes | Configure 802.1q VLAN |
     | `delete_vif` | Yes (vlan_id) | Remove 802.1q VLAN |
     | `set_vif_s` | Yes | Configure QinQ service VLAN |
+    | `delete_vif_s` | Yes (vlan_id) | Remove QinQ service VLAN |
     | `set_vif_c` | Yes (s_vlan,c_vlan) | Configure QinQ customer VLAN |
+    | `delete_vif_c` | Yes (s_vlan,c_vlan) | Remove QinQ customer VLAN |
     | `set_mirror_ingress` | Yes | Configure ingress port mirroring |
     | `set_mirror_egress` | Yes | Configure egress port mirroring |
     | `delete_mirror` | No | Delete port mirroring |
@@ -1088,6 +1092,10 @@ async def configure_interface_batch(http_request: Request, request: InterfaceBat
                 if not value:
                     raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
                 batch.set_vif_s(request.interface, value)
+            elif op_type == "delete_vif_s":
+                if not value:
+                    raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
+                batch.delete_vif_s(request.interface, value)
             elif op_type == "set_vif_c":
                 if not value:
                     raise HTTPException(status_code=400, detail=f"{op_type} requires a value (s_vlan,c_vlan)")
@@ -1096,6 +1104,13 @@ async def configure_interface_batch(http_request: Request, request: InterfaceBat
                 if len(parts) != 2:
                     raise HTTPException(status_code=400, detail=f"{op_type} value must be 's_vlan,c_vlan'")
                 batch.set_vif_c(request.interface, parts[0], parts[1])
+            elif op_type == "delete_vif_c":
+                if not value:
+                    raise HTTPException(status_code=400, detail=f"{op_type} requires a value (s_vlan,c_vlan)")
+                parts = value.split(",")
+                if len(parts) != 2:
+                    raise HTTPException(status_code=400, detail=f"{op_type} value must be 's_vlan,c_vlan'")
+                batch.delete_vif_c(request.interface, parts[0], parts[1])
             # Port Mirroring
             elif op_type == "set_mirror_ingress":
                 if not value:
@@ -1450,6 +1465,8 @@ async def configure_interface_batch(http_request: Request, request: InterfaceBat
             data=result_data,
             error=response.error if response.error else None
         )
+    except HTTPException:
+        raise
     except KeyError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ValueError as e:

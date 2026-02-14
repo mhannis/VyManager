@@ -495,12 +495,26 @@ class EthernetInterfaceBuilderMixin:
         path = self.mappers[self.interface_mapper_key].get_vif_s(interface, vlan_id)
         return self.add_set(path)
 
+    def delete_vif_s(
+        self, interface: str, vlan_id: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Delete QinQ service VLAN (vif-s)"""
+        path = self.mappers[self.interface_mapper_key].get_vif_s(interface, vlan_id)
+        return self.add_delete(path)
+
     def set_vif_c(
         self, interface: str, s_vlan_id: str, c_vlan_id: str
     ) -> "EthernetInterfaceBuilderMixin":
         """Configure QinQ customer VLAN (vif-c)"""
         path = self.mappers[self.interface_mapper_key].get_vif_c(interface, s_vlan_id, c_vlan_id)
         return self.add_set(path)
+
+    def delete_vif_c(
+        self, interface: str, s_vlan_id: str, c_vlan_id: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Delete QinQ customer VLAN (vif-c)"""
+        path = self.mappers[self.interface_mapper_key].get_vif_c(interface, s_vlan_id, c_vlan_id)
+        return self.add_delete(path)
 
     # ========================================================================
     # VIF (802.1q VLAN) Sub-interface Configuration

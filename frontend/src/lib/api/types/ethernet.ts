@@ -66,6 +66,15 @@ export interface VIFSConfig extends VIFConfig {
   vif_c?: VIFConfig[] | null;
 }
 
+export type VlanKind = "vif" | "vif-s" | "vif-c";
+
+export interface VLANWithParent extends VIFConfig {
+  parentInterface: string;
+  fullName: string;
+  kind: VlanKind;
+  service_vlan_id?: string | null;
+}
+
 export interface MirrorConfig {
   ingress?: string | null;
   egress?: string | null;

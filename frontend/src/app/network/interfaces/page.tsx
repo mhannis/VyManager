@@ -11,18 +11,19 @@ import Link from "next/link";
 import { ethernetService } from "@/lib/api/ethernet";
 import { showService } from "@/lib/api/show";
 import type { InterfacePhysical } from "@/lib/api/show";
-import type { EthernetInterface, EthernetCapabilities, VIFConfig } from "@/lib/api/types/ethernet";
+import type { EthernetInterface, EthernetCapabilities, VLANWithParent } from "@/lib/api/types/ethernet";
 import { ComprehensiveEthernetModal } from "@/components/network/ComprehensiveEthernetModal";
 import { ComprehensiveVLANModal } from "@/components/network/ComprehensiveVLANModal";
 import { DeleteEthernetModal } from "@/components/network/DeleteEthernetModal";
+import { DeleteVLANModal } from "@/components/network/DeleteVLANModal";
 
 type InterfaceType = "all" | "ethernet" | "vlan";
 
-// VLAN with parent interface info
-interface VLANWithParent extends VIFConfig {
-  parentInterface: string;
-  fullName: string;
-}
+const VLAN_KIND_LABELS: Record<VLANWithParent["kind"], string> = {
+  "vif": "802.1Q",
+  "vif-s": "QinQ Service",
+  "vif-c": "QinQ Customer",
+};
 
 const normalizeLinkDetail = (value?: string | null): string | undefined => {
   if (!value) return undefined;
@@ -51,6 +52,7 @@ export default function InterfacesPage() {
   // VLAN Modal states
   const [isCreateVLANModalOpen, setIsCreateVLANModalOpen] = useState(false);
   const [editingVLAN, setEditingVLAN] = useState<VLANWithParent | null>(null);
+  const [deletingVLAN, setDeletingVLAN] = useState<VLANWithParent | null>(null);
 
   const loadData = async () => {
     try {
@@ -80,34 +82,49 @@ export default function InterfacesPage() {
     loadData();
   }, []);
 
-  // Extract all VLANs from interfaces
-  const allVlans: VLANWithParent[] = interfaces.flatMap((iface) => {
-    const vlans: VLANWithParent[] = [];
+  // Extract all VLAN and QinQ subinterfaces from interfaces
+  const allVlans: VLANWithParent[] = interfaces
+    .flatMap((iface) => {
+      const vlans: VLANWithParent[] = [];
 
-    // Add VIFs (802.1q)
-    if (iface.vif) {
-      iface.vif.forEach((vif) => {
-        vlans.push({
-          ...vif,
-          parentInterface: iface.name,
-          fullName: `${iface.name}.${vif.vlan_id}`,
+      if (iface.vif) {
+        iface.vif.forEach((vif) => {
+          vlans.push({
+            ...vif,
+            parentInterface: iface.name,
+            fullName: `${iface.name}.${vif.vlan_id}`,
+            kind: "vif",
+          });
         });
-      });
-    }
+      }
 
-    // Add VIF-S (QinQ) if needed in the future
-    if (iface.vif_s) {
-      iface.vif_s.forEach((vifs) => {
-        vlans.push({
-          ...vifs,
-          parentInterface: iface.name,
-          fullName: `${iface.name}.${vifs.vlan_id}`,
+      if (iface.vif_s) {
+        iface.vif_s.forEach((vifs) => {
+          vlans.push({
+            ...vifs,
+            parentInterface: iface.name,
+            fullName: `${iface.name}.${vifs.vlan_id}`,
+            kind: "vif-s",
+            service_vlan_id: vifs.vlan_id,
+          });
+
+          if (vifs.vif_c) {
+            vifs.vif_c.forEach((vifc) => {
+              vlans.push({
+                ...vifc,
+                parentInterface: iface.name,
+                fullName: `${iface.name}.${vifs.vlan_id}.${vifc.vlan_id}`,
+                kind: "vif-c",
+                service_vlan_id: vifs.vlan_id,
+              });
+            });
+          }
         });
-      });
-    }
+      }
 
-    return vlans;
-  });
+      return vlans;
+    })
+    .sort((left, right) => left.fullName.localeCompare(right.fullName, undefined, { numeric: true }));
 
   // Calculate statistics
   const totalInterfaces = interfaces.length;
@@ -136,6 +153,8 @@ export default function InterfacesPage() {
       searchQuery === "" ||
       vlan.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       vlan.parentInterface.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      VLAN_KIND_LABELS[vlan.kind].toLowerCase().includes(searchQuery.toLowerCase()) ||
+      vlan.service_vlan_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       vlan.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       vlan.addresses?.some((addr) => addr.toLowerCase().includes(searchQuery.toLowerCase())) ||
       vlan.vrf?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -276,7 +295,7 @@ export default function InterfacesPage() {
                 }}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Create {typeFilter === "vlan" ? "VLAN" : "Interface"}
+                Create {typeFilter === "vlan" ? "VLAN / QinQ" : "Interface"}
               </Button>
             </div>
           </div>
@@ -293,7 +312,10 @@ export default function InterfacesPage() {
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredInterfaces.map((iface) => {
-                    const vlanCount = (iface.vif?.length || 0) + (iface.vif_s?.length || 0);
+                    const qinqCustomerCount = (iface.vif_s || []).reduce((count, serviceVlan) => {
+                      return count + (serviceVlan.vif_c?.length || 0);
+                    }, 0);
+                    const vlanCount = (iface.vif?.length || 0) + (iface.vif_s?.length || 0) + qinqCustomerCount;
                     const physical = physicalByInterface[iface.name];
                     const linkUp = physical?.link_up;
                     const linkSpeed = linkUp === true ? normalizeLinkDetail(physical?.speed) : undefined;
@@ -424,7 +446,7 @@ export default function InterfacesPage() {
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredVlans.map((vlan) => (
-                    <Card key={vlan.fullName} className="border-border hover:border-primary/50 transition-colors group">
+                    <Card key={`${vlan.kind}:${vlan.fullName}`} className="border-border hover:border-primary/50 transition-colors group">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-2">
@@ -436,7 +458,7 @@ export default function InterfacesPage() {
                                 {vlan.fullName}
                               </code>
                               <div className="text-xs text-muted-foreground mt-0.5">
-                                Parent: {vlan.parentInterface}
+                                Parent: {vlan.parentInterface} | {VLAN_KIND_LABELS[vlan.kind]}
                               </div>
                             </div>
                           </div>
@@ -452,9 +474,7 @@ export default function InterfacesPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => {
-                                // TODO: Implement VLAN delete
-                              }}
+                              onClick={() => setDeletingVLAN(vlan)}
                               className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -492,8 +512,13 @@ export default function InterfacesPage() {
                               variant="outline"
                               className="bg-purple-500/10 text-purple-500 border-purple-500/20 text-xs"
                             >
-                              VLAN {vlan.vlan_id}
+                              {VLAN_KIND_LABELS[vlan.kind]} {vlan.vlan_id}
                             </Badge>
+                            {vlan.kind === "vif-c" && vlan.service_vlan_id && (
+                              <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-xs">
+                                S-Tag: {vlan.service_vlan_id}
+                              </Badge>
+                            )}
                             {vlan.vrf && (
                               <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/20 text-xs">
                                 VRF: {vlan.vrf}
@@ -604,6 +629,16 @@ export default function InterfacesPage() {
           }}
         />
       )}
+
+      <DeleteVLANModal
+        open={!!deletingVLAN}
+        onOpenChange={(open) => !open && setDeletingVLAN(null)}
+        vlan={deletingVLAN}
+        onSuccess={() => {
+          setDeletingVLAN(null);
+          loadData();
+        }}
+      />
     </AppLayout>
   );
 }

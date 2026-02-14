@@ -1,11 +1,18 @@
-timestamp: 2026-02-14T13:32:56Z
-failing_command: cd frontend && npm run -s smoke:ui
-error_summary: Playwright UI smoke failed to launch Chromium because required host shared libraries are missing (`libnspr4.so`).
+timestamp: 2026-02-14T14:37:50Z
+failing_command: cd /home/redhot/VyOS/VyManager && PYTHONPATH=backend backend/.venv/bin/pytest -q backend/tests/test_ethernet_vlan_batch_ops.py backend/tests/test_system_services_ssh_dns.py
+error_summary: A new VLAN batch validation test expected HTTP 400 for malformed `delete_vif_c` input, but endpoint returned HTTP 500 because `HTTPException` was swallowed by a broad `except Exception` block.
 
 relevant_output:
-UI smoke test failed to execute: browserType.launch: Target page, context or browser has been closed
-[pid=791339][err] ... chrome-headless-shell: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
-... process exited with code 127
+..F...........                                                           [100%]
+=================================== FAILURES ===================================
+_______________ test_batch_delete_vif_c_rejects_invalid_payload ________________
+...
+>       assert response.status_code == 400
+E       assert 500 == 400
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+...
+FAILED backend/tests/test_ethernet_vlan_batch_ops.py::test_batch_delete_vif_c_rejects_invalid_payload
+1 failed, 13 passed in 0.81s
 
-suspected_cause: Playwright runtime dependencies are not installed in this Ubuntu environment.
-next_step: Install dependencies (`sudo npx playwright install-deps`) and rerun `cd frontend && npm run -s smoke:ui`.
+suspected_cause: `configure_interface_batch` catches all exceptions and converts them to 500, including `HTTPException`.
+next_step: Add explicit `except HTTPException: raise` in `backend/routers/interfaces/ethernet.py`, then rerun backend tests.
