@@ -7,7 +7,7 @@ Prioritization policy:
 
 | Priority | Domain | Risk | Breadth | Reuse | Implemented | Partial | Not Started | Total |
 |---:|---|---:|---:|---:|---:|---:|---:|---:|
-| 1 | `services` | 78 | 19 | 88 | 4 | 19 | 0 | 23 |
+| 1 | `services` | 78 | 11 | 88 | 12 | 11 | 0 | 23 |
 | 2 | `vpn` | 70 | 7 | 72 | 5 | 7 | 0 | 12 |
 | 3 | `ha` | 65 | 1 | 55 | 0 | 0 | 1 | 1 |
 | 4 | `vrf` | 60 | 1 | 62 | 0 | 1 | 0 | 1 |

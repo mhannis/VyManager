@@ -8,11 +8,11 @@
     {
       "domain": "services",
       "risk": 78,
-      "breadth": 19,
+      "breadth": 11,
       "reuse": 88,
       "total_pages": 23,
-      "implemented": 4,
-      "partial": 19,
+      "implemented": 12,
+      "partial": 11,
       "not_started": 0
     },
     {

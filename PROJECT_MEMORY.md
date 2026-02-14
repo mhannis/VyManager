@@ -54,50 +54,85 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Harden frontend runtime validation so client-side crashes are caught before reporting completion.
-- Completed this cycle: expanded browser smoke defaults to include high-risk routing and DHCP routes.
-- Completed this cycle: switched smoke default origin to `http://localhost:3000` to avoid origin/cookie false negatives.
-- Completed this cycle: reran build + restart + runtime smoke + browser smoke; all checks passed.
-- Next: continue one-function-at-a-time protocol/service parity implementation with this stronger runtime gate.
+- Continue services-domain parity with form-driven pages (no free-form CLI input).
+- Completed this cycle: implemented `HTTP API`, `SNMP`, and `TFTP Server` service tabs with backend service wrappers and scoped batch writes.
+- Completed this cycle: expanded runtime/browser smoke defaults to include the new service tabs.
+- Completed this cycle: regenerated coverage artifacts after improving service-wrapper token detection.
+- Next: continue services-domain backlog reduction (remaining partials: 11).
 
 ## Current Feature Spec
-Feature: **Frontend runtime smoke hardening for route-level crash detection**
+Feature: **Services slice: HTTPS API + SNMP + TFTP Server**
 
 Acceptance criteria:
-- `frontend/scripts/smoke-ui.mjs` defaults include critical routing/infrastructure/multicast and DHCP pages that previously regressed.
-- `frontend/scripts/smoke-ui.mjs` default base URL is `http://localhost:3000`.
-- `frontend/scripts/check-runtime.sh` probes a critical route set and fails on unexpected statuses.
-- End-to-end validation (`build`, restart `vm-ui`, runtime smoke, browser smoke) passes on the active environment.
+- Backend exposes dedicated wrappers:
+  - `/vyos/service-https/*`
+  - `/vyos/service-snmp/*`
+  - `/vyos/service-tftp-server/*`
+- System Services page has form-driven tabs for:
+  - HTTP API listener/config
+  - SNMP v2 communities/traps/listeners
+  - TFTP server directory/listeners/upload toggle
+- Sidebar `Services` navigation includes new entries and remains A-Z ordered.
+- End-to-end validation (`pytest`, `tsc`, `build`, restart, runtime smoke, browser smoke) passes.
+- Coverage artifacts reflect progress (`services` improved from 9/14/0 to 12/11/0 implemented/partial/not_started).
 
 Assumptions:
-- Playwright system libraries are present through local LD path (`/home/redhot/VyOS/.local-playwright-libs/...`) on this host.
+- SNMPv3 advanced options (users/groups/views/script extensions) remain a follow-up slice.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: runtime smoke hardening complete in working tree (not yet committed in this cycle).
+- Status: services slice implemented in working tree (not yet committed in this cycle).
 - Working tree is dirty with unrelated pre-existing changes outside this hotfix.
 
 ### Files Touched This Cycle (hotfix-owned)
+- `backend/app.py`
+- `backend/routers/https_service/__init__.py`
+- `backend/routers/https_service/https_service.py`
+- `backend/routers/snmp_service/__init__.py`
+- `backend/routers/snmp_service/snmp_service.py`
+- `backend/routers/tftp_server_service/__init__.py`
+- `backend/routers/tftp_server_service/tftp_server_service.py`
+- `backend/tests/test_service_wrapper_capabilities.py`
+- `frontend/src/lib/api/service-wrappers.ts`
+- `frontend/src/components/system/serviceTabHelpers.ts`
+- `frontend/src/components/system/HttpsServiceTab.tsx`
+- `frontend/src/components/system/SnmpServiceTab.tsx`
+- `frontend/src/components/system/TftpServiceTab.tsx`
+- `frontend/src/app/system/services/page.tsx`
+- `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/scripts/smoke-ui.mjs`
 - `frontend/scripts/check-runtime.sh`
+- `scripts/generate_config_coverage_matrix.py`
+- `CONFIG_COVERAGE_MATRIX.json`
+- `CONFIG_COVERAGE_MATRIX.md`
+- `CONFIG_COVERAGE_PHASE1.json`
+- `CONFIG_COVERAGE_PHASE1.md`
+- `PARITY_BACKLOG.json`
+- `PARITY_BACKLOG.md`
 
 ### Validation This Cycle
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_service_wrapper_capabilities.py tests/test_app.py` -> pass (`25 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s build` -> pass
-- Restarted runtime UI session and verified listener:
+- Restarted runtime API/UI sessions and verified listeners:
+  - `tmux kill-session -t vm-api`
+  - `tmux new-session -d -s vm-api 'cd /home/redhot/VyOS/VyManager/backend && source .env && PYTHONPATH=. ./.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --proxy-headers'`
   - `tmux kill-session -t vm-ui`
   - `tmux new-session -d -s vm-ui 'cd /home/redhot/VyOS/VyManager/frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000'`
-  - `ss -ltnp | rg ':3000'` -> listening
+  - `ss -ltnp | rg ':(8000|3000)'` -> listening
 - `cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime` -> pass
 - `cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui` -> pass
+- `python3 scripts/generate_config_coverage_matrix.py && python3 scripts/generate_phase1_backlog.py` -> pass
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
 - Browser smoke currently depends on host-specific Playwright shared libs path; this should be standardized in dev bootstrap.
+- SNMPv3 configuration and HTTPS GraphQL/certificate controls are not exposed yet.
 
 ## TODO Backlog (next queue)
-- Continue protocol/service parity slices with robust form-first UX.
+- Continue services parity slices with robust form-first UX.
+- Candidates next: `broadcast-relay`, `conntrack-sync`, `console-server`, `eventhandler`, `salt-minion`.
 - For each new slice: keep runtime gate sequence mandatory (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
@@ -124,3 +159,6 @@ Assumptions:
 - Reviewer-agent spawn was temporarily unavailable due thread cap; this cycle used manual reviewer pass and recorded the agent-limit failure in `LAST_FAILURE.txt`.
 - Frontend smoke defaults now cover the exact high-risk routes that recently regressed (`routing/*`, `services/dhcp-server`, and related infrastructure pages), so route-level runtime crashes are no longer missed by default.
 - Runtime/browser smoke defaults now use `http://localhost:3000`; this avoids invalid-origin/cookie edge cases seen with `127.0.0.1`.
+- Added service-wrapper routers for `https`, `snmp`, and `tftp-server`; wrappers enforce command scope under their exact `service <name>` trees.
+- Added form-driven service tabs for HTTP API, SNMP, and TFTP under `System -> Services`; these pages do not expose free-form CLI input.
+- Coverage crawler now recognizes service-wrapper naming conventions (`<service>_service` and `service_<service>`) so matrix status reflects backend support for service pages.

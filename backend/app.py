@@ -54,6 +54,14 @@ from routers.rpki import rpki
 from routers.pim import pim
 from routers.pim6 import pim6
 from routers.protocols import protocols as protocols_overview
+from routers.dns import dns as dns_service_router
+from routers.ssh import ssh as ssh_service_router
+from routers.ntp import ntp as ntp_service_router
+from routers.lldp import lldp as lldp_service_router
+from routers.mdns import mdns as mdns_service_router
+from routers.https_service import https_service as https_service_router
+from routers.snmp_service import snmp_service as snmp_service_router
+from routers.tftp_server_service import tftp_server_service as tftp_server_service_router
 from routers import system
 from routers import power as power_router
 from routers.config import config as config_router
@@ -314,6 +322,14 @@ app.include_router(rpki.router)
 app.include_router(pim.router)
 app.include_router(pim6.router)
 app.include_router(protocols_overview.router)
+app.include_router(dns_service_router.router)
+app.include_router(ssh_service_router.router)
+app.include_router(ntp_service_router.router)
+app.include_router(lldp_service_router.router)
+app.include_router(mdns_service_router.router)
+app.include_router(https_service_router.router)
+app.include_router(snmp_service_router.router)
+app.include_router(tftp_server_service_router.router)
 app.include_router(system.router)
 app.include_router(power_router.router)
 app.include_router(config_router.router)

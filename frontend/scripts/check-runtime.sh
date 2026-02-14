@@ -21,6 +21,9 @@ critical_routes=(
   "/routing/unicast-protocols/openfabric"
   "/routing/infrastructure/mpls"
   "/routing/multicast/igmp-proxy"
+  "/system/services?tab=https-api&view=single"
+  "/system/services?tab=snmp&view=single"
+  "/system/services?tab=tftp-server&view=single"
   "/services/dhcp-server"
 )
 

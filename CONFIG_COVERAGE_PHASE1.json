@@ -1,5 +1,5 @@
 {
-  "source_matrix_generated_at": "2026-02-14T18:02:05Z",
+  "source_matrix_generated_at": "2026-02-14T21:47:57Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -2336,10 +2336,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -2409,10 +2409,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -2482,10 +2482,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -2555,10 +2555,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -2628,10 +2628,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -2701,10 +2701,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -2774,10 +2774,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -2847,10 +2847,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -2920,10 +2920,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -2993,10 +2993,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -3066,10 +3066,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -3139,10 +3139,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -3212,10 +3212,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -3285,10 +3285,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -3358,10 +3358,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -3431,10 +3431,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -3504,10 +3504,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -3577,10 +3577,10 @@
           "frontend/src/components/routing/Pim6Content.tsx",
           "frontend/src/components/routing/PimContent.tsx",
           "frontend/src/components/routing/ProtocolCommandContent.tsx",
+          "frontend/src/components/routing/ProtocolSimpleListEditor.tsx",
           "frontend/src/components/routing/RipContent.tsx",
           "frontend/src/components/routing/RoutingTablesAccordion.tsx",
           "frontend/src/components/routing/RpkiContent.tsx",
-          "frontend/src/components/routing/StaticProtocolContent.tsx",
           "frontend/src/components/routing/ViewRoutingTableModal.tsx"
         ]
       }
@@ -3614,7 +3614,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -3647,7 +3650,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -3680,7 +3686,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -3713,7 +3722,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -3746,7 +3758,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -3779,7 +3794,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -3789,8 +3807,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/dns.html",
       "cli_scope": "service dns",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -3812,7 +3830,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -3845,7 +3866,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -3855,8 +3879,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/https.html",
       "cli_scope": "service https",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -3878,7 +3902,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -3911,7 +3938,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -3944,7 +3974,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -3954,8 +3987,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/lldp.html",
       "cli_scope": "service lldp",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -3977,7 +4010,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -3987,8 +4023,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/mdns.html",
       "cli_scope": "service mdns",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -4010,7 +4046,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4043,7 +4082,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4053,8 +4095,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/ntp.html",
       "cli_scope": "service ntp",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -4076,7 +4118,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4109,7 +4154,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4142,7 +4190,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4175,7 +4226,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4185,8 +4239,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/snmp.html",
       "cli_scope": "service snmp",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -4208,7 +4262,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4218,8 +4275,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/ssh.html",
       "cli_scope": "service ssh",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -4241,7 +4298,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4274,7 +4334,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4284,8 +4347,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/tftp-server.html",
       "cli_scope": "service tftp server",
       "domain": "services",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/dhcp/__init__.py",
@@ -4307,7 +4370,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4340,7 +4406,10 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/HttpsServiceTab.tsx",
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4369,10 +4438,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4401,10 +4473,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4433,10 +4508,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4465,10 +4543,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4497,10 +4578,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4529,10 +4613,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4561,10 +4648,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4593,10 +4683,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4625,10 +4718,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4657,10 +4753,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4689,10 +4788,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4721,10 +4823,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4753,10 +4858,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4785,10 +4893,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4817,10 +4928,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4849,10 +4963,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4881,10 +4998,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4913,10 +5033,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4945,10 +5068,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -4977,10 +5103,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -5009,10 +5138,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },
@@ -5041,10 +5173,13 @@
           "frontend/src/components/system/DhcpRelayServiceTab.tsx",
           "frontend/src/components/system/DnsServiceTab.tsx",
           "frontend/src/components/system/DynamicDnsServiceTab.tsx",
+          "frontend/src/components/system/HttpsServiceTab.tsx",
           "frontend/src/components/system/PowerActionBanner.tsx",
           "frontend/src/components/system/PoweroffModal.tsx",
           "frontend/src/components/system/RebootModal.tsx",
-          "frontend/src/components/system/SshServiceTab.tsx"
+          "frontend/src/components/system/SnmpServiceTab.tsx",
+          "frontend/src/components/system/SshServiceTab.tsx",
+          "frontend/src/components/system/TftpServiceTab.tsx"
         ]
       }
     },

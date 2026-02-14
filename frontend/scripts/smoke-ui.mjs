@@ -32,6 +32,9 @@ const ROUTES = (
     "/network/dhcp",
     "/firewall/zones",
     "/system/services",
+    "/system/services?tab=https-api&view=single",
+    "/system/services?tab=snmp&view=single",
+    "/system/services?tab=tftp-server&view=single",
     "/system/containers",
     "/vpn/ipsec",
   ].join(",")

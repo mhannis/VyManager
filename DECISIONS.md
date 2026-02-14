@@ -93,3 +93,6 @@
 - 2026-02-14: Browser smoke defaults were expanded to include high-risk routing and DHCP routes (`/routing/*`, `/services/dhcp-server`, `/network/dhcp`) after user-reported route-level client crashes were missed by narrower probes.
 - 2026-02-14: Frontend smoke defaults now use `http://localhost:3000` instead of `127.0.0.1` to avoid origin/cookie mismatches during automated login and route probing.
 - 2026-02-14: Runtime smoke now probes a critical route list rather than only `/` and `/login`, catching broken route handlers earlier in pre-handoff validation.
+- 2026-02-14: Added service-wrapper routers for `https`, `snmp`, and `tftp-server` using the existing thin `build_service_router(...)` abstraction; this preserves API contract style while extending services-domain coverage.
+- 2026-02-14: Implemented form-first service tabs for HTTP API, SNMP, and TFTP under `/system/services` and avoided free-form CLI input for these domains.
+- 2026-02-14: Coverage crawler now treats service wrapper naming patterns (`<service>_service` and `service_<service>`) as backend signals, allowing service docs pages like SNMP/HTTPS/TFTP to move from `FRONTEND_ONLY` to `DETECTED`.

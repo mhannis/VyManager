@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-14T18:02:05Z",
+  "generated_at": "2026-02-14T21:47:57Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -691,9 +691,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/dns.html",
       "title": "DNS Forwarding",
       "cli_scope": "service dns",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 78,
@@ -709,9 +709,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/https.html",
       "title": "HTTP API",
       "cli_scope": "service https",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 80,
@@ -736,18 +736,18 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/lldp.html",
       "title": "LLDP",
       "cli_scope": "service lldp",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 83,
       "url": "https://docs.vyos.io/en/latest/configuration/service/mdns.html",
       "title": "mDNS Repeater",
       "cli_scope": "service mdns",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 84,
@@ -763,9 +763,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/ntp.html",
       "title": "NTP",
       "cli_scope": "service ntp",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 86,
@@ -799,18 +799,18 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/snmp.html",
       "title": "SNMP",
       "cli_scope": "service snmp",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 90,
       "url": "https://docs.vyos.io/en/latest/configuration/service/ssh.html",
       "title": "SSH",
       "cli_scope": "service ssh",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 91,
@@ -826,9 +826,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/service/tftp-server.html",
       "title": "TFTP Server",
       "cli_scope": "service tftp server",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 93,

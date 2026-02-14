@@ -216,6 +216,13 @@ def detect_domain_coverage(
         normalized.add("_".join(token_list))
         normalized.add("".join(token_list))
 
+    # Service wrappers are often implemented as `<service>_service` or
+    # `service_<service>` backend router module names.
+    if len(token_list) > 1 and token_list[0] == "service":
+        service_tail = "_".join(token_list[1:])
+        normalized.add(f"{service_tail}_service")
+        normalized.add(f"service_{service_tail}")
+
     backend_detected = any(token in backend_domains for token in normalized)
     frontend_detected = any(token in frontend_domains for token in normalized)
     return backend_detected, frontend_detected

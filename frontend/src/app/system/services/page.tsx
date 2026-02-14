@@ -66,6 +66,9 @@ import { SshServiceTab } from "@/components/system/SshServiceTab";
 import { DnsServiceTab } from "@/components/system/DnsServiceTab";
 import { DynamicDnsServiceTab } from "@/components/system/DynamicDnsServiceTab";
 import { DhcpRelayServiceTab } from "@/components/system/DhcpRelayServiceTab";
+import { HttpsServiceTab } from "@/components/system/HttpsServiceTab";
+import { SnmpServiceTab } from "@/components/system/SnmpServiceTab";
+import { TftpServiceTab } from "@/components/system/TftpServiceTab";
 import { formatInterfaceDisplayName } from "@/lib/utils";
 
 const EMPTY_SERVER: NtpServerConfig = {
@@ -91,6 +94,9 @@ type ServiceTab =
   | "lldp"
   | "mdns"
   | "ssh"
+  | "https-api"
+  | "snmp"
+  | "tftp-server"
   | "dns-forwarder"
   | "dns-resolver"
   | "dynamic-dns"
@@ -101,6 +107,9 @@ const SERVICE_TAB_VALUES: ServiceTab[] = [
   "lldp",
   "mdns",
   "ssh",
+  "https-api",
+  "snmp",
+  "tftp-server",
   "dns-forwarder",
   "dns-resolver",
   "dynamic-dns",
@@ -112,6 +121,9 @@ const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
   lldp: "LLDP",
   mdns: "mDNS Repeater",
   ssh: "SSH",
+  "https-api": "HTTP API",
+  snmp: "SNMP",
+  "tftp-server": "TFTP Server",
   "dns-forwarder": "DNS Forwarder",
   "dns-resolver": "DNS Resolver",
   "dynamic-dns": "Dynamic DNS",
@@ -705,14 +717,17 @@ function SystemServicesPageContent() {
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           {!singleServiceView && (
             <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
-              <TabsTrigger value="ntp">NTP</TabsTrigger>
-              <TabsTrigger value="lldp">LLDP</TabsTrigger>
-              <TabsTrigger value="mdns">mDNS Repeater</TabsTrigger>
-              <TabsTrigger value="ssh">SSH</TabsTrigger>
+              <TabsTrigger value="dhcp-relay">DHCP Relay</TabsTrigger>
               <TabsTrigger value="dns-forwarder">DNS Forwarder</TabsTrigger>
               <TabsTrigger value="dns-resolver">DNS Resolver</TabsTrigger>
               <TabsTrigger value="dynamic-dns">Dynamic DNS</TabsTrigger>
-              <TabsTrigger value="dhcp-relay">DHCP Relay</TabsTrigger>
+              <TabsTrigger value="https-api">HTTP API</TabsTrigger>
+              <TabsTrigger value="lldp">LLDP</TabsTrigger>
+              <TabsTrigger value="mdns">mDNS Repeater</TabsTrigger>
+              <TabsTrigger value="ntp">NTP</TabsTrigger>
+              <TabsTrigger value="snmp">SNMP</TabsTrigger>
+              <TabsTrigger value="ssh">SSH</TabsTrigger>
+              <TabsTrigger value="tftp-server">TFTP Server</TabsTrigger>
             </TabsList>
           )}
 
@@ -1553,6 +1568,22 @@ function SystemServicesPageContent() {
             />
           </TabsContent>
 
+          <TabsContent value="https-api" className="space-y-6">
+            <HttpsServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "https-api"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
+          <TabsContent value="snmp" className="space-y-6">
+            <SnmpServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "snmp"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
           <TabsContent value="dhcp-relay" className="space-y-6">
             <DhcpRelayServiceTab
               canEdit={canEditSystem}
@@ -1561,6 +1592,14 @@ function SystemServicesPageContent() {
               interfaces={availableInterfaces}
               interfaceLabels={interfaceDisplayLabels}
               interfacesLoading={interfacesLoading}
+            />
+          </TabsContent>
+
+          <TabsContent value="tftp-server" className="space-y-6">
+            <TftpServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "tftp-server"}
+              refreshNonce={serviceRefreshNonce}
             />
           </TabsContent>
         </Tabs>

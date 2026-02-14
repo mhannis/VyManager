@@ -119,7 +119,7 @@ const navigation: NavItem[] = [
       },
       {
         title: "Static & Failover",
-        href: "/routing/static-failover",
+        href: "/routing/static-failover/static-routes",
         requiredPermission: FeatureGroup.STATIC_ROUTES
       },
       {
@@ -241,6 +241,11 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
+        title: "HTTP API",
+        href: "/system/services?tab=https-api&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
         title: "LLDP",
         href: "/system/services?tab=lldp&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
@@ -253,6 +258,16 @@ const navigation: NavItem[] = [
       {
         title: "NTP",
         href: "/system/services?tab=ntp&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "SNMP",
+        href: "/system/services?tab=snmp&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "TFTP Server",
+        href: "/system/services?tab=tftp-server&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
       },
     ],
@@ -303,7 +318,13 @@ export function Sidebar() {
   const isHrefActive = useCallback((href?: string): boolean => {
     if (!href) return false;
     const [hrefPath, hrefQuery] = href.split("?");
-    if (pathname !== hrefPath) return false;
+    const normalizePath = (path: string) => path.replace(/\/+$/, "") || "/";
+    const normalizedHrefPath = normalizePath(hrefPath);
+    const normalizedPathname = normalizePath(pathname);
+    const pathMatches =
+      normalizedPathname === normalizedHrefPath ||
+      (normalizedHrefPath !== "/" && normalizedPathname.startsWith(`${normalizedHrefPath}/`));
+    if (!pathMatches) return false;
     if (!hrefQuery) return true;
 
     const requiredParams = new URLSearchParams(hrefQuery);

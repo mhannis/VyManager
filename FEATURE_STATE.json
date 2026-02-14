@@ -1,69 +1,97 @@
 {
-  "feature_id": "frontend-runtime-smoke-hardening-2026-02-14",
-  "title": "Frontend route-level runtime smoke hardening",
+  "feature_id": "services-https-snmp-tftp-2026-02-14",
+  "title": "Services slice: HTTP API, SNMP, and TFTP Server",
   "status": "done",
   "acceptance_criteria": [
-    "Browser smoke defaults include high-risk routing, infrastructure, multicast, and DHCP routes that previously regressed.",
-    "Smoke defaults use http://localhost:3000 to avoid origin/cookie false negatives.",
-    "Runtime smoke probes a critical route set and fails on unexpected statuses.",
-    "Frontend validation flow (build, restart vm-ui, smoke:runtime, smoke:ui) passes end-to-end."
+    "Backend service wrappers exist for https, snmp, and tftp-server with capabilities/config/batch endpoints.",
+    "System Services has form-driven tabs for HTTP API, SNMP, and TFTP Server without free-form CLI input.",
+    "Services sidebar includes HTTP API, SNMP, and TFTP Server links in A-Z order.",
+    "Runtime/browser smoke includes new service tabs and passes.",
+    "Coverage artifacts regenerate and show services backlog improvement."
   ],
   "assumptions": [
-    "Playwright shared libraries are available on this host via LD_LIBRARY_PATH.",
-    "vm-ui tmux session is the canonical runtime process for frontend validation."
+    "SNMPv3 advanced options are a follow-up slice.",
+    "Current wrappers continue to use command-string batch payloads under strict service subtree validation.",
+    "Unrelated dirty worktree files remain untouched."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "UI",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/scripts/smoke-ui.mjs",
-        "frontend/scripts/check-runtime.sh"
+        "backend/app.py",
+        "backend/routers/https_service/__init__.py",
+        "backend/routers/https_service/https_service.py",
+        "backend/routers/snmp_service/__init__.py",
+        "backend/routers/snmp_service/snmp_service.py",
+        "backend/routers/tftp_server_service/__init__.py",
+        "backend/routers/tftp_server_service/tftp_server_service.py",
+        "backend/tests/test_service_wrapper_capabilities.py"
       ],
-      "notes": "Expanded default route coverage and normalized smoke origin to localhost."
+      "notes": "Added wrappers and tests for three new service domains."
     },
     {
       "id": "T2",
-      "owner_role": "Build/Execution",
+      "owner_role": "UI",
       "status": "done",
-      "files": [],
-      "notes": "Ran typecheck, build, restarted vm-ui, and executed runtime + browser smoke successfully."
+      "files": [
+        "frontend/src/lib/api/service-wrappers.ts",
+        "frontend/src/components/system/serviceTabHelpers.ts",
+        "frontend/src/components/system/HttpsServiceTab.tsx",
+        "frontend/src/components/system/SnmpServiceTab.tsx",
+        "frontend/src/components/system/TftpServiceTab.tsx",
+        "frontend/src/app/system/services/page.tsx",
+        "frontend/src/components/layout/Sidebar.tsx"
+      ],
+      "notes": "Implemented form-driven service tabs and wired navigation."
     },
     {
       "id": "T3",
       "owner_role": "Test",
       "status": "done",
-      "files": [],
-      "notes": "Validated that browser smoke catches client-side crashes and now covers user-reported regression routes."
+      "files": [
+        "frontend/scripts/smoke-ui.mjs",
+        "frontend/scripts/check-runtime.sh"
+      ],
+      "notes": "Expanded smoke routes to include new service pages and validated runtime/browser smoke."
     },
     {
       "id": "T4",
       "owner_role": "Planner",
-      "status": "todo",
-      "files": [],
-      "notes": "Continue one-function-at-a-time parity slices, reusing the hardened runtime gate before every handoff."
+      "status": "done",
+      "files": [
+        "scripts/generate_config_coverage_matrix.py",
+        "CONFIG_COVERAGE_MATRIX.json",
+        "CONFIG_COVERAGE_PHASE1.json",
+        "PARITY_BACKLOG.json"
+      ],
+      "notes": "Updated crawler service-wrapper detection and regenerated parity artifacts."
     },
     {
       "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/scripts/smoke-ui.mjs",
-        "frontend/scripts/check-runtime.sh"
+        "backend/app.py",
+        "backend/tests/test_service_wrapper_capabilities.py",
+        "frontend/src/components/system/HttpsServiceTab.tsx",
+        "frontend/src/components/system/SnmpServiceTab.tsx",
+        "frontend/src/components/system/TftpServiceTab.tsx",
+        "frontend/src/app/system/services/page.tsx"
       ],
-      "notes": "Manual review complete for scope; no API contract changes."
+      "notes": "Manual reviewer pass complete; no API contract breakages introduced."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_service_wrapper_capabilities.py tests/test_app.py && cd frontend && npx tsc --noEmit --pretty false && cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Routing/services parity implementation with runtime smoke gating",
+      "purpose": "Services-domain parity implementation",
       "status": "active"
     }
   ]
