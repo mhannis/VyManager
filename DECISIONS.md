@@ -106,3 +106,4 @@
 - 2026-02-14: Coverage/backlog generation was re-run sequentially (`generate_config_coverage_matrix.py` then `generate_phase1_backlog.py`) because parallel execution can race and produce stale raw-status snapshots in phase1 outputs.
 - 2026-02-14: Introduced `backend/routers/_vpn_wrapper.py` as a thin scoped wrapper (parallel to service wrappers) for VPN subtree endpoints; this preserves existing session/VyOS service contracts while allowing incremental VPN domain parity.
 - 2026-02-14: Added first VPN backlog slice `RSA Keys` at `/vpn/rsa-keys` with dedicated wrapper endpoints and form-driven CRUD, then updated smoke coverage to include this route.
+- 2026-02-14: Added second VPN wrapper/page slice for `l2tp` (`/vyos/vpn-l2tp`, `/vpn/l2tp`) using the shared scoped VPN wrapper and form-first remote-access editor pattern.

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-14T22:44:20Z",
+  "generated_at": "2026-02-14T22:51:48Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -1114,9 +1114,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/vpn/l2tp.html",
       "title": "L2TP",
       "cli_scope": "vpn l2tp",
-      "backend_detected": false,
+      "backend_detected": true,
       "frontend_detected": true,
-      "status": "FRONTEND_ONLY"
+      "status": "DETECTED"
     },
     {
       "index": 125,

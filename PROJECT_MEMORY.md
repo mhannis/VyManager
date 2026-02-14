@@ -55,33 +55,35 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 
 ## Current Objective
 - Continue parity execution in the `vpn` domain after services completion.
-- Completed this cycle: added a dedicated VPN RSA Keys vertical slice (backend wrapper + UI page + tests + smoke coverage).
-- Completed this cycle: services domain remains complete at `23/0/0`; vpn domain improved to `6 implemented / 6 partial / 0 not_started`.
-- Next: continue form-driven VPN slices (`l2tp`, `pptp`, `sstp`, `openconnect`, `dmvpn`, and vpn index).
+- Completed this cycle: added a dedicated VPN L2TP vertical slice (backend wrapper + UI page + tests + smoke coverage), following the earlier RSA keys slice.
+- Completed this cycle: services domain remains complete at `23/0/0`; vpn domain improved to `7 implemented / 5 partial / 0 not_started`.
+- Next: continue form-driven VPN slices (`pptp`, `sstp`, `openconnect`, `dmvpn`, and vpn index).
 
 ## Current Feature Spec
-Feature: **VPN slice batch 1: RSA Keys**
+Feature: **VPN slice batch 2: L2TP**
 
 Acceptance criteria:
 - Backend exposes a dedicated wrapper:
-  - `/vyos/vpn-rsa-keys/*`
-- VPN section includes a form-driven `RSA Keys` page (no free-form CLI text input).
-- Sidebar `VPN` navigation includes the new `RSA Keys` page.
+  - `/vyos/vpn-l2tp/*`
+- VPN section includes a form-driven `L2TP` page (no free-form CLI text input).
+- Sidebar `VPN` navigation includes the new `L2TP` page.
 - End-to-end validation (`pytest`, `tsc`, `build`, restart, runtime smoke, browser smoke) passes.
-- Coverage artifacts reflect progress (`vpn` improved from 5/7/0 to 6/6/0 implemented/partial/not_started).
+- Coverage artifacts reflect progress (`vpn` improved from 6/6/0 to 7/5/0 implemented/partial/not_started).
 
 Assumptions:
-- Remaining VPN docs pages still need full-form coverage beyond RSA key storage.
+- Remaining VPN docs pages still need full-form coverage beyond RSA keys and L2TP.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: services batch 4 committed and pushed (`609bbd1`); vpn rsa-keys slice committed and pushed (`4b855db`).
+- Status: services batch 4 committed and pushed (`609bbd1`); vpn rsa-keys slice committed and pushed (`4b855db`); vpn l2tp slice implemented in working tree (pending commit in this cycle).
 - Working tree is dirty with unrelated pre-existing changes outside this hotfix.
 
 ### Files Touched This Cycle (hotfix-owned)
 - `backend/app.py`
 - `backend/routers/_vpn_wrapper.py`
+- `backend/routers/vpn_l2tp/__init__.py`
+- `backend/routers/vpn_l2tp/l2tp.py`
 - `backend/routers/vpn_rsa_keys/__init__.py`
 - `backend/routers/vpn_rsa_keys/rsa_keys.py`
 - `backend/routers/monitoring_service/__init__.py`
@@ -95,6 +97,7 @@ Assumptions:
 - `backend/tests/test_service_wrapper_capabilities.py`
 - `backend/tests/test_vpn_wrapper_capabilities.py`
 - `frontend/src/lib/api/service-wrappers.ts`
+- `frontend/src/lib/api/vpn-l2tp.ts`
 - `frontend/src/lib/api/vpn-rsa-keys.ts`
 - `frontend/src/components/system/MonitoringServiceTab.tsx`
 - `frontend/src/components/system/WebproxyServiceTab.tsx`
@@ -102,6 +105,7 @@ Assumptions:
 - `frontend/src/components/system/IpoeServerServiceTab.tsx`
 - `frontend/src/app/system/services/page.tsx`
 - `frontend/src/app/vpn/rsa-keys/page.tsx`
+- `frontend/src/app/vpn/l2tp/page.tsx`
 - `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/scripts/smoke-ui.mjs`
 - `frontend/scripts/check-runtime.sh`
@@ -115,7 +119,7 @@ Assumptions:
 ### Validation This Cycle
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_service_wrapper_capabilities.py` -> pass (`54 passed`)
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_app.py` -> pass (`1 passed`)
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_vpn_wrapper_capabilities.py tests/test_app.py` -> pass (`4 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_vpn_wrapper_capabilities.py tests/test_app.py` -> pass (`7 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s build` -> pass
 - Restarted runtime API/UI sessions and verified listeners:
@@ -136,7 +140,7 @@ Assumptions:
 - VPN non-IPsec/non-WireGuard protocols are still partial and require additional form-first editors.
 
 ## TODO Backlog (next queue)
-- Implement additional VPN pages with dedicated wrappers/forms: `l2tp`, `pptp`, `sstp`, `openconnect`, `dmvpn`, and VPN index.
+- Implement additional VPN pages with dedicated wrappers/forms: `pptp`, `sstp`, `openconnect`, `dmvpn`, and VPN index.
 - Keep runtime gate sequence mandatory for each slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes

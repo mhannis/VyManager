@@ -1,17 +1,17 @@
 {
-  "feature_id": "vpn-rsa-keys-2026-02-14",
-  "title": "VPN slice: RSA Keys",
+  "feature_id": "vpn-l2tp-2026-02-14",
+  "title": "VPN slice: L2TP",
   "status": "done",
   "acceptance_criteria": [
-    "Backend wrapper exists for vpn-rsa-keys with capabilities/config/batch endpoints.",
-    "VPN RSA Keys page exists at /vpn/rsa-keys with form-first CRUD for key name/value entries.",
-    "VPN sidebar includes RSA Keys navigation entry.",
+    "Backend wrapper exists for vpn-l2tp with capabilities/config/batch endpoints.",
+    "L2TP page exists at /vpn/l2tp with form-first remote-access configuration and no free-form CLI text entry.",
+    "VPN sidebar includes L2TP navigation entry.",
     "Backend tests, frontend typecheck/build, runtime smoke, and browser smoke pass.",
-    "Coverage artifacts regenerate with VPN domain progress from 5/7/0 to 6/6/0."
+    "Coverage artifacts regenerate with VPN domain progress from 6/6/0 to 7/5/0."
   ],
   "assumptions": [
-    "Additional VPN protocol pages (l2tp/pptp/sstp/openconnect/dmvpn) are separate upcoming slices.",
-    "Wrapper batch writes remain command-scoped under 'vpn rsa-keys'.",
+    "L2TP page currently covers common remote-access fields; advanced radius and IPv6 pool branches will be expanded in follow-up slices.",
+    "Wrapper batch writes remain command-scoped under 'vpn l2tp'.",
     "Unrelated dirty worktree files remain untouched."
   ],
   "tasks": [
@@ -21,23 +21,22 @@
       "status": "done",
       "files": [
         "backend/app.py",
-        "backend/routers/_vpn_wrapper.py",
-        "backend/routers/vpn_rsa_keys/__init__.py",
-        "backend/routers/vpn_rsa_keys/rsa_keys.py",
+        "backend/routers/vpn_l2tp/__init__.py",
+        "backend/routers/vpn_l2tp/l2tp.py",
         "backend/tests/test_vpn_wrapper_capabilities.py"
       ],
-      "notes": "Added VPN subtree wrapper infrastructure and RSA keys router with scope validation tests."
+      "notes": "Added L2TP wrapper router and expanded VPN wrapper tests."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/vpn-rsa-keys.ts",
-        "frontend/src/app/vpn/rsa-keys/page.tsx",
+        "frontend/src/lib/api/vpn-l2tp.ts",
+        "frontend/src/app/vpn/l2tp/page.tsx",
         "frontend/src/components/layout/Sidebar.tsx"
       ],
-      "notes": "Implemented RSA key page and navigation under VPN."
+      "notes": "Implemented form-driven L2TP remote-access page and sidebar integration."
     },
     {
       "id": "T3",
@@ -47,7 +46,7 @@
         "frontend/scripts/check-runtime.sh",
         "frontend/scripts/smoke-ui.mjs"
       ],
-      "notes": "Extended runtime/browser smoke coverage with /vpn/rsa-keys route."
+      "notes": "Extended runtime/browser smoke coverage with /vpn/l2tp route."
     },
     {
       "id": "T4",
@@ -61,18 +60,17 @@
         "PARITY_BACKLOG.json",
         "PARITY_BACKLOG.md"
       ],
-      "notes": "Regenerated matrix and backlog after RSA keys slice."
+      "notes": "Regenerated matrix and backlog after L2TP slice."
     },
     {
       "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/routers/_vpn_wrapper.py",
-        "backend/routers/vpn_rsa_keys/rsa_keys.py",
-        "frontend/src/app/vpn/rsa-keys/page.tsx"
+        "backend/routers/vpn_l2tp/l2tp.py",
+        "frontend/src/app/vpn/l2tp/page.tsx"
       ],
-      "notes": "Manual review complete; no existing API contracts were changed."
+      "notes": "Manual review complete; existing API contracts remain unchanged."
     }
   ],
   "commands": {
@@ -83,7 +81,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Parity implementation (services complete, continuing VPN backlog)",
+      "purpose": "Parity implementation (continuing VPN backlog)",
       "status": "active"
     }
   ]

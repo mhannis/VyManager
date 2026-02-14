@@ -1,14 +1,14 @@
 # CONFIG_COVERAGE_MATRIX
 
-Generated: `2026-02-14T22:44:20Z`
+Generated: `2026-02-14T22:51:48Z`
 Source: `https://docs.vyos.io/en/latest/configuration/`
 
 ## Status Summary
 
 - Total documentation pages discovered: **129**
-- `DETECTED` (backend + frontend signal): **112**
+- `DETECTED` (backend + frontend signal): **113**
 - `BACKEND_ONLY`: **0**
-- `FRONTEND_ONLY`: **13**
+- `FRONTEND_ONLY`: **12**
 - `MISSING`: **4**
 
 ## Notes
@@ -144,7 +144,7 @@ Source: `https://docs.vyos.io/en/latest/configuration/`
 | 121 | [IPSec IKEv2 Remote Access VPN](https://docs.vyos.io/en/latest/configuration/vpn/ipsec/remoteaccess_ipsec.html) | `vpn ipsec remoteaccess_ipsec` | Y | Y | `DETECTED` |
 | 122 | [IPsec Site-to-Site VPN](https://docs.vyos.io/en/latest/configuration/vpn/ipsec/site2site_ipsec.html) | `vpn ipsec site2site_ipsec` | Y | Y | `DETECTED` |
 | 123 | [Troubleshooting Site-to-Site VPN IPsec](https://docs.vyos.io/en/latest/configuration/vpn/ipsec/troubleshooting_ipsec.html) | `vpn ipsec troubleshooting_ipsec` | Y | Y | `DETECTED` |
-| 124 | [L2TP](https://docs.vyos.io/en/latest/configuration/vpn/l2tp.html) | `vpn l2tp` | N | Y | `FRONTEND_ONLY` |
+| 124 | [L2TP](https://docs.vyos.io/en/latest/configuration/vpn/l2tp.html) | `vpn l2tp` | Y | Y | `DETECTED` |
 | 125 | [OpenConnect](https://docs.vyos.io/en/latest/configuration/vpn/openconnect.html) | `vpn openconnect` | N | Y | `FRONTEND_ONLY` |
 | 126 | [PPTP-Server](https://docs.vyos.io/en/latest/configuration/vpn/pptp.html) | `vpn pptp` | N | Y | `FRONTEND_ONLY` |
 | 127 | [RSA-Keys](https://docs.vyos.io/en/latest/configuration/vpn/rsa-keys.html) | `vpn rsa keys` | Y | Y | `DETECTED` |

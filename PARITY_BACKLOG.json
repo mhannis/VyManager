@@ -8,11 +8,11 @@
     {
       "domain": "vpn",
       "risk": 70,
-      "breadth": 6,
+      "breadth": 5,
       "reuse": 72,
       "total_pages": 12,
-      "implemented": 6,
-      "partial": 6,
+      "implemented": 7,
+      "partial": 5,
       "not_started": 0
     },
     {
