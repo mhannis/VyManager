@@ -4,6 +4,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { InProgress } from "@/components/layout/InProgress";
 import { BfdContent } from "@/components/bfd/BfdContent";
 import { ArpProtocolContent } from "@/components/routing/ArpProtocolContent";
+import { MplsContent } from "@/components/routing/MplsContent";
+import { RpkiContent } from "@/components/routing/RpkiContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Settings, ChevronRight, Activity, Box, Waypoints, Globe, Shield } from "lucide-react";
@@ -126,6 +128,10 @@ export default function InfrastructurePage() {
             <BfdContent />
           ) : selectedInfra === "arp" ? (
             <ArpProtocolContent />
+          ) : selectedInfra === "mpls" ? (
+            <MplsContent />
+          ) : selectedInfra === "rpki" ? (
+            <RpkiContent />
           ) : (
             <InProgress />
           )}

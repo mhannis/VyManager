@@ -58,84 +58,88 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Deliver protocol slices in batches while keeping runtime stable.
 
 ## Current Feature Spec
-Feature: **Protocols batch slice (ARP + OSPF + RIP + IS-IS + IGMP Proxy)**
+Feature: **Protocols batch slice (Static + Failover + MPLS + OpenFabric + RPKI)**
 
 Acceptance criteria:
-- Add backend routers for ARP/OSPF/RIP/IS-IS/IGMP Proxy with:
+- Add backend routers for Static/Failover/MPLS/OpenFabric/RPKI with:
   - `GET /capabilities`
   - `GET /config`
   - `POST /batch`
-- Expose frontend protocol editors in Routing pages for same 5 protocols.
+- Expose frontend protocol editors/pages in Routing UI for same 5 protocols.
 - Regenerate matrix/backlog and reduce protocols uncovered count by this batch.
 - Run backend tests + frontend typecheck/build/lint/runtime checks.
+- Reviewer sign-off.
 
 Assumptions:
 - Batch operations are command-string based (`operations: string[]`) and executed via `service.configure_batch(...)`.
-- Initial UI for these protocols can be command-driven while deeper forms are built in later slices.
+- Command-driven protocol UIs are acceptable MVP for parity slicing speed.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- New backend commit in this cycle: `cc385d6`.
+- New commits in this cycle:
+  - `cc385d6` (previous protocols batch backend)
+  - `c19143a` (previous protocols batch full slice)
 - Working tree is dirty with unrelated pre-existing files outside this slice.
 
 ### Files Touched This Cycle (slice-owned)
 - Backend:
-  - `backend/routers/arp/arp.py`
-  - `backend/routers/ospf/ospf.py`
-  - `backend/routers/rip/rip.py`
-  - `backend/routers/isis/isis.py`
-  - `backend/routers/igmp_proxy/igmp_proxy.py`
+  - `backend/routers/static/static.py`
+  - `backend/routers/failover/failover.py`
+  - `backend/routers/mpls/mpls.py`
+  - `backend/routers/openfabric/openfabric.py`
+  - `backend/routers/rpki/rpki.py`
+  - `backend/app.py`
   - `backend/tests/test_protocol_capabilities.py`
 - Frontend:
-  - `frontend/src/components/routing/ProtocolCommandContent.tsx`
-  - `frontend/src/components/routing/ArpProtocolContent.tsx`
-  - `frontend/src/components/routing/OspfContent.tsx`
-  - `frontend/src/components/routing/RipContent.tsx`
-  - `frontend/src/components/routing/IsisContent.tsx`
-  - `frontend/src/components/routing/IgmpProxyContent.tsx`
+  - `frontend/src/components/routing/FailoverContent.tsx`
+  - `frontend/src/components/routing/MplsContent.tsx`
+  - `frontend/src/components/routing/OpenfabricContent.tsx`
+  - `frontend/src/components/routing/RpkiContent.tsx`
+  - `frontend/src/components/routing/StaticProtocolContent.tsx`
   - `frontend/src/app/routing/unicast-protocols/page.tsx`
-  - `frontend/src/app/routing/multicast/page.tsx`
+  - `frontend/src/app/routing/unicast-protocols/openfabric/page.tsx`
+  - `frontend/src/app/routing/unicast-protocols/static/page.tsx`
   - `frontend/src/app/routing/infrastructure/page.tsx`
-  - `frontend/src/app/routing/unicast-protocols/ospf/page.tsx`
-  - `frontend/src/app/routing/unicast-protocols/rip/page.tsx`
-  - `frontend/src/app/routing/unicast-protocols/isis/page.tsx`
-  - `frontend/src/app/routing/multicast/igmp-proxy/page.tsx`
-  - `frontend/src/app/routing/infrastructure/arp/page.tsx`
-  - `frontend/src/lib/api/arp.ts`
-  - `frontend/src/lib/api/ospf.ts`
-  - `frontend/src/lib/api/rip.ts`
-  - `frontend/src/lib/api/isis.ts`
-  - `frontend/src/lib/api/igmp-proxy.ts`
+  - `frontend/src/app/routing/infrastructure/mpls/page.tsx`
+  - `frontend/src/app/routing/infrastructure/rpki/page.tsx`
+  - `frontend/src/app/routing/static-failover/page.tsx`
+  - `frontend/src/app/routing/static-failover/failover/page.tsx`
+  - `frontend/src/lib/api/failover.ts`
+  - `frontend/src/lib/api/mpls.ts`
+  - `frontend/src/lib/api/openfabric.ts`
+  - `frontend/src/lib/api/rpki.ts`
+  - `frontend/src/lib/api/static-protocol.ts`
 - Generated artifacts:
   - `CONFIG_COVERAGE_MATRIX.md/.json`
   - `CONFIG_COVERAGE_PHASE1.md/.json`
   - `PARITY_BACKLOG.md/.json`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_policy_capabilities.py tests/test_safe_apply.py tests/test_vyos_driver_wrapper.py tests/test_vyos_service_safe_apply.py tests/test_ethernet_vlan_batch_ops.py tests/test_system_services_ssh_dns.py tests/test_containers_automation_v1.py tests/test_app.py` -> pass (`41 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py` -> pass (`30 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_policy_capabilities.py tests/test_safe_apply.py tests/test_vyos_driver_wrapper.py tests/test_vyos_service_safe_apply.py tests/test_ethernet_vlan_batch_ops.py tests/test_system_services_ssh_dns.py tests/test_containers_automation_v1.py tests/test_app.py` -> pass (`31 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
 - `cd frontend && npm run -s build` -> pass
 - `cd frontend && npm run -s smoke:runtime` -> pass
-- `python3 scripts/generate_config_coverage_matrix.py` -> pass
-- `python3 scripts/generate_phase1_backlog.py` -> pass
-- Reviewer pass: `APPROVED` (no blocking findings) after protocol batch scope hardening.
+- `python3 scripts/generate_config_coverage_matrix.py && python3 scripts/generate_phase1_backlog.py` -> pass
+- Reviewer pass: `APPROVED`.
 
 ### Backlog Delta
 - `protocols` domain moved from:
-  - implemented `0`, partial `5`, not_started `13`
-- to:
   - implemented `5`, partial `5`, not_started `8`
+- to:
+  - implemented `10`, partial `5`, not_started `3`
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
 - Protocol UIs are command-driven MVPs; richer form-based editors are still needed.
 
 ## TODO Backlog (next protocol queue)
-- Remaining protocols not started: `failover`, `protocols index`, `mpls`, `openfabric`, `pim`, `pim6`, `rpki`, `static`.
+- Remaining protocols not started: `protocols index`, `pim`, `pim6`.
 - Remaining partial protocols: `babel`, `bfd`, `bgp`, `multicast`, `segment-routing`.
 
 ## Agent Handoff Notes
-- Backend routers in this slice intentionally use thin wrappers and now enforce protocol-scoped command prefix guards per endpoint.
+- Protocol batch endpoints use prefix validation + operation count/length guards.
 - Frontend protocol cards use shared `ProtocolCommandContent` to reduce repeated page logic.
+- `/routing/static-failover` now redirects based on permissions (Static Routes first, then Failover).
 - Keep protocol batch cadence at 3-5 items per run until protocols breadth is 0.

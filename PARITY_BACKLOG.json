@@ -8,12 +8,12 @@
     {
       "domain": "protocols",
       "risk": 94,
-      "breadth": 13,
+      "breadth": 8,
       "reuse": 90,
       "total_pages": 18,
-      "implemented": 5,
+      "implemented": 10,
       "partial": 5,
-      "not_started": 8
+      "not_started": 3
     },
     {
       "domain": "services",

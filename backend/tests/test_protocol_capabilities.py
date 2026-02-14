@@ -8,6 +8,11 @@ import routers.ospf.ospf as ospf_router
 import routers.rip.rip as rip_router
 import routers.isis.isis as isis_router
 import routers.igmp_proxy.igmp_proxy as igmp_proxy_router
+import routers.static.static as static_router
+import routers.failover.failover as failover_router
+import routers.mpls.mpls as mpls_router
+import routers.openfabric.openfabric as openfabric_router
+import routers.rpki.rpki as rpki_router
 
 
 ROUTER_MODULES = (
@@ -16,6 +21,11 @@ ROUTER_MODULES = (
     rip_router,
     isis_router,
     igmp_proxy_router,
+    static_router,
+    failover_router,
+    mpls_router,
+    openfabric_router,
+    rpki_router,
 )
 
 
@@ -37,12 +47,17 @@ class DummyService:
                                 }
                             }
                         }
-                    }
+                    },
+                    "route": {"0.0.0.0/0": {"next-hop": {"192.0.2.1": {}}}},
                 },
                 "ospf": {"parameters": {"router-id": "1.1.1.1"}},
                 "rip": {"network": {"10.0.0.0/8": {}}},
                 "isis": {"interface": {"eth0": {}}},
                 "igmp-proxy": {"interface": {"eth1": {"role": "upstream"}}},
+                "failover": {"route": {"0.0.0.0/0": {"next-hop": {"192.0.2.1": {}}}}},
+                "mpls": {"interface": {"eth2": {}}},
+                "openfabric": {"interface": {"eth2": {}}},
+                "rpki": {"cache": {"192.0.2.10": {"port": "3323"}}},
             }
         }
 
@@ -62,6 +77,11 @@ def app():
     app.include_router(rip_router.router)
     app.include_router(isis_router.router)
     app.include_router(igmp_proxy_router.router)
+    app.include_router(static_router.router)
+    app.include_router(failover_router.router)
+    app.include_router(mpls_router.router)
+    app.include_router(openfabric_router.router)
+    app.include_router(rpki_router.router)
     return app
 
 
@@ -95,6 +115,11 @@ def mock_service(monkeypatch):
         ("/vyos/rip/capabilities", ("protocol", "version", "features")),
         ("/vyos/isis/capabilities", ("protocol", "version", "features")),
         ("/vyos/igmp-proxy/capabilities", ("protocol", "version", "features")),
+        ("/vyos/static-protocol/capabilities", ("protocol", "version", "features")),
+        ("/vyos/failover/capabilities", ("protocol", "version", "features")),
+        ("/vyos/mpls/capabilities", ("protocol", "version", "features")),
+        ("/vyos/openfabric/capabilities", ("protocol", "version", "features")),
+        ("/vyos/rpki/capabilities", ("protocol", "version", "features")),
     ],
 )
 def test_protocol_capabilities_endpoints_return_expected_payload(
@@ -121,6 +146,11 @@ def test_protocol_capabilities_endpoints_return_expected_payload(
         ("/vyos/rip/config", "rip"),
         ("/vyos/isis/config", "isis"),
         ("/vyos/igmp-proxy/config", "igmp_proxy"),
+        ("/vyos/static-protocol/config", "static"),
+        ("/vyos/failover/config", "failover"),
+        ("/vyos/mpls/config", "mpls"),
+        ("/vyos/openfabric/config", "openfabric"),
+        ("/vyos/rpki/config", "rpki"),
     ],
 )
 def test_protocol_config_endpoints_return_expected_payload(
@@ -166,6 +196,31 @@ def test_protocol_config_endpoints_return_expected_payload(
             "/vyos/igmp-proxy/batch",
             "set protocols igmp-proxy interface eth1 role upstream",
             "set protocols pim interface eth1",
+        ),
+        (
+            "/vyos/static-protocol/batch",
+            "set protocols static route 0.0.0.0/0 next-hop 192.0.2.1",
+            "set protocols rip network 10.0.0.0/8",
+        ),
+        (
+            "/vyos/failover/batch",
+            "set protocols failover route 0.0.0.0/0 next-hop 192.0.2.1 interface eth0",
+            "set protocols static route 0.0.0.0/0 next-hop 192.0.2.1",
+        ),
+        (
+            "/vyos/mpls/batch",
+            "set protocols mpls interface eth2",
+            "set interfaces ethernet eth2 description TEST",
+        ),
+        (
+            "/vyos/openfabric/batch",
+            "set protocols openfabric interface eth2",
+            "set protocols ospf parameters router-id 1.1.1.1",
+        ),
+        (
+            "/vyos/rpki/batch",
+            "set protocols rpki cache 192.0.2.10 port 3323",
+            "set protocols bgp system-as 64512",
         ),
     ],
 )

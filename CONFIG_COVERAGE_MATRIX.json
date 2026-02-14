@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-14T17:16:29Z",
+  "generated_at": "2026-02-14T17:53:09Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -511,9 +511,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/failover.html",
       "title": "Failover",
       "cli_scope": "protocols failover",
-      "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 58,
@@ -547,9 +547,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/mpls.html",
       "title": "MPLS",
       "cli_scope": "protocols mpls",
-      "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 62,
@@ -565,9 +565,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/openfabric.html",
       "title": "OpenFabric",
       "cli_scope": "protocols openfabric",
-      "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 64,
@@ -610,9 +610,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/rpki.html",
       "title": "RPKI",
       "cli_scope": "protocols rpki",
-      "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 69,
@@ -628,9 +628,9 @@
       "url": "https://docs.vyos.io/en/latest/configuration/protocols/static.html",
       "title": "Static",
       "cli_scope": "protocols static",
-      "backend_detected": false,
-      "frontend_detected": false,
-      "status": "MISSING"
+      "backend_detected": true,
+      "frontend_detected": true,
+      "status": "DETECTED"
     },
     {
       "index": 71,

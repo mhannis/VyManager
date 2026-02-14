@@ -63,3 +63,6 @@
 - 2026-02-14: Added command-driven protocol editor UI (`ProtocolCommandContent`) as an MVP acceleration pattern for rapid coverage across remaining protocol pages.
 - 2026-02-14: Coverage regeneration order must be sequential: run `generate_config_coverage_matrix.py` first, then `generate_phase1_backlog.py`; running them concurrently can produce stale phase1 statuses.
 - 2026-02-14: Protocol batch endpoints now enforce protocol-scoped command prefixes and size/length guards to prevent cross-feature command execution with narrower RBAC permissions.
+- 2026-02-14: Added protocol routers/pages for Static, Failover, MPLS, OpenFabric, and RPKI using the existing command-batch pattern to rapidly reduce protocols backlog breadth.
+- 2026-02-14: `backend/tests/test_protocol_capabilities.py` fixture must avoid duplicate protocol keys (Python dict overwrite risk); static ARP + static route fixtures are now merged under a single `static` object.
+- 2026-02-14: `/routing/static-failover` now performs permission-aware redirect (`STATIC_ROUTES` preferred, fallback to `FAILOVER`) to avoid routing users into unauthorized pages.

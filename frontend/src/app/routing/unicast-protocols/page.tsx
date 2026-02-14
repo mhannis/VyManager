@@ -7,6 +7,8 @@ import { BgpContent } from "@/components/bgp/BgpContent";
 import { OspfContent } from "@/components/routing/OspfContent";
 import { RipContent } from "@/components/routing/RipContent";
 import { IsisContent } from "@/components/routing/IsisContent";
+import { OpenfabricContent } from "@/components/routing/OpenfabricContent";
+import { StaticProtocolContent } from "@/components/routing/StaticProtocolContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Network, ChevronRight } from "lucide-react";
@@ -15,10 +17,11 @@ import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 
-type ProtocolType = "bgp" | "ospf" | "ospfv3" | "isis" | "openfabric" | "rip" | "ripng" | "babel";
+type ProtocolType = "bgp" | "static" | "ospf" | "ospfv3" | "isis" | "openfabric" | "rip" | "ripng" | "babel";
 
 const allProtocols = [
   { id: "bgp" as ProtocolType, name: "BGP", description: "Border Gateway Protocol", permission: FeatureGroup.BGP },
+  { id: "static" as ProtocolType, name: "Static", description: "Static protocol routes and attributes", permission: FeatureGroup.STATIC_ROUTES },
   { id: "ospf" as ProtocolType, name: "OSPF", description: "Open Shortest Path First", permission: FeatureGroup.OSPF },
   { id: "ospfv3" as ProtocolType, name: "OSPFv3", description: "OSPF for IPv6", permission: FeatureGroup.OSPFV3 },
   { id: "isis" as ProtocolType, name: "IS-IS", description: "Intermediate System to Intermediate System", permission: FeatureGroup.ISIS },
@@ -126,10 +129,14 @@ export default function UnicastProtocolsPage() {
         <div className="flex-1">
           {selectedProtocol === "bgp" ? (
             <BgpContent />
+          ) : selectedProtocol === "static" ? (
+            <StaticProtocolContent />
           ) : selectedProtocol === "babel" ? (
             <BabelContent />
           ) : selectedProtocol === "ospf" ? (
             <OspfContent />
+          ) : selectedProtocol === "openfabric" ? (
+            <OpenfabricContent />
           ) : selectedProtocol === "rip" ? (
             <RipContent />
           ) : selectedProtocol === "isis" ? (

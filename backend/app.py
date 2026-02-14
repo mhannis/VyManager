@@ -44,6 +44,11 @@ from routers.ospf import ospf
 from routers.rip import rip
 from routers.isis import isis
 from routers.igmp_proxy import igmp_proxy
+from routers.static import static as static_protocol
+from routers.failover import failover
+from routers.mpls import mpls
+from routers.openfabric import openfabric
+from routers.rpki import rpki
 from routers import system
 from routers import power as power_router
 from routers.config import config as config_router
@@ -293,6 +298,11 @@ app.include_router(ospf.router)
 app.include_router(rip.router)
 app.include_router(isis.router)
 app.include_router(igmp_proxy.router)
+app.include_router(static_protocol.router)
+app.include_router(failover.router)
+app.include_router(mpls.router)
+app.include_router(openfabric.router)
+app.include_router(rpki.router)
 app.include_router(system.router)
 app.include_router(power_router.router)
 app.include_router(config_router.router)

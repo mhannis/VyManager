@@ -1,15 +1,15 @@
 # CONFIG_COVERAGE_MATRIX
 
-Generated: `2026-02-14T17:16:29Z`
+Generated: `2026-02-14T17:53:09Z`
 Source: `https://docs.vyos.io/en/latest/configuration/`
 
 ## Status Summary
 
 - Total documentation pages discovered: **129**
-- `DETECTED` (backend + frontend signal): **80**
+- `DETECTED` (backend + frontend signal): **85**
 - `BACKEND_ONLY`: **3**
 - `FRONTEND_ONLY`: **34**
-- `MISSING`: **12**
+- `MISSING`: **7**
 
 ## Notes
 
@@ -77,20 +77,20 @@ Source: `https://docs.vyos.io/en/latest/configuration/`
 | 54 | [Babel](https://docs.vyos.io/en/latest/configuration/protocols/babel.html) | `protocols babel` | Y | N | `BACKEND_ONLY` |
 | 55 | [BFD](https://docs.vyos.io/en/latest/configuration/protocols/bfd.html) | `protocols bfd` | Y | N | `BACKEND_ONLY` |
 | 56 | [BGP](https://docs.vyos.io/en/latest/configuration/protocols/bgp.html) | `protocols bgp` | Y | N | `BACKEND_ONLY` |
-| 57 | [Failover](https://docs.vyos.io/en/latest/configuration/protocols/failover.html) | `protocols failover` | N | N | `MISSING` |
+| 57 | [Failover](https://docs.vyos.io/en/latest/configuration/protocols/failover.html) | `protocols failover` | Y | Y | `DETECTED` |
 | 58 | [IGMP Proxy](https://docs.vyos.io/en/latest/configuration/protocols/igmp-proxy.html) | `protocols igmp proxy` | Y | Y | `DETECTED` |
 | 59 | [Protocols](https://docs.vyos.io/en/latest/configuration/protocols/index.html) | `protocols` | N | N | `MISSING` |
 | 60 | [IS-IS](https://docs.vyos.io/en/latest/configuration/protocols/isis.html) | `protocols isis` | Y | Y | `DETECTED` |
-| 61 | [MPLS](https://docs.vyos.io/en/latest/configuration/protocols/mpls.html) | `protocols mpls` | N | N | `MISSING` |
+| 61 | [MPLS](https://docs.vyos.io/en/latest/configuration/protocols/mpls.html) | `protocols mpls` | Y | Y | `DETECTED` |
 | 62 | [Multicast](https://docs.vyos.io/en/latest/configuration/protocols/multicast.html) | `protocols multicast` | N | Y | `FRONTEND_ONLY` |
-| 63 | [OpenFabric](https://docs.vyos.io/en/latest/configuration/protocols/openfabric.html) | `protocols openfabric` | N | N | `MISSING` |
+| 63 | [OpenFabric](https://docs.vyos.io/en/latest/configuration/protocols/openfabric.html) | `protocols openfabric` | Y | Y | `DETECTED` |
 | 64 | [OSPF](https://docs.vyos.io/en/latest/configuration/protocols/ospf.html) | `protocols ospf` | Y | Y | `DETECTED` |
 | 65 | [PIM – Protocol Independent Multicast](https://docs.vyos.io/en/latest/configuration/protocols/pim.html) | `protocols pim` | N | N | `MISSING` |
 | 66 | [PIM6 - Protocol Independent Multicast for IPv6](https://docs.vyos.io/en/latest/configuration/protocols/pim6.html) | `protocols pim6` | N | N | `MISSING` |
 | 67 | [RIP](https://docs.vyos.io/en/latest/configuration/protocols/rip.html) | `protocols rip` | Y | Y | `DETECTED` |
-| 68 | [RPKI](https://docs.vyos.io/en/latest/configuration/protocols/rpki.html) | `protocols rpki` | N | N | `MISSING` |
+| 68 | [RPKI](https://docs.vyos.io/en/latest/configuration/protocols/rpki.html) | `protocols rpki` | Y | Y | `DETECTED` |
 | 69 | [Segment Routing](https://docs.vyos.io/en/latest/configuration/protocols/segment-routing.html) | `protocols segment routing` | N | Y | `FRONTEND_ONLY` |
-| 70 | [Static](https://docs.vyos.io/en/latest/configuration/protocols/static.html) | `protocols static` | N | N | `MISSING` |
+| 70 | [Static](https://docs.vyos.io/en/latest/configuration/protocols/static.html) | `protocols static` | Y | Y | `DETECTED` |
 | 71 | [UDP Broadcast Relay](https://docs.vyos.io/en/latest/configuration/service/broadcast-relay.html) | `service broadcast relay` | N | Y | `FRONTEND_ONLY` |
 | 72 | [Config Sync](https://docs.vyos.io/en/latest/configuration/service/config-sync.html) | `service config sync` | Y | Y | `DETECTED` |
 | 73 | [Conntrack Sync](https://docs.vyos.io/en/latest/configuration/service/conntrack-sync.html) | `service conntrack sync` | N | Y | `FRONTEND_ONLY` |
