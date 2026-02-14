@@ -130,6 +130,7 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
     - `6d21a51` Containers: add SSH bootstrap + install endpoints
     - `2764416` Containers UI: bootstrap gate, install button, link host selection
     - `b0601d4` SSH: block path traversal for container volume mkdir
+    - `74e7060` Containers UI: prefer non-management IP for link host default
   - Orchestrator memory files: commits `ccbe26e`, `0e2cf5a` (adds `ORCHESTRATOR.md`, `PROJECT_MEMORY.md`, `CURRENT_FEATURE.md`, `DECISIONS.md`)
  - Unfinished work:
    - DHCP fixes are stashed locally (`git stash list`) and not yet on a branch/PR.
