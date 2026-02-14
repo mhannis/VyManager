@@ -1,14 +1,14 @@
 # CONFIG_COVERAGE_MATRIX
 
-Generated: `2026-02-14T22:51:48Z`
+Generated: `2026-02-14T23:16:50Z`
 Source: `https://docs.vyos.io/en/latest/configuration/`
 
 ## Status Summary
 
 - Total documentation pages discovered: **129**
-- `DETECTED` (backend + frontend signal): **113**
+- `DETECTED` (backend + frontend signal): **118**
 - `BACKEND_ONLY`: **0**
-- `FRONTEND_ONLY`: **12**
+- `FRONTEND_ONLY`: **7**
 - `MISSING`: **4**
 
 ## Notes
@@ -137,16 +137,16 @@ Source: `https://docs.vyos.io/en/latest/configuration/`
 | 114 | [Updates](https://docs.vyos.io/en/latest/configuration/system/updates.html) | `system updates` | Y | Y | `DETECTED` |
 | 115 | [Watchdog](https://docs.vyos.io/en/latest/configuration/system/watchdog.html) | `system watchdog` | Y | Y | `DETECTED` |
 | 116 | [Traffic Policy](https://docs.vyos.io/en/latest/configuration/trafficpolicy/index.html) | `trafficpolicy` | N | N | `MISSING` |
-| 117 | [DMVPN](https://docs.vyos.io/en/latest/configuration/vpn/dmvpn.html) | `vpn dmvpn` | N | Y | `FRONTEND_ONLY` |
-| 118 | [VPN](https://docs.vyos.io/en/latest/configuration/vpn/index.html) | `vpn` | N | Y | `FRONTEND_ONLY` |
+| 117 | [DMVPN](https://docs.vyos.io/en/latest/configuration/vpn/dmvpn.html) | `vpn dmvpn` | Y | Y | `DETECTED` |
+| 118 | [VPN](https://docs.vyos.io/en/latest/configuration/vpn/index.html) | `vpn` | Y | Y | `DETECTED` |
 | 119 | [IPsec](https://docs.vyos.io/en/latest/configuration/vpn/ipsec/index.html) | `vpn ipsec` | Y | Y | `DETECTED` |
 | 120 | [IPsec General Information](https://docs.vyos.io/en/latest/configuration/vpn/ipsec/ipsec_general.html) | `vpn ipsec ipsec_general` | Y | Y | `DETECTED` |
 | 121 | [IPSec IKEv2 Remote Access VPN](https://docs.vyos.io/en/latest/configuration/vpn/ipsec/remoteaccess_ipsec.html) | `vpn ipsec remoteaccess_ipsec` | Y | Y | `DETECTED` |
 | 122 | [IPsec Site-to-Site VPN](https://docs.vyos.io/en/latest/configuration/vpn/ipsec/site2site_ipsec.html) | `vpn ipsec site2site_ipsec` | Y | Y | `DETECTED` |
 | 123 | [Troubleshooting Site-to-Site VPN IPsec](https://docs.vyos.io/en/latest/configuration/vpn/ipsec/troubleshooting_ipsec.html) | `vpn ipsec troubleshooting_ipsec` | Y | Y | `DETECTED` |
 | 124 | [L2TP](https://docs.vyos.io/en/latest/configuration/vpn/l2tp.html) | `vpn l2tp` | Y | Y | `DETECTED` |
-| 125 | [OpenConnect](https://docs.vyos.io/en/latest/configuration/vpn/openconnect.html) | `vpn openconnect` | N | Y | `FRONTEND_ONLY` |
-| 126 | [PPTP-Server](https://docs.vyos.io/en/latest/configuration/vpn/pptp.html) | `vpn pptp` | N | Y | `FRONTEND_ONLY` |
+| 125 | [OpenConnect](https://docs.vyos.io/en/latest/configuration/vpn/openconnect.html) | `vpn openconnect` | Y | Y | `DETECTED` |
+| 126 | [PPTP-Server](https://docs.vyos.io/en/latest/configuration/vpn/pptp.html) | `vpn pptp` | Y | Y | `DETECTED` |
 | 127 | [RSA-Keys](https://docs.vyos.io/en/latest/configuration/vpn/rsa-keys.html) | `vpn rsa keys` | Y | Y | `DETECTED` |
-| 128 | [SSTP Server](https://docs.vyos.io/en/latest/configuration/vpn/sstp.html) | `vpn sstp` | N | Y | `FRONTEND_ONLY` |
+| 128 | [SSTP Server](https://docs.vyos.io/en/latest/configuration/vpn/sstp.html) | `vpn sstp` | Y | Y | `DETECTED` |
 | 129 | [VRF](https://docs.vyos.io/en/latest/configuration/vrf/index.html) | `vrf` | N | Y | `FRONTEND_ONLY` |

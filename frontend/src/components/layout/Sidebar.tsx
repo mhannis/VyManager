@@ -200,6 +200,16 @@ const navigation: NavItem[] = [
     icon: Lock,
     children: [
       {
+        title: "Overview",
+        href: "/vpn",
+        requiredPermission: FeatureGroup.VPN
+      },
+      {
+        title: "DMVPN",
+        href: "/vpn/dmvpn",
+        requiredPermission: FeatureGroup.VPN
+      },
+      {
         title: "IPsec",
         href: "/vpn/ipsec",
         requiredPermission: FeatureGroup.IPSEC
@@ -210,8 +220,23 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.VPN
       },
       {
+        title: "OpenConnect",
+        href: "/vpn/openconnect",
+        requiredPermission: FeatureGroup.VPN
+      },
+      {
+        title: "PPTP Server",
+        href: "/vpn/pptp",
+        requiredPermission: FeatureGroup.VPN
+      },
+      {
         title: "RSA Keys",
         href: "/vpn/rsa-keys",
+        requiredPermission: FeatureGroup.VPN
+      },
+      {
+        title: "SSTP Server",
+        href: "/vpn/sstp",
         requiredPermission: FeatureGroup.VPN
       },
       {

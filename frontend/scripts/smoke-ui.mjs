@@ -46,8 +46,13 @@ const ROUTES = (
     "/system/services?tab=tftp-server&view=single",
     "/system/services?tab=webproxy&view=single",
     "/system/containers",
+    "/vpn",
+    "/vpn/dmvpn",
     "/vpn/l2tp",
+    "/vpn/openconnect",
+    "/vpn/pptp",
     "/vpn/rsa-keys",
+    "/vpn/sstp",
     "/vpn/ipsec",
   ].join(",")
 )

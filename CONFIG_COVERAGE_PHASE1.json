@@ -1,5 +1,5 @@
 {
-  "source_matrix_generated_at": "2026-02-14T22:51:48Z",
+  "source_matrix_generated_at": "2026-02-14T23:16:50Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -5652,8 +5652,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/vpn/dmvpn.html",
       "cli_scope": "vpn dmvpn",
       "domain": "vpn",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/ipsec.py",
@@ -5661,9 +5661,14 @@
           "backend/routers/wireguard/wireguard.py"
         ],
         "frontend": [
+          "frontend/src/app/vpn/dmvpn/page.tsx",
           "frontend/src/app/vpn/ipsec/page.tsx",
           "frontend/src/app/vpn/l2tp/page.tsx",
+          "frontend/src/app/vpn/openconnect/page.tsx",
+          "frontend/src/app/vpn/page.tsx",
+          "frontend/src/app/vpn/pptp/page.tsx",
           "frontend/src/app/vpn/rsa-keys/page.tsx",
+          "frontend/src/app/vpn/sstp/page.tsx",
           "frontend/src/app/vpn/wireguard/page.tsx",
           "frontend/src/components/vpn/CreateInterfaceModal.tsx",
           "frontend/src/components/vpn/CreatePeerModal.tsx",
@@ -5690,8 +5695,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/vpn/index.html",
       "cli_scope": "vpn",
       "domain": "vpn",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/ipsec.py",
@@ -5699,9 +5704,14 @@
           "backend/routers/wireguard/wireguard.py"
         ],
         "frontend": [
+          "frontend/src/app/vpn/dmvpn/page.tsx",
           "frontend/src/app/vpn/ipsec/page.tsx",
           "frontend/src/app/vpn/l2tp/page.tsx",
+          "frontend/src/app/vpn/openconnect/page.tsx",
+          "frontend/src/app/vpn/page.tsx",
+          "frontend/src/app/vpn/pptp/page.tsx",
           "frontend/src/app/vpn/rsa-keys/page.tsx",
+          "frontend/src/app/vpn/sstp/page.tsx",
           "frontend/src/app/vpn/wireguard/page.tsx",
           "frontend/src/components/vpn/CreateInterfaceModal.tsx",
           "frontend/src/components/vpn/CreatePeerModal.tsx",
@@ -5737,9 +5747,14 @@
           "backend/routers/wireguard/wireguard.py"
         ],
         "frontend": [
+          "frontend/src/app/vpn/dmvpn/page.tsx",
           "frontend/src/app/vpn/ipsec/page.tsx",
           "frontend/src/app/vpn/l2tp/page.tsx",
+          "frontend/src/app/vpn/openconnect/page.tsx",
+          "frontend/src/app/vpn/page.tsx",
+          "frontend/src/app/vpn/pptp/page.tsx",
           "frontend/src/app/vpn/rsa-keys/page.tsx",
+          "frontend/src/app/vpn/sstp/page.tsx",
           "frontend/src/app/vpn/wireguard/page.tsx",
           "frontend/src/components/vpn/CreateInterfaceModal.tsx",
           "frontend/src/components/vpn/CreatePeerModal.tsx",
@@ -5775,9 +5790,14 @@
           "backend/routers/wireguard/wireguard.py"
         ],
         "frontend": [
+          "frontend/src/app/vpn/dmvpn/page.tsx",
           "frontend/src/app/vpn/ipsec/page.tsx",
           "frontend/src/app/vpn/l2tp/page.tsx",
+          "frontend/src/app/vpn/openconnect/page.tsx",
+          "frontend/src/app/vpn/page.tsx",
+          "frontend/src/app/vpn/pptp/page.tsx",
           "frontend/src/app/vpn/rsa-keys/page.tsx",
+          "frontend/src/app/vpn/sstp/page.tsx",
           "frontend/src/app/vpn/wireguard/page.tsx",
           "frontend/src/components/vpn/CreateInterfaceModal.tsx",
           "frontend/src/components/vpn/CreatePeerModal.tsx",
@@ -5813,9 +5833,14 @@
           "backend/routers/wireguard/wireguard.py"
         ],
         "frontend": [
+          "frontend/src/app/vpn/dmvpn/page.tsx",
           "frontend/src/app/vpn/ipsec/page.tsx",
           "frontend/src/app/vpn/l2tp/page.tsx",
+          "frontend/src/app/vpn/openconnect/page.tsx",
+          "frontend/src/app/vpn/page.tsx",
+          "frontend/src/app/vpn/pptp/page.tsx",
           "frontend/src/app/vpn/rsa-keys/page.tsx",
+          "frontend/src/app/vpn/sstp/page.tsx",
           "frontend/src/app/vpn/wireguard/page.tsx",
           "frontend/src/components/vpn/CreateInterfaceModal.tsx",
           "frontend/src/components/vpn/CreatePeerModal.tsx",
@@ -5851,9 +5876,14 @@
           "backend/routers/wireguard/wireguard.py"
         ],
         "frontend": [
+          "frontend/src/app/vpn/dmvpn/page.tsx",
           "frontend/src/app/vpn/ipsec/page.tsx",
           "frontend/src/app/vpn/l2tp/page.tsx",
+          "frontend/src/app/vpn/openconnect/page.tsx",
+          "frontend/src/app/vpn/page.tsx",
+          "frontend/src/app/vpn/pptp/page.tsx",
           "frontend/src/app/vpn/rsa-keys/page.tsx",
+          "frontend/src/app/vpn/sstp/page.tsx",
           "frontend/src/app/vpn/wireguard/page.tsx",
           "frontend/src/components/vpn/CreateInterfaceModal.tsx",
           "frontend/src/components/vpn/CreatePeerModal.tsx",
@@ -5889,9 +5919,14 @@
           "backend/routers/wireguard/wireguard.py"
         ],
         "frontend": [
+          "frontend/src/app/vpn/dmvpn/page.tsx",
           "frontend/src/app/vpn/ipsec/page.tsx",
           "frontend/src/app/vpn/l2tp/page.tsx",
+          "frontend/src/app/vpn/openconnect/page.tsx",
+          "frontend/src/app/vpn/page.tsx",
+          "frontend/src/app/vpn/pptp/page.tsx",
           "frontend/src/app/vpn/rsa-keys/page.tsx",
+          "frontend/src/app/vpn/sstp/page.tsx",
           "frontend/src/app/vpn/wireguard/page.tsx",
           "frontend/src/components/vpn/CreateInterfaceModal.tsx",
           "frontend/src/components/vpn/CreatePeerModal.tsx",
@@ -5927,9 +5962,14 @@
           "backend/routers/wireguard/wireguard.py"
         ],
         "frontend": [
+          "frontend/src/app/vpn/dmvpn/page.tsx",
           "frontend/src/app/vpn/ipsec/page.tsx",
           "frontend/src/app/vpn/l2tp/page.tsx",
+          "frontend/src/app/vpn/openconnect/page.tsx",
+          "frontend/src/app/vpn/page.tsx",
+          "frontend/src/app/vpn/pptp/page.tsx",
           "frontend/src/app/vpn/rsa-keys/page.tsx",
+          "frontend/src/app/vpn/sstp/page.tsx",
           "frontend/src/app/vpn/wireguard/page.tsx",
           "frontend/src/components/vpn/CreateInterfaceModal.tsx",
           "frontend/src/components/vpn/CreatePeerModal.tsx",
@@ -5956,8 +5996,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/vpn/openconnect.html",
       "cli_scope": "vpn openconnect",
       "domain": "vpn",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/ipsec.py",
@@ -5965,9 +6005,14 @@
           "backend/routers/wireguard/wireguard.py"
         ],
         "frontend": [
+          "frontend/src/app/vpn/dmvpn/page.tsx",
           "frontend/src/app/vpn/ipsec/page.tsx",
           "frontend/src/app/vpn/l2tp/page.tsx",
+          "frontend/src/app/vpn/openconnect/page.tsx",
+          "frontend/src/app/vpn/page.tsx",
+          "frontend/src/app/vpn/pptp/page.tsx",
           "frontend/src/app/vpn/rsa-keys/page.tsx",
+          "frontend/src/app/vpn/sstp/page.tsx",
           "frontend/src/app/vpn/wireguard/page.tsx",
           "frontend/src/components/vpn/CreateInterfaceModal.tsx",
           "frontend/src/components/vpn/CreatePeerModal.tsx",
@@ -5994,8 +6039,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/vpn/pptp.html",
       "cli_scope": "vpn pptp",
       "domain": "vpn",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/ipsec.py",
@@ -6003,9 +6048,14 @@
           "backend/routers/wireguard/wireguard.py"
         ],
         "frontend": [
+          "frontend/src/app/vpn/dmvpn/page.tsx",
           "frontend/src/app/vpn/ipsec/page.tsx",
           "frontend/src/app/vpn/l2tp/page.tsx",
+          "frontend/src/app/vpn/openconnect/page.tsx",
+          "frontend/src/app/vpn/page.tsx",
+          "frontend/src/app/vpn/pptp/page.tsx",
           "frontend/src/app/vpn/rsa-keys/page.tsx",
+          "frontend/src/app/vpn/sstp/page.tsx",
           "frontend/src/app/vpn/wireguard/page.tsx",
           "frontend/src/components/vpn/CreateInterfaceModal.tsx",
           "frontend/src/components/vpn/CreatePeerModal.tsx",
@@ -6041,9 +6091,14 @@
           "backend/routers/wireguard/wireguard.py"
         ],
         "frontend": [
+          "frontend/src/app/vpn/dmvpn/page.tsx",
           "frontend/src/app/vpn/ipsec/page.tsx",
           "frontend/src/app/vpn/l2tp/page.tsx",
+          "frontend/src/app/vpn/openconnect/page.tsx",
+          "frontend/src/app/vpn/page.tsx",
+          "frontend/src/app/vpn/pptp/page.tsx",
           "frontend/src/app/vpn/rsa-keys/page.tsx",
+          "frontend/src/app/vpn/sstp/page.tsx",
           "frontend/src/app/vpn/wireguard/page.tsx",
           "frontend/src/components/vpn/CreateInterfaceModal.tsx",
           "frontend/src/components/vpn/CreatePeerModal.tsx",
@@ -6070,8 +6125,8 @@
       "url": "https://docs.vyos.io/en/latest/configuration/vpn/sstp.html",
       "cli_scope": "vpn sstp",
       "domain": "vpn",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
           "backend/routers/ipsec.py",
@@ -6079,9 +6134,14 @@
           "backend/routers/wireguard/wireguard.py"
         ],
         "frontend": [
+          "frontend/src/app/vpn/dmvpn/page.tsx",
           "frontend/src/app/vpn/ipsec/page.tsx",
           "frontend/src/app/vpn/l2tp/page.tsx",
+          "frontend/src/app/vpn/openconnect/page.tsx",
+          "frontend/src/app/vpn/page.tsx",
+          "frontend/src/app/vpn/pptp/page.tsx",
           "frontend/src/app/vpn/rsa-keys/page.tsx",
+          "frontend/src/app/vpn/sstp/page.tsx",
           "frontend/src/app/vpn/wireguard/page.tsx",
           "frontend/src/components/vpn/CreateInterfaceModal.tsx",
           "frontend/src/components/vpn/CreatePeerModal.tsx",

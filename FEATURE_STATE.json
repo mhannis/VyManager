@@ -1,18 +1,18 @@
 {
-  "feature_id": "vpn-l2tp-2026-02-14",
-  "title": "VPN slice: L2TP",
+  "feature_id": "vpn-batch-remaining-2026-02-14",
+  "title": "VPN backlog batch: DMVPN/OpenConnect/PPTP/SSTP/Overview",
   "status": "done",
   "acceptance_criteria": [
-    "Backend wrapper exists for vpn-l2tp with capabilities/config/batch endpoints.",
-    "L2TP page exists at /vpn/l2tp with form-first remote-access configuration and no free-form CLI text entry.",
-    "VPN sidebar includes L2TP navigation entry.",
-    "Backend tests, frontend typecheck/build, runtime smoke, and browser smoke pass.",
-    "Coverage artifacts regenerate with VPN domain progress from 6/6/0 to 7/5/0."
+    "Backend routers exist for openconnect, pptp, sstp, dmvpn, and vpn overview while preserving existing API contracts.",
+    "Form-driven VPN pages exist for /vpn, /vpn/dmvpn, /vpn/openconnect, /vpn/pptp, and /vpn/sstp with no free-form command text areas.",
+    "VPN sidebar includes links for all new pages.",
+    "Backend tests, frontend typecheck/build, runtime smoke, and browser smoke pass on localhost.",
+    "Coverage artifacts regenerate with VPN domain moving to fully implemented status."
   ],
   "assumptions": [
-    "L2TP page currently covers common remote-access fields; advanced radius and IPv6 pool branches will be expanded in follow-up slices.",
-    "Wrapper batch writes remain command-scoped under 'vpn l2tp'.",
-    "Unrelated dirty worktree files remain untouched."
+    "DMVPN implementation focuses on tunnel/NHRP/IPsec-profile workflows documented in VyOS docs and does not attempt to replace full IPsec policy editing.",
+    "Unrelated pre-existing dirty files in the worktree remain untouched.",
+    "OpenConnect/PPTP/SSTP pages prioritize common deployment paths first and can be expanded with more advanced RADIUS/PPP branches in follow-up slices."
   ],
   "tasks": [
     {
@@ -21,32 +21,38 @@
       "status": "done",
       "files": [
         "backend/app.py",
-        "backend/routers/vpn_l2tp/__init__.py",
-        "backend/routers/vpn_l2tp/l2tp.py",
-        "backend/tests/test_vpn_wrapper_capabilities.py"
+        "backend/routers/vpn_openconnect/openconnect.py",
+        "backend/routers/vpn_pptp/pptp.py",
+        "backend/routers/vpn_sstp/sstp.py",
+        "backend/routers/dmvpn/dmvpn.py",
+        "backend/routers/vpn/vpn.py"
       ],
-      "notes": "Added L2TP wrapper router and expanded VPN wrapper tests."
+      "notes": "Added scoped backend routers for the remaining VPN backlog pages."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/vpn-l2tp.ts",
-        "frontend/src/app/vpn/l2tp/page.tsx",
+        "frontend/src/app/vpn/page.tsx",
+        "frontend/src/app/vpn/dmvpn/page.tsx",
+        "frontend/src/app/vpn/openconnect/page.tsx",
+        "frontend/src/app/vpn/pptp/page.tsx",
+        "frontend/src/app/vpn/sstp/page.tsx",
         "frontend/src/components/layout/Sidebar.tsx"
       ],
-      "notes": "Implemented form-driven L2TP remote-access page and sidebar integration."
+      "notes": "Implemented form-first VPN pages and navigation updates."
     },
     {
       "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
+        "backend/tests/test_vpn_wrapper_capabilities.py",
         "frontend/scripts/check-runtime.sh",
         "frontend/scripts/smoke-ui.mjs"
       ],
-      "notes": "Extended runtime/browser smoke coverage with /vpn/l2tp route."
+      "notes": "Extended backend scope tests and smoke route coverage for the new VPN pages."
     },
     {
       "id": "T4",
@@ -60,28 +66,31 @@
         "PARITY_BACKLOG.json",
         "PARITY_BACKLOG.md"
       ],
-      "notes": "Regenerated matrix and backlog after L2TP slice."
+      "notes": "Regenerated parity matrix/backlog after VPN batch completion."
     },
     {
       "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/routers/vpn_l2tp/l2tp.py",
-        "frontend/src/app/vpn/l2tp/page.tsx"
+        "backend/routers/dmvpn/dmvpn.py",
+        "frontend/src/app/vpn/dmvpn/page.tsx",
+        "frontend/src/app/vpn/openconnect/page.tsx",
+        "frontend/src/app/vpn/pptp/page.tsx",
+        "frontend/src/app/vpn/sstp/page.tsx"
       ],
-      "notes": "Manual review complete; existing API contracts remain unchanged."
+      "notes": "Manual review completed; command scope guards and API contract compatibility confirmed."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_vpn_wrapper_capabilities.py tests/test_app.py && cd frontend && npx tsc --noEmit --pretty false && cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_vpn_wrapper_capabilities.py tests/test_app.py && cd ../frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Parity implementation (continuing VPN backlog)",
+      "purpose": "Parity implementation (post-VPN completion moving to next domain)",
       "status": "active"
     }
   ]

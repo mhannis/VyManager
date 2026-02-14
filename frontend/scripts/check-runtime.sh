@@ -35,8 +35,13 @@ critical_routes=(
   "/system/services?tab=tftp-server&view=single"
   "/system/services?tab=webproxy&view=single"
   "/services/dhcp-server"
+  "/vpn"
+  "/vpn/dmvpn"
   "/vpn/l2tp"
+  "/vpn/openconnect"
+  "/vpn/pptp"
   "/vpn/rsa-keys"
+  "/vpn/sstp"
 )
 
 for route in "${critical_routes[@]}"; do

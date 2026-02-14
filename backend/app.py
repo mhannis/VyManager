@@ -72,8 +72,13 @@ from routers.monitoring_service import monitoring_service as monitoring_service_
 from routers.webproxy_service import webproxy_service as webproxy_service_router
 from routers.pppoe_server_service import pppoe_server_service as pppoe_server_service_router
 from routers.ipoe_server_service import ipoe_server_service as ipoe_server_service_router
+from routers.vpn import vpn as vpn_overview_router
 from routers.vpn_rsa_keys import rsa_keys as vpn_rsa_keys_router
 from routers.vpn_l2tp import l2tp as vpn_l2tp_router
+from routers.vpn_openconnect import openconnect as vpn_openconnect_router
+from routers.vpn_pptp import pptp as vpn_pptp_router
+from routers.vpn_sstp import sstp as vpn_sstp_router
+from routers.dmvpn import dmvpn as vpn_dmvpn_router
 from routers import system
 from routers import power as power_router
 from routers.config import config as config_router
@@ -352,8 +357,13 @@ app.include_router(monitoring_service_router.router)
 app.include_router(webproxy_service_router.router)
 app.include_router(pppoe_server_service_router.router)
 app.include_router(ipoe_server_service_router.router)
+app.include_router(vpn_overview_router.router)
 app.include_router(vpn_rsa_keys_router.router)
 app.include_router(vpn_l2tp_router.router)
+app.include_router(vpn_openconnect_router.router)
+app.include_router(vpn_pptp_router.router)
+app.include_router(vpn_sstp_router.router)
+app.include_router(vpn_dmvpn_router.router)
 app.include_router(system.router)
 app.include_router(power_router.router)
 app.include_router(config_router.router)

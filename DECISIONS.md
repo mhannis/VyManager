@@ -107,3 +107,6 @@
 - 2026-02-14: Introduced `backend/routers/_vpn_wrapper.py` as a thin scoped wrapper (parallel to service wrappers) for VPN subtree endpoints; this preserves existing session/VyOS service contracts while allowing incremental VPN domain parity.
 - 2026-02-14: Added first VPN backlog slice `RSA Keys` at `/vpn/rsa-keys` with dedicated wrapper endpoints and form-driven CRUD, then updated smoke coverage to include this route.
 - 2026-02-14: Added second VPN wrapper/page slice for `l2tp` (`/vyos/vpn-l2tp`, `/vpn/l2tp`) using the shared scoped VPN wrapper and form-first remote-access editor pattern.
+- 2026-02-14: Completed the remaining VPN docs backlog in one batch by adding dedicated routers/pages for `openconnect`, `pptp`, `sstp`, `dmvpn`, plus top-level VPN overview; preserved thin-wrapper architecture and existing session/VyOS service contracts.
+- 2026-02-14: DMVPN backend endpoint intentionally accepts only `interfaces tunnel`, `protocols nhrp`, and related `vpn ipsec profile/interface/group` command roots to keep safety boundaries tight while supporting required workflow.
+- 2026-02-14: Runtime validation gate for VPN batch includes explicit route probes for `/vpn`, `/vpn/dmvpn`, `/vpn/openconnect`, `/vpn/pptp`, and `/vpn/sstp` to catch page-level client crashes before handoff.

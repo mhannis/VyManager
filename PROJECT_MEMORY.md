@@ -54,58 +54,58 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Continue parity execution in the `vpn` domain after services completion.
-- Completed this cycle: added a dedicated VPN L2TP vertical slice (backend wrapper + UI page + tests + smoke coverage), following the earlier RSA keys slice.
-- Completed this cycle: services domain remains complete at `23/0/0`; vpn domain improved to `7 implemented / 5 partial / 0 not_started`.
-- Next: continue form-driven VPN slices (`pptp`, `sstp`, `openconnect`, `dmvpn`, and vpn index).
+- Complete all remaining VPN backlog entries as form-first features.
+- Completed this cycle: implemented `DMVPN`, `VPN index`, `OpenConnect`, `PPTP-Server`, and `SSTP Server`.
+- Completed this cycle: VPN domain moved to `12 implemented / 0 partial / 0 not_started`.
+- Next: continue parity from the next highest-priority non-VPN backlog domain.
 
 ## Current Feature Spec
-Feature: **VPN slice batch 2: L2TP**
+Feature: **VPN backlog completion batch (DMVPN/OpenConnect/PPTP/SSTP/Overview)**
 
 Acceptance criteria:
-- Backend exposes a dedicated wrapper:
-  - `/vyos/vpn-l2tp/*`
-- VPN section includes a form-driven `L2TP` page (no free-form CLI text input).
-- Sidebar `VPN` navigation includes the new `L2TP` page.
+- Backend exposes dedicated endpoints:
+  - `/vyos/vpn/*`
+  - `/vyos/vpn-dmvpn/*`
+  - `/vyos/vpn-openconnect/*`
+  - `/vyos/vpn-pptp/*`
+  - `/vyos/vpn-sstp/*`
+- VPN section includes form-driven pages for `DMVPN`, `OpenConnect`, `PPTP`, `SSTP`, and top-level `VPN Overview` (no free-form CLI text input).
+- Sidebar `VPN` navigation includes all new pages.
 - End-to-end validation (`pytest`, `tsc`, `build`, restart, runtime smoke, browser smoke) passes.
-- Coverage artifacts reflect progress (`vpn` improved from 6/6/0 to 7/5/0 implemented/partial/not_started).
+- Coverage artifacts reflect progress (`vpn` improved from 7/5/0 to 12/0/0 implemented/partial/not_started).
 
 Assumptions:
-- Remaining VPN docs pages still need full-form coverage beyond RSA keys and L2TP.
+- DMVPN UI intentionally focuses on tunnel + NHRP + IPsec profile bind workflow from the official docs.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: services batch 4 committed and pushed (`609bbd1`); vpn rsa-keys slice committed and pushed (`4b855db`); vpn l2tp slice committed and pushed (`c321782`).
+- Status: VPN completion batch implemented and validated; commit/push pending in this cycle.
 - Working tree is dirty with unrelated pre-existing changes outside this hotfix.
 
 ### Files Touched This Cycle (hotfix-owned)
 - `backend/app.py`
-- `backend/routers/_vpn_wrapper.py`
-- `backend/routers/vpn_l2tp/__init__.py`
-- `backend/routers/vpn_l2tp/l2tp.py`
-- `backend/routers/vpn_rsa_keys/__init__.py`
-- `backend/routers/vpn_rsa_keys/rsa_keys.py`
-- `backend/routers/monitoring_service/__init__.py`
-- `backend/routers/monitoring_service/monitoring_service.py`
-- `backend/routers/webproxy_service/__init__.py`
-- `backend/routers/webproxy_service/webproxy_service.py`
-- `backend/routers/pppoe_server_service/__init__.py`
-- `backend/routers/pppoe_server_service/pppoe_server_service.py`
-- `backend/routers/ipoe_server_service/__init__.py`
-- `backend/routers/ipoe_server_service/ipoe_server_service.py`
-- `backend/tests/test_service_wrapper_capabilities.py`
+- `backend/routers/vpn/__init__.py`
+- `backend/routers/vpn/vpn.py`
+- `backend/routers/dmvpn/__init__.py`
+- `backend/routers/dmvpn/dmvpn.py`
+- `backend/routers/vpn_openconnect/__init__.py`
+- `backend/routers/vpn_openconnect/openconnect.py`
+- `backend/routers/vpn_pptp/__init__.py`
+- `backend/routers/vpn_pptp/pptp.py`
+- `backend/routers/vpn_sstp/__init__.py`
+- `backend/routers/vpn_sstp/sstp.py`
 - `backend/tests/test_vpn_wrapper_capabilities.py`
-- `frontend/src/lib/api/service-wrappers.ts`
-- `frontend/src/lib/api/vpn-l2tp.ts`
-- `frontend/src/lib/api/vpn-rsa-keys.ts`
-- `frontend/src/components/system/MonitoringServiceTab.tsx`
-- `frontend/src/components/system/WebproxyServiceTab.tsx`
-- `frontend/src/components/system/PppoeServerServiceTab.tsx`
-- `frontend/src/components/system/IpoeServerServiceTab.tsx`
-- `frontend/src/app/system/services/page.tsx`
-- `frontend/src/app/vpn/rsa-keys/page.tsx`
-- `frontend/src/app/vpn/l2tp/page.tsx`
+- `frontend/src/lib/api/vpn-overview.ts`
+- `frontend/src/lib/api/vpn-dmvpn.ts`
+- `frontend/src/lib/api/vpn-openconnect.ts`
+- `frontend/src/lib/api/vpn-pptp.ts`
+- `frontend/src/lib/api/vpn-sstp.ts`
+- `frontend/src/app/vpn/page.tsx`
+- `frontend/src/app/vpn/dmvpn/page.tsx`
+- `frontend/src/app/vpn/openconnect/page.tsx`
+- `frontend/src/app/vpn/pptp/page.tsx`
+- `frontend/src/app/vpn/sstp/page.tsx`
 - `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/scripts/smoke-ui.mjs`
 - `frontend/scripts/check-runtime.sh`
@@ -117,14 +117,12 @@ Assumptions:
 - `PARITY_BACKLOG.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_service_wrapper_capabilities.py` -> pass (`54 passed`)
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_app.py` -> pass (`1 passed`)
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_vpn_wrapper_capabilities.py tests/test_app.py` -> pass (`7 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_vpn_wrapper_capabilities.py tests/test_app.py` -> pass (`21 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s build` -> pass
 - Restarted runtime API/UI sessions and verified listeners:
   - `tmux kill-session -t vm-api`
-  - `tmux new-session -d -s vm-api 'cd /home/redhot/VyOS/VyManager/backend && source .env && PYTHONPATH=. ./.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --proxy-headers'`
+  - `tmux new-session -d -s vm-api 'cd /home/redhot/VyOS/VyManager/backend && PYTHONPATH=. ./.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --proxy-headers'`
   - `tmux kill-session -t vm-ui`
   - `tmux new-session -d -s vm-ui 'cd /home/redhot/VyOS/VyManager/frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000'`
   - `ss -ltnp | rg ':(8000|3000)'` -> listening
@@ -137,10 +135,10 @@ Assumptions:
 - Browser smoke currently depends on host-specific Playwright shared libs path; this should be standardized in dev bootstrap.
 - SNMPv3 configuration and HTTPS GraphQL/certificate controls are not exposed yet.
 - PPPoE/IPoE tabs currently prioritize common operator paths; advanced branches should be added as follow-up.
-- VPN non-IPsec/non-WireGuard protocols are still partial and require additional form-first editors.
+- DMVPN and remote-access VPN pages cover documented core flows, but advanced RADIUS/PPP knobs can still be expanded.
 
 ## TODO Backlog (next queue)
-- Implement additional VPN pages with dedicated wrappers/forms: `pptp`, `sstp`, `openconnect`, `dmvpn`, and VPN index.
+- Begin the next non-VPN parity slice from `PARITY_BACKLOG.json` priority order.
 - Keep runtime gate sequence mandatory for each slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
@@ -179,3 +177,8 @@ Assumptions:
 - Added service-wrapper routers and form-first tabs for `monitoring`, `webproxy`, `pppoe-server`, and `ipoe-server` under `System -> Services`.
 - Service tabs now include common CRUD coverage for listen interfaces, pools, authentication, and server lists without free-form command text fields.
 - Coverage/backlog generation must run sequentially (`generate_config_coverage_matrix.py` then `generate_phase1_backlog.py`); running them in parallel can produce stale phase1 raw statuses.
+- Added scoped VPN routers for `openconnect`, `pptp`, and `sstp` using the shared `_vpn_wrapper` abstraction.
+- Added DMVPN router/page with constrained command support for `interfaces tunnel`, `protocols nhrp`, and `vpn ipsec profile` workflows.
+- Added VPN overview API/page (`/vyos/vpn`, `/vpn`) to complete docs index parity and expose protocol cards.
+- VPN smoke coverage now includes `/vpn`, `/vpn/dmvpn`, `/vpn/openconnect`, `/vpn/pptp`, and `/vpn/sstp`.
+- VPN domain parity now reports complete (`12 implemented / 0 partial / 0 not_started`) in `CONFIG_COVERAGE_PHASE1.json`.

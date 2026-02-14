@@ -1,10 +1,12 @@
-timestamp: 2026-02-14T22:39:00Z
+timestamp: 2026-02-14T23:15:43Z
 failing_command: cd /home/redhot/VyOS/VyManager/frontend && npx tsc --noEmit --pretty false
-error_summary: TypeScript failed in newly added service tabs because helper functions declared return type `JSX.Element`, but this frontend TS setup does not expose `JSX` namespace globally.
+error_summary: TypeScript rejected DMVPN page state updates because the generic row helper constrained entries to `Record<string, string>`, which was too narrow for typed `NhrpMapEntry` / `NhrpNhsEntry` arrays.
 
 relevant_output:
-src/components/system/MonitoringServiceTab.tsx(106,4): error TS2503: Cannot find namespace 'JSX'.
-src/components/system/WebproxyServiceTab.tsx(161,4): error TS2503: Cannot find namespace 'JSX'.
+src/app/vpn/dmvpn/page.tsx(538,41): error TS2345: Argument of type '(previous: DmvpnState) => { nhrpMaps: Record<string, string>[]; ... }' is not assignable to parameter of type 'SetStateAction<DmvpnState>'.
+src/app/vpn/dmvpn/page.tsx(540,53): error TS2345: Argument of type 'NhrpMapEntry[]' is not assignable to parameter of type 'Record<string, string>[]'.
+src/app/vpn/dmvpn/page.tsx(603,41): error TS2345: Argument of type '(previous: DmvpnState) => { nhrpNhs: Record<string, string>[]; ... }' is not assignable to parameter of type 'SetStateAction<DmvpnState>'.
+src/app/vpn/dmvpn/page.tsx(605,52): error TS2345: Argument of type 'NhrpNhsEntry[]' is not assignable to parameter of type 'Record<string, string>[]'.
 
-suspected_cause: Explicit `JSX.Element` type annotation in utility render helpers under Next.js TS config.
-next_step: Remove `JSX.Element` return annotations (or switch to `React.ReactNode`) and rerun typecheck/build/smoke.
+suspected_cause: Helper signature over-constrained state row types and forced object-index signature compatibility.
+next_step: Use a key-safe generic helper (`<T extends object, K extends keyof T>`) and rerun typecheck/build/smoke.

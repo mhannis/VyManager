@@ -1,12 +1,12 @@
-feature_id: vpn-l2tp-2026-02-14
+feature_id: vpn-batch-remaining-2026-02-14
 status: done
-title: VPN slice - L2TP
+title: VPN backlog batch - DMVPN/OpenConnect/PPTP/SSTP/Overview
 branch: feature/containers-automation-v1
 commits:
-  - c321782
+  - pending-commit
 notes:
-  - Added backend wrapper endpoints for `/vyos/vpn-l2tp`.
-  - Added form-driven page at `/vpn/l2tp` for remote-access configuration.
-  - Added VPN sidebar navigation entry for L2TP.
-  - Extended backend VPN wrapper tests and smoke routes.
-  - Regenerated parity artifacts; VPN domain improved from 6/6/0 to 7/5/0 implemented/partial/not_started.
+  - Added backend wrapper endpoints for `/vyos/vpn-openconnect`, `/vyos/vpn-pptp`, and `/vyos/vpn-sstp`.
+  - Added DMVPN backend router at `/vyos/vpn-dmvpn` with scoped command validation for tunnel/NHRP/IPsec-profile operations.
+  - Added VPN overview backend router at `/vyos/vpn` (`/capabilities` + `/overview`) to complete docs-index parity signal.
+  - Added form-driven pages: `/vpn`, `/vpn/dmvpn`, `/vpn/openconnect`, `/vpn/pptp`, `/vpn/sstp`.
+  - Updated VPN sidebar and smoke routes; regenerated parity artifacts with VPN domain now fully implemented.

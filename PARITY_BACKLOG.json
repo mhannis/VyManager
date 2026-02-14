@@ -6,16 +6,6 @@
   ],
   "domains": [
     {
-      "domain": "vpn",
-      "risk": 70,
-      "breadth": 5,
-      "reuse": 72,
-      "total_pages": 12,
-      "implemented": 7,
-      "partial": 5,
-      "not_started": 0
-    },
-    {
       "domain": "ha",
       "risk": 65,
       "breadth": 1,
@@ -144,6 +134,16 @@
       "reuse": 88,
       "total_pages": 23,
       "implemented": 23,
+      "partial": 0,
+      "not_started": 0
+    },
+    {
+      "domain": "vpn",
+      "risk": 70,
+      "breadth": 0,
+      "reuse": 72,
+      "total_pages": 12,
+      "implemented": 12,
       "partial": 0,
       "not_started": 0
     },
