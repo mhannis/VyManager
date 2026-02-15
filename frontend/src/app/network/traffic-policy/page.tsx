@@ -26,6 +26,9 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { trafficPolicyApi } from "@/lib/api/traffic-policy";
 import { qosApi } from "@/lib/api/qos";
+import { ethernetService } from "@/lib/api/ethernet";
+import { showService } from "@/lib/api/show";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 
@@ -90,6 +93,12 @@ type QosPolicyEntry = {
   codelQuantum: string;
   rtt: string;
   classes: QosPolicyClassEntry[];
+};
+
+type QosInterfaceBinding = {
+  interface: string;
+  ingress: string;
+  egress: string;
 };
 
 const TRAFFIC_POLICY_TYPES: TrafficPolicyType[] = [
@@ -168,6 +177,12 @@ const EMPTY_QOS_CLASS_DRAFT: QosPolicyClassEntry = {
   matchGroup: [],
 };
 
+const EMPTY_QOS_INTERFACE_DRAFT: QosInterfaceBinding = {
+  interface: "",
+  ingress: "",
+  egress: "",
+};
+
 function normalizeText(value: string): string {
   return value.trim();
 }
@@ -194,6 +209,10 @@ function qosPolicyKey(entry: QosPolicyEntry): string {
 
 function qosClassKey(entry: QosPolicyClassEntry): string {
   return normalizeText(entry.classId);
+}
+
+function qosInterfaceKey(entry: QosInterfaceBinding): string {
+  return normalizeText(entry.interface);
 }
 
 function uniqueList(values: string[]): string[] {
@@ -278,6 +297,14 @@ function qosClassEqual(left: QosPolicyClassEntry, right: QosPolicyClassEntry): b
   );
 }
 
+function qosInterfaceEqual(left: QosInterfaceBinding, right: QosInterfaceBinding): boolean {
+  return (
+    left.interface === right.interface &&
+    left.ingress === right.ingress &&
+    left.egress === right.egress
+  );
+}
+
 function sortByTypeAndName<T extends { type: string; name: string }>(entries: T[]): T[] {
   return [...entries].sort((left, right) => {
     const typeCompare = left.type.localeCompare(right.type);
@@ -303,6 +330,10 @@ export default function TrafficPolicyPage() {
   const [qosPolicies, setQosPolicies] = useState<QosPolicyEntry[]>([]);
   const [currentQosPolicies, setCurrentQosPolicies] = useState<QosPolicyEntry[]>([]);
   const [qosPolicyDraft, setQosPolicyDraft] = useState<QosPolicyEntry>(EMPTY_QOS_POLICY_DRAFT);
+  const [qosInterfaces, setQosInterfaces] = useState<QosInterfaceBinding[]>([]);
+  const [currentQosInterfaces, setCurrentQosInterfaces] = useState<QosInterfaceBinding[]>([]);
+  const [qosInterfaceDraft, setQosInterfaceDraft] = useState<QosInterfaceBinding>(EMPTY_QOS_INTERFACE_DRAFT);
+  const [interfaceOptions, setInterfaceOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [selectedQosPolicyKey, setSelectedQosPolicyKey] = useState("");
   const [qosClassDraft, setQosClassDraft] = useState<QosPolicyClassEntry>(EMPTY_QOS_CLASS_DRAFT);
   const [qosClassMatchInput, setQosClassMatchInput] = useState("");
@@ -323,14 +354,41 @@ export default function TrafficPolicyPage() {
     selectedQosPolicy && QOS_CLASS_CAPABLE_TYPES.includes(selectedQosPolicy.type)
   );
 
+  const interfaceLabelByName = useMemo(
+    () =>
+      interfaceOptions.reduce<Record<string, string>>((acc, option) => {
+        acc[option.value] = option.label;
+        return acc;
+      }, {}),
+    [interfaceOptions]
+  );
+
+  const ingressPolicyNames = useMemo(
+    () =>
+      uniqueList(
+        qosPolicies
+          .filter((entry) => entry.type === "limiter")
+          .map((entry) => entry.name)
+      ),
+    [qosPolicies]
+  );
+
+  const egressPolicyNames = useMemo(
+    () => uniqueList(qosPolicies.map((entry) => entry.name)),
+    [qosPolicies]
+  );
+
   const loadData = useCallback(async (refresh = false) => {
     try {
       setLoading(true);
       setError(null);
 
-      const [trafficConfig, qosConfig] = await Promise.all([
+      const [trafficConfig, qosConfig, ethernetConfig, physicalConfig, allInterfacesConfig] = await Promise.all([
         trafficPolicyApi.getConfig<Record<string, unknown>>(refresh),
         qosApi.getConfig<Record<string, unknown>>(refresh).catch(() => ({})),
+        ethernetService.getConfig().catch(() => ({ interfaces: [] })),
+        showService.getInterfacePhysical().catch(() => ({ interfaces: [], total: 0 })),
+        showService.getAllInterfaces().catch(() => ({ interfaces: [], total: 0 })),
       ]);
 
       const parsedTraffic: TrafficPolicyEntry[] = [];
@@ -351,6 +409,7 @@ export default function TrafficPolicyPage() {
       }
 
       const policyRoot = asObject(asObject(qosConfig).policy);
+      const interfaceRoot = asObject(asObject(qosConfig).interface);
       const parsedQos: QosPolicyEntry[] = [];
       for (const policyType of QOS_POLICY_TYPES) {
         const typeRoot = asObject(policyRoot[policyType]);
@@ -405,6 +464,40 @@ export default function TrafficPolicyPage() {
 
       const sortedTraffic = sortByTypeAndName(parsedTraffic);
       const sortedQos = sortByTypeAndName(parsedQos);
+      const parsedQosInterfaces: QosInterfaceBinding[] = Object.entries(interfaceRoot)
+        .map(([interfaceName, value]) => {
+          const root = asObject(value);
+          return {
+            interface: normalizeText(interfaceName),
+            ingress: normalizeText(asText(root.ingress)),
+            egress: normalizeText(asText(root.egress)),
+          };
+        })
+        .filter((entry) => entry.interface)
+        .sort((left, right) =>
+          left.interface.localeCompare(right.interface, undefined, { numeric: true })
+        );
+
+      const interfaceNames = new Set<string>();
+      const descriptionByName = ethernetConfig.interfaces.reduce<Record<string, string | null>>(
+        (acc, iface) => {
+          acc[iface.name] = iface.description ?? null;
+          return acc;
+        },
+        {}
+      );
+      ethernetConfig.interfaces.forEach((iface) => interfaceNames.add(iface.name));
+      physicalConfig.interfaces.forEach((iface) => interfaceNames.add(iface.interface));
+      allInterfacesConfig.interfaces.forEach((iface) => interfaceNames.add(iface.name));
+      parsedQosInterfaces.forEach((entry) => interfaceNames.add(entry.interface));
+
+      const normalizedInterfaces = [...interfaceNames]
+        .filter((name) => name && name !== "lo")
+        .map((name) => ({
+          value: name,
+          label: formatInterfaceDisplayName(name, descriptionByName[name] ?? null),
+        }))
+        .sort((left, right) => left.label.localeCompare(right.label, undefined, { numeric: true }));
 
       setTrafficPolicies(sortedTraffic);
       setCurrentTrafficPolicies(sortedTraffic);
@@ -413,6 +506,13 @@ export default function TrafficPolicyPage() {
       setQosPolicies(sortedQos);
       setCurrentQosPolicies(sortedQos);
       setQosPolicyDraft(EMPTY_QOS_POLICY_DRAFT);
+      setQosInterfaces(parsedQosInterfaces);
+      setCurrentQosInterfaces(parsedQosInterfaces);
+      setInterfaceOptions(normalizedInterfaces);
+      setQosInterfaceDraft({
+        ...EMPTY_QOS_INTERFACE_DRAFT,
+        interface: normalizedInterfaces[0]?.value || "",
+      });
       const initialClassPolicy = sortedQos.find((entry) => QOS_CLASS_CAPABLE_TYPES.includes(entry.type));
       setSelectedQosPolicyKey(initialClassPolicy ? qosPolicyKey(initialClassPolicy) : "");
       setQosClassDraft(EMPTY_QOS_CLASS_DRAFT);
@@ -514,6 +614,57 @@ export default function TrafficPolicyPage() {
       }
       return remaining;
     });
+  };
+
+  const addQosInterfaceBinding = () => {
+    setError(null);
+
+    const entry: QosInterfaceBinding = {
+      interface: normalizeText(qosInterfaceDraft.interface),
+      ingress: normalizeText(qosInterfaceDraft.ingress),
+      egress: normalizeText(qosInterfaceDraft.egress),
+    };
+
+    if (!entry.interface) {
+      setError("QoS interface binding requires an interface.");
+      return;
+    }
+
+    if (!entry.ingress && !entry.egress) {
+      setError("QoS interface binding requires at least ingress or egress policy.");
+      return;
+    }
+
+    if (entry.ingress && !ingressPolicyNames.includes(entry.ingress)) {
+      setError("Ingress must reference an existing limiter policy name.");
+      return;
+    }
+
+    if (entry.egress && !egressPolicyNames.includes(entry.egress)) {
+      setError("Egress must reference an existing QoS policy name.");
+      return;
+    }
+
+    if (qosInterfaces.some((item) => qosInterfaceKey(item) === qosInterfaceKey(entry))) {
+      setError("QoS interface binding already exists for this interface.");
+      return;
+    }
+
+    setQosInterfaces((previous) =>
+      [...previous, entry].sort((left, right) =>
+        left.interface.localeCompare(right.interface, undefined, { numeric: true })
+      )
+    );
+
+    setQosInterfaceDraft({
+      ...EMPTY_QOS_INTERFACE_DRAFT,
+      interface: interfaceOptions[0]?.value || "",
+    });
+  };
+
+  const removeQosInterfaceBinding = (entry: QosInterfaceBinding) => {
+    const key = qosInterfaceKey(entry);
+    setQosInterfaces((previous) => previous.filter((item) => qosInterfaceKey(item) !== key));
   };
 
   const resetQosClassDraft = () => {
@@ -779,6 +930,37 @@ export default function TrafficPolicyPage() {
               qosOperations.push(`set ${classBasePath} match group ${matchGroupValue}`);
             }
           }
+        }
+      }
+
+      const currentQosInterfaceMap = new Map(currentQosInterfaces.map((entry) => [qosInterfaceKey(entry), entry]));
+      const desiredQosInterfaceMap = new Map(qosInterfaces.map((entry) => [qosInterfaceKey(entry), entry]));
+
+      for (const [key, current] of currentQosInterfaceMap.entries()) {
+        if (!desiredQosInterfaceMap.has(key)) {
+          qosOperations.push(`delete qos interface ${current.interface}`);
+        }
+      }
+
+      for (const [key, desired] of desiredQosInterfaceMap.entries()) {
+        const current = currentQosInterfaceMap.get(key);
+        if (current && qosInterfaceEqual(current, desired)) {
+          continue;
+        }
+
+        const basePath = `qos interface ${desired.interface}`;
+        qosOperations.push(`set ${basePath}`);
+
+        if (desired.ingress) {
+          qosOperations.push(`set ${basePath} ingress ${desired.ingress}`);
+        } else if (current?.ingress) {
+          qosOperations.push(`delete ${basePath} ingress`);
+        }
+
+        if (desired.egress) {
+          qosOperations.push(`set ${basePath} egress ${desired.egress}`);
+        } else if (current?.egress) {
+          qosOperations.push(`delete ${basePath} egress`);
         }
       }
 
@@ -1570,6 +1752,137 @@ export default function TrafficPolicyPage() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>QoS Interface Assignment</CardTitle>
+            <CardDescription>
+              Bind QoS policies to interfaces via `qos interface &lt;if&gt; ingress|egress`.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Interface</Label>
+                <Select
+                  value={qosInterfaceDraft.interface || "__unset__"}
+                  onValueChange={(value) =>
+                    setQosInterfaceDraft((previous) => ({
+                      ...previous,
+                      interface: value === "__unset__" ? "" : value,
+                    }))
+                  }
+                  disabled={!canEdit || interfaceOptions.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select interface" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__unset__">Select interface</SelectItem>
+                    {interfaceOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Ingress Policy (Limiter)</Label>
+                <Select
+                  value={qosInterfaceDraft.ingress || "__unset__"}
+                  onValueChange={(value) =>
+                    setQosInterfaceDraft((previous) => ({
+                      ...previous,
+                      ingress: value === "__unset__" ? "" : value,
+                    }))
+                  }
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__unset__">None</SelectItem>
+                    {ingressPolicyNames.map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Egress Policy</Label>
+                <Select
+                  value={qosInterfaceDraft.egress || "__unset__"}
+                  onValueChange={(value) =>
+                    setQosInterfaceDraft((previous) => ({
+                      ...previous,
+                      egress: value === "__unset__" ? "" : value,
+                    }))
+                  }
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__unset__">None</SelectItem>
+                    {egressPolicyNames.map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button type="button" variant="outline" onClick={addQosInterfaceBinding} disabled={!canEdit}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Interface Assignment
+            </Button>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Interface</TableHead>
+                  <TableHead>Ingress</TableHead>
+                  <TableHead>Egress</TableHead>
+                  <TableHead className="w-[120px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {qosInterfaces.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-muted-foreground">
+                      No QoS interface bindings configured.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  qosInterfaces.map((entry) => (
+                    <TableRow key={qosInterfaceKey(entry)}>
+                      <TableCell>{interfaceLabelByName[entry.interface] || entry.interface}</TableCell>
+                      <TableCell>{entry.ingress || "-"}</TableCell>
+                      <TableCell>{entry.egress || "-"}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeQosInterfaceBinding(entry)}
+                          disabled={!canEdit}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))

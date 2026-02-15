@@ -1,11 +1,11 @@
-feature_id: traffic-policy-qos-classes-depth-2026-02-15
+feature_id: traffic-policy-qos-interface-assignment-2026-02-15
 status: done
-title: Traffic Policy parity deepening (QoS class-level editors)
+title: Traffic Policy parity deepening (QoS interface assignment)
 branch: feature/containers-automation-v1
 commits:
   - pending
 notes:
-  - Added class-level QoS editor on `/network/traffic-policy` for `qos policy ... class ...` command trees.
-  - Added class-capable policy gating to avoid invalid class operations on unsupported QoS policy types.
-  - Extended diff-based save logic to include class leaves, DSCP, and class match/match-group nodes.
+  - Added QoS interface assignment editor on `/network/traffic-policy` for `qos interface <if> ingress|egress`.
+  - Added interface discovery + description-first labeling for assignment selection.
+  - Added save-time validation for ingress limiter policy names and egress QoS policy names.
   - Validated with backend test_app, frontend tsc/lint/build, runtime smoke, and browser smoke.

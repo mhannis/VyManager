@@ -133,3 +133,6 @@
 - 2026-02-15: Added class-level QoS editor under `/network/traffic-policy` for class-capable policy types (`limiter`, `priority-queue`, `round-robin`, `shaper`) so GUI can manage `qos policy ... class ...` without CLI text entry.
 - 2026-02-15: Enforced class-capable policy gating in the QoS class editor to avoid generating invalid class commands for unsupported policy types.
 - 2026-02-15: Heavy-task startup/smoke race caused a transient runtime smoke failure; downgraded HEAVY parallel execution to `HEAVY_MAX=1` for this session and resumed sequential heavy runs.
+- 2026-02-15: Extended `/network/traffic-policy` to manage `qos interface <if> ingress|egress` assignments, closing a missing top-level `qos interface` workflow from the QoS command tree.
+- 2026-02-15: Assignment UI validates ingress policy names against limiter policies and egress names against known QoS policy names to reduce invalid apply attempts.
+- 2026-02-15: Interface assignment selectors use merged interface discovery sources (`interfaces config`, `show interface physical`, `show all interfaces`) and description-first labels for consistency.

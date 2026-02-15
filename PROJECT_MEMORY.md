@@ -54,32 +54,31 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Deepen option-level parity in the remaining non-routing domains, now focused on `traffic-policy` class-level QoS editors.
+- Deepen option-level parity in the remaining non-routing domains, now focused on full `qos` policy usage coverage (class editors + interface assignment) and then PKI helper workflows.
 - Keep GUI form-driven (no free-form CLI entry) while aligning each page to the corresponding VyOS command tree semantics.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) each slice.
 
 ## Current Feature Spec
-Feature: **Traffic Policy class-level QoS parity deepening (`qos policy ... class ...` editors)**
+Feature: **Traffic Policy QoS assignment deepening (`qos interface <if> ingress|egress`)**
 
 Acceptance criteria:
-- Frontend `/network/traffic-policy` supports class CRUD under class-capable policy types (`limiter`, `priority-queue`, `round-robin`, `shaper`).
-- Save path emits scoped diff-based set/delete operations for `qos policy <type> <name> class <id>` leaves (queue, shaping, DSCP, and match fields).
-- Class editor gates unsupported policy types to prevent invalid command generation.
+- Frontend `/network/traffic-policy` supports form-driven QoS interface assignment CRUD for `qos interface <if> ingress|egress`.
+- Save path emits scoped diff-based set/delete operations for interface assignments alongside policy/class operations.
+- Ingress assignment is validated against limiter policy names; egress assignment is validated against known QoS policy names.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- Existing `/vyos/qos` wrapper API is sufficient for class-level operations; no backend contract changes are required for this slice.
-- Initial class editor targets high-value common class leaves; additional QoS subtrees remain additive follow-up.
+- Existing `/vyos/qos` wrapper API is sufficient for interface assignment operations; no backend contract changes are required for this slice.
+- Interface assignment UI relies on available interface discovery endpoints and excludes loopback.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: traffic-policy class-level QoS deepening implemented and validated; commit pending.
+- Status: traffic-policy QoS interface assignment deepening implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
 - `frontend/src/app/network/traffic-policy/page.tsx`
-- `LAST_FAILURE.txt`
 
 ### Validation This Cycle
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_app.py` -> pass
@@ -112,6 +111,7 @@ Assumptions:
 - `/network/high-availability` now includes dedicated form-driven IPVS coverage for `virtual-server` and nested `real-server` CRUD; save uses diff-based set/delete generation under `high-availability virtual-server ...` and preserves existing VRRP/sync-group behavior.
 - `/network/traffic-policy` now includes class-level QoS editing for class-capable policy types, with diff-based command generation under `qos policy <type> <name> class <id> ...`.
 - Class editor policy picker is gated to class-capable types (`limiter`, `priority-queue`, `round-robin`, `shaper`) to avoid invalid class commands on unsupported QoS policy types.
+- `/network/traffic-policy` now also supports QoS interface assignment (`qos interface <if> ingress|egress`) with interface selectors labeled as `Description (ethX)` and policy-name validation before save.
 - Runtime smoke can fail with transient connection errors if startup and smoke probes run in parallel; run runtime smoke sequentially after listener checks on `:3000`.
 - Added shared backend `build_config_tree_router(...)` wrapper for non-service, non-VPN top-level config trees while preserving existing session/VyOS service contracts.
 - Added scoped backend routers for `vrf`, `load-balancing`, `high-availability`, `traffic-policy`, and `pki`; each router exposes `capabilities`, `config`, and `batch` endpoints with strict subtree command validation.
