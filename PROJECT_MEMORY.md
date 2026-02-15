@@ -73,7 +73,7 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: traffic-policy/qos parity deepening implemented and validated locally; pending commit/push.
+- Status: traffic-policy/qos parity deepening implemented, validated, and committed (`1b96f27`); pending push.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)

@@ -3,7 +3,7 @@ status: done
 title: Traffic Policy parity deepening (traffic-policy + qos policy structured editors)
 branch: feature/containers-automation-v1
 commits:
-  - pending-local-commit
+  - 1b96f27
 notes:
   - Added backend `/vyos/qos/*` thin wrapper router (config + capabilities + batch) without changing existing service architecture.
   - Expanded `/network/traffic-policy` to manage both `traffic-policy` and `qos policy` trees via form-driven editors.
