@@ -229,3 +229,4 @@
 - 2026-02-15: Added dedicated form-first System pages (`/system/proxy`, `/system/sysctl`, `/system/flow-accounting`) instead of embedding these settings under generic tabs, to improve IA clarity and parity tracking.
 - 2026-02-15: Runtime smoke route defaults now include the three new System pages so route-level client crashes are caught before handoff.
 - 2026-02-15: ESLint strict mode (`--max-warnings=0`) treats ignored-file warnings as failures; shell scripts should be excluded from targeted frontend ESLint file lists.
+- 2026-02-15: Reviewer-agent spawn failed due thread cap (`max 6`) during this cycle; manual reviewer fallback was used and failure was recorded in `LAST_FAILURE.txt`.

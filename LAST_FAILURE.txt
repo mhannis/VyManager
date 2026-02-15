@@ -1,12 +1,7 @@
-timestamp: 2026-02-15T23:00:40Z
-failing_command: cd frontend && npx eslint ... scripts/check-runtime.sh ... --max-warnings=0
-error_summary: ESLint run failed because `scripts/check-runtime.sh` is outside configured ESLint file matching and produced an ignored-file warning, which was treated as fatal by `--max-warnings=0`.
+timestamp: 2026-02-15T23:06:48Z
+failing_command: spawn_agent(type=explorer) for code review
+error_summary: Sub-agent creation failed because the current session has reached the configured agent thread cap.
 last_output:
-/home/redhot/VyOS/VyManager/frontend/scripts/check-runtime.sh
-  0:0  warning  File ignored because no matching configuration was supplied
-
-✖ 1 problem (0 errors, 1 warning)
-
-ESLint found too many warnings (maximum: 0).
-suspected_cause: The lint target list included a shell script not covered by frontend ESLint config.
-next_step: Re-run ESLint against TS/JS files only (or use `--no-warn-ignored`) and proceed with build/smoke gates.
+collab spawn failed: agent thread limit reached (max 6)
+suspected_cause: Existing background agent/session slots are fully occupied.
+next_step: Use manual reviewer fallback for this slice and continue execution; retry reviewer-agent when thread slots free up.
