@@ -3,7 +3,7 @@ status: done
 title: PKI parity deepening (CA metadata + certificate revoke/ACME options)
 branch: feature/containers-automation-v1
 commits:
-  - pending-local-commit
+  - 14d81a5
 notes:
   - Expanded `/system/pki` to include CA CRL/description/private password-protected and certificate description/private password-protected/revoke/ACME fields.
   - Replaced non-guide passphrase model with guide-aligned `private password-protected` toggles.
