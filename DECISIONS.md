@@ -136,3 +136,7 @@
 - 2026-02-15: Extended `/network/traffic-policy` to manage `qos interface <if> ingress|egress` assignments, closing a missing top-level `qos interface` workflow from the QoS command tree.
 - 2026-02-15: Assignment UI validates ingress policy names against limiter policies and egress names against known QoS policy names to reduce invalid apply attempts.
 - 2026-02-15: Interface assignment selectors use merged interface discovery sources (`interfaces config`, `show interface physical`, `show all interfaces`) and description-first labels for consistency.
+- 2026-02-15: Replaced routing failover command-box UX with a dedicated form-first editor (route/next-hop/check/interface/metric) to align with the no-CLI-in-GUI direction while preserving the existing `/vyos/failover` API contract.
+- 2026-02-15: Replaced PIM and PIM6 lightweight list editors with full form-first pages modeled on the VyOS protocol guide command trees, including nested join management and diff-based batch apply.
+- 2026-02-15: Replaced ARP lightweight list editor with dedicated static ARP CRUD page including MAC format validation and description-first interface selectors.
+- 2026-02-15: Kept all routing hardening changes frontend-only (no backend refactor) to satisfy thin-wrapper and API-contract preservation constraints.

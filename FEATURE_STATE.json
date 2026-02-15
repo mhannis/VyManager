@@ -1,16 +1,17 @@
 {
-  "feature_id": "traffic-policy-qos-interface-assignment-2026-02-15",
-  "title": "Traffic Policy parity deepening (QoS interface assignment)",
+  "feature_id": "routing-protocol-hardening-batch-2026-02-15",
+  "title": "Routing protocol hardening batch (Failover, PIM, PIM6, Static ARP)",
   "status": "done",
   "acceptance_criteria": [
-    "`/network/traffic-policy` supports CRUD for `qos interface <if> ingress|egress` assignments.",
-    "Save path emits diff-based set/delete operations for interface assignments with scoped qos tree commands.",
-    "Ingress choices are validated against limiter policy names and egress choices against known QoS policy names.",
-    "Validation passes: backend test_app, frontend tsc/lint/build, runtime smoke, and browser smoke."
+    "`/routing/static-failover/failover` provides form-driven failover route CRUD without free-form command entry.",
+    "`/routing/multicast/pim` provides form-driven CRUD for global settings, interface settings, RP mappings, and IGMP joins.",
+    "`/routing/multicast/pim6` provides form-driven CRUD for interface MLD settings and static MLD joins.",
+    "`/routing/infrastructure/arp` provides form-driven static ARP CRUD with interface selection and MAC validation.",
+    "Validation passes: frontend tsc/lint/build, runtime smoke, and browser smoke."
   ],
   "assumptions": [
-    "Existing `/vyos/qos` wrapper endpoints remain sufficient for interface assignment operations.",
-    "Interface discovery sources may be partially populated; merged source list is used for selector resilience.",
+    "Existing protocol wrapper endpoints remain sufficient for these UI slices with no backend API contract changes.",
+    "Interface selectors use merged discovery from ethernet config + show physical + show all interfaces for resilience.",
     "Unrelated dirty files in this worktree remain untouched."
   ],
   "tasks": [
@@ -19,36 +20,52 @@
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/network/traffic-policy/page.tsx"
+        "frontend/src/components/routing/FailoverContent.tsx"
       ],
-      "notes": "Added qos interface assignment state parsing, editor UI, validation, and diff-based save generation."
+      "notes": "Replaced command-box workflow with structured failover route editor and diff-based save generation."
     },
     {
       "id": "T2",
-      "owner_role": "Backend",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "backend/routers/qos/qos.py"
+        "frontend/src/components/routing/PimContent.tsx",
+        "frontend/src/components/routing/Pim6Content.tsx"
       ],
-      "notes": "No backend changes required; existing qos tree wrapper already supports command scope."
+      "notes": "Implemented guide-aligned PIM/PIM6 form editors with interface-aware selectors and nested join handling."
     },
     {
       "id": "T3",
-      "owner_role": "Test",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/network/traffic-policy/page.tsx"
+        "frontend/src/components/routing/ArpProtocolContent.tsx"
       ],
-      "notes": "Validated via backend pytest, frontend tsc/lint/build, runtime smoke, and UI smoke."
+      "notes": "Implemented dedicated static ARP form editor with MAC-format validation and diff-based save behavior."
     },
     {
       "id": "T4",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "frontend/src/components/routing/FailoverContent.tsx",
+        "frontend/src/components/routing/PimContent.tsx",
+        "frontend/src/components/routing/Pim6Content.tsx",
+        "frontend/src/components/routing/ArpProtocolContent.tsx"
+      ],
+      "notes": "Validated with frontend tsc/lint/build plus runtime and browser smoke checks."
+    },
+    {
+      "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/app/network/traffic-policy/page.tsx"
+        "frontend/src/components/routing/FailoverContent.tsx",
+        "frontend/src/components/routing/PimContent.tsx",
+        "frontend/src/components/routing/Pim6Content.tsx",
+        "frontend/src/components/routing/ArpProtocolContent.tsx"
       ],
-      "notes": "Manual review completed in-session; no blocking issues found."
+      "notes": "Manual in-session review completed; no blocking issues found."
     }
   ],
   "commands": {

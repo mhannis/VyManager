@@ -54,31 +54,35 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Deepen option-level parity in the remaining non-routing domains, now focused on full `qos` policy usage coverage (class editors + interface assignment) and then PKI helper workflows.
+- Replace remaining lightweight routing protocol editors with robust form-driven pages aligned to the VyOS guide command trees.
 - Keep GUI form-driven (no free-form CLI entry) while aligning each page to the corresponding VyOS command tree semantics.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) each slice.
 
 ## Current Feature Spec
-Feature: **Traffic Policy QoS assignment deepening (`qos interface <if> ingress|egress`)**
+Feature: **Routing protocol UX hardening batch (`failover`, `pim`, `pim6`, `static arp`)**
 
 Acceptance criteria:
-- Frontend `/network/traffic-policy` supports form-driven QoS interface assignment CRUD for `qos interface <if> ingress|egress`.
-- Save path emits scoped diff-based set/delete operations for interface assignments alongside policy/class operations.
-- Ingress assignment is validated against limiter policy names; egress assignment is validated against known QoS policy names.
+- Frontend `/routing/static-failover/failover` is a form-driven failover route editor (no command text box) supporting route + next-hop + check/interface/metric fields.
+- Frontend `/routing/multicast/pim` is a form-driven PIM editor covering global settings, interface tuning, RP mappings, and IGMP static joins.
+- Frontend `/routing/multicast/pim6` is a form-driven PIM6 editor covering interface MLD settings and static MLD joins.
+- Frontend `/routing/infrastructure/arp` is a form-driven static ARP editor with interface-aware selection and MAC validation.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- Existing `/vyos/qos` wrapper API is sufficient for interface assignment operations; no backend contract changes are required for this slice.
-- Interface assignment UI relies on available interface discovery endpoints and excludes loopback.
+- Existing protocol batch APIs (`/vyos/failover`, `/vyos/pim`, `/vyos/pim6`, `/vyos/arp`) are sufficient; no backend contract changes are required for this slice.
+- Interface selectors continue to merge ethernet config + physical + all-interface discovery to remain resilient on partial endpoint data.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: traffic-policy QoS interface assignment deepening implemented and validated; commit pending.
+- Status: routing protocol hardening batch implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/app/network/traffic-policy/page.tsx`
+- `frontend/src/components/routing/FailoverContent.tsx`
+- `frontend/src/components/routing/PimContent.tsx`
+- `frontend/src/components/routing/Pim6Content.tsx`
+- `frontend/src/components/routing/ArpProtocolContent.tsx`
 
 ### Validation This Cycle
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_app.py` -> pass
@@ -103,11 +107,16 @@ Assumptions:
 ## TODO Backlog (next queue)
 - Deepen remaining option-level coverage for `traffic-policy` (precedence/default and other policy-type-specific subtrees).
 - Add PKI op-mode helper workflows (generate/import guidance) as optional UX accelerators.
+- Continue robust protocol pass for remaining pages that still expose minimal subsets despite being matrix-marked implemented.
 - Add live fixture-seeding and CLI alignment checks (`show configuration commands`) for the new domains.
 - After all config-guide features are implemented, run a full robustness relook sweep across all previously implemented domains and harden weak spots before final completion report.
 - Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Replaced `/routing/static-failover/failover` command-text workflow with a structured failover route editor that supports route/next-hop plus check target/timeout/type/policy, interface, and metric fields with diff-based set/delete saves.
+- Replaced `/routing/multicast/pim` simple list editor with a full form-first implementation covering guide-aligned global controls, interface parameters, RP mappings, and IGMP static joins.
+- Replaced `/routing/multicast/pim6` simple list editor with a full form-first implementation covering interface MLD controls and static MLD joins.
+- Replaced `/routing/infrastructure/arp` simple list editor with a dedicated static ARP editor that validates MAC format and uses description-first interface selection.
 - `/network/high-availability` now includes dedicated form-driven IPVS coverage for `virtual-server` and nested `real-server` CRUD; save uses diff-based set/delete generation under `high-availability virtual-server ...` and preserves existing VRRP/sync-group behavior.
 - `/network/traffic-policy` now includes class-level QoS editing for class-capable policy types, with diff-based command generation under `qos policy <type> <name> class <id> ...`.
 - Class editor policy picker is gated to class-capable types (`limiter`, `priority-queue`, `round-robin`, `shaper`) to avoid invalid class commands on unsupported QoS policy types.
