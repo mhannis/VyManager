@@ -54,59 +54,32 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Remove Gateway Status card from dashboard capability surface entirely.
-- Keep telemetry features native-API-only: if gateway probe or CPU temp are unsupported by API commands, do not present those capabilities in the UI.
-- Preserve existing API contracts and keep implementation thin within existing routers/components.
-- Keep runtime safety gate after backend changes (`pytest -> restart vm-api -> smoke:runtime -> smoke:ui`).
+- Remove CPU temperature from the System Information dashboard card display.
+- Preserve existing backend/API contracts; this is a frontend-only visibility change.
+- Validate via frontend type-check and runtime smoke gates.
 
 ## Current Feature Spec
-Feature: **Capability Prune: Gateway Card removal + native-only telemetry**
+Feature: **System Information card: remove temperature display**
 
 Acceptance criteria:
-- Gateway Status card no longer appears in Add Card options.
-- Existing saved `gateway-status` cards are filtered out when loading dashboard layouts.
-- Gateway probe capability is marked unsupported (`probe_supported=false`) when both `show ping` and `generate ping` are invalid-command paths.
-- CPU temp capability is marked unsupported (`cpu_temperature_supported=false`) when API sensor commands are unavailable.
-- UI hides unsupported telemetry controls/fields instead of showing persistent failing warnings.
-- Runtime remains healthy after restart (`smoke:runtime`, `smoke:ui` pass).
+- CPU temperature is no longer rendered in the System Information card.
+- Thermometer icon import is removed from the card component.
+- Frontend type-check passes.
 
 Assumptions:
-- Native API support is the only allowed capability source for these telemetry features.
+- Temperature data may still exist in API responses but should not be shown in this card.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: gateway-card removal and native-capability gating implemented and validated; commit pending.
+- Status: frontend temperature-display removal implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `backend/routers/show.py`
-- `backend/routers/system.py`
-- `backend/tests/test_gateway_summary.py`
-- `backend/tests/test_system_dashboard_temperature.py`
-- `frontend/src/components/dashboard/AddCardModal.tsx`
-- `frontend/src/app/page.tsx`
-- `frontend/src/lib/api/show.ts`
-- `frontend/src/lib/api/system.ts`
 - `frontend/src/components/dashboard/SystemInformationCard.tsx`
-- `frontend/src/components/dashboard/GatewayStatusCard.tsx`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py tests/test_system_dashboard_temperature.py` -> pass (`22 passed`)
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py tests/test_safe_apply.py` -> pass (`7 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
-- `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
-- `cd frontend && npm run -s build` -> pass
-- Restarted API process:
-  - `tmux kill-session -t vm-api || true`
-  - `tmux new-session -d -s vm-api 'cd /home/redhot/VyOS/VyManager/backend && set -a; [ -f .env ] && source .env; set +a; ./.venv/bin/python -m uvicorn app:app --host 0.0.0.0 --port 8000 --proxy-headers'`
-  - `ss -ltnp | rg ':8000'` -> listening
-- Restarted UI process:
-  - `tmux kill-session -t vm-ui || true`
-  - `tmux new-session -d -s vm-ui 'cd /home/redhot/VyOS/VyManager/frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000'`
-  - `ss -ltnp | rg ':3000'` -> listening
-- `cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime` -> pass
-- `cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui` -> pass
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.

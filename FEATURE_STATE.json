@@ -1,64 +1,43 @@
 {
-  "feature_id": "dashboard-capability-prune-r5-2026-02-15",
-  "title": "Remove Gateway card and enforce native-only telemetry capability",
+  "feature_id": "system-info-remove-temp-r1-2026-02-15",
+  "title": "Remove temperature display from System Information card",
   "status": "in_review",
   "acceptance_criteria": [
-    "Gateway Status is removed from Add Card options.",
-    "Saved gateway-status cards are filtered out on dashboard load.",
-    "Gateway probe capability is marked unsupported when API ping commands are unavailable.",
-    "CPU temperature capability is marked unsupported when API sensor commands are unavailable.",
-    "Unsupported telemetry is hidden in UI instead of showing repeated failing warnings.",
-    "Backend tests and runtime smoke pass after restart."
+    "CPU temperature is not shown in the System Information card UI.",
+    "Unused thermometer icon import is removed from card component.",
+    "Frontend type-check passes after change."
   ],
   "assumptions": [
-    "Native API support is the only allowed capability source for gateway probe and CPU temperature telemetry.",
+    "Temperature values may still exist in API payloads; only UI visibility is being changed.",
     "Unrelated dirty files in the working tree are pre-existing and out of scope for this hotfix."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "Backend",
-      "status": "done",
-      "files": [
-        "backend/routers/show.py",
-        "backend/routers/system.py"
-      ],
-      "notes": "Removed SSH fallback, added capability flags (probe_supported/cpu_temperature_supported), and kept API contracts additive."
-    },
-    {
-      "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/dashboard/AddCardModal.tsx",
-        "frontend/src/app/page.tsx",
-        "frontend/src/components/dashboard/SystemInformationCard.tsx",
-        "frontend/src/components/dashboard/GatewayStatusCard.tsx",
-        "frontend/src/lib/api/show.ts",
-        "frontend/src/lib/api/system.ts"
+        "frontend/src/components/dashboard/SystemInformationCard.tsx"
       ],
-      "notes": "Removed Gateway card from dashboard surface and hid unsupported telemetry fields in card UI."
+      "notes": "Removed temperature badge rendering and Thermometer icon import from System Information card."
     },
     {
-      "id": "T3",
+      "id": "T2",
       "owner_role": "Test",
       "status": "done",
-      "files": [
-        "backend/tests/test_gateway_summary.py",
-        "backend/tests/test_system_dashboard_temperature.py"
-      ],
-      "notes": "Replaced SSH fallback assertions with unsupported-capability assertions and validated targeted suites."
+      "files": [],
+      "notes": "Ran frontend type-check successfully."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_safe_apply.py",
+    "test": "cd frontend && npx tsc --noEmit --pretty false",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Native-only telemetry capability pruning",
+      "purpose": "System Information card UI polish",
       "status": "active"
     }
   ]

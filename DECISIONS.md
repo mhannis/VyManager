@@ -183,3 +183,4 @@
 - 2026-02-15: On some VyOS builds, op-mode probes return `400 Invalid command` when invoked through `show` (e.g., `show [ping]` and `show [sensors]`); gateway telemetry and dashboard temperature collection now retry the same path through `generate` before marking data unavailable.
 - 2026-02-15: Some targets reject both `show ping` and `generate ping` (`Invalid command`); gateway telemetry now attempts SSH CLI ping (`ping -c/-w`) as a last-resort probe path, and dashboard temperature similarly falls back to SSH `sensors`.
 - 2026-02-15: Per operator direction, non-native telemetry fallbacks were removed for dashboard capabilities; Gateway Status card is now removed from UI, and telemetry fields are only shown when native API command support exists.
+- 2026-02-15: Per operator request, CPU temperature display was removed from the System Information dashboard card; telemetry data may still exist in backend payloads but is intentionally hidden in this card UI.
