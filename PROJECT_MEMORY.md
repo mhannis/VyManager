@@ -65,6 +65,7 @@ Acceptance criteria:
 - Add reusable page-level help dialog component and shared routing guide content.
 - Wire guide dialogs into OSPF, IS-IS, OpenFabric, RIP, MPLS, BFD, RPKI, IGMP Proxy, PIM, and PIM6 protocol pages.
 - Remove `setState`-in-effect selector patterns on `/routing/unicast-protocols`, `/routing/infrastructure`, and `/routing/multicast`.
+- Keep redirect-only route pages wrapped in `AppLayout` so sidebar/navigation shell remains visible during redirects.
 - Frontend build/typecheck remains green with no route/runtime regressions.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
@@ -94,6 +95,8 @@ Assumptions:
 - `frontend/src/app/routing/unicast-protocols/page.tsx`
 - `frontend/src/app/routing/infrastructure/page.tsx`
 - `frontend/src/app/routing/multicast/page.tsx`
+- `frontend/src/app/network/routes/page.tsx`
+- `frontend/src/app/routing/unicast-protocols/static/page.tsx`
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
@@ -193,3 +196,4 @@ Assumptions:
 - Removed effect-driven selector resets in unicast/infrastructure/multicast routing shells by deriving active selection from permissions + optional user selection, eliminating `react-hooks/set-state-in-effect` warnings and reducing selector flicker risk.
 - Expanded `routingProtocolGuides` to include BFD, RPKI, IGMP Proxy, PIM, and PIM6 and integrated guide dialogs into each corresponding page header.
 - BFD now exposes in-page guidance without changing peer/profile CRUD contracts; infrastructure and multicast protocols now follow the same help-entry UX as unicast protocol pages.
+- Redirect pages `/network/routes` and `/routing/unicast-protocols/static` now render inside `AppLayout` while auto-redirecting, preventing temporary left-nav disappearance during transitions.

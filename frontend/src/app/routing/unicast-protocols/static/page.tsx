@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
@@ -29,8 +30,10 @@ export default function StaticProtocolPage() {
   }, [canRead, isLoading, router]);
 
   return (
-    <div className="flex h-full items-center justify-center">
-      <LoadingSpinner />
-    </div>
+    <AppLayout>
+      <div className="flex h-full items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    </AppLayout>
   );
 }

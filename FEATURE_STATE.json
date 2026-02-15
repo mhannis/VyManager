@@ -6,6 +6,7 @@
     "A reusable help dialog component exists for page-level operator guidance.",
     "Routing protocol how-to guides are available from OSPF, IS-IS, OpenFabric, RIP, MPLS, BFD, RPKI, IGMP Proxy, PIM, and PIM6 pages.",
     "Routing selector shells avoid setState-in-effect patterns and derive selected panel deterministically.",
+    "Redirect-only routes keep AppLayout shell visible so left navigation does not disappear during transition.",
     "Frontend typecheck/build and runtime/browser smoke pass after changes."
   ],
   "assumptions": [
@@ -30,9 +31,11 @@
         "frontend/src/components/routing/RpkiContent.tsx",
         "frontend/src/components/routing/IgmpProxyContent.tsx",
         "frontend/src/components/routing/PimContent.tsx",
-        "frontend/src/components/routing/Pim6Content.tsx"
+        "frontend/src/components/routing/Pim6Content.tsx",
+        "frontend/src/app/network/routes/page.tsx",
+        "frontend/src/app/routing/unicast-protocols/static/page.tsx"
       ],
-      "notes": "Added reusable help dialog and integrated page-level guides across core unicast, infrastructure, and multicast protocol pages."
+      "notes": "Added reusable help dialog and integrated page-level guides across core unicast, infrastructure, and multicast protocol pages; aligned redirect-only route pages with AppLayout shell."
     },
     {
       "id": "T2",
@@ -64,7 +67,9 @@
         "frontend/src/components/routing/Pim6Content.tsx",
         "frontend/src/app/routing/unicast-protocols/page.tsx",
         "frontend/src/app/routing/infrastructure/page.tsx",
-        "frontend/src/app/routing/multicast/page.tsx"
+        "frontend/src/app/routing/multicast/page.tsx",
+        "frontend/src/app/network/routes/page.tsx",
+        "frontend/src/app/routing/unicast-protocols/static/page.tsx"
       ],
       "notes": "Validated with tsc, lint, build, runtime smoke, and browser smoke."
     },
@@ -87,7 +92,9 @@
         "frontend/src/components/routing/Pim6Content.tsx",
         "frontend/src/app/routing/unicast-protocols/page.tsx",
         "frontend/src/app/routing/infrastructure/page.tsx",
-        "frontend/src/app/routing/multicast/page.tsx"
+        "frontend/src/app/routing/multicast/page.tsx",
+        "frontend/src/app/network/routes/page.tsx",
+        "frontend/src/app/routing/unicast-protocols/static/page.tsx"
       ],
       "notes": "Manual review: no contract changes, no free-form CLI UX regressions, and no route-level runtime crashes observed in smoke."
     }
