@@ -222,3 +222,6 @@
 - 2026-02-15: Interface backlog tracking now marks `IF-11` as `partial` after baseline VTI implementation; next queued item is `IF-12` (VXLAN).
 - 2026-02-15: Added VXLAN interface parity slice (`interfaces vxlan`) with thin wrapper endpoint `/vyos/vxlan-interface/*` and form-first page `/network/interfaces/vxlan`, including VLAN-to-VNI mapping support.
 - 2026-02-15: Interface backlog tracking now marks `IF-12` as `partial` after baseline VXLAN implementation; next queued item is `IF-13` (wireless capability-gated strategy).
+- 2026-02-15: Implemented `interfaces wireless` as a custom thin router (instead of generic tree wrapper) so the same page can safely apply `system wireless country-code` alongside interface changes; this avoids backend layer rewrites while satisfying AP-mode prerequisites from the VyOS guide.
+- 2026-02-15: Added non-blocking capability warnings on Wireless/WWAN pages when no matching hardware (`wlan*`/`wwan*`) is detected; pre-stage config remains allowed to support template-driven deployments.
+- 2026-02-15: Marked IF-13 and IF-14 backlog items as `partial` after baseline form-first implementation; advanced 802.11 capability depth and WWAN DHCPv6-PD/op-mode workflows are intentionally queued under IF-15.

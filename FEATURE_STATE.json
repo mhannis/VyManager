@@ -1,120 +1,64 @@
 {
-  "feature_id": "interfaces-if-06-through-if-12-openvpn-peth-sstpc-veth-tunnel-vti-vxlan-2026-02-15",
-  "title": "Interfaces parity: OpenVPN + Pseudo-Ethernet + SSTP Client + Virtual-Ethernet + Tunnel + VTI + VXLAN editors",
+  "feature_id": "interfaces-if-13-if-14-wireless-wwan-2026-02-15",
+  "title": "Interfaces parity: Wireless + WWAN form-first editors",
   "status": "in_progress",
   "acceptance_criteria": [
-    "Backend exposes scoped wrappers for `interfaces openvpn`, `interfaces pseudo-ethernet`, `interfaces sstpc`, `interfaces virtual-ethernet`, `interfaces tunnel`, `interfaces vti`, and `interfaces vxlan`.",
-    "UI includes dedicated form-first pages under Network Interfaces for OpenVPN, Pseudo-Ethernet, SSTP Client, Virtual-Ethernet, Tunnel, VTI, and VXLAN.",
-    "Each page supports create/read/update/delete using diff-based `set/delete` command generation with validation.",
-    "Sidebar navigation, Interfaces quick links, guides, and runtime smoke routes include all newly added interface pages.",
-    "Validation gates pass: backend wrapper tests, frontend typecheck, targeted eslint, frontend build, runtime smoke."
+    "Backend exposes scoped wrappers for `interfaces wireless` and `interfaces wwan` without replacing existing service layers.",
+    "Wireless page supports GUI CRUD for core WLAN/AP settings, WPA ciphers/passphrase/RADIUS, and key HT capability toggles.",
+    "WWAN page supports GUI CRUD for APN, addressing, DHCP option leaves, and IPv4/IPv6 per-interface tuning controls.",
+    "Interfaces navigation, side menu, page guides, and runtime smoke routes include the new wireless and wwan pages.",
+    "Validation gates pass: backend tests, frontend typecheck, targeted eslint, frontend build, and runtime smoke."
   ],
   "assumptions": [
-    "OpenVPN interface parser currently models high-signal config leaves; advanced server-client nested objects (per-client maps, MFA subtrees) remain follow-up depth work.",
-    "Pseudo-Ethernet and Virtual-Ethernet pages currently focus on core interface/common fields and do not yet expose nested VLAN/QinQ editors.",
-    "Tunnel page currently covers core encapsulation/endpoints/common IP toggles and GRE key; advanced tunnel-specific options remain follow-up depth work.",
-    "VTI page currently covers baseline interface fields; deeper IPsec option coupling lives in VPN/IPsec workflows.",
-    "VXLAN page currently covers major transport and parameter options plus VLAN-to-VNI mappings; deeper EVPN/SVD integration verification remains follow-up work.",
-    "Playwright browser smoke remains environment-limited in this host due missing system shared libraries."
+    "Wireless/WWAN hardware may be absent on many test nodes, so both pages must remain usable in pre-stage mode with clear capability warnings.",
+    "Wireless option-depth beyond core WPA/HT and WWAN DHCPv6-PD/operational modem controls remains follow-up parity work.",
+    "Playwright browser smoke remains blocked on this host due missing system shared libraries (libnspr4.so)."
   ],
   "tasks": [
     {
-      "id": "IF-06",
+      "id": "IF-13",
       "owner_role": "Backend/UI/Test",
       "status": "done",
       "files": [
-        "backend/routers/interfaces/openvpn.py",
-        "frontend/src/lib/api/openvpn-interface.ts",
-        "frontend/src/app/network/interfaces/openvpn/page.tsx"
+        "backend/routers/interfaces/wireless.py",
+        "frontend/src/lib/api/wireless.ts",
+        "frontend/src/app/network/interfaces/wireless/page.tsx"
       ],
-      "notes": "OpenVPN interface editor implemented with mode/protocol/addressing/tls/encryption/server controls and diff-based saves."
+      "notes": "Implemented wireless router/page with country-code support, core AP/station settings, WPA and RADIUS controls, and HT capability toggles."
     },
     {
-      "id": "IF-07",
+      "id": "IF-14",
       "owner_role": "Backend/UI/Test",
       "status": "done",
       "files": [
-        "backend/routers/interfaces/pseudo_ethernet.py",
-        "frontend/src/lib/api/pseudo-ethernet.ts",
-        "frontend/src/app/network/interfaces/pseudo-ethernet/page.tsx"
+        "backend/routers/interfaces/wwan.py",
+        "frontend/src/lib/api/wwan.ts",
+        "frontend/src/app/network/interfaces/wwan/page.tsx"
       ],
-      "notes": "Pseudo-Ethernet editor implemented with source-interface, common interface fields, and address CRUD."
+      "notes": "Implemented WWAN router/page with APN, addressing, DHCP options, and IPv4/IPv6 interface tuning controls."
     },
     {
-      "id": "IF-08",
-      "owner_role": "Backend/UI/Test",
+      "id": "IF-NAV-HELP",
+      "owner_role": "UI/Test",
       "status": "done",
       "files": [
-        "backend/routers/interfaces/sstpc.py",
-        "frontend/src/lib/api/sstpc.ts",
-        "frontend/src/app/network/interfaces/sstp-client/page.tsx"
-      ],
-      "notes": "SSTP client editor implemented with server/routing/ip settings and MSS controls."
-    },
-    {
-      "id": "IF-09",
-      "owner_role": "Backend/UI/Test",
-      "status": "done",
-      "files": [
-        "backend/routers/interfaces/tunnel.py",
-        "frontend/src/lib/api/tunnel-interface.ts",
-        "frontend/src/app/network/interfaces/tunnel/page.tsx"
-      ],
-      "notes": "Tunnel editor implemented for core encapsulation, endpoint, addressing, and key interface toggles."
-    },
-    {
-      "id": "IF-10",
-      "owner_role": "Backend/UI/Test",
-      "status": "done",
-      "files": [
-        "backend/routers/interfaces/virtual_ethernet.py",
-        "frontend/src/lib/api/virtual-ethernet.ts",
-        "frontend/src/app/network/interfaces/virtual-ethernet/page.tsx"
-      ],
-      "notes": "Virtual-Ethernet editor implemented with peer-name pairing, common interface fields, and address CRUD."
-    },
-    {
-      "id": "IF-11",
-      "owner_role": "Backend/UI/Test",
-      "status": "done",
-      "files": [
-        "backend/routers/interfaces/vti.py",
-        "frontend/src/lib/api/vti.ts",
-        "frontend/src/app/network/interfaces/vti/page.tsx"
-      ],
-      "notes": "VTI editor implemented with common interface fields and route-based VPN friendly baseline UX."
-    },
-    {
-      "id": "IF-12",
-      "owner_role": "Backend/UI/Test",
-      "status": "done",
-      "files": [
-        "backend/routers/interfaces/vxlan.py",
-        "frontend/src/lib/api/vxlan.ts",
-        "frontend/src/app/network/interfaces/vxlan/page.tsx"
-      ],
-      "notes": "VXLAN editor implemented with unicast/multicast transport, parameters, and VLAN-to-VNI mapping support."
-    },
-    {
-      "id": "IF-TEST",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/test_config_tree_wrapper_capabilities.py",
+        "frontend/src/components/layout/Sidebar.tsx",
+        "frontend/src/app/network/interfaces/page.tsx",
+        "frontend/src/lib/help/pageGuides.ts",
         "frontend/scripts/check-runtime.sh",
         "frontend/scripts/smoke-ui.mjs"
       ],
-      "notes": "Expanded wrapper tests and smoke route sets for newly added interface pages; runtime smoke verified."
+      "notes": "Added navigation links, how-to guides, and smoke route coverage for wireless/wwan pages."
     },
     {
-      "id": "IF-13",
+      "id": "IF-15",
       "owner_role": "Planner",
       "status": "todo",
       "files": [
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
-        "PROJECT_MEMORY.md"
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
       ],
-      "notes": "Next queued item: implement wireless interface coverage strategy with platform capability gating (`interfaces wireless`)."
+      "notes": "Next queue: deepen remaining interface-family option parity (ethernet/pppoe/loopback/wireguard plus advanced wireless/wwan depth)."
     }
   ],
   "commands": {

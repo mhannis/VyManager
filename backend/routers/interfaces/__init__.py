@@ -19,6 +19,8 @@ from . import (
     virtual_ethernet,
     vti,
     vxlan,
+    wireless,
+    wwan,
 )
 
 __all__ = [
@@ -36,4 +38,6 @@ __all__ = [
     "virtual_ethernet",
     "vti",
     "vxlan",
+    "wireless",
+    "wwan",
 ]

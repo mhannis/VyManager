@@ -46,6 +46,8 @@ const ROUTES = (
     "/network/interfaces/tunnel",
     "/network/interfaces/vti",
     "/network/interfaces/vxlan",
+    "/network/interfaces/wireless",
+    "/network/interfaces/wwan",
     "/network/interfaces/dummy",
     "/firewall/zones",
     "/system/services",

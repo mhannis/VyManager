@@ -37,6 +37,8 @@ critical_routes=(
   "/network/interfaces/tunnel"
   "/network/interfaces/vti"
   "/network/interfaces/vxlan"
+  "/network/interfaces/wireless"
+  "/network/interfaces/wwan"
   "/network/interfaces/dummy"
   "/system/services?tab=broadcast-relay&view=single"
   "/system/services?tab=config-sync&view=single"

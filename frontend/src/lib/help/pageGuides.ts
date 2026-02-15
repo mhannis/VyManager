@@ -14,6 +14,8 @@ export const pageGuides: Record<
   | "tunnelInterfaces"
   | "vtiInterfaces"
   | "vxlanInterfaces"
+  | "wirelessInterfaces"
+  | "wwanInterfaces"
   | "dhcpServer"
   | "firewallZones"
   | "firewallPolicies"
@@ -419,6 +421,67 @@ export const pageGuides: Record<
         items: [
           "Remote/group misconfiguration and underlay ACL/firewall blocks are the most common causes of VXLAN traffic loss.",
           "If interoperability fails across vendors, verify UDP destination port expectations and encapsulation defaults.",
+        ],
+      },
+    ],
+  },
+  wirelessInterfaces: {
+    title: "Wireless Interfaces How-To",
+    summary:
+      "Configure WLAN interfaces for station or access-point operation with WPA and radio capability tuning.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/interfaces/wireless.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Set `system wireless country-code` first, especially before enabling access-point mode.",
+          "Create interface basics (type, mode, channel, SSID, addressing) before enabling advanced capabilities.",
+          "Apply WPA mode/ciphers/passphrase (or RADIUS servers) before onboarding clients.",
+          "Enable advanced HT capability flags only after baseline connectivity is stable.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Confirm interface appears in the configured list with the intended SSID/type/mode values.",
+          "Check client association and traffic flow after save using the dashboard and interface pages.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Association failures are commonly country-code/channel incompatibility or WPA mismatch issues.",
+          "If AP works but traffic fails, verify DHCP/firewall/NAT path for the WLAN subnet.",
+        ],
+      },
+    ],
+  },
+  wwanInterfaces: {
+    title: "WWAN Interfaces How-To",
+    summary:
+      "Configure cellular modem interfaces with APN, DHCP/static addressing, and per-interface IP behavior.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/interfaces/wwan.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Create the WWAN interface and set APN based on your carrier requirements.",
+          "Set addressing (typically `dhcp`) and default-route behavior before applying advanced IP tweaks.",
+          "Apply MSS/forwarding/source-validation settings only when needed for your uplink design.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Verify WWAN interface is enabled and has a leased/assigned address after save.",
+          "Confirm route behavior and upstream reachability with expected DHCP route distance settings.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "No connectivity is often APN mismatch or modem not fully initialized by the platform.",
+          "For unstable sessions, tune MSS and verify provider-side DHCP/default-route expectations.",
         ],
       },
     ],

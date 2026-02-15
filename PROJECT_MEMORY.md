@@ -56,80 +56,40 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 ## Current Objective
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
-- Continue interfaces-domain backlog after completing IF-06 through IF-12 and move next to IF-13 wireless capability-gated coverage.
+- Continue interfaces-domain backlog after delivering IF-13 and IF-14, then move to IF-15 option-depth parity.
 
 ## Current Feature Spec
-Feature: **Interfaces IF-06 through IF-12 parity (OpenVPN + Pseudo-Ethernet + SSTP Client + Virtual-Ethernet + Tunnel + VTI + VXLAN editors)**
+Feature: **Interfaces IF-13 + IF-14 parity (Wireless + WWAN editors)**
 
 Acceptance criteria:
-- Backend exposes scoped read/batch wrapper endpoints for:
-  - `interfaces openvpn`
-  - `interfaces pseudo-ethernet`
-  - `interfaces sstpc`
-  - `interfaces virtual-ethernet`
-  - `interfaces tunnel`
-  - `interfaces vti`
-  - `interfaces vxlan`
+- Backend exposes scoped read/batch endpoints for:
+  - `interfaces wireless` (+ `system wireless country-code` operations)
+  - `interfaces wwan`
 - UI includes dedicated form-first pages:
-  - `/network/interfaces/openvpn`
-  - `/network/interfaces/pseudo-ethernet`
-  - `/network/interfaces/sstp-client`
-  - `/network/interfaces/virtual-ethernet`
-  - `/network/interfaces/tunnel`
-  - `/network/interfaces/vti`
-  - `/network/interfaces/vxlan`
+  - `/network/interfaces/wireless`
+  - `/network/interfaces/wwan`
 - All pages support create/read/update/delete workflows with validation and diff-based command generation.
 - Interfaces navigation and runtime smoke route coverage include all new pages.
 
 Assumptions:
-- Existing dirty files outside this slice are pre-existing and out of scope.
-- Browser smoke still depends on host Playwright system libraries.
+- Wireless/WWAN hardware may be absent on test nodes; UI must still allow pre-staged config with clear warnings.
+- Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: `IF-06`, `IF-07`, `IF-08`, `IF-09`, `IF-10`, `IF-11`, and `IF-12` implemented in backend/frontend; next queued slice is `IF-13` wireless capability-gated strategy.
+- Status: `IF-13` and `IF-14` baseline implementations are complete in backend/frontend and validated; next queued slice is `IF-15` interface option-depth parity.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
 - `backend/app.py`
-- `backend/routers/interfaces/bonding.py`
-- `backend/routers/interfaces/bridge.py`
-- `backend/routers/interfaces/geneve.py`
-- `backend/routers/interfaces/l2tpv3.py`
-- `backend/routers/interfaces/macsec.py`
-- `backend/routers/interfaces/openvpn.py`
-- `backend/routers/interfaces/pseudo_ethernet.py`
-- `backend/routers/interfaces/sstpc.py`
-- `backend/routers/interfaces/tunnel.py`
-- `backend/routers/interfaces/virtual_ethernet.py`
-- `backend/routers/interfaces/vti.py`
-- `backend/routers/interfaces/vxlan.py`
 - `backend/routers/interfaces/__init__.py`
+- `backend/routers/interfaces/wireless.py`
+- `backend/routers/interfaces/wwan.py`
 - `backend/tests/test_config_tree_wrapper_capabilities.py`
-- `frontend/src/lib/api/bonding.ts`
-- `frontend/src/lib/api/bridge-interface.ts`
-- `frontend/src/lib/api/geneve.ts`
-- `frontend/src/lib/api/l2tpv3.ts`
-- `frontend/src/lib/api/macsec.ts`
-- `frontend/src/lib/api/openvpn-interface.ts`
-- `frontend/src/lib/api/pseudo-ethernet.ts`
-- `frontend/src/lib/api/sstpc.ts`
-- `frontend/src/lib/api/tunnel-interface.ts`
-- `frontend/src/lib/api/virtual-ethernet.ts`
-- `frontend/src/lib/api/vti.ts`
-- `frontend/src/lib/api/vxlan.ts`
-- `frontend/src/app/network/interfaces/bonding/page.tsx`
-- `frontend/src/app/network/interfaces/bridge/page.tsx`
-- `frontend/src/app/network/interfaces/geneve/page.tsx`
-- `frontend/src/app/network/interfaces/l2tpv3/page.tsx`
-- `frontend/src/app/network/interfaces/macsec/page.tsx`
-- `frontend/src/app/network/interfaces/openvpn/page.tsx`
-- `frontend/src/app/network/interfaces/pseudo-ethernet/page.tsx`
-- `frontend/src/app/network/interfaces/sstp-client/page.tsx`
-- `frontend/src/app/network/interfaces/tunnel/page.tsx`
-- `frontend/src/app/network/interfaces/virtual-ethernet/page.tsx`
-- `frontend/src/app/network/interfaces/vti/page.tsx`
-- `frontend/src/app/network/interfaces/vxlan/page.tsx`
+- `frontend/src/lib/api/wireless.ts`
+- `frontend/src/lib/api/wwan.ts`
+- `frontend/src/app/network/interfaces/wireless/page.tsx`
+- `frontend/src/app/network/interfaces/wwan/page.tsx`
 - `frontend/src/lib/help/pageGuides.ts`
 - `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/src/app/network/interfaces/page.tsx`
@@ -143,12 +103,13 @@ Assumptions:
 - `LAST_FAILURE.txt`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py` passed (`51 passed`).
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_containers_automation_v1.py` passed (`118 passed`).
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py` passed (`58 passed`).
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_containers_automation_v1.py` passed (`125 passed`).
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/app/network/interfaces/openvpn/page.tsx src/app/network/interfaces/pseudo-ethernet/page.tsx src/app/network/interfaces/sstp-client/page.tsx src/app/network/interfaces/virtual-ethernet/page.tsx src/lib/api/openvpn-interface.ts src/lib/api/pseudo-ethernet.ts src/lib/api/sstpc.ts src/lib/api/virtual-ethernet.ts src/lib/help/pageGuides.ts src/components/layout/Sidebar.tsx src/app/network/interfaces/page.tsx --max-warnings=0` passed.
+- `cd frontend && npx eslint src/lib/api/wireless.ts src/lib/api/wwan.ts src/app/network/interfaces/wireless/page.tsx src/app/network/interfaces/wwan/page.tsx src/app/network/interfaces/page.tsx src/components/layout/Sidebar.tsx src/lib/help/pageGuides.ts --max-warnings=0` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
+- `cd frontend && npm run -s smoke:ui` failed due missing host library `libnspr4.so` (recorded in `LAST_FAILURE.txt`).
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
@@ -158,8 +119,7 @@ Assumptions:
 
 ## TODO Backlog (next queue)
 - Execute next missing interfaces slices from `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`.
-- `IF-13`: add robust wireless editor with platform capability gating.
-- `IF-14`: add robust wwan editor with platform capability gating.
+- `IF-15`: deepen ethernet/pppoe/loopback/wireguard option parity and advanced wireless/wwan leaves.
 - Continue remaining interface-family gaps (`IF-15` deepening) in guide order.
 - Build option-level parity scoring to replace detection-only completion claims (`X-01`).
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
@@ -323,3 +283,8 @@ Assumptions:
   - `/vyos/vxlan-interface/*` + `/network/interfaces/vxlan`
 - VXLAN UI currently covers major guide options (VNI/port/source/remote-or-group/parameters flags) and includes VLAN-to-VNI mapping CRUD for SVD-oriented configurations.
 - Backlog status updated: `IF-12` moved from `missing` to `partial` (baseline page implemented).
+- Added dedicated interface routers/pages for `wireless` and `wwan` and integrated both into navigation + smoke routes.
+- Wireless backend endpoint now supports `system wireless country-code` operations alongside `interfaces wireless` subtree updates so AP-mode prerequisites can be applied in-page.
+- Added capability-gating UX for both pages: if no `wlan*`/`wwan*` interfaces are detected, the UI shows a non-blocking warning while still allowing pre-stage configuration.
+- Backlog artifacts now mark `IF-13` and `IF-14` as `partial` (baseline complete, advanced depth pending under `IF-15`).
+- Latest validation snapshot: backend tests `125 passed`, frontend typecheck passed, targeted eslint passed, frontend build passed, runtime smoke passed; browser smoke remains blocked on missing `libnspr4.so`.

@@ -163,6 +163,16 @@ const navigation: NavItem[] = [
         href: "/network/interfaces/vxlan",
         requiredPermission: FeatureGroup.INTERFACES,
       },
+      {
+        title: "Wireless Interfaces",
+        href: "/network/interfaces/wireless",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "WWAN Interfaces",
+        href: "/network/interfaces/wwan",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
     ],
   },
   {

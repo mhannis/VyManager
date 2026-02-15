@@ -17,6 +17,8 @@ import routers.interfaces.tunnel as tunnel_router
 import routers.interfaces.virtual_ethernet as virtual_ethernet_router
 import routers.interfaces.vti as vti_router
 import routers.interfaces.vxlan as vxlan_router
+import routers.interfaces.wireless as wireless_router
+import routers.interfaces.wwan as wwan_router
 import routers.load_balancing.load_balancing as load_balancing_router
 import routers.pki.pki as pki_router
 import routers.traffic_policy.traffic_policy as traffic_policy_router
@@ -118,6 +120,19 @@ class DummyService:
                         "source-interface": "eth0",
                     }
                 },
+                "wireless": {
+                    "wlan0": {
+                        "type": "access-point",
+                        "mode": "n",
+                        "ssid": "LabWifi",
+                    }
+                },
+                "wwan": {
+                    "wwan0": {
+                        "apn": "internet.example",
+                        "address": ["dhcp"],
+                    }
+                },
             },
             "vrf": {
                 "name": {
@@ -160,6 +175,11 @@ class DummyService:
                     }
                 }
             },
+            "system": {
+                "wireless": {
+                    "country-code": "us",
+                }
+            },
         }
 
     def configure_batch(self, commands):
@@ -185,6 +205,8 @@ def app():
     app.include_router(virtual_ethernet_router.router)
     app.include_router(vti_router.router)
     app.include_router(vxlan_router.router)
+    app.include_router(wireless_router.router)
+    app.include_router(wwan_router.router)
     app.include_router(vrf_router.router)
     app.include_router(load_balancing_router.router)
     app.include_router(high_availability_router.router)
@@ -203,6 +225,8 @@ def allow_permissions(monkeypatch):
 
     monkeypatch.setattr(config_tree_wrapper_module, "require_read_permission", allow_read)
     monkeypatch.setattr(config_tree_wrapper_module, "require_write_permission", allow_write)
+    monkeypatch.setattr(wireless_router, "require_read_permission", allow_read)
+    monkeypatch.setattr(wireless_router, "require_write_permission", allow_write)
 
 
 @pytest.fixture()
@@ -211,6 +235,7 @@ def mock_service(monkeypatch):
         return DummyService()
 
     monkeypatch.setattr(config_tree_wrapper_module, "get_session_vyos_service", service_factory)
+    monkeypatch.setattr(wireless_router, "get_session_vyos_service", service_factory)
 
 
 @pytest.mark.parametrize(
@@ -228,6 +253,8 @@ def mock_service(monkeypatch):
         "/vyos/virtual-ethernet/capabilities",
         "/vyos/vti-interface/capabilities",
         "/vyos/vxlan-interface/capabilities",
+        "/vyos/wireless-interface/capabilities",
+        "/vyos/wwan-interface/capabilities",
         "/vyos/vrf/capabilities",
         "/vyos/load-balancing/capabilities",
         "/vyos/high-availability/capabilities",
@@ -261,6 +288,8 @@ def test_config_tree_wrapper_capabilities_payload(app, allow_permissions, mock_s
         ("/vyos/virtual-ethernet/config", "virtual_ethernet", "veth10"),
         ("/vyos/vti-interface/config", "vti", "vti0"),
         ("/vyos/vxlan-interface/config", "vxlan", "vxlan241"),
+        ("/vyos/wireless-interface/config", "wireless", "wlan0"),
+        ("/vyos/wwan-interface/config", "wwan", "wwan0"),
         ("/vyos/vrf/config", "vrf", "name"),
         ("/vyos/load-balancing/config", "load_balancing", "wan"),
         ("/vyos/high-availability/config", "high_availability", "vrrp"),
@@ -283,6 +312,15 @@ def test_config_tree_wrapper_config_payload(
     payload = response.json()
     assert response_key in payload
     assert marker in payload[response_key]
+
+
+def test_wireless_config_includes_country_code(app, allow_permissions, mock_service):
+    client = TestClient(app)
+    response = client.get("/vyos/wireless-interface/config")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload.get("country_code") == "us"
 
 
 @pytest.mark.parametrize(
@@ -347,6 +385,16 @@ def test_config_tree_wrapper_config_payload(
             "/vyos/vxlan-interface/batch",
             "set interfaces vxlan vxlan241 vni 241",
             "set interfaces vti vti0 description IPSecVTI",
+        ),
+        (
+            "/vyos/wireless-interface/batch",
+            "set interfaces wireless wlan0 ssid LabWifi",
+            "set interfaces vxlan vxlan241 vni 241",
+        ),
+        (
+            "/vyos/wwan-interface/batch",
+            "set interfaces wwan wwan0 apn internet.example",
+            "set interfaces wireless wlan0 ssid LabWifi",
         ),
         (
             "/vyos/vrf/batch",

@@ -324,6 +324,12 @@ export default function InterfacesPage() {
               <Button asChild variant="outline">
                 <Link href="/network/interfaces/vxlan">VXLAN Interfaces</Link>
               </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/wireless">Wireless Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/wwan">WWAN Interfaces</Link>
+              </Button>
               <div className="flex flex-col gap-2">
                 <Button onClick={() => setIsCreateInterfaceModalOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />

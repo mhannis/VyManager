@@ -1,19 +1,23 @@
-timestamp: 2026-02-15T17:33:11Z
-failing command: cd frontend && npm run -s smoke:ui
-error summary:
-Playwright UI smoke failed before browser startup because Chromium headless shell cannot load shared library `libnspr4.so` on this host.
-This is an environment dependency issue, not an application route/runtime crash.
-
-last output (tail):
-[pid=1190052][err] ... chrome-headless-shell: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
+timestamp: 2026-02-15T22:27:38Z
+failing_command: cd frontend && npm run -s smoke:ui
+error_summary: Playwright browser smoke could not launch Chromium because required host shared library `libnspr4.so` is missing. Runtime smoke/build/typecheck/lint/tests passed, but browser e2e remains blocked by host dependency.
+last_output:
+UI smoke test failed to execute: browserType.launch: Target page, context or browser has been closed
+Browser logs:
+<launching> ... chrome-headless-shell ...
+<launched> pid=1240371
+[pid=1240371][err] .../chrome-headless-shell: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
 Call log:
-  - <launching> .../chrome-headless-shell ...
-  - <launched> pid=1190052
-  - [pid=1190052][err] ... libnspr4.so: cannot open shared object file: No such file or directory
-  - [pid=1190052] <gracefully close start>
-  - [pid=1190052] <kill>
-  - [pid=1190052] <process did exit: exitCode=127, signal=null>
-
-suspected cause + next step:
-Missing Playwright runtime libraries (`libnspr4` and potentially other shared libs) in the OS environment.
-Next step: install required Playwright dependencies (or provide local libs path) and rerun `npm run -s smoke:ui`.
+  - <launching> ... chrome-headless-shell ...
+  - <launched> pid=1240371
+  - [pid=1240371][err] ... libnspr4.so: cannot open shared object file: No such file or directory
+  - [pid=1240371] <gracefully close start>
+  - [pid=1240371] <kill>
+  - [pid=1240371] <will force kill>
+  - [pid=1240371] exception while trying to kill process: Error: kill ESRCH
+  - [pid=1240371] <process did exit: exitCode=127, signal=null>
+  - [pid=1240371] starting temporary directories cleanup
+  - [pid=1240371] finished temporary directories cleanup
+  - [pid=1240371] <gracefully close end>
+suspected_cause: Playwright system dependencies are not installed on this host image.
+next_step: Install host deps (`sudo npx playwright install-deps`) or provide `libnspr4` and rerun `npm run -s smoke:ui`.

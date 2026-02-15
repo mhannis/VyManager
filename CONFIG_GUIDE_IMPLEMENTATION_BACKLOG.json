@@ -178,13 +178,13 @@
     {
       "id": "IF-13",
       "domain": "interfaces",
-      "status": "missing",
+      "status": "partial",
       "title": "Add wireless editor"
     },
     {
       "id": "IF-14",
       "domain": "interfaces",
-      "status": "missing",
+      "status": "partial",
       "title": "Add wwan editor"
     },
     {
