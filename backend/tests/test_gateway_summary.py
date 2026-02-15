@@ -303,6 +303,52 @@ def test_gateway_summary_probe_falls_back_when_deadline_unsupported(monkeypatch)
     assert data["loss_percent"] == pytest.approx(0.0)
 
 
+def test_gateway_summary_probe_falls_back_to_generate_when_show_ping_invalid(monkeypatch):
+    class DummyDevice:
+        def show(self, path=None):
+            if path == ["ip", "route", "0.0.0.0/0"]:
+                return DummyResponse(output="S>* 0.0.0.0/0 [1/0] via 192.168.10.1, eth0\n")
+            if path == ["interfaces", "ethernet", "eth0", "physical"]:
+                return DummyResponse(output="link detected: yes\n")
+            if path and path[0] == "ping":
+                return DummyResponse(status=400, error="HTTP Error 400: Invalid command: show [ping]")
+            raise AssertionError(f"Unexpected show path: {path}")
+
+        def generate(self, path=None):
+            if path == ["ping", "192.168.10.1", "interface", "eth0", "count", "3", "deadline", "4"]:
+                return DummyResponse(
+                    output=(
+                        "3 packets transmitted, 3 received, 0% packet loss, time 2002ms\n"
+                        "rtt min/avg/max/mdev = 0.300/0.400/0.600/0.050 ms\n"
+                    )
+                )
+            return DummyResponse(status=400, error="unsupported")
+
+    class DummyService:
+        device = DummyDevice()
+
+        def get_full_config(self, refresh=False):
+            return {}
+
+    async def allow_read(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(show_router, "get_session_vyos_service", lambda _req: DummyService())
+    monkeypatch.setattr(show_router, "require_read_permission", allow_read)
+
+    app = FastAPI()
+    app.include_router(show_router.router)
+    client = TestClient(app)
+
+    resp = client.get("/vyos/show/gateway-summary")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["rtt_ms"] == pytest.approx(0.4)
+    assert data["rttsd_ms"] == pytest.approx(0.05)
+    assert data["loss_percent"] == pytest.approx(0.0)
+    assert data["warnings"] == []
+
+
 def test_gateway_summary_probe_target_derived_from_dhcp_lease(monkeypatch):
     class DummyDevice:
         def show(self, path=None):

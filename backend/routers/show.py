@@ -1602,10 +1602,23 @@ async def get_gateway_summary(request: Request, refresh: bool = False) -> Gatewa
             last_error: Optional[str] = None
 
             for ping_path in probe_paths:
+                ping_response = None
                 try:
-                    ping_response = await run_in_threadpool(service.device.show, path=ping_path)
+                    show_response = await run_in_threadpool(service.device.show, path=ping_path)
                 except Exception as e:
-                    # Fallback to generate path on builds where show ping is unavailable.
+                    last_error = f"{type(e).__name__}: {str(e)}"
+                    show_response = None
+
+                if show_response is not None and getattr(show_response, "status", None) == 200:
+                    ping_response = show_response
+                else:
+                    # Fall back to generate for builds where show ping is unsupported
+                    # or rejected as an invalid command.
+                    show_error = ""
+                    if show_response is not None:
+                        show_error = str(getattr(show_response, "error", "") or "")
+                        if show_error:
+                            last_error = show_error
                     try:
                         ping_response = await run_in_threadpool(service.device.generate, path=ping_path)
                     except Exception as generate_error:

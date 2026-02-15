@@ -1,11 +1,11 @@
-feature_id: gateway-probe-metrics-r2-2026-02-15
+feature_id: gateway-temp-telemetry-r3-2026-02-15
 status: in_review
-title: Gateway Status card RTT/RTTsd/Loss hardening
+title: Gateway ping and sensor telemetry compatibility hardening
 branch: feature/containers-automation-v1
 commits:
   - pending
 notes:
-  - Hardened gateway ping metric parsing for additional ping summary variants and per-echo sample fallback.
-  - Added DHCP lease router parsing as probe-target fallback for DHCP default routes without explicit next-hop.
-  - Added ping command variant retries (with interface and without) plus generate fallback when show ping is unavailable.
-  - Added targeted backend tests and revalidated runtime smoke after vm-api restart.
+  - Gateway probe now retries via generate when show ping returns Invalid command.
+  - Added regression test for user-reported warning: Invalid command: show [ping].
+  - Dashboard temperature acquisition now falls back to generate for sensors commands.
+  - Added dashboard summary test proving CPU temp can be read from sensors when show sensors fails.

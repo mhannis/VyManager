@@ -190,7 +190,7 @@ def _parse_cpu_output(output: str) -> Dict[str, Any]:
 
 
 def _parse_temperature_token_to_celsius(token: str) -> Optional[float]:
-    match = re.search(r"(-?[0-9]+(?:\.[0-9]+)?)\s*°?\s*([CF])\b", token, re.IGNORECASE)
+    match = re.search(r"([+-]?[0-9]+(?:\.[0-9]+)?)\s*°?\s*([CF])\b", token, re.IGNORECASE)
     if not match:
         return None
 
@@ -1239,7 +1239,7 @@ def _parse_lldp_neighbors_output(output: str) -> List[LldpNeighbor]:
     header_index: Optional[int] = None
     for index, line in enumerate(lines):
         stripped = line.strip()
-        if re.match(r"(?i)^(interface|local\\s+port|local\\s+interface)\\b", stripped):
+        if re.match(r"(?i)^(interface|local\s+port|local\s+interface)\b", stripped):
             header_index = index
             break
 
@@ -1305,6 +1305,86 @@ def _parse_lldp_neighbors_output(output: str) -> List[LldpNeighbor]:
             )
         )
 
+    return neighbors
+
+
+def _parse_lldp_neighbors_detail_output(output: str) -> List[LldpNeighbor]:
+    """
+    Parse block-style LLDP detail output (e.g., lldpd style) into neighbors.
+    This is a fallback when summary-table parsing yields no neighbors.
+    """
+    cleaned = _strip_ansi(output or "")
+    lines = [line.rstrip("\r") for line in cleaned.splitlines()]
+    if not any(line.strip() for line in lines):
+        return []
+
+    neighbors: List[LldpNeighbor] = []
+    current: Dict[str, str] = {}
+    current_raw: List[str] = []
+
+    def flush() -> None:
+        nonlocal current, current_raw
+        if not current:
+            return
+
+        local_interface = current.get("interface") or current.get("localport")
+        if local_interface and "," in local_interface:
+            local_interface = local_interface.split(",", 1)[0].strip()
+
+        neighbor = LldpNeighbor(
+            local_interface=local_interface or None,
+            chassis_id=current.get("chassisid"),
+            port_id=current.get("portid"),
+            port_description=current.get("portdescr"),
+            system_name=current.get("sysname") or current.get("systemname"),
+            system_description=current.get("sysdescr") or current.get("systemdescription"),
+            platform=current.get("platform"),
+            capabilities=current.get("capability") or current.get("capabilities"),
+            raw="\n".join(current_raw).strip() or "(detail block)",
+        )
+
+        if any(
+            (
+                neighbor.local_interface,
+                neighbor.chassis_id,
+                neighbor.port_id,
+                neighbor.system_name,
+                neighbor.system_description,
+                neighbor.platform,
+                neighbor.capabilities,
+            )
+        ):
+            neighbors.append(neighbor)
+
+        current = {}
+        current_raw = []
+
+    for raw_line in lines:
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+
+        if re.match(r"^-{3,}$", stripped):
+            flush()
+            continue
+
+        match = re.match(r"^([A-Za-z][A-Za-z0-9 ]+):\s*(.+)$", stripped)
+        if not match:
+            continue
+
+        key = match.group(1).strip().lower().replace(" ", "")
+        value = match.group(2).strip()
+        if not value:
+            continue
+
+        if key in current and current[key] != value:
+            current[key] = f"{current[key]}, {value}"
+        else:
+            current[key] = value
+
+        current_raw.append(stripped)
+
+    flush()
     return neighbors
 
 
@@ -1837,13 +1917,22 @@ async def get_dashboard_summary(request: Request, refresh: bool = False) -> Syst
             ["hardware", "temperature"],
             ["system", "temperature"],
             ["hardware", "sensors"],
+            ["system", "sensors"],
+            ["sensors"],
         ):
+            response = None
             try:
                 response = await run_in_threadpool(service.device.show, path=command_path)
             except Exception:
-                continue
+                response = None
 
-            if getattr(response, "status", None) != 200:
+            if response is None or getattr(response, "status", None) != 200:
+                try:
+                    response = await run_in_threadpool(service.device.generate, path=command_path)
+                except Exception:
+                    response = None
+
+            if response is None or getattr(response, "status", None) != 200:
                 continue
 
             candidate = _extract_show_output(getattr(response, "result", ""))
@@ -3165,6 +3254,10 @@ async def get_lldp_status(request: Request, refresh: bool = False) -> LldpStatus
             detail_output = _extract_show_output(detail_response.result)
 
         neighbors = _parse_lldp_neighbors_output(neighbors_output) if neighbors_output else []
+        if not neighbors and detail_output:
+            neighbors = _parse_lldp_neighbors_detail_output(detail_output)
+            if neighbors:
+                error = None
 
         return LldpStatusResponse(
             enabled=True,

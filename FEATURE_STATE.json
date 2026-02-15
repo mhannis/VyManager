@@ -1,17 +1,17 @@
 {
-  "feature_id": "gateway-probe-metrics-r2-2026-02-15",
-  "title": "Gateway Status card RTT/RTTsd/Loss hardening",
+  "feature_id": "gateway-temp-telemetry-r3-2026-02-15",
+  "title": "Gateway ping and sensor telemetry compatibility hardening",
   "status": "in_review",
   "acceptance_criteria": [
-    "Gateway summary parses RTT/Loss from multiple ping output formats including reduced summaries.",
-    "Gateway summary derives probe target from DHCP lease routers when route next-hop is unavailable.",
-    "Gateway probe attempts multiple ping command variants and falls back to generate when show ping is unsupported.",
-    "Backend tests cover parser and fallback behavior.",
+    "Gateway summary retries probe via generate when show ping is rejected as invalid command.",
+    "Gateway summary still parses RTT/RTTsd/Loss across varied ping output formats.",
+    "System dashboard summary reads CPU temperature from sensors even when show sensors is unsupported.",
+    "Regression tests exist for show->generate fallback on ping and sensors.",
     "Runtime smoke checks pass after backend restart."
   ],
   "assumptions": [
-    "Some VyOS builds output ping stats without mdev/stddev fields.",
-    "DHCP WAN default routes can be reported as default dev <iface> without explicit next-hop.",
+    "Some VyOS builds reject op-mode ping under show but allow it via generate.",
+    "Some VyOS builds expose sensors output via generate path only.",
     "Unrelated dirty files in the working tree are pre-existing and out of scope for this hotfix."
   ],
   "tasks": [
@@ -20,18 +20,20 @@
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/show.py"
+        "backend/routers/show.py",
+        "backend/routers/system.py"
       ],
-      "notes": "Hardened route parser, ping metric parsing, DHCP lease gateway extraction, and ping command fallbacks."
+      "notes": "Added show->generate fallback paths for gateway ping and dashboard sensors acquisition."
     },
     {
       "id": "T2",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_gateway_summary.py"
+        "backend/tests/test_gateway_summary.py",
+        "backend/tests/test_system_dashboard_temperature.py"
       ],
-      "notes": "Added parser/fallback tests and ran targeted backend suites."
+      "notes": "Added regressions for invalid show ping fallback and invalid show sensors fallback."
     },
     {
       "id": "T3",
@@ -39,20 +41,22 @@
       "status": "done",
       "files": [
         "backend/routers/show.py",
-        "backend/tests/test_gateway_summary.py"
+        "backend/routers/system.py",
+        "backend/tests/test_gateway_summary.py",
+        "backend/tests/test_system_dashboard_temperature.py"
       ],
-      "notes": "Manual review completed; no API contract changes introduced."
+      "notes": "Manual review completed; changes are additive and preserve API contracts."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py tests/test_system_lldp_parsing.py tests/test_system_dashboard_temperature.py tests/test_safe_apply.py",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_safe_apply.py",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Gateway dashboard probe metrics hardening",
+      "purpose": "Gateway + temperature telemetry compatibility fixes",
       "status": "active"
     }
   ]

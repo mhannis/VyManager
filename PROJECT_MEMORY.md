@@ -54,37 +54,42 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Fix Gateway Status card probe metrics so `RTT`, `RTTsd`, and `Loss` populate on more VyOS builds.
-- Preserve existing API contracts and keep implementation thin within `backend/routers/show.py`.
+- Fix Gateway Status probe failures on platforms that reject `show ping`.
+- Make CPU temperature collection resilient when sensor data is only available via `generate sensors`.
+- Preserve existing API contracts and keep implementation thin within `backend/routers/show.py` and `backend/routers/system.py`.
 - Keep runtime safety gate after backend changes (`pytest -> restart vm-api -> smoke:runtime -> smoke:ui`).
 
 ## Current Feature Spec
-Feature: **Gateway Status probe metrics hardening**
+Feature: **Gateway + Temperature telemetry hardening**
 
 Acceptance criteria:
 - Gateway endpoint parses additional ping summary formats and packet-loss variants.
 - Gateway endpoint derives probe target from DHCP lease routers when route next-hop is unavailable.
-- Gateway endpoint attempts multiple ping path variants and falls back to `generate` when `show ping` is unsupported.
+- Gateway endpoint falls back to `generate ping` when `show ping` returns `400 Invalid command`.
+- Dashboard summary falls back to `generate` sensor commands when `show ... sensors` is unsupported.
 - Gateway backend tests pass for parser and fallback scenarios.
 - Runtime remains healthy after restart (`smoke:runtime`, `smoke:ui` pass).
 
 Assumptions:
 - Active default route can be `default dev <iface>` with no explicit next-hop on DHCP WAN.
-- Some VyOS builds expose different ping output formats (`mdev/stddev` may be absent).
+- Some VyOS builds expose different ping output formats (`mdev/stddev` may be absent) and reject op-mode probes under `show`.
+- Some builds expose sensor output through `generate` but not `show`.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: gateway probe metrics slice implemented and validated; commit pending.
+- Status: gateway + temperature compatibility slice implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
 - `backend/routers/show.py`
+- `backend/routers/system.py`
 - `backend/tests/test_gateway_summary.py`
+- `backend/tests/test_system_dashboard_temperature.py`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py` -> pass (`14 passed`)
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py tests/test_system_dashboard_temperature.py` -> pass (`6 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py tests/test_system_dashboard_temperature.py` -> pass (`20 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py` -> pass
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_safe_apply.py` -> pass (`5 passed`)
 - Restarted API process:
   - `tmux kill-session -t vm-api || true`
