@@ -37,227 +37,241 @@ const navigation: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
+    title: "Containers",
+    href: "/system/containers",
+    icon: Building2,
+    requiredPermission: FeatureGroup.SYSTEM,
+  },
+  {
     title: "Firewall",
     icon: Shield,
     children: [
       {
         title: "Policies",
         href: "/firewall/policies",
-        requiredPermission: FeatureGroup.FIREWALL_POLICIES
+        requiredPermission: FeatureGroup.FIREWALL_POLICIES,
       },
       {
         title: "Bridge",
         href: "/firewall/bridge",
-        requiredPermission: FeatureGroup.FIREWALL_BRIDGE
+        requiredPermission: FeatureGroup.FIREWALL_BRIDGE,
       },
       {
         title: "Groups",
         href: "/firewall/groups",
-        requiredPermission: FeatureGroup.FIREWALL_GROUPS
+        requiredPermission: FeatureGroup.FIREWALL_GROUPS,
       },
       {
         title: "Zones",
         href: "/firewall/zones",
-        requiredPermission: FeatureGroup.FIREWALL_ZONES
+        requiredPermission: FeatureGroup.FIREWALL_ZONES,
       },
       {
         title: "Global Options",
         href: "/firewall/global-options",
-        requiredPermission: FeatureGroup.FIREWALL_GLOBAL_OPTIONS
+        requiredPermission: FeatureGroup.FIREWALL_GLOBAL_OPTIONS,
       },
       {
         title: "Flowtables",
         href: "/firewall/flowtables",
-        requiredPermission: FeatureGroup.FIREWALL_FLOWTABLES
+        requiredPermission: FeatureGroup.FIREWALL_FLOWTABLES,
       },
     ],
   },
   {
-    title: "Network",
+    title: "High Availability",
+    href: "/network/high-availability",
+    icon: Server,
+    requiredPermission: FeatureGroup.NETWORK,
+  },
+  {
+    title: "Interfaces",
     icon: Network,
     children: [
       {
         title: "Setup Wizard",
         href: "/network/setup-wizard",
-        requiredPermission: FeatureGroup.INTERFACES
-      },
-      {
-        title: "VRF",
-        href: "/network/vrf",
-        requiredPermission: FeatureGroup.VRF
+        requiredPermission: FeatureGroup.INTERFACES,
       },
       {
         title: "Interfaces",
         href: "/network/interfaces",
-        requiredPermission: FeatureGroup.INTERFACES
+        requiredPermission: FeatureGroup.INTERFACES,
       },
       {
         title: "Dummy Interfaces",
         href: "/network/interfaces/dummy",
-        requiredPermission: FeatureGroup.INTERFACES
+        requiredPermission: FeatureGroup.INTERFACES,
       },
       {
-        title: "Load Balancing",
-        href: "/network/load-balancing",
-        requiredPermission: FeatureGroup.LOAD_BALANCING
+        title: "Bonding Interfaces",
+        href: "/network/interfaces/bonding",
+        requiredPermission: FeatureGroup.INTERFACES,
       },
       {
-        title: "High Availability",
-        href: "/network/high-availability",
-        requiredPermission: FeatureGroup.NETWORK
+        title: "Bridge Interfaces",
+        href: "/network/interfaces/bridge",
+        requiredPermission: FeatureGroup.INTERFACES,
       },
       {
-        title: "Traffic Policy",
-        href: "/network/traffic-policy",
-        requiredPermission: FeatureGroup.NETWORK
+        title: "Geneve Interfaces",
+        href: "/network/interfaces/geneve",
+        requiredPermission: FeatureGroup.INTERFACES,
       },
       {
-        title: "NAT",
-        href: "/network/nat",
-        requiredPermission: FeatureGroup.NAT
+        title: "L2TPv3 Interfaces",
+        href: "/network/interfaces/l2tpv3",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "MACsec Interfaces",
+        href: "/network/interfaces/macsec",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "OpenVPN Interfaces",
+        href: "/network/interfaces/openvpn",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "Pseudo-Ethernet Interfaces",
+        href: "/network/interfaces/pseudo-ethernet",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "SSTP Client Interfaces",
+        href: "/network/interfaces/sstp-client",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "Virtual-Ethernet Interfaces",
+        href: "/network/interfaces/virtual-ethernet",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "Tunnel Interfaces",
+        href: "/network/interfaces/tunnel",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "VTI Interfaces",
+        href: "/network/interfaces/vti",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "VXLAN Interfaces",
+        href: "/network/interfaces/vxlan",
+        requiredPermission: FeatureGroup.INTERFACES,
       },
     ],
   },
   {
-    title: "Routing",
+    title: "Load Balancing",
+    href: "/network/load-balancing",
     icon: Route,
-    children: [
-      {
-        title: "Overview",
-        href: "/routing/protocols",
-        requiredPermission: FeatureGroup.ROUTING
-      },
-      {
-        title: "Unicast Protocols",
-        href: "/routing/unicast-protocols",
-        requiredPermission: FeatureGroup.UNICAST_PROTOCOLS
-      },
-      {
-        title: "Static & Failover",
-        href: "/routing/static-failover/static-routes",
-        requiredPermission: FeatureGroup.STATIC_ROUTES
-      },
-      {
-        title: "Routing Infrastructure",
-        href: "/routing/infrastructure",
-        requiredPermission: FeatureGroup.ROUTING_INFRASTRUCTURE
-      },
-      {
-        title: "Multicast",
-        href: "/routing/multicast",
-        requiredPermission: FeatureGroup.MULTICAST
-      },
-    ],
+    requiredPermission: FeatureGroup.LOAD_BALANCING,
   },
   {
-    title: "Policies",
+    title: "NAT",
+    href: "/network/nat",
+    icon: Network,
+    requiredPermission: FeatureGroup.NAT,
+  },
+  {
+    title: "Policy",
     icon: FileText,
     children: [
       {
         title: "Overview",
         href: "/policies",
-        requiredPermission: FeatureGroup.ACCESS_LIST
+        requiredPermission: FeatureGroup.ACCESS_LIST,
       },
       {
         title: "Access List",
         href: "/policies/access-list",
-        requiredPermission: FeatureGroup.ACCESS_LIST
+        requiredPermission: FeatureGroup.ACCESS_LIST,
       },
       {
         title: "Prefix List",
         href: "/policies/prefix-list",
-        requiredPermission: FeatureGroup.PREFIX_LIST
+        requiredPermission: FeatureGroup.PREFIX_LIST,
       },
       {
         title: "Route",
         href: "/policies/route",
-        requiredPermission: FeatureGroup.ROUTE_POLICY
+        requiredPermission: FeatureGroup.ROUTE_POLICY,
       },
       {
         title: "Route Map",
         href: "/policies/route-map",
-        requiredPermission: FeatureGroup.ROUTE_MAP
+        requiredPermission: FeatureGroup.ROUTE_MAP,
       },
       {
         title: "Local Route",
         href: "/policies/local-route",
-        requiredPermission: FeatureGroup.LOCAL_ROUTE
+        requiredPermission: FeatureGroup.LOCAL_ROUTE,
       },
       {
         title: "BGP AS",
         href: "/policies/bgp-as",
-        requiredPermission: FeatureGroup.BGP_AS_PATH
+        requiredPermission: FeatureGroup.BGP_AS_PATH,
       },
       {
         title: "BGP Community",
         href: "/policies/bgp-community",
-        requiredPermission: FeatureGroup.BGP_COMMUNITY
+        requiredPermission: FeatureGroup.BGP_COMMUNITY,
       },
       {
         title: "BGP Extended Community",
         href: "/policies/bgp-extended-community",
-        requiredPermission: FeatureGroup.BGP_EXTENDED_COMMUNITY
+        requiredPermission: FeatureGroup.BGP_EXTENDED_COMMUNITY,
       },
       {
         title: "BGP Large Community",
         href: "/policies/bgp-large-community",
-        requiredPermission: FeatureGroup.BGP_LARGE_COMMUNITY
+        requiredPermission: FeatureGroup.BGP_LARGE_COMMUNITY,
       },
       {
         title: "Examples",
         href: "/policies/examples",
-        requiredPermission: FeatureGroup.ACCESS_LIST
+        requiredPermission: FeatureGroup.ACCESS_LIST,
       },
     ],
   },
   {
-    title: "VPN",
-    icon: Lock,
+    title: "PKI",
+    href: "/system/pki",
+    icon: Shield,
+    requiredPermission: FeatureGroup.SYSTEM,
+  },
+  {
+    title: "Protocols",
+    icon: Route,
     children: [
       {
         title: "Overview",
-        href: "/vpn",
-        requiredPermission: FeatureGroup.VPN
+        href: "/routing/protocols",
+        requiredPermission: FeatureGroup.ROUTING,
       },
       {
-        title: "DMVPN",
-        href: "/vpn/dmvpn",
-        requiredPermission: FeatureGroup.VPN
+        title: "Unicast Protocols",
+        href: "/routing/unicast-protocols",
+        requiredPermission: FeatureGroup.UNICAST_PROTOCOLS,
       },
       {
-        title: "IPsec",
-        href: "/vpn/ipsec",
-        requiredPermission: FeatureGroup.IPSEC
+        title: "Static & Failover",
+        href: "/routing/static-failover/static-routes",
+        requiredPermission: FeatureGroup.STATIC_ROUTES,
       },
       {
-        title: "L2TP",
-        href: "/vpn/l2tp",
-        requiredPermission: FeatureGroup.VPN
+        title: "Routing Infrastructure",
+        href: "/routing/infrastructure",
+        requiredPermission: FeatureGroup.ROUTING_INFRASTRUCTURE,
       },
       {
-        title: "OpenConnect",
-        href: "/vpn/openconnect",
-        requiredPermission: FeatureGroup.VPN
-      },
-      {
-        title: "PPTP Server",
-        href: "/vpn/pptp",
-        requiredPermission: FeatureGroup.VPN
-      },
-      {
-        title: "RSA Keys",
-        href: "/vpn/rsa-keys",
-        requiredPermission: FeatureGroup.VPN
-      },
-      {
-        title: "SSTP Server",
-        href: "/vpn/sstp",
-        requiredPermission: FeatureGroup.VPN
-      },
-      {
-        title: "WireGuard",
-        href: "/vpn/wireguard",
-        requiredPermission: FeatureGroup.WIREGUARD
+        title: "Multicast",
+        href: "/routing/multicast",
+        requiredPermission: FeatureGroup.MULTICAST,
       },
     ],
   },
@@ -268,6 +282,11 @@ const navigation: NavItem[] = [
       {
         title: "Broadcast Relay",
         href: "/system/services?tab=broadcast-relay&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "Config Sync",
+        href: "/system/services?tab=config-sync&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
@@ -346,6 +365,11 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
+        title: "Router Advert",
+        href: "/system/services?tab=router-advert&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
         title: "Salt Minion",
         href: "/system/services?tab=salt-minion&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
@@ -353,6 +377,11 @@ const navigation: NavItem[] = [
       {
         title: "SNMP",
         href: "/system/services?tab=snmp&view=single",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "SSH",
+        href: "/system/services?tab=ssh&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
@@ -373,10 +402,84 @@ const navigation: NavItem[] = [
     ],
   },
   {
-    title: "Containers",
-    href: "/system/containers",
-    icon: Building2,
+    title: "Traffic Policy",
+    href: "/network/traffic-policy",
+    icon: FileText,
+    requiredPermission: FeatureGroup.NETWORK,
+  },
+  {
+    title: "VPN",
+    icon: Lock,
+    children: [
+      {
+        title: "Overview",
+        href: "/vpn",
+        requiredPermission: FeatureGroup.VPN,
+      },
+      {
+        title: "DMVPN",
+        href: "/vpn/dmvpn",
+        requiredPermission: FeatureGroup.VPN,
+      },
+      {
+        title: "IPsec",
+        href: "/vpn/ipsec",
+        requiredPermission: FeatureGroup.IPSEC,
+      },
+      {
+        title: "L2TP",
+        href: "/vpn/l2tp",
+        requiredPermission: FeatureGroup.VPN,
+      },
+      {
+        title: "OpenConnect",
+        href: "/vpn/openconnect",
+        requiredPermission: FeatureGroup.VPN,
+      },
+      {
+        title: "PPTP Server",
+        href: "/vpn/pptp",
+        requiredPermission: FeatureGroup.VPN,
+      },
+      {
+        title: "RSA Keys",
+        href: "/vpn/rsa-keys",
+        requiredPermission: FeatureGroup.VPN,
+      },
+      {
+        title: "SSTP Server",
+        href: "/vpn/sstp",
+        requiredPermission: FeatureGroup.VPN,
+      },
+      {
+        title: "WireGuard",
+        href: "/vpn/wireguard",
+        requiredPermission: FeatureGroup.WIREGUARD,
+      },
+    ],
+  },
+  {
+    title: "VRF",
+    href: "/network/vrf",
+    icon: Route,
+    requiredPermission: FeatureGroup.VRF,
+  },
+  {
+    title: "L3VPN VRFs",
+    href: "/network/vrf?section=l3vpn",
+    icon: Route,
+    requiredPermission: FeatureGroup.VRF,
+  },
+  {
+    title: "Configuration Guide",
+    href: "/configuration",
+    icon: FileText,
     requiredPermission: FeatureGroup.SYSTEM,
+  },
+  {
+    title: "Settings",
+    href: "/settings",
+    icon: Settings,
   },
   {
     title: "System",
@@ -385,34 +488,24 @@ const navigation: NavItem[] = [
       {
         title: "Options & Coverage",
         href: "/system/options",
-        requiredPermission: FeatureGroup.SYSTEM
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "Acceleration",
+        href: "/system/acceleration",
+        requiredPermission: FeatureGroup.SYSTEM,
       },
       {
         title: "Logs",
         href: "/system/logs",
-        requiredPermission: FeatureGroup.SYSTEM
+        requiredPermission: FeatureGroup.SYSTEM,
       },
       {
         title: "Users",
         href: "/system/users",
-        requiredPermission: FeatureGroup.SYSTEM
-      },
-      {
-        title: "PKI",
-        href: "/system/pki",
-        requiredPermission: FeatureGroup.SYSTEM
-      },
-      {
-        title: "Configuration Guide",
-        href: "/configuration",
-        requiredPermission: FeatureGroup.SYSTEM
+        requiredPermission: FeatureGroup.SYSTEM,
       },
     ],
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: Settings,
   },
 ];
 

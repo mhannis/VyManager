@@ -1,15 +1,19 @@
-2026-02-15T08:20:00Z
-failing command: cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py
-error summary: Newly added DHCP-lease fallback test failed because the dummy device raised AssertionError for unsupported lease probe command paths, causing lease-target derivation to abort in test scaffolding.
+timestamp: 2026-02-15T17:33:11Z
+failing command: cd frontend && npm run -s smoke:ui
+error summary:
+Playwright UI smoke failed before browser startup because Chromium headless shell cannot load shared library `libnspr4.so` on this host.
+This is an environment dependency issue, not an application route/runtime crash.
 
-last output excerpt:
-............F.
-=================================== FAILURES ===================================
-__________ test_gateway_summary_probe_target_derived_from_dhcp_lease ___________
-E       assert None == 2.0 ± 2.0e-06
-E         Obtained: None
-E         Expected: 2.0 ± 2.0e-06
-FAILED tests/test_gateway_summary.py::test_gateway_summary_probe_target_derived_from_dhcp_lease
-1 failed, 13 passed in 0.46s
+last output (tail):
+[pid=1190052][err] ... chrome-headless-shell: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
+Call log:
+  - <launching> .../chrome-headless-shell ...
+  - <launched> pid=1190052
+  - [pid=1190052][err] ... libnspr4.so: cannot open shared object file: No such file or directory
+  - [pid=1190052] <gracefully close start>
+  - [pid=1190052] <kill>
+  - [pid=1190052] <process did exit: exitCode=127, signal=null>
 
-suspected cause + next step: Test dummy response behavior was too strict. Updated dummy to return HTTP 400 for unknown paths instead of throwing, then reran tests successfully.
+suspected cause + next step:
+Missing Playwright runtime libraries (`libnspr4` and potentially other shared libs) in the OS environment.
+Next step: install required Playwright dependencies (or provide local libs path) and rerun `npm run -s smoke:ui`.

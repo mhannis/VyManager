@@ -120,6 +120,22 @@ class ServiceWrappersApi {
     });
   }
 
+  async getConfigSyncCapabilities(): Promise<ServiceWrapperCapabilities> {
+    return apiClient.get<ServiceWrapperCapabilities>("/vyos/service-config-sync/capabilities");
+  }
+
+  async getConfigSyncConfig(refresh: boolean = false): Promise<ServiceWrapperConfigResponse> {
+    return apiClient.get<ServiceWrapperConfigResponse>("/vyos/service-config-sync/config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async configureConfigSync(operations: string[]): Promise<ServiceWrapperBatchResponse> {
+    return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-config-sync/batch", {
+      operations,
+    });
+  }
+
   async getConntrackSyncCapabilities(): Promise<ServiceWrapperCapabilities> {
     return apiClient.get<ServiceWrapperCapabilities>("/vyos/service-conntrack-sync/capabilities");
   }
@@ -148,6 +164,22 @@ class ServiceWrappersApi {
 
   async configureEventHandler(operations: string[]): Promise<ServiceWrapperBatchResponse> {
     return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-event-handler/batch", {
+      operations,
+    });
+  }
+
+  async getRouterAdvertCapabilities(): Promise<ServiceWrapperCapabilities> {
+    return apiClient.get<ServiceWrapperCapabilities>("/vyos/service-router-advert/capabilities");
+  }
+
+  async getRouterAdvertConfig(refresh: boolean = false): Promise<ServiceWrapperConfigResponse> {
+    return apiClient.get<ServiceWrapperConfigResponse>("/vyos/service-router-advert/config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async configureRouterAdvert(operations: string[]): Promise<ServiceWrapperBatchResponse> {
+    return apiClient.post<ServiceWrapperBatchResponse>("/vyos/service-router-advert/batch", {
       operations,
     });
   }

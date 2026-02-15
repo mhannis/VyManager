@@ -17,7 +17,22 @@ from middleware.session import SessionMiddleware
 
 # Import routers
 from routers.session import session as session_router
-from routers.interfaces import ethernet, dummy
+from routers.interfaces import (
+    ethernet,
+    dummy,
+    bonding,
+    bridge,
+    geneve,
+    l2tpv3,
+    macsec,
+    openvpn,
+    pseudo_ethernet,
+    sstpc,
+    tunnel,
+    virtual_ethernet,
+    vti,
+    vxlan,
+)
 from routers.firewall import groups
 from routers.firewall import ipv4 as firewall_ipv4
 from routers.firewall import ipv6 as firewall_ipv6
@@ -67,11 +82,13 @@ from routers.salt_minion_service import salt_minion_service as salt_minion_servi
 from routers.suricata_service import suricata_service as suricata_service_router
 from routers.broadcast_relay_service import broadcast_relay_service as broadcast_relay_service_router
 from routers.conntrack_sync_service import conntrack_sync_service as conntrack_sync_service_router
+from routers.config_sync_service import config_sync_service as config_sync_service_router
 from routers.event_handler_service import event_handler_service as event_handler_service_router
 from routers.monitoring_service import monitoring_service as monitoring_service_router
 from routers.webproxy_service import webproxy_service as webproxy_service_router
 from routers.pppoe_server_service import pppoe_server_service as pppoe_server_service_router
 from routers.ipoe_server_service import ipoe_server_service as ipoe_server_service_router
+from routers.router_advert_service import router_advert_service as router_advert_service_router
 from routers.vpn import vpn as vpn_overview_router
 from routers.vpn_rsa_keys import rsa_keys as vpn_rsa_keys_router
 from routers.vpn_l2tp import l2tp as vpn_l2tp_router
@@ -308,6 +325,18 @@ app.add_middleware(AuthenticationMiddleware)
 app.include_router(session_router.router)
 app.include_router(ethernet.router)
 app.include_router(dummy.router)
+app.include_router(bonding.router)
+app.include_router(bridge.router)
+app.include_router(geneve.router)
+app.include_router(l2tpv3.router)
+app.include_router(macsec.router)
+app.include_router(openvpn.router)
+app.include_router(pseudo_ethernet.router)
+app.include_router(sstpc.router)
+app.include_router(tunnel.router)
+app.include_router(virtual_ethernet.router)
+app.include_router(vti.router)
+app.include_router(vxlan.router)
 app.include_router(groups.router)
 app.include_router(firewall_ipv4.router)
 app.include_router(firewall_ipv6.router)
@@ -357,8 +386,10 @@ app.include_router(console_server_service_router.router)
 app.include_router(salt_minion_service_router.router)
 app.include_router(suricata_service_router.router)
 app.include_router(broadcast_relay_service_router.router)
+app.include_router(config_sync_service_router.router)
 app.include_router(conntrack_sync_service_router.router)
 app.include_router(event_handler_service_router.router)
+app.include_router(router_advert_service_router.router)
 app.include_router(monitoring_service_router.router)
 app.include_router(webproxy_service_router.router)
 app.include_router(pppoe_server_service_router.router)

@@ -195,6 +195,13 @@ def _build_safe_apply_metadata(
     }
 
 
+def _is_missing_snapshot_directory(save_response: Any) -> bool:
+    if getattr(save_response, "status", None) == 200:
+        return False
+    error_text = str(getattr(save_response, "error", "") or "").lower()
+    return "no such file or directory" in error_text or "failed to write config file" in error_text
+
+
 def apply_with_safe_apply(
     device: Any,
     operations: Sequence[Dict[str, Any]],
@@ -235,6 +242,13 @@ def apply_with_safe_apply(
     )
 
     save_response = device.config_file_save(file=backup_file)
+    if _is_missing_snapshot_directory(save_response):
+        fallback_backup_file = f"/config/{os.path.basename(backup_file)}"
+        retry_response = device.config_file_save(file=fallback_backup_file)
+        if getattr(retry_response, "status", None) == 200:
+            backup_file = fallback_backup_file
+            save_response = retry_response
+
     if getattr(save_response, "status", None) != 200:
         return ApiResponse(
             status=500,
@@ -298,4 +312,3 @@ def apply_with_safe_apply(
             f"{rollback_error}"
         ),
     )
-

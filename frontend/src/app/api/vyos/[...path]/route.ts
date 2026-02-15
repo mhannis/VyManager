@@ -59,8 +59,10 @@ async function proxyRequest(
   const BACKEND_URL = getBackendUrl();
 
   try {
-    // Get the session token from request cookies
+    // Preserve full cookie header so secure/alternate auth cookie names continue to work.
+    const cookieHeader = request.headers.get("cookie");
     const sessionToken = request.cookies.get("better-auth.session_token");
+    const secureSessionToken = request.cookies.get("__Secure-better-auth.session_token");
 
     // Build the backend URL
     const backendPath = `/vyos/${path.join("/")}`;
@@ -75,9 +77,13 @@ async function proxyRequest(
     // Prepare headers
     const headers: HeadersInit = {};
 
-    // Add the session token cookie if it exists
-    if (sessionToken) {
-      headers["Cookie"] = `better-auth.session_token=${sessionToken.value}`;
+    if (cookieHeader) {
+      headers["Cookie"] = cookieHeader;
+    } else if (sessionToken || secureSessionToken) {
+      const tokenCookie = sessionToken
+        ? `better-auth.session_token=${sessionToken.value}`
+        : `__Secure-better-auth.session_token=${secureSessionToken!.value}`;
+      headers["Cookie"] = tokenCookie;
     }
 
     // Handle request body

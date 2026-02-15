@@ -41,7 +41,6 @@ export default function InterfacesPage() {
   const [physicalByInterface, setPhysicalByInterface] = useState<Record<string, InterfacePhysical>>({});
   const [capabilities, setCapabilities] = useState<EthernetCapabilities | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<InterfaceType>("all");
@@ -59,7 +58,6 @@ export default function InterfacesPage() {
   const loadData = async () => {
     try {
       setError(null);
-      setRefreshing(true);
       const [configData, capabilitiesData, physicalData] = await Promise.all([
         ethernetService.getConfig(),
         ethernetService.getCapabilities(),
@@ -76,7 +74,6 @@ export default function InterfacesPage() {
       setError(err instanceof Error ? err.message : "Failed to load interface data");
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -290,6 +287,42 @@ export default function InterfacesPage() {
               </Button>
               <Button asChild variant="outline">
                 <Link href="/network/interfaces/dummy">Dummy Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/bonding">Bonding Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/bridge">Bridge Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/geneve">Geneve Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/l2tpv3">L2TPv3 Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/macsec">MACsec Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/openvpn">OpenVPN Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/pseudo-ethernet">Pseudo-Ethernet Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/sstp-client">SSTP Client Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/virtual-ethernet">Virtual-Ethernet Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/tunnel">Tunnel Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/vti">VTI Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/vxlan">VXLAN Interfaces</Link>
               </Button>
               <div className="flex flex-col gap-2">
                 <Button onClick={() => setIsCreateInterfaceModalOpen(true)}>

@@ -89,6 +89,7 @@ export function EditDHCPServerModal({
 }: EditDHCPServerModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [targetNetworkName, setTargetNetworkName] = useState("");
 
   // Basic fields
   const [defaultRouter, setDefaultRouter] = useState("");
@@ -122,9 +123,11 @@ export function EditDHCPServerModal({
     if (open && subnet) {
       loadSubnetData();
     }
-  }, [open, subnet]);
+  }, [open, subnet, networkName]);
 
   const loadSubnetData = () => {
+    setTargetNetworkName(networkName);
+
     // Basic fields
     setDefaultRouter(subnet.default_router || "");
     setDomainName(subnet.domain_name || "");
@@ -170,6 +173,11 @@ export function EditDHCPServerModal({
   };
 
   const validateForm = (): boolean => {
+    if (!targetNetworkName.trim()) {
+      setError("Shared network name is required");
+      return false;
+    }
+
     // Default router validation
     if (!defaultRouter.trim()) {
       setError("Default router (gateway) is required");
@@ -186,10 +194,6 @@ export function EditDHCPServerModal({
 
     // Name servers validation
     const validNameServers = nameServers.filter((ns) => ns.trim());
-    if (validNameServers.length === 0) {
-      setError("At least one name server is required");
-      return false;
-    }
     for (const ns of validNameServers) {
       if (!isValidIPv4(ns.trim())) {
         setError(`Invalid name server IP address: ${ns}`);
@@ -287,12 +291,17 @@ export function EditDHCPServerModal({
     setError(null);
 
     try {
-      await dhcpService.updateSubnet({
-        network_name: networkName,
-        subnet: subnet.subnet,
+      const resolvedNameServers =
+        nameServers
+          .map((entry) => entry.trim())
+          .filter((entry) => entry.length > 0).length > 0
+          ? nameServers.map((entry) => entry.trim()).filter((entry) => entry.length > 0)
+          : [defaultRouter.trim()];
+
+      const updatePayload = {
         // Basic fields - always set if they have values
         default_router: defaultRouter.trim() || undefined,
-        name_servers: nameServers.filter((ns) => ns.trim()),
+        name_servers: resolvedNameServers,
         domain_name: domainName.trim() || undefined,
         lease: lease.trim() || undefined,
         ranges: ranges.filter((r) => r.start && r.stop),
@@ -323,7 +332,22 @@ export function EditDHCPServerModal({
         enable_failover: capabilities?.fields.enable_failover.supported && enableFailover ? true : undefined,
         delete_ping_check: capabilities?.fields.ping_check.supported && !pingCheck && subnet.ping_check,
         delete_enable_failover: capabilities?.fields.enable_failover.supported && !enableFailover && subnet.enable_failover,
-      });
+      };
+
+      if (targetNetworkName.trim() === networkName) {
+        await dhcpService.updateSubnet({
+          ...updatePayload,
+          network_name: networkName,
+          subnet: subnet.subnet,
+        });
+      } else {
+        await dhcpService.moveSubnetToSharedNetwork(
+          networkName,
+          targetNetworkName.trim(),
+          subnet.subnet,
+          updatePayload
+        );
+      }
 
       handleClose();
       onSuccess();
@@ -433,9 +457,13 @@ export function EditDHCPServerModal({
               <div className="grid gap-4">
                 <div>
                   <Label>Shared Network Name</Label>
-                  <Input value={networkName} disabled />
+                  <Input
+                    value={targetNetworkName}
+                    onChange={(event) => setTargetNetworkName(event.target.value)}
+                    placeholder="e.g., LAN"
+                  />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Cannot be changed (delete and recreate to move)
+                    Changing this moves the subnet into a different shared network.
                   </p>
                 </div>
 
@@ -523,6 +551,9 @@ export function EditDHCPServerModal({
                     Add Name Server
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  If left blank, DHCP defaults DNS to the gateway IP.
+                </p>
               </div>
 
               <div>

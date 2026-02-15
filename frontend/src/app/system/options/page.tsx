@@ -219,16 +219,10 @@ export default function SystemOptionsPage() {
               System Coverage
             </CardTitle>
             <CardDescription>
-              Non-redundant shortcuts for system options and documentation.
+              Quick links for documentation and initial setup flows.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            <Button asChild variant="outline" className="justify-start">
-              <Link href="/system/services?tab=ssh&view=single">SSH Service</Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start">
-              <Link href="/system/acceleration">Acceleration (QAT/VPP)</Link>
-            </Button>
             <Button asChild variant="outline" className="justify-start">
               <a href="https://docs.vyos.io/en/latest/configuration/system/" target="_blank" rel="noreferrer">
                 <BookOpen className="mr-2 h-4 w-4" />

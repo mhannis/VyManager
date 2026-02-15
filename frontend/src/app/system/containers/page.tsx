@@ -27,9 +27,17 @@ import { useSessionStore } from "@/store/session-store";
 import {
   containersService,
   type ContainerBootstrapStatusResponse,
+  type ContainerDeviceMapping,
   type ContainerEnvironmentVar,
+  type ContainerImageSummary,
+  type ContainerImagesResponse,
+  type ContainerInspectResponse,
+  type ContainerKeyValue,
+  type ContainerNetworkAttachment,
+  type ContainerRegistrySummary,
   type ContainerInitialSetupRequest,
   type ContainerNetworkSummary,
+  type ContainerTmpfsMapping,
   type ContainerWebLink,
   type ContainerPortMapping,
   type ContainerSummary,
@@ -40,6 +48,9 @@ import {
 import type { EthernetInterface } from "@/lib/api/types/ethernet";
 import {
   AlertCircle,
+  Boxes,
+  ClipboardList,
+  Database,
   ExternalLink,
   FileText,
   Loader2,
@@ -69,8 +80,26 @@ interface ContainerDraft {
   restart: "no" | "on-failure" | "always";
   enabled: boolean;
   allow_host_networks: boolean;
+  allow_host_pid: boolean;
   network: string;
   network_address: string;
+  networks: ContainerNetworkAttachment[];
+  name_servers: string[];
+  uid: string;
+  gid: string;
+  cpu_quota: string;
+  memory: string;
+  capabilities: string[];
+  tmpfs: ContainerTmpfsMapping[];
+  devices: ContainerDeviceMapping[];
+  sysctls: ContainerKeyValue[];
+  labels: ContainerKeyValue[];
+  health_check_enabled: boolean;
+  health_check_command: string;
+  health_check_interval: string;
+  health_check_timeout: string;
+  health_check_retries: string;
+  log_driver: "" | "k8s-file" | "journald" | "none";
   environment: ContainerEnvironmentVar[];
   ports: ContainerPortMapping[];
   volumes: ContainerVolumeMapping[];
@@ -121,6 +150,18 @@ interface ContainerNetworkDraft {
   dnsDisabled: boolean;
 }
 
+interface ContainerRegistryDraft {
+  name: string;
+  enabled: boolean;
+  insecure: boolean;
+  username: string;
+  password: string;
+  mirrorAddress: string;
+  mirrorHostName: string;
+  mirrorPort: string;
+  mirrorPath: string;
+}
+
 const EMPTY_DRAFT: ContainerDraft = {
   name: "",
   image: "",
@@ -132,8 +173,26 @@ const EMPTY_DRAFT: ContainerDraft = {
   restart: "on-failure",
   enabled: true,
   allow_host_networks: true,
+  allow_host_pid: false,
   network: "",
   network_address: "",
+  networks: [],
+  name_servers: [],
+  uid: "",
+  gid: "",
+  cpu_quota: "",
+  memory: "",
+  capabilities: [],
+  tmpfs: [],
+  devices: [],
+  sysctls: [],
+  labels: [],
+  health_check_enabled: false,
+  health_check_command: "",
+  health_check_interval: "",
+  health_check_timeout: "",
+  health_check_retries: "",
+  log_driver: "",
   environment: [],
   ports: [],
   volumes: [],
@@ -148,8 +207,42 @@ const EMPTY_NETWORK_DRAFT: ContainerNetworkDraft = {
   dnsDisabled: false,
 };
 
+const EMPTY_REGISTRY_DRAFT: ContainerRegistryDraft = {
+  name: "",
+  enabled: true,
+  insecure: false,
+  username: "",
+  password: "",
+  mirrorAddress: "",
+  mirrorHostName: "",
+  mirrorPort: "",
+  mirrorPath: "",
+};
+
 function hasAdvancedRuntimeOverrides(draft: ContainerDraft): boolean {
   return Boolean(draft.entrypoint.trim() || draft.command.trim() || draft.arguments.trim());
+}
+
+function hasExtendedAdvancedSettings(draft: ContainerDraft): boolean {
+  return Boolean(
+    draft.allow_host_pid ||
+      draft.name_servers.some((value) => value.trim().length > 0) ||
+      draft.uid.trim() ||
+      draft.gid.trim() ||
+      draft.cpu_quota.trim() ||
+      draft.memory.trim() ||
+      draft.capabilities.some((value) => value.trim().length > 0) ||
+      draft.tmpfs.length > 0 ||
+      draft.devices.length > 0 ||
+      draft.sysctls.some((pair) => pair.key.trim().length > 0) ||
+      draft.labels.some((pair) => pair.key.trim().length > 0) ||
+      draft.health_check_enabled ||
+      draft.health_check_command.trim() ||
+      draft.health_check_interval.trim() ||
+      draft.health_check_timeout.trim() ||
+      draft.health_check_retries.trim() ||
+      draft.log_driver
+  );
 }
 
 function parseIPv4(ip: string): number | null {
@@ -295,6 +388,14 @@ function detectBrowserTimezone(): string {
 }
 
 function normalizeDraftToPayload(draft: ContainerDraft): ContainerUpsertRequest {
+  const parseOptionalNumber = (value: string): number | null => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed)) return null;
+    return Math.trunc(parsed);
+  };
+
   return {
     image: draft.image.trim(),
     description: draft.description.trim() || null,
@@ -305,8 +406,53 @@ function normalizeDraftToPayload(draft: ContainerDraft): ContainerUpsertRequest 
     restart: draft.restart,
     enabled: draft.enabled,
     allow_host_networks: draft.allow_host_networks,
+    allow_host_pid: draft.allow_host_pid,
     network: draft.network.trim() || null,
     network_address: draft.network_address.trim() || null,
+    networks: draft.networks
+      .map((entry) => ({
+        name: entry.name.trim(),
+        address: entry.address?.trim() || null,
+      }))
+      .filter((entry) => entry.name.length > 0 || (entry.address ?? "").length > 0),
+    name_servers: draft.name_servers.map((server) => server.trim()).filter((server) => server.length > 0),
+    uid: parseOptionalNumber(draft.uid),
+    gid: parseOptionalNumber(draft.gid),
+    cpu_quota: parseOptionalNumber(draft.cpu_quota),
+    memory: parseOptionalNumber(draft.memory),
+    capabilities: draft.capabilities.map((value) => value.trim()).filter((value) => value.length > 0),
+    tmpfs: draft.tmpfs
+      .map((entry) => ({
+        name: entry.name.trim(),
+        destination: entry.destination.trim(),
+        size_mb:
+          entry.size_mb == null || String(entry.size_mb).trim() === ""
+            ? null
+            : Number(entry.size_mb),
+      }))
+      .filter((entry) => entry.name.length > 0 || entry.destination.length > 0),
+    devices: draft.devices
+      .map((device) => ({
+        name: device.name.trim(),
+        source: device.source.trim(),
+        destination: device.destination.trim(),
+      }))
+      .filter(
+        (device) =>
+          device.name.length > 0 || device.source.length > 0 || device.destination.length > 0,
+      ),
+    sysctls: draft.sysctls
+      .map((pair) => ({ key: pair.key.trim(), value: pair.value }))
+      .filter((pair) => pair.key.length > 0),
+    labels: draft.labels
+      .map((pair) => ({ key: pair.key.trim(), value: pair.value }))
+      .filter((pair) => pair.key.length > 0),
+    health_check_enabled: draft.health_check_enabled,
+    health_check_command: draft.health_check_command.trim() || null,
+    health_check_interval: draft.health_check_interval.trim() || null,
+    health_check_timeout: draft.health_check_timeout.trim() || null,
+    health_check_retries: parseOptionalNumber(draft.health_check_retries),
+    log_driver: draft.log_driver || null,
     environment: draft.environment
       .map((env) => ({ key: env.key.trim(), value: env.value }))
       .filter((env) => env.key.length > 0),
@@ -340,7 +486,24 @@ function ensureArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+function isEndpointUnavailableError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return (
+    /\b404\b/.test(message) ||
+    /\b405\b/.test(message) ||
+    /not found/i.test(message) ||
+    /method not allowed/i.test(message)
+  );
+}
+
 function toDraft(container: ContainerSummary): ContainerDraft {
+  const parsedNetworks = ensureArray<ContainerNetworkAttachment>(container.networks).map((entry) => ({
+    name: entry.name ?? "",
+    address: entry.address ?? "",
+  }));
+  const primaryNetwork = parsedNetworks[0];
+  const additionalNetworks = primaryNetwork ? parsedNetworks.slice(1) : parsedNetworks;
+
   return {
     name: container.name,
     image: container.image ?? "",
@@ -352,8 +515,27 @@ function toDraft(container: ContainerSummary): ContainerDraft {
     restart: container.restart ?? "on-failure",
     enabled: container.enabled,
     allow_host_networks: container.allow_host_networks,
-    network: container.network ?? "",
-    network_address: container.network_address ?? "",
+    allow_host_pid: container.allow_host_pid,
+    network: primaryNetwork?.name ?? container.network ?? "",
+    network_address: (primaryNetwork?.address as string | undefined) ?? container.network_address ?? "",
+    networks: additionalNetworks,
+    name_servers: ensureArray<string>(container.name_servers).map((value) => String(value)),
+    uid: container.uid != null ? String(container.uid) : "",
+    gid: container.gid != null ? String(container.gid) : "",
+    cpu_quota: container.cpu_quota != null ? String(container.cpu_quota) : "",
+    memory: container.memory != null ? String(container.memory) : "",
+    capabilities: ensureArray<string>(container.capabilities).map((value) => String(value)),
+    tmpfs: ensureArray<ContainerTmpfsMapping>(container.tmpfs).map((item) => ({ ...item })),
+    devices: ensureArray<ContainerDeviceMapping>(container.devices).map((item) => ({ ...item })),
+    sysctls: ensureArray<ContainerKeyValue>(container.sysctls).map((item) => ({ ...item })),
+    labels: ensureArray<ContainerKeyValue>(container.labels).map((item) => ({ ...item })),
+    health_check_enabled: container.health_check_enabled,
+    health_check_command: container.health_check_command ?? "",
+    health_check_interval: container.health_check_interval ?? "",
+    health_check_timeout: container.health_check_timeout ?? "",
+    health_check_retries:
+      container.health_check_retries != null ? String(container.health_check_retries) : "",
+    log_driver: container.log_driver ?? "",
     environment: ensureArray<ContainerEnvironmentVar>(container.environment).map((item) => ({ ...item })),
     ports: ensureArray<ContainerPortMapping>(container.ports).map((item) => ({ ...item })),
     volumes: ensureArray<ContainerVolumeMapping>(container.volumes).map((item) => ({ ...item })),
@@ -412,6 +594,98 @@ function getValidationError(draft: ContainerDraft): string | null {
     return "Set a network name before setting a network address.";
   }
 
+  const attachedNetworks = [
+    ...(draft.network.trim()
+      ? [{ name: draft.network.trim(), address: draft.network_address.trim() || "" }]
+      : []),
+    ...draft.networks.map((entry) => ({
+      name: entry.name.trim(),
+      address: entry.address?.trim() || "",
+    })),
+  ].filter((entry) => entry.name || entry.address);
+
+  const networkNames = new Set<string>();
+  for (const entry of attachedNetworks) {
+    if (!entry.name) return "Every network attachment needs a network name.";
+    if (networkNames.has(entry.name)) return `Duplicate network attachment: ${entry.name}`;
+    networkNames.add(entry.name);
+  }
+  if (draft.allow_host_networks && attachedNetworks.length > 0) {
+    return "Host networking cannot be combined with container network attachments.";
+  }
+
+  const nameServers = new Set<string>();
+  for (const nameServer of draft.name_servers) {
+    const value = nameServer.trim();
+    if (!value) continue;
+    if (nameServers.has(value)) return `Duplicate name server: ${value}`;
+    nameServers.add(value);
+    if (!/^[0-9a-fA-F:.]+$/.test(value)) {
+      return `Name server must be an IP address: ${value}`;
+    }
+  }
+
+  for (const [label, value] of [
+    ["UID", draft.uid],
+    ["GID", draft.gid],
+    ["CPU Quota", draft.cpu_quota],
+    ["Memory (MB)", draft.memory],
+    ["Health Check Retries", draft.health_check_retries],
+  ] as const) {
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+    if (!/^\d+$/.test(trimmed)) return `${label} must be a positive integer.`;
+  }
+
+  const capabilities = new Set<string>();
+  for (const capability of draft.capabilities) {
+    const value = capability.trim();
+    if (!value) continue;
+    if (capabilities.has(value)) return `Duplicate capability: ${value}`;
+    capabilities.add(value);
+  }
+
+  const tmpfsNames = new Set<string>();
+  for (const entry of draft.tmpfs) {
+    const name = entry.name.trim();
+    const destination = entry.destination.trim();
+    if (!name && !destination) continue;
+    if (!name) return "Every tmpfs entry needs a name.";
+    if (tmpfsNames.has(name)) return `Duplicate tmpfs name: ${name}`;
+    tmpfsNames.add(name);
+    if (!destination) return `tmpfs ${name} requires a destination path.`;
+    const sizeText = entry.size_mb == null ? "" : String(entry.size_mb).trim();
+    if (sizeText && !/^\d+$/.test(sizeText)) return `tmpfs ${name} size must be numeric.`;
+  }
+
+  const deviceNames = new Set<string>();
+  for (const device of draft.devices) {
+    const name = device.name.trim();
+    const source = device.source.trim();
+    const destination = device.destination.trim();
+    if (!name && !source && !destination) continue;
+    if (!name) return "Every device mapping needs a name.";
+    if (deviceNames.has(name)) return `Duplicate device mapping name: ${name}`;
+    deviceNames.add(name);
+    if (!source || !destination) return `Device ${name} requires source and destination.`;
+  }
+
+  const sysctlKeys = new Set<string>();
+  for (const item of draft.sysctls) {
+    const key = item.key.trim();
+    if (!key) continue;
+    if (sysctlKeys.has(key)) return `Duplicate sysctl key: ${key}`;
+    sysctlKeys.add(key);
+  }
+
+  const labelKeys = new Set<string>();
+  for (const item of draft.labels) {
+    const key = item.key.trim();
+    if (!key) continue;
+    if (labelKeys.has(key)) return `Duplicate label key: ${key}`;
+    labelKeys.add(key);
+  }
+
   return null;
 }
 
@@ -424,6 +698,7 @@ const CONTAINER_TEMPLATES: ContainerTemplateDefinition[] = [
     lanHint:
       "Use a dedicated LAN IP if clients should query Pi-hole directly on port 53.",
     buildDraft: ({ timezone }) => ({
+      ...EMPTY_DRAFT,
       name: "pihole",
       image: "pihole/pihole:latest",
       description: "Pi-hole DNS and ad-blocking service",
@@ -470,6 +745,7 @@ const CONTAINER_TEMPLATES: ContainerTemplateDefinition[] = [
     lanHint:
       "Like Pi-hole, AdGuard is best with a LAN-facing DNS address and free port 53.",
     buildDraft: ({ timezone }) => ({
+      ...EMPTY_DRAFT,
       name: "adguard-home",
       image: "adguard/adguardhome:latest",
       description: "AdGuard Home DNS filtering service",
@@ -511,6 +787,7 @@ const CONTAINER_TEMPLATES: ContainerTemplateDefinition[] = [
     docsUrl: "https://uptime.kuma.pet/",
     lanHint: "Good fit for LAN-only visibility and alerting.",
     buildDraft: () => ({
+      ...EMPTY_DRAFT,
       name: "uptime-kuma",
       image: "louislam/uptime-kuma:1",
       description: "Uptime Kuma monitoring dashboard",
@@ -543,6 +820,7 @@ const CONTAINER_TEMPLATES: ContainerTemplateDefinition[] = [
     lanHint:
       "Plan WAN/LAN firewall and port-forwarding before exposing this externally.",
     buildDraft: () => ({
+      ...EMPTY_DRAFT,
       name: "nginx-proxy-manager",
       image: "jc21/nginx-proxy-manager:latest",
       description: "Nginx Proxy Manager reverse proxy",
@@ -585,6 +863,7 @@ const CONTAINER_TEMPLATES: ContainerTemplateDefinition[] = [
     lanHint:
       "Use this to operate containers after initial bootstrap from VyManager.",
     buildDraft: () => ({
+      ...EMPTY_DRAFT,
       name: "portainer",
       image: "portainer/portainer-ce:latest",
       description: "Portainer container management UI",
@@ -626,6 +905,7 @@ const CONTAINER_TEMPLATES: ContainerTemplateDefinition[] = [
     lanHint:
       "Host networking is enabled by default for local discovery integrations.",
     buildDraft: ({ timezone }) => ({
+      ...EMPTY_DRAFT,
       name: "home-assistant",
       image: "ghcr.io/home-assistant/home-assistant:stable",
       description: "Home Assistant core",
@@ -673,8 +953,12 @@ export default function SystemContainersPage() {
   const [instanceHostDraft, setInstanceHostDraft] = useState("");
   const [savingInstanceHost, setSavingInstanceHost] = useState(false);
   const [networksExpanded, setNetworksExpanded] = useState(false);
+  const [imagesExpanded, setImagesExpanded] = useState(false);
+  const [registriesExpanded, setRegistriesExpanded] = useState(false);
   const [lanHelperExpanded, setLanHelperExpanded] = useState(false);
   const [runtimeOverridesExpanded, setRuntimeOverridesExpanded] = useState(false);
+  const [advancedSettingsExpanded, setAdvancedSettingsExpanded] = useState(false);
+  const [networkAttachmentsExpanded, setNetworkAttachmentsExpanded] = useState(false);
   const [environmentExpanded, setEnvironmentExpanded] = useState(false);
   const [portMappingsExpanded, setPortMappingsExpanded] = useState(true);
   const [volumeMappingsExpanded, setVolumeMappingsExpanded] = useState(false);
@@ -686,6 +970,13 @@ export default function SystemContainersPage() {
   const [logsText, setLogsText] = useState("");
   const [networkDraft, setNetworkDraft] = useState<ContainerNetworkDraft>({ ...EMPTY_NETWORK_DRAFT });
   const [editingNetworkName, setEditingNetworkName] = useState<string | null>(null);
+  const [registryDraft, setRegistryDraft] = useState<ContainerRegistryDraft>({ ...EMPTY_REGISTRY_DRAFT });
+  const [editingRegistryName, setEditingRegistryName] = useState<string | null>(null);
+  const [registries, setRegistries] = useState<ContainerRegistrySummary[]>([]);
+  const [imageCatalog, setImageCatalog] = useState<ContainerImagesResponse | null>(null);
+  const [imageLifecycleRef, setImageLifecycleRef] = useState("");
+  const [imageDeleteTarget, setImageDeleteTarget] = useState("");
+  const [imageDeleteForce, setImageDeleteForce] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
     CONTAINER_TEMPLATES[0]?.id ?? "pihole"
   );
@@ -702,6 +993,14 @@ export default function SystemContainersPage() {
   const [savingNetwork, setSavingNetwork] = useState(false);
   const [actionTarget, setActionTarget] = useState<string | null>(null);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [loadingImages, setLoadingImages] = useState(false);
+  const [loadingRegistries, setLoadingRegistries] = useState(false);
+  const [processingImageAction, setProcessingImageAction] = useState<null | "pull" | "update" | "delete">(null);
+  const [savingRegistry, setSavingRegistry] = useState(false);
+  const [inspectContainerName, setInspectContainerName] = useState<string | null>(null);
+  const [inspectText, setInspectText] = useState("");
+  const [loadingInspect, setLoadingInspect] = useState(false);
+  const [logsLines, setLogsLines] = useState(400);
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -807,6 +1106,38 @@ export default function SystemContainersPage() {
     }
   }, []);
 
+  const loadImageCatalog = useCallback(async (refresh: boolean = false) => {
+    setLoadingImages(true);
+    try {
+      const response = await containersService.getImages(refresh);
+      setImageCatalog(response);
+    } catch (err) {
+      setImageCatalog(null);
+      if (isEndpointUnavailableError(err)) {
+        return;
+      }
+      setError(err instanceof Error ? err.message : "Failed to load container image catalog.");
+    } finally {
+      setLoadingImages(false);
+    }
+  }, []);
+
+  const loadRegistries = useCallback(async (refresh: boolean = false) => {
+    setLoadingRegistries(true);
+    try {
+      const response = await containersService.getRegistries(refresh);
+      setRegistries(response);
+    } catch (err) {
+      setRegistries([]);
+      if (isEndpointUnavailableError(err)) {
+        return;
+      }
+      setError(err instanceof Error ? err.message : "Failed to load container registries.");
+    } finally {
+      setLoadingRegistries(false);
+    }
+  }, []);
+
   const loadLanSegments = useCallback(async () => {
     setLoadingLanSegments(true);
     setLanSegmentsError(null);
@@ -832,9 +1163,11 @@ export default function SystemContainersPage() {
   useEffect(() => {
     loadBootstrapStatus();
     loadOverview(true);
+    loadImageCatalog(true);
+    loadRegistries(true);
     loadLanSegments();
     loadSession();
-  }, [loadBootstrapStatus, loadLanSegments, loadOverview, loadSession]);
+  }, [loadBootstrapStatus, loadImageCatalog, loadLanSegments, loadOverview, loadRegistries, loadSession]);
 
   useEffect(() => {
     if (!editingInstanceHost) {
@@ -906,6 +1239,8 @@ export default function SystemContainersPage() {
     setDraft({ ...EMPTY_DRAFT });
     setLanHelperExpanded(false);
     setRuntimeOverridesExpanded(false);
+    setAdvancedSettingsExpanded(false);
+    setNetworkAttachmentsExpanded(false);
     setEnvironmentExpanded(false);
     setPortMappingsExpanded(true);
     setVolumeMappingsExpanded(false);
@@ -939,6 +1274,8 @@ export default function SystemContainersPage() {
     setSelectedContainerName(container.name);
     setDraft(nextDraft);
     setRuntimeOverridesExpanded(hasAdvancedRuntimeOverrides(nextDraft));
+    setAdvancedSettingsExpanded(hasExtendedAdvancedSettings(nextDraft));
+    setNetworkAttachmentsExpanded(nextDraft.networks.length > 0);
     setEnvironmentExpanded(nextDraft.environment.length > 0);
     setPortMappingsExpanded(nextDraft.ports.length > 0);
     setVolumeMappingsExpanded(nextDraft.volumes.length > 0);
@@ -1183,6 +1520,8 @@ export default function SystemContainersPage() {
     setSelectedContainerName(null);
     setDraft(nextDraft);
     setRuntimeOverridesExpanded(hasAdvancedRuntimeOverrides(nextDraft));
+    setAdvancedSettingsExpanded(hasExtendedAdvancedSettings(nextDraft));
+    setNetworkAttachmentsExpanded(nextDraft.networks.length > 0);
     setEnvironmentExpanded(nextDraft.environment.length > 0);
     setPortMappingsExpanded(nextDraft.ports.length > 0);
     setVolumeMappingsExpanded(nextDraft.volumes.length > 0);
@@ -1246,7 +1585,7 @@ export default function SystemContainersPage() {
     setLoadingLogs(true);
     setError(null);
     try {
-      const response = await containersService.getLogs(name, 400);
+      const response = await containersService.getLogs(name, logsLines);
       setLogsContainerName(name);
       setLogsText(response.logs || "(no logs)");
     } catch (err) {
@@ -1288,6 +1627,241 @@ export default function SystemContainersPage() {
       };
       return { ...previous, volumes };
     });
+  };
+
+  const updateNameServer = (index: number, value: string) => {
+    setDraft((previous) => {
+      const nameServers = [...previous.name_servers];
+      nameServers[index] = value;
+      return { ...previous, name_servers: nameServers };
+    });
+  };
+
+  const updateCapability = (index: number, value: string) => {
+    setDraft((previous) => {
+      const capabilities = [...previous.capabilities];
+      capabilities[index] = value;
+      return { ...previous, capabilities };
+    });
+  };
+
+  const updateTmpfs = (index: number, key: keyof ContainerTmpfsMapping, value: string) => {
+    setDraft((previous) => {
+      const tmpfs = [...previous.tmpfs];
+      if (key === "size_mb") {
+        tmpfs[index] = {
+          ...tmpfs[index],
+          size_mb: value.trim() ? Number(value) : null,
+        };
+      } else {
+        tmpfs[index] = {
+          ...tmpfs[index],
+          [key]: value as ContainerTmpfsMapping[typeof key],
+        };
+      }
+      return { ...previous, tmpfs };
+    });
+  };
+
+  const updateDevice = (index: number, key: keyof ContainerDeviceMapping, value: string) => {
+    setDraft((previous) => {
+      const devices = [...previous.devices];
+      devices[index] = {
+        ...devices[index],
+        [key]: value as ContainerDeviceMapping[typeof key],
+      };
+      return { ...previous, devices };
+    });
+  };
+
+  const updateSysctl = (index: number, key: keyof ContainerKeyValue, value: string) => {
+    setDraft((previous) => {
+      const sysctls = [...previous.sysctls];
+      sysctls[index] = {
+        ...sysctls[index],
+        [key]: value,
+      };
+      return { ...previous, sysctls };
+    });
+  };
+
+  const updateLabel = (index: number, key: keyof ContainerKeyValue, value: string) => {
+    setDraft((previous) => {
+      const labels = [...previous.labels];
+      labels[index] = {
+        ...labels[index],
+        [key]: value,
+      };
+      return { ...previous, labels };
+    });
+  };
+
+  const updateAttachedNetwork = (
+    index: number,
+    key: keyof ContainerNetworkAttachment,
+    value: string,
+  ) => {
+    setDraft((previous) => {
+      const networks = [...previous.networks];
+      const current = networks[index] ?? { name: "", address: "" };
+      networks[index] = {
+        ...current,
+        [key]: value,
+      };
+      return { ...previous, networks };
+    });
+  };
+
+  const loadInspect = async (name: string) => {
+    setLoadingInspect(true);
+    setError(null);
+    try {
+      const response: ContainerInspectResponse = await containersService.inspectContainer(name);
+      setInspectContainerName(name);
+      setInspectText(response.output || "(no inspect output)");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to inspect container.");
+    } finally {
+      setLoadingInspect(false);
+    }
+  };
+
+  const runImageAction = async (action: "pull" | "update" | "delete") => {
+    if (!canEditSystem) {
+      setError("You currently have read-only access for System features.");
+      return;
+    }
+
+    setProcessingImageAction(action);
+    setError(null);
+    setSuccess(null);
+    try {
+      if (action === "delete") {
+        const target = imageDeleteTarget.trim();
+        if (!target) {
+          setError("Image delete target is required.");
+          return;
+        }
+        const response = await containersService.deleteImage({
+          target,
+          force: imageDeleteForce,
+        });
+        setSuccess(`Image delete requested for ${response.target}.`);
+      } else {
+        const image = imageLifecycleRef.trim();
+        if (!image) {
+          setError("Image reference is required.");
+          return;
+        }
+        if (action === "pull") {
+          const response = await containersService.pullImage({ image });
+          setSuccess(`Image pull requested for ${response.target}.`);
+        } else {
+          const response = await containersService.updateImage({ image });
+          setSuccess(`Image update requested for ${response.target}.`);
+        }
+      }
+
+      await Promise.all([
+        loadImageCatalog(true),
+        loadOverview(true),
+      ]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to run image action.");
+    } finally {
+      setProcessingImageAction(null);
+    }
+  };
+
+  const editRegistry = (registry: ContainerRegistrySummary) => {
+    setEditingRegistryName(registry.name);
+    setRegistryDraft({
+      name: registry.name,
+      enabled: registry.enabled,
+      insecure: registry.insecure,
+      username: registry.username ?? "",
+      password: "",
+      mirrorAddress: registry.mirror?.address ?? "",
+      mirrorHostName: registry.mirror?.host_name ?? "",
+      mirrorPort: registry.mirror?.port != null ? String(registry.mirror.port) : "",
+      mirrorPath: registry.mirror?.path ?? "",
+    });
+  };
+
+  const resetRegistryDraft = () => {
+    setEditingRegistryName(null);
+    setRegistryDraft({ ...EMPTY_REGISTRY_DRAFT });
+  };
+
+  const saveRegistry = async () => {
+    if (!canEditSystem) {
+      setError("You currently have read-only access for System features.");
+      return;
+    }
+
+    const name = registryDraft.name.trim();
+    if (!name) {
+      setError("Registry name is required.");
+      return;
+    }
+
+    const mirrorPortText = registryDraft.mirrorPort.trim();
+    if (mirrorPortText && !/^\d+$/.test(mirrorPortText)) {
+      setError("Registry mirror port must be numeric.");
+      return;
+    }
+
+    setSavingRegistry(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await containersService.upsertRegistry(name, {
+        enabled: registryDraft.enabled,
+        insecure: registryDraft.insecure,
+        username: registryDraft.username.trim() || null,
+        password: registryDraft.password.trim() || null,
+        mirror:
+          registryDraft.mirrorAddress.trim() ||
+          registryDraft.mirrorHostName.trim() ||
+          registryDraft.mirrorPort.trim() ||
+          registryDraft.mirrorPath.trim()
+            ? {
+                address: registryDraft.mirrorAddress.trim() || null,
+                host_name: registryDraft.mirrorHostName.trim() || null,
+                port: mirrorPortText ? Number(mirrorPortText) : null,
+                path: registryDraft.mirrorPath.trim() || null,
+              }
+            : null,
+      });
+      await loadRegistries(true);
+      resetRegistryDraft();
+      setSuccess(`Registry ${name} saved.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save registry.");
+    } finally {
+      setSavingRegistry(false);
+    }
+  };
+
+  const removeRegistry = async (name: string) => {
+    if (!canEditSystem) return;
+    if (!window.confirm(`Delete container registry '${name}'?`)) return;
+
+    setSavingRegistry(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await containersService.deleteRegistry(name);
+      await loadRegistries(true);
+      if (editingRegistryName === name) {
+        resetRegistryDraft();
+      }
+      setSuccess(`Registry ${name} deleted.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete registry.");
+    } finally {
+      setSavingRegistry(false);
+    }
   };
 
   const containerAutomationReady = Boolean(
@@ -1603,6 +2177,350 @@ export default function SystemContainersPage() {
           <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
             <div>
               <CardTitle className="flex items-center gap-2">
+                <Boxes className="h-4 w-4" />
+                Image Lifecycle
+              </CardTitle>
+              <CardDescription>
+                Pull, update, and delete container images with bootstrap safety checks.
+              </CardDescription>
+            </div>
+            <Button
+              size="sm"
+              variant={imagesExpanded ? "default" : "outline"}
+              onClick={() => setImagesExpanded((previous) => !previous)}
+            >
+              {imagesExpanded ? "Collapse" : "Manage Images"}
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={imageCatalog?.automation_ready ? "default" : "secondary"}>
+                {imageCatalog?.automation_ready ? "Automation Ready" : "Automation Required"}
+              </Badge>
+              <Badge variant={imageCatalog?.ssh_enabled ? "default" : "secondary"}>
+                SSH {imageCatalog?.ssh_enabled ? "Enabled" : "Disabled"}
+              </Badge>
+              <Badge variant={imageCatalog?.ssh_key_installed ? "default" : "secondary"}>
+                Key {imageCatalog?.ssh_key_installed ? "Installed" : "Missing"}
+              </Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => loadImageCatalog(true)}
+                disabled={loadingImages || processingImageAction !== null}
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${loadingImages ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
+            <Collapsible open={imagesExpanded} onOpenChange={setImagesExpanded}>
+              <CollapsibleContent className="space-y-4">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Image Reference</Label>
+                    <Input
+                      value={imageLifecycleRef}
+                      onChange={(event) => setImageLifecycleRef(event.target.value)}
+                      placeholder="pihole/pihole:latest"
+                      disabled={processingImageAction !== null}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => runImageAction("pull")}
+                        disabled={!canEditSystem || processingImageAction !== null}
+                      >
+                        {processingImageAction === "pull" ? "Pulling..." : "Pull Image"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => runImageAction("update")}
+                        disabled={!canEditSystem || processingImageAction !== null}
+                      >
+                        {processingImageAction === "update" ? "Updating..." : "Update Image"}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Delete Target</Label>
+                    <Input
+                      value={imageDeleteTarget}
+                      onChange={(event) => setImageDeleteTarget(event.target.value)}
+                      placeholder="image-ref or all"
+                      disabled={processingImageAction !== null}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={imageDeleteForce}
+                        onCheckedChange={(checked) => setImageDeleteForce(checked === true)}
+                        disabled={processingImageAction !== null}
+                      />
+                      <Label>Force delete</Label>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => runImageAction("delete")}
+                      disabled={!canEditSystem || processingImageAction !== null}
+                    >
+                      {processingImageAction === "delete" ? "Deleting..." : "Delete Image"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Configured Images</Label>
+                    <div className="rounded-md border p-3 min-h-20 space-y-1">
+                      {(imageCatalog?.configured_images ?? []).length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No configured images.</p>
+                      ) : (
+                        imageCatalog!.configured_images.map((image) => (
+                          <div key={`configured-image-${image}`} className="text-xs font-mono break-all">
+                            {image}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Runtime Images</Label>
+                    <div className="rounded-md border p-3 min-h-20 space-y-1">
+                      {(imageCatalog?.runtime_images ?? []).length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No runtime images reported.</p>
+                      ) : (
+                        imageCatalog!.runtime_images.map((image: ContainerImageSummary) => (
+                          <div
+                            key={`runtime-image-${image.reference}-${image.source}`}
+                            className="flex items-center gap-2 text-xs"
+                          >
+                            <span className="font-mono break-all">{image.reference}</span>
+                            <Badge variant="outline">{image.source}</Badge>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-4 w-4" />
+                Container Registries
+              </CardTitle>
+              <CardDescription>
+                Configure registry mirrors, credentials, and trust behavior.
+              </CardDescription>
+            </div>
+            <Button
+              size="sm"
+              variant={registriesExpanded ? "default" : "outline"}
+              onClick={() => setRegistriesExpanded((previous) => !previous)}
+            >
+              {registriesExpanded ? "Collapse" : "Manage Registries"}
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{registries.length} registries</Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => loadRegistries(true)}
+                disabled={loadingRegistries || savingRegistry}
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${loadingRegistries ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
+            <Collapsible open={registriesExpanded} onOpenChange={setRegistriesExpanded}>
+              <CollapsibleContent className="space-y-4">
+                {registries.length > 0 && (
+                  <div className="space-y-2">
+                    {registries.map((registry) => (
+                      <div key={registry.name} className="rounded-md border p-3 space-y-2">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div>
+                            <div className="font-medium">{registry.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {registry.username ? `user: ${registry.username}` : "No username configured"}
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant={registry.enabled ? "default" : "secondary"}>
+                              {registry.enabled ? "Enabled" : "Disabled"}
+                            </Badge>
+                            {registry.insecure && <Badge variant="destructive">Insecure</Badge>}
+                            {registry.password_set && <Badge variant="outline">Password Set</Badge>}
+                            <Button size="sm" variant="outline" onClick={() => editRegistry(registry)}>
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => removeRegistry(registry.name)}
+                              disabled={!canEditSystem || savingRegistry}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                        {registry.mirror && (
+                          <div className="text-xs text-muted-foreground font-mono">
+                            mirror: {registry.mirror.address ?? "-"} host:{registry.mirror.host_name ?? "-"} port:
+                            {registry.mirror.port ?? "-"} path:{registry.mirror.path ?? "-"}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="rounded-md border p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold">
+                      {editingRegistryName ? `Edit Registry: ${editingRegistryName}` : "Create Registry"}
+                    </h3>
+                    {editingRegistryName && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={resetRegistryDraft}
+                        disabled={savingRegistry}
+                      >
+                        Cancel Edit
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Name</Label>
+                      <Input
+                        value={registryDraft.name}
+                        onChange={(event) =>
+                          setRegistryDraft((previous) => ({ ...previous, name: event.target.value }))
+                        }
+                        placeholder="docker.io"
+                        disabled={savingRegistry || Boolean(editingRegistryName)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Username (optional)</Label>
+                      <Input
+                        value={registryDraft.username}
+                        onChange={(event) =>
+                          setRegistryDraft((previous) => ({ ...previous, username: event.target.value }))
+                        }
+                        disabled={savingRegistry}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Password (optional)</Label>
+                      <Input
+                        type="password"
+                        value={registryDraft.password}
+                        onChange={(event) =>
+                          setRegistryDraft((previous) => ({ ...previous, password: event.target.value }))
+                        }
+                        placeholder={editingRegistryName ? "Leave empty to keep existing" : ""}
+                        disabled={savingRegistry}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Mirror Address (optional)</Label>
+                      <Input
+                        value={registryDraft.mirrorAddress}
+                        onChange={(event) =>
+                          setRegistryDraft((previous) => ({ ...previous, mirrorAddress: event.target.value }))
+                        }
+                        placeholder="192.168.1.1"
+                        disabled={savingRegistry}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Mirror Host Name (optional)</Label>
+                      <Input
+                        value={registryDraft.mirrorHostName}
+                        onChange={(event) =>
+                          setRegistryDraft((previous) => ({ ...previous, mirrorHostName: event.target.value }))
+                        }
+                        disabled={savingRegistry}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Mirror Port (optional)</Label>
+                      <Input
+                        value={registryDraft.mirrorPort}
+                        onChange={(event) =>
+                          setRegistryDraft((previous) => ({ ...previous, mirrorPort: event.target.value }))
+                        }
+                        placeholder="8080"
+                        disabled={savingRegistry}
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label>Mirror Path (optional)</Label>
+                      <Input
+                        value={registryDraft.mirrorPath}
+                        onChange={(event) =>
+                          setRegistryDraft((previous) => ({ ...previous, mirrorPath: event.target.value }))
+                        }
+                        placeholder="/mirror"
+                        disabled={savingRegistry}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={registryDraft.enabled}
+                        onCheckedChange={(checked) =>
+                          setRegistryDraft((previous) => ({ ...previous, enabled: checked === true }))
+                        }
+                        disabled={savingRegistry}
+                      />
+                      <Label>Enabled</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={registryDraft.insecure}
+                        onCheckedChange={(checked) =>
+                          setRegistryDraft((previous) => ({ ...previous, insecure: checked === true }))
+                        }
+                        disabled={savingRegistry}
+                      />
+                      <Label>Insecure</Label>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={saveRegistry} disabled={!canEditSystem || savingRegistry}>
+                      <Save className="h-4 w-4 mr-1" />
+                      {savingRegistry ? "Saving..." : "Save Registry"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => loadRegistries(true)}
+                      disabled={savingRegistry || loadingRegistries}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Refresh Registries
+                    </Button>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+            <div>
+              <CardTitle className="flex items-center gap-2">
                 <Network className="h-4 w-4" />
                 Container Networks
               </CardTitle>
@@ -1828,6 +2746,22 @@ export default function SystemContainersPage() {
                           <Badge variant={container.enabled ? "default" : "secondary"}>
                             {container.enabled ? "Enabled" : "Disabled"}
                           </Badge>
+                          {container.health_status && (
+                            <Badge
+                              variant={
+                                container.health_status === "healthy"
+                                  ? "default"
+                                  : container.health_status === "unhealthy"
+                                    ? "destructive"
+                                    : "secondary"
+                              }
+                            >
+                              Health: {container.health_status}
+                            </Badge>
+                          )}
+                          {container.uptime && (
+                            <Badge variant="outline">Uptime: {container.uptime}</Badge>
+                          )}
                         </div>
                       </div>
 
@@ -1911,6 +2845,15 @@ export default function SystemContainersPage() {
                         </Button>
                         <Button
                           size="sm"
+                          variant="outline"
+                          onClick={() => loadInspect(container.name)}
+                          disabled={loadingInspect}
+                        >
+                          <ClipboardList className="h-3.5 w-3.5 mr-1" />
+                          Inspect
+                        </Button>
+                        <Button
+                          size="sm"
                           variant="destructive"
                           onClick={() => removeContainer(container.name)}
                           disabled={!canEditSystem || busy || saving}
@@ -1927,7 +2870,32 @@ export default function SystemContainersPage() {
               {logsContainerName && (
                 <div className="pt-2 border-t">
                   <div className="flex items-center justify-between mb-2">
-                    <Label>Logs: {logsContainerName}</Label>
+                    <div className="flex items-center gap-2">
+                      <Label>Logs: {logsContainerName}</Label>
+                      <Select
+                        value={String(logsLines)}
+                        onValueChange={(value) => setLogsLines(Number(value))}
+                      >
+                        <SelectTrigger className="h-7 w-[120px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="100">100 lines</SelectItem>
+                          <SelectItem value="400">400 lines</SelectItem>
+                          <SelectItem value="1000">1000 lines</SelectItem>
+                          <SelectItem value="2000">2000 lines</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => loadLogs(logsContainerName)}
+                        disabled={loadingLogs}
+                      >
+                        <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loadingLogs ? "animate-spin" : ""}`} />
+                        Refresh
+                      </Button>
+                    </div>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1940,6 +2908,36 @@ export default function SystemContainersPage() {
                     </Button>
                   </div>
                   <Textarea value={logsText} readOnly className="min-h-56 font-mono text-xs" />
+                </div>
+              )}
+
+              {inspectContainerName && (
+                <div className="pt-2 border-t">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Label>Inspect: {inspectContainerName}</Label>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => loadInspect(inspectContainerName)}
+                        disabled={loadingInspect}
+                      >
+                        <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loadingInspect ? "animate-spin" : ""}`} />
+                        Refresh
+                      </Button>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setInspectContainerName(null);
+                        setInspectText("");
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Textarea value={inspectText} readOnly className="min-h-56 font-mono text-xs" />
                 </div>
               )}
             </CardContent>
@@ -2285,7 +3283,7 @@ export default function SystemContainersPage() {
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-3">
                 <div className="flex items-center gap-3">
                   <Checkbox
                     checked={draft.enabled}
@@ -2306,6 +3304,532 @@ export default function SystemContainersPage() {
                   />
                   <Label>Allow Host Networks</Label>
                 </div>
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    checked={draft.allow_host_pid}
+                    onCheckedChange={(checked) =>
+                      setDraft((previous) => ({ ...previous, allow_host_pid: checked === true }))
+                    }
+                    disabled={saving}
+                  />
+                  <Label>Allow Host PID</Label>
+                </div>
+              </div>
+
+              <div className="rounded-md border p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <Label className="text-sm font-semibold">Advanced Runtime and Security</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Optional container limits, identity, capabilities, health checks, and metadata.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setAdvancedSettingsExpanded((previous) => !previous)}
+                  >
+                    {advancedSettingsExpanded ? "Collapse" : "Edit"}
+                  </Button>
+                </div>
+                <Collapsible open={advancedSettingsExpanded} onOpenChange={setAdvancedSettingsExpanded}>
+                  <CollapsibleContent className="space-y-4">
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>UID (optional)</Label>
+                        <Input
+                          type="number"
+                          value={draft.uid}
+                          onChange={(event) =>
+                            setDraft((previous) => ({ ...previous, uid: event.target.value }))
+                          }
+                          disabled={saving}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>GID (optional)</Label>
+                        <Input
+                          type="number"
+                          value={draft.gid}
+                          onChange={(event) =>
+                            setDraft((previous) => ({ ...previous, gid: event.target.value }))
+                          }
+                          disabled={saving}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>CPU Quota (optional)</Label>
+                        <Input
+                          type="number"
+                          value={draft.cpu_quota}
+                          onChange={(event) =>
+                            setDraft((previous) => ({ ...previous, cpu_quota: event.target.value }))
+                          }
+                          disabled={saving}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Memory MB (optional)</Label>
+                        <Input
+                          type="number"
+                          value={draft.memory}
+                          onChange={(event) =>
+                            setDraft((previous) => ({ ...previous, memory: event.target.value }))
+                          }
+                          disabled={saving}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Log Driver (optional)</Label>
+                        <Select
+                          value={draft.log_driver || "none-selected"}
+                          onValueChange={(value) =>
+                            setDraft((previous) => ({
+                              ...previous,
+                              log_driver: value === "none-selected" ? "" : (value as ContainerDraft["log_driver"]),
+                            }))
+                          }
+                          disabled={saving}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none-selected">Not set</SelectItem>
+                            <SelectItem value="k8s-file">k8s-file</SelectItem>
+                            <SelectItem value="journald">journald</SelectItem>
+                            <SelectItem value="none">none</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="rounded-md border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold">Container Name Servers</Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setDraft((previous) => ({
+                              ...previous,
+                              name_servers: [...previous.name_servers, ""],
+                            }))
+                          }
+                          disabled={saving}
+                        >
+                          <Plus className="h-3.5 w-3.5 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                      {draft.name_servers.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No container-specific DNS servers.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {draft.name_servers.map((server, index) => (
+                            <div key={`nameserver-${index}`} className="grid gap-2 md:grid-cols-[1fr_auto]">
+                              <Input
+                                placeholder="1.1.1.1"
+                                value={server}
+                                onChange={(event) => updateNameServer(index, event.target.value)}
+                                disabled={saving}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setDraft((previous) => ({
+                                    ...previous,
+                                    name_servers: previous.name_servers.filter((_, i) => i !== index),
+                                  }))
+                                }
+                                disabled={saving}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-md border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold">Capabilities</Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setDraft((previous) => ({
+                              ...previous,
+                              capabilities: [...previous.capabilities, ""],
+                            }))
+                          }
+                          disabled={saving}
+                        >
+                          <Plus className="h-3.5 w-3.5 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                      {draft.capabilities.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No extra capabilities configured.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {draft.capabilities.map((capability, index) => (
+                            <div key={`capability-${index}`} className="grid gap-2 md:grid-cols-[1fr_auto]">
+                              <Input
+                                placeholder="NET_ADMIN"
+                                value={capability}
+                                onChange={(event) => updateCapability(index, event.target.value)}
+                                disabled={saving}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setDraft((previous) => ({
+                                    ...previous,
+                                    capabilities: previous.capabilities.filter((_, i) => i !== index),
+                                  }))
+                                }
+                                disabled={saving}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-md border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold">Tmpfs Mounts</Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setDraft((previous) => ({
+                              ...previous,
+                              tmpfs: [...previous.tmpfs, { name: "", destination: "", size_mb: null }],
+                            }))
+                          }
+                          disabled={saving}
+                        >
+                          <Plus className="h-3.5 w-3.5 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                      {draft.tmpfs.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No tmpfs mounts configured.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {draft.tmpfs.map((entry, index) => (
+                            <div
+                              key={`tmpfs-${index}`}
+                              className="grid gap-2 md:grid-cols-[1fr_1fr_140px_auto]"
+                            >
+                              <Input
+                                placeholder="cache"
+                                value={entry.name}
+                                onChange={(event) => updateTmpfs(index, "name", event.target.value)}
+                                disabled={saving}
+                              />
+                              <Input
+                                placeholder="/tmp/cache"
+                                value={entry.destination}
+                                onChange={(event) => updateTmpfs(index, "destination", event.target.value)}
+                                disabled={saving}
+                              />
+                              <Input
+                                type="number"
+                                placeholder="64"
+                                value={entry.size_mb == null ? "" : String(entry.size_mb)}
+                                onChange={(event) => updateTmpfs(index, "size_mb", event.target.value)}
+                                disabled={saving}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setDraft((previous) => ({
+                                    ...previous,
+                                    tmpfs: previous.tmpfs.filter((_, i) => i !== index),
+                                  }))
+                                }
+                                disabled={saving}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-md border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold">Device Mappings</Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setDraft((previous) => ({
+                              ...previous,
+                              devices: [...previous.devices, { name: "", source: "", destination: "" }],
+                            }))
+                          }
+                          disabled={saving}
+                        >
+                          <Plus className="h-3.5 w-3.5 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                      {draft.devices.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No devices configured.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {draft.devices.map((device, index) => (
+                            <div
+                              key={`device-${index}`}
+                              className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto]"
+                            >
+                              <Input
+                                placeholder="tun"
+                                value={device.name}
+                                onChange={(event) => updateDevice(index, "name", event.target.value)}
+                                disabled={saving}
+                              />
+                              <Input
+                                placeholder="/dev/net/tun"
+                                value={device.source}
+                                onChange={(event) => updateDevice(index, "source", event.target.value)}
+                                disabled={saving}
+                              />
+                              <Input
+                                placeholder="/dev/net/tun"
+                                value={device.destination}
+                                onChange={(event) => updateDevice(index, "destination", event.target.value)}
+                                disabled={saving}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setDraft((previous) => ({
+                                    ...previous,
+                                    devices: previous.devices.filter((_, i) => i !== index),
+                                  }))
+                                }
+                                disabled={saving}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-md border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold">Sysctl Parameters</Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setDraft((previous) => ({
+                              ...previous,
+                              sysctls: [...previous.sysctls, { key: "", value: "" }],
+                            }))
+                          }
+                          disabled={saving}
+                        >
+                          <Plus className="h-3.5 w-3.5 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                      {draft.sysctls.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No sysctl parameters configured.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {draft.sysctls.map((pair, index) => (
+                            <div key={`sysctl-${index}`} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+                              <Input
+                                placeholder="net.ipv4.ip_forward"
+                                value={pair.key}
+                                onChange={(event) => updateSysctl(index, "key", event.target.value)}
+                                disabled={saving}
+                              />
+                              <Input
+                                placeholder="1"
+                                value={pair.value}
+                                onChange={(event) => updateSysctl(index, "value", event.target.value)}
+                                disabled={saving}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setDraft((previous) => ({
+                                    ...previous,
+                                    sysctls: previous.sysctls.filter((_, i) => i !== index),
+                                  }))
+                                }
+                                disabled={saving}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-md border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold">Container Labels</Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setDraft((previous) => ({
+                              ...previous,
+                              labels: [...previous.labels, { key: "", value: "" }],
+                            }))
+                          }
+                          disabled={saving}
+                        >
+                          <Plus className="h-3.5 w-3.5 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                      {draft.labels.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No labels configured.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {draft.labels.map((pair, index) => (
+                            <div key={`label-${index}`} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+                              <Input
+                                placeholder="com.example.role"
+                                value={pair.key}
+                                onChange={(event) => updateLabel(index, "key", event.target.value)}
+                                disabled={saving}
+                              />
+                              <Input
+                                placeholder="dns"
+                                value={pair.value}
+                                onChange={(event) => updateLabel(index, "value", event.target.value)}
+                                disabled={saving}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setDraft((previous) => ({
+                                    ...previous,
+                                    labels: previous.labels.filter((_, i) => i !== index),
+                                  }))
+                                }
+                                disabled={saving}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-md border p-3 space-y-2">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={draft.health_check_enabled}
+                          onCheckedChange={(checked) =>
+                            setDraft((previous) => ({
+                              ...previous,
+                              health_check_enabled: checked === true,
+                            }))
+                          }
+                          disabled={saving}
+                        />
+                        <Label>Enable Health Check</Label>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="space-y-2 md:col-span-2">
+                          <Label>Command (optional)</Label>
+                          <Input
+                            value={draft.health_check_command}
+                            onChange={(event) =>
+                              setDraft((previous) => ({
+                                ...previous,
+                                health_check_command: event.target.value,
+                              }))
+                            }
+                            placeholder="/usr/bin/check-health.sh"
+                            disabled={saving}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Interval (optional)</Label>
+                          <Input
+                            value={draft.health_check_interval}
+                            onChange={(event) =>
+                              setDraft((previous) => ({
+                                ...previous,
+                                health_check_interval: event.target.value,
+                              }))
+                            }
+                            placeholder="30s"
+                            disabled={saving}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Timeout (optional)</Label>
+                          <Input
+                            value={draft.health_check_timeout}
+                            onChange={(event) =>
+                              setDraft((previous) => ({
+                                ...previous,
+                                health_check_timeout: event.target.value,
+                              }))
+                            }
+                            placeholder="10s"
+                            disabled={saving}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Retries (optional)</Label>
+                          <Input
+                            type="number"
+                            value={draft.health_check_retries}
+                            onChange={(event) =>
+                              setDraft((previous) => ({
+                                ...previous,
+                                health_check_retries: event.target.value,
+                              }))
+                            }
+                            placeholder="3"
+                            disabled={saving}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
 
               <div className="rounded-md border p-4 space-y-3">

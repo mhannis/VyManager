@@ -19,6 +19,28 @@ export interface ContainerVolumeMapping {
   mode: "rw" | "ro";
 }
 
+export interface ContainerTmpfsMapping {
+  name: string;
+  destination: string;
+  size_mb?: number | null;
+}
+
+export interface ContainerDeviceMapping {
+  name: string;
+  source: string;
+  destination: string;
+}
+
+export interface ContainerKeyValue {
+  key: string;
+  value: string;
+}
+
+export interface ContainerNetworkAttachment {
+  name: string;
+  address?: string | null;
+}
+
 export interface ContainerWebLink {
   label: string;
   url: string;
@@ -38,8 +60,28 @@ export interface ContainerSummary {
   restart: "no" | "on-failure" | "always" | null;
   enabled: boolean;
   allow_host_networks: boolean;
+  allow_host_pid: boolean;
   network: string | null;
   network_address: string | null;
+  networks: ContainerNetworkAttachment[];
+  name_servers: string[];
+  uid: number | null;
+  gid: number | null;
+  cpu_quota: number | null;
+  memory: number | null;
+  capabilities: string[];
+  tmpfs: ContainerTmpfsMapping[];
+  devices: ContainerDeviceMapping[];
+  sysctls: ContainerKeyValue[];
+  labels: ContainerKeyValue[];
+  health_check_enabled: boolean;
+  health_check_command: string | null;
+  health_check_interval: string | null;
+  health_check_timeout: string | null;
+  health_check_retries: number | null;
+  log_driver: "k8s-file" | "journald" | "none" | null;
+  health_status: "healthy" | "unhealthy" | "starting" | null;
+  uptime: string | null;
   status: string | null;
   environment: ContainerEnvironmentVar[];
   ports: ContainerPortMapping[];
@@ -66,8 +108,26 @@ export interface ContainerUpsertRequest {
   restart?: "no" | "on-failure" | "always" | null;
   enabled: boolean;
   allow_host_networks: boolean;
+  allow_host_pid: boolean;
   network?: string | null;
   network_address?: string | null;
+  networks: ContainerNetworkAttachment[];
+  name_servers: string[];
+  uid?: number | null;
+  gid?: number | null;
+  cpu_quota?: number | null;
+  memory?: number | null;
+  capabilities: string[];
+  tmpfs: ContainerTmpfsMapping[];
+  devices: ContainerDeviceMapping[];
+  sysctls: ContainerKeyValue[];
+  labels: ContainerKeyValue[];
+  health_check_enabled: boolean;
+  health_check_command?: string | null;
+  health_check_interval?: string | null;
+  health_check_timeout?: string | null;
+  health_check_retries?: number | null;
+  log_driver?: "k8s-file" | "journald" | "none" | null;
   environment: ContainerEnvironmentVar[];
   ports: ContainerPortMapping[];
   volumes: ContainerVolumeMapping[];
@@ -116,6 +176,73 @@ export interface ContainerInstallResponse {
   image_pulled: boolean;
   created_volume_paths: string[];
   pull_output: string | null;
+}
+
+export interface ContainerImageSummary {
+  reference: string;
+  source: "runtime" | "configured";
+}
+
+export interface ContainerImagesResponse {
+  automation_ready: boolean;
+  ssh_enabled: boolean;
+  ssh_key_installed: boolean;
+  configured_images: string[];
+  runtime_images: ContainerImageSummary[];
+  raw_output: string | null;
+}
+
+export interface ContainerImageLifecycleRequest {
+  image: string;
+}
+
+export interface ContainerImageDeleteRequest {
+  target: string;
+  force: boolean;
+}
+
+export interface ContainerImageLifecycleResponse {
+  success: boolean;
+  action: "pull" | "update" | "delete";
+  target: string;
+  output: string | null;
+  automation_ready: boolean;
+}
+
+export interface ContainerRegistryMirror {
+  address: string | null;
+  host_name: string | null;
+  port: number | null;
+  path: string | null;
+}
+
+export interface ContainerRegistrySummary {
+  name: string;
+  enabled: boolean;
+  insecure: boolean;
+  username: string | null;
+  password_set: boolean;
+  mirror: ContainerRegistryMirror | null;
+}
+
+export interface ContainerRegistryUpsertRequest {
+  enabled: boolean;
+  insecure: boolean;
+  username?: string | null;
+  password?: string | null;
+  mirror?: ContainerRegistryMirror | null;
+}
+
+export interface ContainerRegistryOperationResponse {
+  success: boolean;
+  registry: string;
+  message: string;
+}
+
+export interface ContainerInspectResponse {
+  name: string;
+  method: string | null;
+  output: string;
 }
 
 export interface ContainerNetworkSummary {
@@ -214,6 +341,54 @@ class ContainersService {
     return apiClient.get<ContainerLogsResponse>(`/vyos/containers/${encodeURIComponent(name)}/logs`, {
       lines: String(lines),
     });
+  }
+
+  async getImages(refresh: boolean = false): Promise<ContainerImagesResponse> {
+    return apiClient.get<ContainerImagesResponse>("/vyos/containers/images", {
+      refresh: refresh ? "true" : "false",
+    });
+  }
+
+  async pullImage(body: ContainerImageLifecycleRequest): Promise<ContainerImageLifecycleResponse> {
+    return apiClient.post<ContainerImageLifecycleResponse>("/vyos/containers/images/pull", body);
+  }
+
+  async updateImage(body: ContainerImageLifecycleRequest): Promise<ContainerImageLifecycleResponse> {
+    return apiClient.post<ContainerImageLifecycleResponse>("/vyos/containers/images/update", body);
+  }
+
+  async deleteImage(
+    body: ContainerImageDeleteRequest,
+  ): Promise<ContainerImageLifecycleResponse> {
+    return apiClient.post<ContainerImageLifecycleResponse>("/vyos/containers/images/delete", body);
+  }
+
+  async getRegistries(refresh: boolean = false): Promise<ContainerRegistrySummary[]> {
+    return apiClient.get<ContainerRegistrySummary[]>("/vyos/containers/registries", {
+      refresh: refresh ? "true" : "false",
+    });
+  }
+
+  async upsertRegistry(
+    name: string,
+    body: ContainerRegistryUpsertRequest,
+  ): Promise<ContainerRegistrySummary> {
+    return apiClient.put<ContainerRegistrySummary>(
+      `/vyos/containers/registries/${encodeURIComponent(name)}`,
+      body,
+    );
+  }
+
+  async deleteRegistry(name: string): Promise<ContainerRegistryOperationResponse> {
+    return apiClient.delete<ContainerRegistryOperationResponse>(
+      `/vyos/containers/registries/${encodeURIComponent(name)}`,
+    );
+  }
+
+  async inspectContainer(name: string): Promise<ContainerInspectResponse> {
+    return apiClient.get<ContainerInspectResponse>(
+      `/vyos/containers/${encodeURIComponent(name)}/inspect`,
+    );
   }
 }
 

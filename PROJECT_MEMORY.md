@@ -54,32 +54,101 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Remove CPU temperature from the System Information dashboard card display.
-- Preserve existing backend/API contracts; this is a frontend-only visibility change.
-- Validate via frontend type-check and runtime smoke gates.
+- Execute backlog slices in guide order with full GUI-first coverage and validation.
+- Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
+- Continue interfaces-domain backlog after completing IF-06 through IF-12 and move next to IF-13 wireless capability-gated coverage.
 
 ## Current Feature Spec
-Feature: **System Information card: remove temperature display**
+Feature: **Interfaces IF-06 through IF-12 parity (OpenVPN + Pseudo-Ethernet + SSTP Client + Virtual-Ethernet + Tunnel + VTI + VXLAN editors)**
 
 Acceptance criteria:
-- CPU temperature is no longer rendered in the System Information card.
-- Thermometer icon import is removed from the card component.
-- Frontend type-check passes.
+- Backend exposes scoped read/batch wrapper endpoints for:
+  - `interfaces openvpn`
+  - `interfaces pseudo-ethernet`
+  - `interfaces sstpc`
+  - `interfaces virtual-ethernet`
+  - `interfaces tunnel`
+  - `interfaces vti`
+  - `interfaces vxlan`
+- UI includes dedicated form-first pages:
+  - `/network/interfaces/openvpn`
+  - `/network/interfaces/pseudo-ethernet`
+  - `/network/interfaces/sstp-client`
+  - `/network/interfaces/virtual-ethernet`
+  - `/network/interfaces/tunnel`
+  - `/network/interfaces/vti`
+  - `/network/interfaces/vxlan`
+- All pages support create/read/update/delete workflows with validation and diff-based command generation.
+- Interfaces navigation and runtime smoke route coverage include all new pages.
 
 Assumptions:
-- Temperature data may still exist in API responses but should not be shown in this card.
-- Existing unrelated dirty working-tree files remain untouched.
+- Existing dirty files outside this slice are pre-existing and out of scope.
+- Browser smoke still depends on host Playwright system libraries.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: frontend temperature-display removal implemented and validated; commit pending.
+- Status: `IF-06`, `IF-07`, `IF-08`, `IF-09`, `IF-10`, `IF-11`, and `IF-12` implemented in backend/frontend; next queued slice is `IF-13` wireless capability-gated strategy.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/components/dashboard/SystemInformationCard.tsx`
+- `backend/app.py`
+- `backend/routers/interfaces/bonding.py`
+- `backend/routers/interfaces/bridge.py`
+- `backend/routers/interfaces/geneve.py`
+- `backend/routers/interfaces/l2tpv3.py`
+- `backend/routers/interfaces/macsec.py`
+- `backend/routers/interfaces/openvpn.py`
+- `backend/routers/interfaces/pseudo_ethernet.py`
+- `backend/routers/interfaces/sstpc.py`
+- `backend/routers/interfaces/tunnel.py`
+- `backend/routers/interfaces/virtual_ethernet.py`
+- `backend/routers/interfaces/vti.py`
+- `backend/routers/interfaces/vxlan.py`
+- `backend/routers/interfaces/__init__.py`
+- `backend/tests/test_config_tree_wrapper_capabilities.py`
+- `frontend/src/lib/api/bonding.ts`
+- `frontend/src/lib/api/bridge-interface.ts`
+- `frontend/src/lib/api/geneve.ts`
+- `frontend/src/lib/api/l2tpv3.ts`
+- `frontend/src/lib/api/macsec.ts`
+- `frontend/src/lib/api/openvpn-interface.ts`
+- `frontend/src/lib/api/pseudo-ethernet.ts`
+- `frontend/src/lib/api/sstpc.ts`
+- `frontend/src/lib/api/tunnel-interface.ts`
+- `frontend/src/lib/api/virtual-ethernet.ts`
+- `frontend/src/lib/api/vti.ts`
+- `frontend/src/lib/api/vxlan.ts`
+- `frontend/src/app/network/interfaces/bonding/page.tsx`
+- `frontend/src/app/network/interfaces/bridge/page.tsx`
+- `frontend/src/app/network/interfaces/geneve/page.tsx`
+- `frontend/src/app/network/interfaces/l2tpv3/page.tsx`
+- `frontend/src/app/network/interfaces/macsec/page.tsx`
+- `frontend/src/app/network/interfaces/openvpn/page.tsx`
+- `frontend/src/app/network/interfaces/pseudo-ethernet/page.tsx`
+- `frontend/src/app/network/interfaces/sstp-client/page.tsx`
+- `frontend/src/app/network/interfaces/tunnel/page.tsx`
+- `frontend/src/app/network/interfaces/virtual-ethernet/page.tsx`
+- `frontend/src/app/network/interfaces/vti/page.tsx`
+- `frontend/src/app/network/interfaces/vxlan/page.tsx`
+- `frontend/src/lib/help/pageGuides.ts`
+- `frontend/src/components/layout/Sidebar.tsx`
+- `frontend/src/app/network/interfaces/page.tsx`
+- `frontend/scripts/check-runtime.sh`
+- `frontend/scripts/smoke-ui.mjs`
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
+- `CURRENT_FEATURE.md`
+- `FEATURE_STATE.json`
+- `DECISIONS.md`
+- `LAST_FAILURE.txt`
 
 ### Validation This Cycle
-- `cd frontend && npx tsc --noEmit --pretty false` -> pass
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py` passed (`51 passed`).
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_containers_automation_v1.py` passed (`118 passed`).
+- `cd frontend && npx tsc --noEmit --pretty false` passed.
+- `cd frontend && npx eslint src/app/network/interfaces/openvpn/page.tsx src/app/network/interfaces/pseudo-ethernet/page.tsx src/app/network/interfaces/sstp-client/page.tsx src/app/network/interfaces/virtual-ethernet/page.tsx src/lib/api/openvpn-interface.ts src/lib/api/pseudo-ethernet.ts src/lib/api/sstpc.ts src/lib/api/virtual-ethernet.ts src/lib/help/pageGuides.ts src/components/layout/Sidebar.tsx src/app/network/interfaces/page.tsx --max-warnings=0` passed.
+- `cd frontend && npm run -s build` passed.
+- `cd frontend && npm run -s smoke:runtime` passed.
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
@@ -88,14 +157,23 @@ Assumptions:
 - Reviewer sub-agent dispatch can fail when thread cap is saturated; manual review fallback is required in that case.
 
 ## TODO Backlog (next queue)
-- Deepen remaining option-level coverage for `traffic-policy` (precedence/default and other policy-type-specific subtrees).
-- Add PKI op-mode helper workflows (generate/import guidance) as optional UX accelerators.
-- Continue robust protocol pass for remaining pages that still expose minimal subsets despite being matrix-marked implemented.
-- Add live fixture-seeding and CLI alignment checks (`show configuration commands`) for the new domains.
-- After all config-guide features are implemented, run a full robustness relook sweep across all previously implemented domains and harden weak spots before final completion report.
-- Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
+- Execute next missing interfaces slices from `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`.
+- `IF-13`: add robust wireless editor with platform capability gating.
+- `IF-14`: add robust wwan editor with platform capability gating.
+- Continue remaining interface-family gaps (`IF-15` deepening) in guide order.
+- Build option-level parity scoring to replace detection-only completion claims (`X-01`).
+- Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Generated new authoritative planning artifacts:
+  - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
+  - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
+- New backlog intentionally classifies real gaps despite `CONFIG_COVERAGE_PHASE1.*` reporting complete parity.
+- Confirmed major confirmed gaps to start with:
+  - Container option-depth parity (resource/security/runtime/image workflows)
+  - Services: missing Config Sync and Router Advertisements pages
+  - Interfaces: many interface families from docs still missing robust dedicated editors
+- Sidebar ordering correction applied per operator: `Policy` now appears before `PKI`, and `L3VPN VRFs` is listed directly after `VRF` (mapped to `/network/vrf?section=l3vpn`).
 - LLDP Neighbors dashboard card now performs live-refresh fetches (`refresh=true`) on initial load and auto-refresh cycles to avoid stale enabled/neighbor state from cached config.
 - System Information dashboard card now always renders CPU temperature status badge; when temperature is unavailable, badge shows `Unavailable` instead of disappearing.
 - Added shared firewall how-to guides for Policies, Groups, Global Options, Bridge, and Flowtables, and integrated `PageGuideDialog` buttons into those page headers.
@@ -186,6 +264,25 @@ Assumptions:
 - Added reusable `PageGuideDialog` component for inline operator help with docs link plus ordered setup/validation/troubleshooting sections.
 - Added shared routing how-to content registry (`routingProtocolGuides`) and wired it into OSPF, IS-IS, OpenFabric, RIP, and MPLS pages.
 - Removed effect-driven selector resets in unicast/infrastructure/multicast routing shells by deriving active selection from permissions + optional user selection, eliminating `react-hooks/set-state-in-effect` warnings and reducing selector flicker risk.
+- Added dedicated backend interface-tree wrappers:
+  - `/vyos/bonding/*` for `interfaces bonding`
+  - `/vyos/bridge/*` for `interfaces bridge`
+  with strict command-scope validation inherited from `build_config_tree_router(...)`.
+- Added robust form-first pages:
+  - `/network/interfaces/bonding` with members/mode/hash/LACP/min-links/primary and advanced system MAC settings.
+  - `/network/interfaces/bridge` with member-port options (cost/priority), STP controls, VLAN toggle, and IGMP settings.
+- Added dedicated backend wrapper and form-first page for Geneve:
+  - `/vyos/geneve/*` for `interfaces geneve`
+  - `/network/interfaces/geneve` with remote/source endpoint controls, VNI, MTU/port, and IPv4/IPv6 MSS adjustment behavior.
+- Added dedicated backend wrapper and form-first page for L2TPv3:
+  - `/vyos/l2tpv3/*` for `interfaces l2tpv3`
+  - `/network/interfaces/l2tpv3` with session/tunnel IDs, source/remote endpoints, encapsulation, ports, and cookie fields.
+- Added dedicated backend wrapper and form-first page for MACsec:
+  - `/vyos/macsec/*` for `interfaces macsec`
+  - `/network/interfaces/macsec` with source-interface, cipher/encrypt settings, replay/mka fields, and static peer CRUD.
+- Added interface how-to guides for bonding, bridge, geneve, l2tpv3, and macsec and wired them into page headers through `PageGuideDialog`.
+- Updated navigation/smoke coverage to include bonding, bridge, geneve, l2tpv3, and macsec pages in both sidebar IA and runtime/browser route lists.
+- Recreated `vm-api` and `vm-ui` tmux sessions after finding no active tmux server socket in the current shell namespace.
 - Expanded `routingProtocolGuides` to include BFD, RPKI, IGMP Proxy, PIM, and PIM6 and integrated guide dialogs into each corresponding page header.
 - BFD now exposes in-page guidance without changing peer/profile CRUD contracts; infrastructure and multicast protocols now follow the same help-entry UX as unicast protocol pages.
 - Redirect pages `/network/routes` and `/routing/unicast-protocols/static` now render inside `AppLayout` while auto-redirecting, preventing temporary left-nav disappearance during transitions.
@@ -201,3 +298,28 @@ Assumptions:
 - Gateway probe parser now supports reduced ping summaries (`min/avg/max`) and per-echo time fallback to compute average/stddev when summary lines are absent.
 - Gateway probe target now falls back to DHCP lease router extraction for DHCP default routes that only expose `default dev <iface>`.
 - Gateway probe now tries interface-scoped and generic ping variants and falls back from `show` to `generate` on unsupported builds.
+- 2026-02-15 cycle update: fixed live Containers-page `Method Not Allowed` by restarting stale `vm-api` (process was serving pre-route code and lacked `/vyos/containers/images|registries`).
+- Containers UI now treats `404/405` from image/registry endpoints as non-fatal endpoint-unavailable states to avoid page-wide load errors during mixed-version runs.
+- Added container lifecycle endpoint tests (`images`, `registries`) and expanded runtime smoke routes to include `/system/containers`.
+- Added new service wrapper routers for `config-sync` and `router-advert` and registered both in `backend/app.py`.
+- Added `Config Sync` and `Router Advertisements` tabs to `System -> Services`, including sidebar single-service links.
+- Updated smoke route probes and backend wrapper tests to cover both new services.
+- Added thin backend wrappers and form-first pages for:
+  - `/vyos/interface-openvpn/*` + `/network/interfaces/openvpn`
+  - `/vyos/pseudo-ethernet/*` + `/network/interfaces/pseudo-ethernet`
+  - `/vyos/sstpc/*` + `/network/interfaces/sstp-client`
+  - `/vyos/virtual-ethernet/*` + `/network/interfaces/virtual-ethernet`
+- Interfaces navigation and runtime/browser smoke route sets now include OpenVPN, Pseudo-Ethernet, SSTP Client, and Virtual-Ethernet pages.
+- Backlog status updated: `IF-06`, `IF-07`, `IF-08`, and `IF-10` moved from `missing` to `partial` (baseline pages implemented; depth verification pending).
+- Added thin backend wrapper and form-first page for tunnel interfaces:
+  - `/vyos/tunnel-interface/*` + `/network/interfaces/tunnel`
+- Tunnel UI currently covers encapsulation/source/remote/addressing, GRE key, source-validation, MSS, and key forwarding flags; deeper protocol-specific parameter parity remains follow-up work.
+- Backlog status updated: `IF-09` moved from `missing` to `partial` (baseline page implemented).
+- Added thin backend wrapper and form-first page for VTI interfaces:
+  - `/vyos/vti-interface/*` + `/network/interfaces/vti`
+- VTI UI currently covers baseline interface fields (address/description/mtu/vrf/disable) and is designed to pair with deeper IPsec workflows managed on VPN pages.
+- Backlog status updated: `IF-11` moved from `missing` to `partial` (baseline page implemented).
+- Added thin backend wrapper and form-first page for VXLAN interfaces:
+  - `/vyos/vxlan-interface/*` + `/network/interfaces/vxlan`
+- VXLAN UI currently covers major guide options (VNI/port/source/remote-or-group/parameters flags) and includes VLAN-to-VNI mapping CRUD for SVD-oriented configurations.
+- Backlog status updated: `IF-12` moved from `missing` to `partial` (baseline page implemented).

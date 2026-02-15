@@ -1,0 +1,533 @@
+{
+  "generated_at": "2026-02-15",
+  "source": "https://docs.vyos.io/en/latest/configuration/index.html",
+  "method": "option_level_gap_backlog",
+  "execution_order": [
+    "container",
+    "firewall",
+    "high-availability",
+    "interfaces",
+    "load-balancing",
+    "nat",
+    "pki",
+    "policy",
+    "protocols",
+    "service",
+    "traffic-policy",
+    "vpn",
+    "vrf",
+    "system"
+  ],
+  "tasks": [
+    {
+      "id": "C-01",
+      "domain": "container",
+      "status": "verify",
+      "title": "Expand container spec editor to full guide fields (implemented, pending live verification)"
+    },
+    {
+      "id": "C-02",
+      "domain": "container",
+      "status": "partial",
+      "title": "Add registry/image lifecycle workflows"
+    },
+    {
+      "id": "C-03",
+      "domain": "container",
+      "status": "partial",
+      "title": "Extend network model and validation"
+    },
+    {
+      "id": "C-04",
+      "domain": "container",
+      "status": "partial",
+      "title": "Add operational actions and inspect workflows"
+    },
+    {
+      "id": "C-05",
+      "domain": "container",
+      "status": "verify",
+      "title": "Validate first-run bootstrap flow on clean instance"
+    },
+    {
+      "id": "F-01",
+      "domain": "firewall",
+      "status": "partial",
+      "title": "IPv4 rule advanced match/action parity"
+    },
+    {
+      "id": "F-02",
+      "domain": "firewall",
+      "status": "partial",
+      "title": "IPv6 rule advanced match/action parity"
+    },
+    {
+      "id": "F-03",
+      "domain": "firewall",
+      "status": "partial",
+      "title": "Firewall groups full type parity"
+    },
+    {
+      "id": "F-04",
+      "domain": "firewall",
+      "status": "partial",
+      "title": "Global options parity pass"
+    },
+    {
+      "id": "F-05",
+      "domain": "firewall",
+      "status": "partial",
+      "title": "Flowtables parity pass"
+    },
+    {
+      "id": "F-06",
+      "domain": "firewall",
+      "status": "partial",
+      "title": "Zone workflow hardening"
+    },
+    {
+      "id": "HA-01",
+      "domain": "high-availability",
+      "status": "partial",
+      "title": "Complete VRRP/sync-group option parity"
+    },
+    {
+      "id": "HA-02",
+      "domain": "high-availability",
+      "status": "partial",
+      "title": "Complete IPVS option parity"
+    },
+    {
+      "id": "HA-03",
+      "domain": "high-availability",
+      "status": "verify",
+      "title": "Dual-node failover verification playbook"
+    },
+    {
+      "id": "IF-01",
+      "domain": "interfaces",
+      "status": "partial",
+      "title": "Add bonding editor (baseline implemented, verify advanced options)"
+    },
+    {
+      "id": "IF-02",
+      "domain": "interfaces",
+      "status": "partial",
+      "title": "Add bridge interface editor (baseline implemented, verify advanced options)"
+    },
+    {
+      "id": "IF-03",
+      "domain": "interfaces",
+      "status": "partial",
+      "title": "Add geneve editor (baseline implemented, verify advanced options)"
+    },
+    {
+      "id": "IF-04",
+      "domain": "interfaces",
+      "status": "partial",
+      "title": "Add l2tpv3 editor (baseline implemented, verify advanced options)"
+    },
+    {
+      "id": "IF-05",
+      "domain": "interfaces",
+      "status": "partial",
+      "title": "Add macsec editor (baseline implemented, verify advanced options)"
+    },
+    {
+      "id": "IF-06",
+      "domain": "interfaces",
+      "status": "partial",
+      "title": "Add openvpn interface editor (baseline implemented; advanced option-depth verification remains)"
+    },
+    {
+      "id": "IF-07",
+      "domain": "interfaces",
+      "status": "partial",
+      "title": "Add pseudo-ethernet editor (baseline implemented; VLAN-depth and edge-option verification remains)"
+    },
+    {
+      "id": "IF-08",
+      "domain": "interfaces",
+      "status": "partial",
+      "title": "Add sstp-client editor (baseline implemented; extended auth/operation-depth verification remains)"
+    },
+    {
+      "id": "IF-09",
+      "domain": "interfaces",
+      "status": "partial",
+      "title": "Add tunnel editor (baseline implemented; advanced protocol/parameter depth verification remains)"
+    },
+    {
+      "id": "IF-10",
+      "domain": "interfaces",
+      "status": "partial",
+      "title": "Add virtual-ethernet editor (baseline implemented; VLAN-depth verification remains)"
+    },
+    {
+      "id": "IF-11",
+      "domain": "interfaces",
+      "status": "partial",
+      "title": "Add vti editor (baseline implemented; VPN IPsec interaction and advanced parity verification remains)"
+    },
+    {
+      "id": "IF-12",
+      "domain": "interfaces",
+      "status": "partial",
+      "title": "Add vxlan editor (baseline implemented; advanced EVPN/SVD depth verification remains)"
+    },
+    {
+      "id": "IF-13",
+      "domain": "interfaces",
+      "status": "missing",
+      "title": "Add wireless editor"
+    },
+    {
+      "id": "IF-14",
+      "domain": "interfaces",
+      "status": "missing",
+      "title": "Add wwan editor"
+    },
+    {
+      "id": "IF-15",
+      "domain": "interfaces",
+      "status": "partial",
+      "title": "Deepen existing interface-type parity"
+    },
+    {
+      "id": "LB-01",
+      "domain": "load-balancing",
+      "status": "partial",
+      "title": "WAN load-balancing full option parity"
+    },
+    {
+      "id": "LB-02",
+      "domain": "load-balancing",
+      "status": "partial",
+      "title": "HAProxy full option parity"
+    },
+    {
+      "id": "LB-03",
+      "domain": "load-balancing",
+      "status": "verify",
+      "title": "Fixture-based behavior verification"
+    },
+    {
+      "id": "NAT-01",
+      "domain": "nat",
+      "status": "partial",
+      "title": "NAT44 advanced parity"
+    },
+    {
+      "id": "NAT-02",
+      "domain": "nat",
+      "status": "partial",
+      "title": "NAT64 parity completion"
+    },
+    {
+      "id": "NAT-03",
+      "domain": "nat",
+      "status": "partial",
+      "title": "NAT66 parity completion"
+    },
+    {
+      "id": "NAT-04",
+      "domain": "nat",
+      "status": "partial",
+      "title": "CGNAT parity completion"
+    },
+    {
+      "id": "PKI-01",
+      "domain": "pki",
+      "status": "partial",
+      "title": "CA/certificate lifecycle parity"
+    },
+    {
+      "id": "PKI-02",
+      "domain": "pki",
+      "status": "partial",
+      "title": "CSR issuance/import/export workflows"
+    },
+    {
+      "id": "PKI-03",
+      "domain": "pki",
+      "status": "verify",
+      "title": "Cross-feature PKI reference verification"
+    },
+    {
+      "id": "POL-01",
+      "domain": "policy",
+      "status": "partial",
+      "title": "Route-map match/set option parity"
+    },
+    {
+      "id": "POL-02",
+      "domain": "policy",
+      "status": "partial",
+      "title": "Policy edge-case validation parity"
+    },
+    {
+      "id": "POL-03",
+      "domain": "policy",
+      "status": "verify",
+      "title": "Policy dependency integrity checks"
+    },
+    {
+      "id": "PR-01",
+      "domain": "protocols",
+      "status": "partial",
+      "title": "BGP full-depth parity"
+    },
+    {
+      "id": "PR-02",
+      "domain": "protocols",
+      "status": "partial",
+      "title": "OSPF/IS-IS/OpenFabric/RIP depth parity"
+    },
+    {
+      "id": "PR-03",
+      "domain": "protocols",
+      "status": "missing",
+      "title": "Segment Routing implementation"
+    },
+    {
+      "id": "PR-04",
+      "domain": "protocols",
+      "status": "partial",
+      "title": "Static/Failover advanced options"
+    },
+    {
+      "id": "PR-05",
+      "domain": "protocols",
+      "status": "partial",
+      "title": "Multicast advanced options"
+    },
+    {
+      "id": "PR-06",
+      "domain": "protocols",
+      "status": "partial",
+      "title": "RPKI/MPLS option parity"
+    },
+    {
+      "id": "SVC-01",
+      "domain": "service",
+      "status": "partial",
+      "title": "Config Sync service page + backend (implemented baseline; parity validation pending)"
+    },
+    {
+      "id": "SVC-02",
+      "domain": "service",
+      "status": "partial",
+      "title": "Router Advertisements page + backend (implemented baseline; option-depth parity pending)"
+    },
+    {
+      "id": "SVC-03",
+      "domain": "service",
+      "status": "partial",
+      "title": "DHCP Server parity sweep"
+    },
+    {
+      "id": "SVC-04",
+      "domain": "service",
+      "status": "partial",
+      "title": "DNS workflows parity hardening"
+    },
+    {
+      "id": "SVC-05",
+      "domain": "service",
+      "status": "partial",
+      "title": "Existing service tabs parity completion"
+    },
+    {
+      "id": "TP-01",
+      "domain": "traffic-policy",
+      "status": "partial",
+      "title": "Remaining traffic policy leaves"
+    },
+    {
+      "id": "TP-02",
+      "domain": "traffic-policy",
+      "status": "partial",
+      "title": "Policy assignment incompatibility validation"
+    },
+    {
+      "id": "TP-03",
+      "domain": "traffic-policy",
+      "status": "verify",
+      "title": "Traffic fixture verification"
+    },
+    {
+      "id": "VPN-01",
+      "domain": "vpn",
+      "status": "partial",
+      "title": "IPsec phase1/phase2 option parity"
+    },
+    {
+      "id": "VPN-02",
+      "domain": "vpn",
+      "status": "partial",
+      "title": "IPsec remote-access/mobile parity"
+    },
+    {
+      "id": "VPN-03",
+      "domain": "vpn",
+      "status": "partial",
+      "title": "DMVPN/NHRP depth parity"
+    },
+    {
+      "id": "VPN-04",
+      "domain": "vpn",
+      "status": "partial",
+      "title": "L2TP/OpenConnect/PPTP/SSTP parity"
+    },
+    {
+      "id": "VPN-05",
+      "domain": "vpn",
+      "status": "verify",
+      "title": "Tunnel bring-up diagnostics workflows"
+    },
+    {
+      "id": "VRF-01",
+      "domain": "vrf",
+      "status": "partial",
+      "title": "VRF option-depth parity"
+    },
+    {
+      "id": "VRF-02",
+      "domain": "vrf",
+      "status": "missing",
+      "title": "L3VPN VRF workflow"
+    },
+    {
+      "id": "VRF-03",
+      "domain": "vrf",
+      "status": "verify",
+      "title": "VRF interaction verification"
+    },
+    {
+      "id": "SYS-01",
+      "domain": "system",
+      "status": "missing",
+      "title": "System Conntrack page"
+    },
+    {
+      "id": "SYS-02",
+      "domain": "system",
+      "status": "missing",
+      "title": "Serial Console page"
+    },
+    {
+      "id": "SYS-03",
+      "domain": "system",
+      "status": "missing",
+      "title": "Default Route/Gateway page"
+    },
+    {
+      "id": "SYS-04",
+      "domain": "system",
+      "status": "missing",
+      "title": "Flow Accounting page"
+    },
+    {
+      "id": "SYS-05",
+      "domain": "system",
+      "status": "missing",
+      "title": "FRR system page"
+    },
+    {
+      "id": "SYS-06",
+      "domain": "system",
+      "status": "missing",
+      "title": "IP system options page"
+    },
+    {
+      "id": "SYS-07",
+      "domain": "system",
+      "status": "missing",
+      "title": "IPv6 system options page"
+    },
+    {
+      "id": "SYS-08",
+      "domain": "system",
+      "status": "missing",
+      "title": "LCD page"
+    },
+    {
+      "id": "SYS-09",
+      "domain": "system",
+      "status": "partial",
+      "title": "Login/user management parity deepening"
+    },
+    {
+      "id": "SYS-10",
+      "domain": "system",
+      "status": "partial",
+      "title": "Name-server/resolver ownership cleanup"
+    },
+    {
+      "id": "SYS-11",
+      "domain": "system",
+      "status": "missing",
+      "title": "System Proxy page"
+    },
+    {
+      "id": "SYS-12",
+      "domain": "system",
+      "status": "missing",
+      "title": "sFlow page"
+    },
+    {
+      "id": "SYS-13",
+      "domain": "system",
+      "status": "missing",
+      "title": "Sysctl page"
+    },
+    {
+      "id": "SYS-14",
+      "domain": "system",
+      "status": "partial",
+      "title": "Syslog parity completion"
+    },
+    {
+      "id": "SYS-15",
+      "domain": "system",
+      "status": "missing",
+      "title": "Task Scheduler page"
+    },
+    {
+      "id": "SYS-16",
+      "domain": "system",
+      "status": "partial",
+      "title": "Time-zone/update/watchdog parity completion"
+    },
+    {
+      "id": "X-01",
+      "domain": "cross-cutting",
+      "status": "missing",
+      "title": "Option-level parity scorer"
+    },
+    {
+      "id": "X-02",
+      "domain": "cross-cutting",
+      "status": "missing",
+      "title": "Fixture-based save/apply/reload loops"
+    },
+    {
+      "id": "X-03",
+      "domain": "cross-cutting",
+      "status": "missing",
+      "title": "Config snapshot tests by domain"
+    },
+    {
+      "id": "X-04",
+      "domain": "cross-cutting",
+      "status": "partial",
+      "title": "Smoke route coverage for all new pages"
+    },
+    {
+      "id": "X-05",
+      "domain": "cross-cutting",
+      "status": "missing",
+      "title": "Final robustness relook pass"
+    }
+  ]
+}

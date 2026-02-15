@@ -75,7 +75,7 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
       ] = await Promise.allSettled([
         systemService.getSshConfig(),
         systemService.getNtpStatus(),
-        systemService.getLldpStatus(),
+        systemService.getLldpStatus(true),
         systemService.getMdnsStatus(),
         systemService.getDnsConfig(),
         dhcpService.getConfig(),

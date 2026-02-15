@@ -36,6 +36,21 @@ class DummyDevice:
         return _response(500, error="probe failed")
 
 
+class DummyDeviceMissingBackupDir(DummyDevice):
+    def config_file_save(self, file=None):
+        self.save_calls.append(file or "")
+        file_text = str(file or "")
+        if file_text.startswith("/config/.vymanager-safe-apply/"):
+            return _response(
+                400,
+                error=(
+                    "failed to write config file, write_file_atomic: "
+                    "[Errno 2] No such file or directory"
+                ),
+            )
+        return _response(200, {"saved": file})
+
+
 def test_should_use_safe_apply_for_risky_paths():
     settings = SafeApplySettings(enabled=True)
     operations = [{"op": "set", "path": ["interfaces", "ethernet", "eth1", "description", "WAN"]}]
@@ -87,3 +102,22 @@ def test_apply_with_safe_apply_rolls_back_on_probe_failure():
     assert len(device.load_calls) == 1
     assert response.result.get("_safe_apply", {}).get("rollback_triggered") is True
 
+
+def test_apply_with_safe_apply_falls_back_to_config_root_when_backup_dir_missing():
+    device = DummyDeviceMissingBackupDir(probe_ok=True)
+    settings = SafeApplySettings(enabled=True, confirm_window_seconds=1, probe_interval_seconds=1)
+    operations = [{"op": "set", "path": ["interfaces", "ethernet", "eth2", "description", "LAN"]}]
+
+    response = apply_with_safe_apply(
+        device,
+        operations,
+        settings=settings,
+        reason="unit-test",
+        force_safe_apply=True,
+    )
+
+    assert response.status == 200
+    assert len(device.save_calls) == 2
+    assert device.save_calls[0].startswith("/config/.vymanager-safe-apply/")
+    assert device.save_calls[1].startswith("/config/safe-apply-")
+    assert response.result.get("_safe_apply", {}).get("backup_file", "").startswith("/config/safe-apply-")

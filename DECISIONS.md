@@ -184,3 +184,41 @@
 - 2026-02-15: Some targets reject both `show ping` and `generate ping` (`Invalid command`); gateway telemetry now attempts SSH CLI ping (`ping -c/-w`) as a last-resort probe path, and dashboard temperature similarly falls back to SSH `sensors`.
 - 2026-02-15: Per operator direction, non-native telemetry fallbacks were removed for dashboard capabilities; Gateway Status card is now removed from UI, and telemetry fields are only shown when native API command support exists.
 - 2026-02-15: Per operator request, CPU temperature display was removed from the System Information dashboard card; telemetry data may still exist in backend payloads but is intentionally hidden in this card UI.
+- 2026-02-15: Sidebar IA is now aligned to guide-domain order preference with `Dashboard` first, `Container` as the first guide domain, and `System` intentionally placed last for operator workflow consistency.
+- 2026-02-15: Sidebar order refined to match operator preference: `Policy` before `PKI`, and `L3VPN VRFs` inserted directly after `VRF` (reusing the current VRF page via query selector).
+- 2026-02-15: Added option-level parity backlog artifacts (`CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md/.json`) because detection-based matrix artifacts (`CONFIG_COVERAGE_PHASE1.*`) reported false full completion despite missing functional depth.
+- 2026-02-15: Container C-01 review used manual reviewer fallback because reviewer-agent spawn failed at thread cap (`max 6`); recorded failure in `LAST_FAILURE.txt` and proceeded with explicit in-process findings check to avoid blocking backlog execution.
+- 2026-02-15: Implemented container advanced-field parity in-place on existing `/vyos/containers` endpoints instead of introducing new backend layers, preserving current API contracts and thin-wrapper architecture.
+- 2026-02-15: Advanced container controls were added behind a single collapsible `Advanced Runtime and Security` section to keep default create/edit UX simple while still exposing full guide-aligned capability.
+- 2026-02-15: Frontend validation for new container fields intentionally remains lightweight (shape/duplicate checks); backend remains the source of truth for strict value validation (IP parsing, numeric ranges).
+- 2026-02-15: `Method Not Allowed` on `System -> Containers` was caused by a stale `vm-api` process running pre-route code; restarting `vm-api` restored `/vyos/containers/images` and `/vyos/containers/registries` route availability.
+- 2026-02-15: Containers UI now treats `404/405` responses on optional image/registry endpoints as endpoint-unavailable (non-fatal) to prevent page-wide load failures during mixed-version backend/frontend sessions.
+- 2026-02-15: Runtime smoke routes now include `/system/containers` so container page regressions are caught in the default runtime gate.
+- 2026-02-15: Implemented missing service backlog slices `SVC-01` and `SVC-02` using thin `build_service_router(...)` wrappers (`service config-sync` and `service router-advert`) to preserve existing service API contracts.
+- 2026-02-15: Added dedicated form-first service tabs for Config Sync and Router Advertisements under `System -> Services` instead of free-form command entry.
+- 2026-02-15: Runtime smoke route sets were expanded to include `/system/services?tab=config-sync&view=single` and `/system/services?tab=router-advert&view=single`.
+- 2026-02-15: Service-wrapper capability/config/batch tests were extended to include config-sync and router-advert wrappers (`backend/tests/test_service_wrapper_capabilities.py`).
+- 2026-02-15: Implemented interfaces-domain IF-01 and IF-02 using thin top-level config-tree wrappers (`/vyos/bonding/*`, `/vyos/bridge/*`) instead of introducing new backend service layers; this preserves existing API/session contracts.
+- 2026-02-15: Added dedicated form-first pages for `/network/interfaces/bonding` and `/network/interfaces/bridge` with diff-based set/delete command generation and no CLI text-entry workflow.
+- 2026-02-15: Bridge editor models member-port options (`cost`, `priority`) and STP options (`priority`, `hello-time`, `max-age`, `forward-delay`) as explicit form fields to align with guide-oriented UX expectations.
+- 2026-02-15: Added bonding/bridge guides to shared `pageGuides` and wired both pages with `PageGuideDialog` for in-context setup/validation/troubleshooting help.
+- 2026-02-15: Runtime smoke route sets now explicitly include `/network/interfaces/bonding` and `/network/interfaces/bridge` to catch page-level regressions early.
+- 2026-02-15: When tmux restart failed with `no server running on /tmp/tmux-1000/default`, remediation was to recreate `vm-api` and `vm-ui` sessions from scratch rather than assuming prior server/socket continuity.
+- 2026-02-15: Implemented IF-03 with a thin scoped wrapper for `interfaces geneve` (`/vyos/geneve/*`) and a dedicated form-first page at `/network/interfaces/geneve`.
+- 2026-02-15: Geneve editor models source selection (`source-address`/`source-interface`), `remote`, `vni`, optional `port`, and IPv4/IPv6 MSS controls with clamp-to-PMTU toggles.
+- 2026-02-15: Added `geneve` route coverage to runtime/browser smoke route sets and to interfaces navigation to reduce hidden-route regressions.
+- 2026-02-15: Implemented IF-04 with a thin scoped wrapper for `interfaces l2tpv3` (`/vyos/l2tpv3/*`) and a dedicated form-first page at `/network/interfaces/l2tpv3`.
+- 2026-02-15: L2TPv3 editor models key pseudowire parameters (remote/source, session IDs, tunnel IDs, encapsulation, UDP ports, cookie/peer-cookie) while preserving existing API contracts.
+- 2026-02-15: Added L2TPv3 route coverage to runtime/browser smoke route sets and interfaces navigation to keep parity additions visible and regression-tested.
+- 2026-02-15: Implemented IF-05 with a thin scoped wrapper for `interfaces macsec` (`/vyos/macsec/*`) and a dedicated form-first page at `/network/interfaces/macsec`.
+- 2026-02-15: MACsec UI scope includes source-interface binding, cipher/encrypt/replay controls, MKA fields, and static peer CRUD while preserving existing session/VyOS backend contracts.
+- 2026-02-15: Added MACsec route coverage to runtime/browser smoke route sets and interfaces navigation so regressions on newly added interface families are caught by default gates.
+- 2026-02-15: Implemented interfaces backlog slices IF-06/IF-07/IF-08/IF-10 with thin config-tree wrappers and dedicated form-first pages for OpenVPN, Pseudo-Ethernet, SSTP Client, and Virtual-Ethernet; preserved existing session/VyOS service contracts and avoided backend layer rewrites.
+- 2026-02-15: Kept OpenVPN wrapper endpoint slug as `/vyos/interface-openvpn/*` to preserve already-added backend tests/API usage and avoid route-contract churn while adding the new UI editor.
+- 2026-02-15: Browser smoke remains blocked by host dependency (`libnspr4.so` missing for Playwright Chromium); runtime route smoke is used as active gate until system libs are installed.
+- 2026-02-15: Added tunnel interface parity slice (`interfaces tunnel`) with thin wrapper endpoint `/vyos/tunnel-interface/*` and form-first page `/network/interfaces/tunnel`; scope is intentionally core-first (encapsulation/endpoints/common toggles) to keep iteration safe and additive.
+- 2026-02-15: Interface backlog tracking now marks `IF-09` as `partial` after baseline tunnel implementation; remaining tunnel protocol-specific leaves are queued for depth pass.
+- 2026-02-15: Added VTI interface parity slice (`interfaces vti`) with thin wrapper endpoint `/vyos/vti-interface/*` and form-first page `/network/interfaces/vti`; kept scope baseline because deeper route-based IPsec semantics remain coupled to VPN/IPsec domain pages.
+- 2026-02-15: Interface backlog tracking now marks `IF-11` as `partial` after baseline VTI implementation; next queued item is `IF-12` (VXLAN).
+- 2026-02-15: Added VXLAN interface parity slice (`interfaces vxlan`) with thin wrapper endpoint `/vyos/vxlan-interface/*` and form-first page `/network/interfaces/vxlan`, including VLAN-to-VNI mapping support.
+- 2026-02-15: Interface backlog tracking now marks `IF-12` as `partial` after baseline VXLAN implementation; next queued item is `IF-13` (wireless capability-gated strategy).

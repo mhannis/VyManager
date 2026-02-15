@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "smoke:runtime": "bash scripts/check-runtime.sh",
+    "smoke:ui": "node scripts/smoke-ui.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -54,6 +56,7 @@
     "@typescript-eslint/parser": "^8.49.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
+    "playwright": "^1.58.2",
     "prisma": "^6.19.1",
     "tailwindcss": "^4",
     "tsx": "^4.19.2",

@@ -17,9 +17,11 @@ from session_vyos_service import get_session_vyos_service
 from utils.ssh_exec import (
     SshCommandError,
     SSH_USERNAME_DEFAULT,
+    ssh_delete_container_image,
     ensure_ssh_keypair,
     ssh_mkdir_p,
     ssh_pull_container_image,
+    ssh_update_container_image,
 )
 from fastapi_permissions import require_read_permission, require_write_permission
 from rbac_permissions import FeatureGroup
@@ -52,6 +54,28 @@ class ContainerVolumeMapping(BaseModel):
     mode: Literal["rw", "ro"] = "rw"
 
 
+class ContainerTmpfsMapping(BaseModel):
+    name: str
+    destination: str
+    size_mb: Optional[int] = None
+
+
+class ContainerDeviceMapping(BaseModel):
+    name: str
+    source: str
+    destination: str
+
+
+class ContainerKeyValue(BaseModel):
+    key: str
+    value: str
+
+
+class ContainerNetworkAttachment(BaseModel):
+    name: str
+    address: Optional[str] = None
+
+
 class ContainerWebLink(BaseModel):
     label: str
     url: str
@@ -71,8 +95,28 @@ class ContainerSummary(BaseModel):
     restart: Optional[str] = None
     enabled: bool = True
     allow_host_networks: bool = False
+    allow_host_pid: bool = False
     network: Optional[str] = None
     network_address: Optional[str] = None
+    networks: List[ContainerNetworkAttachment] = Field(default_factory=list)
+    name_servers: List[str] = Field(default_factory=list)
+    uid: Optional[int] = None
+    gid: Optional[int] = None
+    cpu_quota: Optional[int] = None
+    memory: Optional[int] = None
+    capabilities: List[str] = Field(default_factory=list)
+    tmpfs: List[ContainerTmpfsMapping] = Field(default_factory=list)
+    devices: List[ContainerDeviceMapping] = Field(default_factory=list)
+    sysctls: List[ContainerKeyValue] = Field(default_factory=list)
+    labels: List[ContainerKeyValue] = Field(default_factory=list)
+    health_check_enabled: bool = False
+    health_check_command: Optional[str] = None
+    health_check_interval: Optional[str] = None
+    health_check_timeout: Optional[str] = None
+    health_check_retries: Optional[int] = None
+    log_driver: Optional[str] = None
+    health_status: Optional[str] = None
+    uptime: Optional[str] = None
     status: Optional[str] = None
     environment: List[ContainerEnvironmentVar] = Field(default_factory=list)
     ports: List[ContainerPortMapping] = Field(default_factory=list)
@@ -99,8 +143,26 @@ class ContainerUpsertRequest(BaseModel):
     restart: Optional[Literal["no", "on-failure", "always"]] = "on-failure"
     enabled: bool = True
     allow_host_networks: bool = False
+    allow_host_pid: bool = False
     network: Optional[str] = None
     network_address: Optional[str] = None
+    networks: List[ContainerNetworkAttachment] = Field(default_factory=list)
+    name_servers: List[str] = Field(default_factory=list)
+    uid: Optional[int] = None
+    gid: Optional[int] = None
+    cpu_quota: Optional[int] = None
+    memory: Optional[int] = None
+    capabilities: List[str] = Field(default_factory=list)
+    tmpfs: List[ContainerTmpfsMapping] = Field(default_factory=list)
+    devices: List[ContainerDeviceMapping] = Field(default_factory=list)
+    sysctls: List[ContainerKeyValue] = Field(default_factory=list)
+    labels: List[ContainerKeyValue] = Field(default_factory=list)
+    health_check_enabled: bool = False
+    health_check_command: Optional[str] = None
+    health_check_interval: Optional[str] = None
+    health_check_timeout: Optional[str] = None
+    health_check_retries: Optional[int] = None
+    log_driver: Optional[Literal["k8s-file", "journald", "none"]] = None
     environment: List[ContainerEnvironmentVar] = Field(default_factory=list)
     ports: List[ContainerPortMapping] = Field(default_factory=list)
     volumes: List[ContainerVolumeMapping] = Field(default_factory=list)
@@ -185,12 +247,80 @@ class ContainerNetworkOperationResponse(BaseModel):
     message: str
 
 
+class ContainerImageSummary(BaseModel):
+    reference: str
+    source: Literal["runtime", "configured"] = "runtime"
+
+
+class ContainerImagesResponse(BaseModel):
+    automation_ready: bool = False
+    ssh_enabled: bool = False
+    ssh_key_installed: bool = False
+    configured_images: List[str] = Field(default_factory=list)
+    runtime_images: List[ContainerImageSummary] = Field(default_factory=list)
+    raw_output: Optional[str] = None
+
+
+class ContainerImageLifecycleRequest(BaseModel):
+    image: str
+
+
+class ContainerImageDeleteRequest(BaseModel):
+    target: str
+    force: bool = False
+
+
+class ContainerImageLifecycleResponse(BaseModel):
+    success: bool
+    action: Literal["pull", "update", "delete"]
+    target: str
+    output: Optional[str] = None
+    automation_ready: bool = True
+
+
+class ContainerRegistryMirror(BaseModel):
+    address: Optional[str] = None
+    host_name: Optional[str] = None
+    port: Optional[int] = None
+    path: Optional[str] = None
+
+
+class ContainerRegistrySummary(BaseModel):
+    name: str
+    enabled: bool = True
+    insecure: bool = False
+    username: Optional[str] = None
+    password_set: bool = False
+    mirror: Optional[ContainerRegistryMirror] = None
+
+
+class ContainerRegistryUpsertRequest(BaseModel):
+    enabled: bool = True
+    insecure: bool = False
+    username: Optional[str] = None
+    password: Optional[str] = None
+    mirror: Optional[ContainerRegistryMirror] = None
+
+
+class ContainerRegistryOperationResponse(BaseModel):
+    success: bool
+    registry: str
+    message: str
+
+
+class ContainerInspectResponse(BaseModel):
+    name: str
+    method: Optional[str] = None
+    output: str
+
+
 # ========================================================================
 # Helpers
 # ========================================================================
 
 
 RE_CONTAINER_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,62}$")
+RE_CONTAINER_REGISTRY_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,120}$")
 
 
 def _extract_show_output(result: Any) -> str:
@@ -298,6 +428,284 @@ def _normalize_volumes_or_400(values: List[ContainerVolumeMapping]) -> List[Cont
     return result
 
 
+def _normalize_tmpfs_or_400(values: List[ContainerTmpfsMapping]) -> List[ContainerTmpfsMapping]:
+    seen_names = set()
+    result: List[ContainerTmpfsMapping] = []
+    for item in values:
+        name = item.name.strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Container tmpfs name cannot be empty")
+        if name in seen_names:
+            raise HTTPException(status_code=400, detail=f"Duplicate container tmpfs name: {name}")
+        seen_names.add(name)
+
+        destination = item.destination.strip()
+        if not destination:
+            raise HTTPException(status_code=400, detail=f"tmpfs {name} destination is required")
+
+        size_mb = item.size_mb
+        if size_mb is not None and size_mb <= 0:
+            raise HTTPException(status_code=400, detail=f"tmpfs {name} size must be greater than zero")
+
+        result.append(
+            ContainerTmpfsMapping(
+                name=name,
+                destination=destination,
+                size_mb=size_mb,
+            )
+        )
+    return result
+
+
+def _normalize_devices_or_400(values: List[ContainerDeviceMapping]) -> List[ContainerDeviceMapping]:
+    seen_names = set()
+    result: List[ContainerDeviceMapping] = []
+    for item in values:
+        name = item.name.strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Container device name cannot be empty")
+        if name in seen_names:
+            raise HTTPException(status_code=400, detail=f"Duplicate container device name: {name}")
+        seen_names.add(name)
+
+        source = item.source.strip()
+        destination = item.destination.strip()
+        if not source or not destination:
+            raise HTTPException(status_code=400, detail=f"Device {name} source/destination is required")
+
+        result.append(
+            ContainerDeviceMapping(
+                name=name,
+                source=source,
+                destination=destination,
+            )
+        )
+    return result
+
+
+def _normalize_key_values_or_400(
+    values: List[ContainerKeyValue],
+    label: str,
+) -> List[ContainerKeyValue]:
+    seen_keys = set()
+    result: List[ContainerKeyValue] = []
+    for item in values:
+        key = item.key.strip()
+        value = item.value.strip()
+        if not key:
+            continue
+        if key in seen_keys:
+            raise HTTPException(status_code=400, detail=f"Duplicate {label} key: {key}")
+        seen_keys.add(key)
+        result.append(ContainerKeyValue(key=key, value=value))
+    return result
+
+
+def _normalize_name_servers_or_400(values: List[str]) -> List[str]:
+    result: List[str] = []
+    seen = set()
+    for value in values:
+        text = str(value).strip()
+        if not text:
+            continue
+        try:
+            address = str(ipaddress.ip_address(text))
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid container name-server address: {text}")
+        if address in seen:
+            continue
+        seen.add(address)
+        result.append(address)
+    return result
+
+
+def _normalize_capabilities_or_400(values: List[str]) -> List[str]:
+    result: List[str] = []
+    seen = set()
+    for value in values:
+        capability = str(value).strip()
+        if not capability:
+            continue
+        if capability in seen:
+            raise HTTPException(status_code=400, detail=f"Duplicate container capability: {capability}")
+        seen.add(capability)
+        result.append(capability)
+    return result
+
+
+def _normalize_network_attachments_or_400(
+    values: List[ContainerNetworkAttachment],
+) -> List[ContainerNetworkAttachment]:
+    seen_names = set()
+    result: List[ContainerNetworkAttachment] = []
+    for item in values:
+        name = item.name.strip()
+        address = item.address.strip() if item.address else None
+        if not name:
+            if address:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Container network attachment address requires a network name",
+                )
+            continue
+        if name in seen_names:
+            raise HTTPException(status_code=400, detail=f"Duplicate container network: {name}")
+        seen_names.add(name)
+        result.append(ContainerNetworkAttachment(name=name, address=address))
+    return result
+
+
+def _normalize_optional_int_or_400(
+    value: Optional[int],
+    label: str,
+    *,
+    minimum: Optional[int] = None,
+    maximum: Optional[int] = None,
+) -> Optional[int]:
+    if value is None:
+        return None
+    if minimum is not None and value < minimum:
+        raise HTTPException(status_code=400, detail=f"{label} must be >= {minimum}")
+    if maximum is not None and value > maximum:
+        raise HTTPException(status_code=400, detail=f"{label} must be <= {maximum}")
+    return value
+
+
+def _extract_multivalue_leafs(raw: Any) -> List[str]:
+    values: List[str] = []
+    if isinstance(raw, dict):
+        values.extend(str(key).strip() for key in raw.keys())
+    elif isinstance(raw, list):
+        values.extend(str(item).strip() for item in raw)
+    elif isinstance(raw, str):
+        value = raw.strip()
+        if value:
+            values.append(value)
+    return sorted({value for value in values if value})
+
+
+def _extract_key_value_list(raw: Any) -> List[ContainerKeyValue]:
+    if not isinstance(raw, dict):
+        return []
+    pairs: List[ContainerKeyValue] = []
+    for key, value_data in raw.items():
+        key_text = str(key).strip()
+        if not key_text:
+            continue
+        value_text = ""
+        if isinstance(value_data, dict):
+            value_text = _string_or_none(value_data.get("value")) or ""
+        elif isinstance(value_data, str):
+            value_text = value_data.strip()
+        pairs.append(ContainerKeyValue(key=key_text, value=value_text))
+    return sorted(pairs, key=lambda item: item.key.lower())
+
+
+def _normalize_container_upsert_request_or_400(body: ContainerUpsertRequest) -> ContainerUpsertRequest:
+    image = body.image.strip()
+    if not image:
+        raise HTTPException(status_code=400, detail="Container image is required")
+
+    allow_host_networks = body.allow_host_networks
+    network = body.network.strip() if body.network else None
+    network_address = body.network_address.strip() if body.network_address else None
+    explicit_networks = _normalize_network_attachments_or_400(body.networks)
+    description = body.description.strip() if body.description else None
+    entrypoint = body.entrypoint.strip() if body.entrypoint else None
+    command = body.command.strip() if body.command else None
+    arguments = body.arguments.strip() if body.arguments else None
+    host_name = body.host_name.strip() if body.host_name else None
+    health_check_command = body.health_check_command.strip() if body.health_check_command else None
+    health_check_interval = body.health_check_interval.strip() if body.health_check_interval else None
+    health_check_timeout = body.health_check_timeout.strip() if body.health_check_timeout else None
+    log_driver = body.log_driver.strip() if body.log_driver else None
+
+    merged_networks: List[ContainerNetworkAttachment] = list(explicit_networks)
+    if network:
+        legacy_present = next((entry for entry in merged_networks if entry.name == network), None)
+        if legacy_present:
+            if network_address:
+                legacy_present.address = network_address
+        else:
+            merged_networks.insert(0, ContainerNetworkAttachment(name=network, address=network_address))
+    if merged_networks and not network:
+        network = merged_networks[0].name
+        network_address = merged_networks[0].address
+
+    if allow_host_networks and merged_networks:
+        raise HTTPException(
+            status_code=400,
+            detail="allow_host_networks cannot be combined with container networks",
+        )
+    if network_address and not network:
+        raise HTTPException(
+            status_code=400,
+            detail="network_address requires a network name",
+        )
+
+    environment = _normalize_environment_or_400(body.environment)
+    ports = _normalize_ports_or_400(body.ports)
+    volumes = _normalize_volumes_or_400(body.volumes)
+    tmpfs = _normalize_tmpfs_or_400(body.tmpfs)
+    devices = _normalize_devices_or_400(body.devices)
+    sysctls = _normalize_key_values_or_400(body.sysctls, "sysctl")
+    labels = _normalize_key_values_or_400(body.labels, "label")
+    name_servers = _normalize_name_servers_or_400(body.name_servers)
+    capabilities = _normalize_capabilities_or_400(body.capabilities)
+    uid = _normalize_optional_int_or_400(body.uid, "uid", minimum=0, maximum=2147483647)
+    gid = _normalize_optional_int_or_400(body.gid, "gid", minimum=0, maximum=2147483647)
+    cpu_quota = _normalize_optional_int_or_400(body.cpu_quota, "cpu_quota", minimum=1)
+    memory = _normalize_optional_int_or_400(body.memory, "memory", minimum=1)
+    health_check_retries = _normalize_optional_int_or_400(
+        body.health_check_retries,
+        "health_check_retries",
+        minimum=0,
+    )
+    health_check_enabled = body.health_check_enabled or any(
+        [
+            bool(health_check_command),
+            bool(health_check_interval),
+            bool(health_check_timeout),
+            health_check_retries is not None,
+        ]
+    )
+
+    return ContainerUpsertRequest(
+        image=image,
+        description=description,
+        entrypoint=entrypoint,
+        command=command,
+        arguments=arguments,
+        host_name=host_name,
+        restart=body.restart,
+        enabled=body.enabled,
+        allow_host_networks=allow_host_networks,
+        allow_host_pid=body.allow_host_pid,
+        network=network,
+        network_address=network_address,
+        networks=merged_networks,
+        name_servers=name_servers,
+        uid=uid,
+        gid=gid,
+        cpu_quota=cpu_quota,
+        memory=memory,
+        capabilities=capabilities,
+        tmpfs=tmpfs,
+        devices=devices,
+        sysctls=sysctls,
+        labels=labels,
+        health_check_enabled=health_check_enabled,
+        health_check_command=health_check_command,
+        health_check_interval=health_check_interval,
+        health_check_timeout=health_check_timeout,
+        health_check_retries=health_check_retries,
+        log_driver=log_driver,
+        environment=environment,
+        ports=ports,
+        volumes=volumes,
+    )
+
+
 def _extract_container_config(full_config: Dict[str, Any]) -> Dict[str, Any]:
     container_root = full_config.get("container", {})
     if not isinstance(container_root, dict):
@@ -322,18 +730,39 @@ def _parse_container_from_config(name: str, raw: Any) -> ContainerSummary:
         restart=_string_or_none(data.get("restart")),
         enabled="disable" not in data,
         allow_host_networks="allow-host-networks" in data,
+        allow_host_pid="allow-host-pid" in data,
+        name_servers=_extract_multivalue_leafs(data.get("name-server")),
+        uid=_int_or_none(data.get("uid")),
+        gid=_int_or_none(data.get("gid")),
+        cpu_quota=_int_or_none(data.get("cpu-quota")),
+        memory=_int_or_none(data.get("memory")),
+        capabilities=_extract_multivalue_leafs(data.get("capability")),
+        log_driver=_string_or_none(data.get("log-driver")),
     )
 
     # network
     network_data = data.get("network")
     if isinstance(network_data, dict) and network_data:
-        network_name = sorted(str(key) for key in network_data.keys())[0]
-        summary.network = network_name
-        network_options = network_data.get(network_name)
-        if isinstance(network_options, dict):
-            summary.network_address = _string_or_none(network_options.get("address"))
+        parsed_networks: List[ContainerNetworkAttachment] = []
+        for network_name in sorted(str(key) for key in network_data.keys()):
+            network_options = network_data.get(network_name)
+            address = None
+            if isinstance(network_options, dict):
+                address = _string_or_none(network_options.get("address"))
+            parsed_networks.append(
+                ContainerNetworkAttachment(
+                    name=network_name,
+                    address=address,
+                )
+            )
+        summary.networks = parsed_networks
+        if parsed_networks:
+            summary.network = parsed_networks[0].name
+            summary.network_address = parsed_networks[0].address
     elif isinstance(network_data, str):
         summary.network = network_data.strip() or None
+        if summary.network:
+            summary.networks = [ContainerNetworkAttachment(name=summary.network, address=None)]
 
     # environment
     env_data = data.get("environment")
@@ -401,29 +830,120 @@ def _parse_container_from_config(name: str, raw: Any) -> ContainerSummary:
             )
         summary.volumes = sorted(parsed_volumes, key=lambda item: item.name.lower())
 
+    # tmpfs
+    tmpfs_data = data.get("tmpfs")
+    if isinstance(tmpfs_data, dict):
+        parsed_tmpfs: List[ContainerTmpfsMapping] = []
+        for tmpfs_name, tmpfs_entry in tmpfs_data.items():
+            name_text = str(tmpfs_name).strip()
+            if not name_text:
+                continue
+            entry = tmpfs_entry if isinstance(tmpfs_entry, dict) else {}
+            destination = _string_or_none(entry.get("destination"))
+            if not destination:
+                continue
+            parsed_tmpfs.append(
+                ContainerTmpfsMapping(
+                    name=name_text,
+                    destination=destination,
+                    size_mb=_int_or_none(entry.get("size")),
+                )
+            )
+        summary.tmpfs = sorted(parsed_tmpfs, key=lambda item: item.name.lower())
+
+    # devices
+    device_data = data.get("device")
+    if isinstance(device_data, dict):
+        parsed_devices: List[ContainerDeviceMapping] = []
+        for device_name, device_entry in device_data.items():
+            name_text = str(device_name).strip()
+            if not name_text:
+                continue
+            entry = device_entry if isinstance(device_entry, dict) else {}
+            source = _string_or_none(entry.get("source"))
+            destination = _string_or_none(entry.get("destination"))
+            if not source or not destination:
+                continue
+            parsed_devices.append(
+                ContainerDeviceMapping(
+                    name=name_text,
+                    source=source,
+                    destination=destination,
+                )
+            )
+        summary.devices = sorted(parsed_devices, key=lambda item: item.name.lower())
+
+    # sysctl and labels
+    sysctl_data = data.get("sysctl")
+    if isinstance(sysctl_data, dict):
+        summary.sysctls = _extract_key_value_list(sysctl_data.get("parameter"))
+
+    summary.labels = _extract_key_value_list(data.get("label"))
+
+    # health-check
+    if "health-check" in data:
+        summary.health_check_enabled = True
+        health_data = data.get("health-check")
+        if isinstance(health_data, dict):
+            summary.health_check_command = _string_or_none(health_data.get("command"))
+            summary.health_check_interval = _string_or_none(health_data.get("interval"))
+            summary.health_check_timeout = _string_or_none(health_data.get("timeout"))
+            summary.health_check_retries = _int_or_none(health_data.get("retries"))
+
     return summary
+
+
+def _find_runtime_line_for_container(name: str, runtime_output: str) -> Optional[str]:
+    for line in runtime_output.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if re.search(rf"\b{re.escape(name)}\b", stripped):
+            return stripped
+    return None
 
 
 def _infer_container_status(name: str, runtime_output: str, enabled: bool) -> str:
     if not enabled:
         return "disabled"
 
-    for line in runtime_output.splitlines():
-        stripped = line.strip()
-        if not stripped:
-            continue
-        if re.search(rf"\b{re.escape(name)}\b", stripped):
-            lowered = stripped.lower()
-            if "up " in lowered or " running" in lowered or lowered.startswith("up"):
-                return "running"
-            if "exited" in lowered:
-                return "exited"
-            if "created" in lowered:
-                return "created"
-            if "paused" in lowered:
-                return "paused"
-            return "active"
+    stripped = _find_runtime_line_for_container(name, runtime_output)
+    if stripped:
+        lowered = stripped.lower()
+        if "up " in lowered or " running" in lowered or lowered.startswith("up"):
+            return "running"
+        if "exited" in lowered:
+            return "exited"
+        if "created" in lowered:
+            return "created"
+        if "paused" in lowered:
+            return "paused"
+        return "active"
     return "not-running"
+
+
+def _infer_container_health(name: str, runtime_output: str) -> Optional[str]:
+    stripped = _find_runtime_line_for_container(name, runtime_output)
+    if not stripped:
+        return None
+    lowered = stripped.lower()
+    if "unhealthy" in lowered:
+        return "unhealthy"
+    if "healthy" in lowered:
+        return "healthy"
+    if "starting" in lowered:
+        return "starting"
+    return None
+
+
+def _infer_container_uptime(name: str, runtime_output: str) -> Optional[str]:
+    stripped = _find_runtime_line_for_container(name, runtime_output)
+    if not stripped:
+        return None
+    match = re.search(r"\bUp\s+([^,]+)", stripped, flags=re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    return None
 
 
 def _build_container_links(
@@ -514,6 +1034,8 @@ def _build_container_overview(
             summary.status = "running"
         else:
             summary.status = _infer_container_status(normalized_name, runtime_output, summary.enabled)
+        summary.health_status = _infer_container_health(normalized_name, runtime_output)
+        summary.uptime = _infer_container_uptime(normalized_name, runtime_output)
         summary.links = _build_container_links(
             host,
             summary.ports,
@@ -657,6 +1179,129 @@ def _bootstrap_status_from_config(full_config: Dict[str, Any], key_identifier: s
     )
 
 
+def _extract_runtime_images(runtime_output: str) -> List[ContainerImageSummary]:
+    images: List[ContainerImageSummary] = []
+    seen = set()
+    for raw_line in runtime_output.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        lowered = line.lower()
+        if "repository" in lowered and "image" in lowered:
+            continue
+        tokens = line.split()
+        if not tokens:
+            continue
+        # `show container image` commonly starts rows with the image reference.
+        # Keep parser permissive and expose source + reference only.
+        reference = tokens[0].strip()
+        if reference in {"-", "image", "images"}:
+            continue
+        if reference in seen:
+            continue
+        seen.add(reference)
+        images.append(ContainerImageSummary(reference=reference, source="runtime"))
+    return images
+
+
+def _extract_configured_images(full_config: Dict[str, Any]) -> List[str]:
+    names = _extract_container_config(full_config)
+    images = set()
+    for raw in names.values():
+        if not isinstance(raw, dict):
+            continue
+        image = _string_or_none(raw.get("image"))
+        if image:
+            images.add(image)
+    return sorted(images)
+
+
+def _extract_container_registries(full_config: Dict[str, Any]) -> List[ContainerRegistrySummary]:
+    container_root = full_config.get("container", {}) if isinstance(full_config, dict) else {}
+    registry_root = container_root.get("registry", {}) if isinstance(container_root, dict) else {}
+    if not isinstance(registry_root, dict):
+        return []
+
+    registries: List[ContainerRegistrySummary] = []
+    for registry_name, raw_entry in sorted(registry_root.items(), key=lambda item: str(item[0]).lower()):
+        name = str(registry_name).strip()
+        if not name:
+            continue
+        entry = raw_entry if isinstance(raw_entry, dict) else {}
+        auth = entry.get("authentication", {}) if isinstance(entry.get("authentication"), dict) else {}
+        mirror_data = entry.get("mirror", {}) if isinstance(entry.get("mirror"), dict) else {}
+        mirror = None
+        if mirror_data:
+            mirror = ContainerRegistryMirror(
+                address=_string_or_none(mirror_data.get("address")),
+                host_name=_string_or_none(mirror_data.get("host-name")),
+                port=_int_or_none(mirror_data.get("port")),
+                path=_string_or_none(mirror_data.get("path")),
+            )
+        registries.append(
+            ContainerRegistrySummary(
+                name=name,
+                enabled=("disable" not in entry),
+                insecure=("insecure" in entry),
+                username=_string_or_none(auth.get("username")),
+                password_set=bool(_string_or_none(auth.get("password"))),
+                mirror=mirror,
+            )
+        )
+    return registries
+
+
+def _normalize_registry_name_or_400(name: str) -> str:
+    clean = name.strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail="Container registry name is required")
+    if not RE_CONTAINER_REGISTRY_NAME.match(clean):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Container registry name '{clean}' is invalid. "
+                "Use letters, numbers, dot, dash, underscore, or colon."
+            ),
+        )
+    return clean
+
+
+def _normalize_registry_port_or_400(value: Optional[int]) -> Optional[int]:
+    if value is None:
+        return None
+    if value < 1 or value > 65535:
+        raise HTTPException(status_code=400, detail="Container registry mirror port must be 1-65535")
+    return value
+
+
+def _load_container_images_snapshot(
+    service: Any,
+    full_config: Dict[str, Any],
+) -> ContainerImagesResponse:
+    runtime_output = ""
+    runtime_response = service.device.show(path=["container", "image"])
+    if runtime_response.status == 200:
+        runtime_output = _extract_show_output(runtime_response.result)
+
+    bootstrap = _bootstrap_status_from_config(full_config)
+    configured_images = _extract_configured_images(full_config)
+    runtime_images = _extract_runtime_images(runtime_output)
+
+    for image in configured_images:
+        if not any(entry.reference == image for entry in runtime_images):
+            runtime_images.append(ContainerImageSummary(reference=image, source="configured"))
+
+    runtime_images = sorted(runtime_images, key=lambda item: item.reference.lower())
+    return ContainerImagesResponse(
+        automation_ready=bootstrap.automation_ready,
+        ssh_enabled=bootstrap.ssh_enabled,
+        ssh_key_installed=bootstrap.ssh_key_installed,
+        configured_images=configured_images,
+        runtime_images=runtime_images,
+        raw_output=runtime_output or None,
+    )
+
+
 def _build_container_set_operations(
     name: str,
     body: ContainerUpsertRequest,
@@ -696,10 +1341,17 @@ def _build_container_set_operations(
 
     if body.allow_host_networks:
         operations.append({"op": "set", "path": ["container", "name", name, "allow-host-networks"]})
+    if body.allow_host_pid:
+        operations.append({"op": "set", "path": ["container", "name", name, "allow-host-pid"]})
 
-    if body.network:
-        operations.append({"op": "set", "path": ["container", "name", name, "network", body.network]})
-        if body.network_address:
+    networks = body.networks
+    if not networks and body.network:
+        networks = [ContainerNetworkAttachment(name=body.network, address=body.network_address)]
+    for network in networks:
+        operations.append(
+            {"op": "set", "path": ["container", "name", name, "network", network.name]}
+        )
+        if network.address:
             operations.append(
                 {
                     "op": "set",
@@ -708,12 +1360,36 @@ def _build_container_set_operations(
                         "name",
                         name,
                         "network",
-                        body.network,
+                        network.name,
                         "address",
-                        body.network_address,
+                        network.address,
                     ],
                 }
             )
+
+    for name_server in body.name_servers:
+        operations.append(
+            {
+                "op": "set",
+                "path": ["container", "name", name, "name-server", name_server],
+            }
+        )
+
+    if body.uid is not None:
+        operations.append({"op": "set", "path": ["container", "name", name, "uid", str(body.uid)]})
+    if body.gid is not None:
+        operations.append({"op": "set", "path": ["container", "name", name, "gid", str(body.gid)]})
+    if body.cpu_quota is not None:
+        operations.append(
+            {"op": "set", "path": ["container", "name", name, "cpu-quota", str(body.cpu_quota)]}
+        )
+    if body.memory is not None:
+        operations.append(
+            {"op": "set", "path": ["container", "name", name, "memory", str(body.memory)]}
+        )
+
+    for capability in body.capabilities:
+        operations.append({"op": "set", "path": ["container", "name", name, "capability", capability]})
 
     for env in body.environment:
         operations.append(
@@ -781,6 +1457,132 @@ def _build_container_set_operations(
                     "path": ["container", "name", name, "volume", volume.name, "mode", volume.mode],
                 },
             ]
+        )
+
+    for tmpfs in body.tmpfs:
+        operations.append(
+            {
+                "op": "set",
+                "path": ["container", "name", name, "tmpfs", tmpfs.name, "destination", tmpfs.destination],
+            }
+        )
+        if tmpfs.size_mb is not None:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["container", "name", name, "tmpfs", tmpfs.name, "size", str(tmpfs.size_mb)],
+                }
+            )
+
+    for device in body.devices:
+        operations.extend(
+            [
+                {
+                    "op": "set",
+                    "path": ["container", "name", name, "device", device.name, "source", device.source],
+                },
+                {
+                    "op": "set",
+                    "path": [
+                        "container",
+                        "name",
+                        name,
+                        "device",
+                        device.name,
+                        "destination",
+                        device.destination,
+                    ],
+                },
+            ]
+        )
+
+    for parameter in body.sysctls:
+        operations.append(
+            {
+                "op": "set",
+                "path": [
+                    "container",
+                    "name",
+                    name,
+                    "sysctl",
+                    "parameter",
+                    parameter.key,
+                    "value",
+                    parameter.value,
+                ],
+            }
+        )
+
+    for label in body.labels:
+        operations.append(
+            {
+                "op": "set",
+                "path": ["container", "name", name, "label", label.key, "value", label.value],
+            }
+        )
+
+    if body.health_check_enabled:
+        operations.append({"op": "set", "path": ["container", "name", name, "health-check"]})
+        if body.health_check_command:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": [
+                        "container",
+                        "name",
+                        name,
+                        "health-check",
+                        "command",
+                        body.health_check_command,
+                    ],
+                }
+            )
+        if body.health_check_interval:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": [
+                        "container",
+                        "name",
+                        name,
+                        "health-check",
+                        "interval",
+                        body.health_check_interval,
+                    ],
+                }
+            )
+        if body.health_check_timeout:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": [
+                        "container",
+                        "name",
+                        name,
+                        "health-check",
+                        "timeout",
+                        body.health_check_timeout,
+                    ],
+                }
+            )
+        if body.health_check_retries is not None:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": [
+                        "container",
+                        "name",
+                        name,
+                        "health-check",
+                        "retries",
+                        str(body.health_check_retries),
+                    ],
+                }
+            )
+
+    if body.log_driver:
+        operations.append(
+            {"op": "set", "path": ["container", "name", name, "log-driver", body.log_driver]}
         )
 
     if not body.enabled:
@@ -1010,6 +1812,281 @@ async def delete_container_network(request: Request, network_name: str) -> Conta
         raise HTTPException(status_code=500, detail=f"Failed to delete container network: {exc}")
 
 
+@router.get("/images", response_model=ContainerImagesResponse)
+async def get_container_images(request: Request, refresh: bool = False) -> ContainerImagesResponse:
+    """Return configured/runtime image references and automation readiness."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        return await run_in_threadpool(_load_container_images_snapshot, service, full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to load container images: {exc}")
+
+
+@router.post("/images/pull", response_model=ContainerImageLifecycleResponse)
+async def pull_container_image(
+    request: Request,
+    body: ContainerImageLifecycleRequest,
+) -> ContainerImageLifecycleResponse:
+    """Pull an image reference using VyOS op-mode command."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        await _ensure_container_automation_bootstrap(request)
+        service = get_session_vyos_service(request)
+        host = _string_or_none(getattr(service.config, "hostname", None))
+        if not host:
+            raise HTTPException(status_code=500, detail="Unable to resolve SSH host for active instance")
+        result = await run_in_threadpool(ssh_pull_container_image, host, body.image)
+        return ContainerImageLifecycleResponse(
+            success=True,
+            action="pull",
+            target=body.image.strip(),
+            output=result.output or None,
+            automation_ready=True,
+        )
+    except SshCommandError as ssh_exc:
+        raise HTTPException(status_code=500, detail=f"SSH operation failed: {ssh_exc}")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to pull container image: {exc}")
+
+
+@router.post("/images/update", response_model=ContainerImageLifecycleResponse)
+async def update_container_image(
+    request: Request,
+    body: ContainerImageLifecycleRequest,
+) -> ContainerImageLifecycleResponse:
+    """Update an image reference using VyOS op-mode command."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        await _ensure_container_automation_bootstrap(request)
+        service = get_session_vyos_service(request)
+        host = _string_or_none(getattr(service.config, "hostname", None))
+        if not host:
+            raise HTTPException(status_code=500, detail="Unable to resolve SSH host for active instance")
+        result = await run_in_threadpool(ssh_update_container_image, host, body.image)
+        return ContainerImageLifecycleResponse(
+            success=True,
+            action="update",
+            target=body.image.strip(),
+            output=result.output or None,
+            automation_ready=True,
+        )
+    except SshCommandError as ssh_exc:
+        raise HTTPException(status_code=500, detail=f"SSH operation failed: {ssh_exc}")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to update container image: {exc}")
+
+
+@router.post("/images/delete", response_model=ContainerImageLifecycleResponse)
+async def delete_container_image(
+    request: Request,
+    body: ContainerImageDeleteRequest,
+) -> ContainerImageLifecycleResponse:
+    """Delete a container image reference (or all) using VyOS op-mode command."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        await _ensure_container_automation_bootstrap(request)
+        service = get_session_vyos_service(request)
+        host = _string_or_none(getattr(service.config, "hostname", None))
+        if not host:
+            raise HTTPException(status_code=500, detail="Unable to resolve SSH host for active instance")
+        result = await run_in_threadpool(
+            ssh_delete_container_image,
+            host,
+            body.target,
+            force=body.force,
+        )
+        return ContainerImageLifecycleResponse(
+            success=True,
+            action="delete",
+            target=body.target.strip(),
+            output=result.output or None,
+            automation_ready=True,
+        )
+    except SshCommandError as ssh_exc:
+        raise HTTPException(status_code=500, detail=f"SSH operation failed: {ssh_exc}")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to delete container image: {exc}")
+
+
+@router.get("/registries", response_model=List[ContainerRegistrySummary])
+async def get_container_registries(request: Request, refresh: bool = False) -> List[ContainerRegistrySummary]:
+    """List configured container registries."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        return _extract_container_registries(full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to load container registries: {exc}")
+
+
+@router.put("/registries/{registry_name}", response_model=ContainerRegistrySummary)
+async def upsert_container_registry(
+    request: Request,
+    registry_name: str,
+    body: ContainerRegistryUpsertRequest,
+) -> ContainerRegistrySummary:
+    """Create or update container registry settings."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        name = _normalize_registry_name_or_400(registry_name)
+        username = _string_or_none(body.username)
+        password = _string_or_none(body.password)
+        mirror = body.mirror
+        mirror_address = _string_or_none(mirror.address) if mirror else None
+        mirror_host_name = _string_or_none(mirror.host_name) if mirror else None
+        mirror_path = _string_or_none(mirror.path) if mirror else None
+        mirror_port = _normalize_registry_port_or_400(mirror.port if mirror else None)
+
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        existing_map = {entry.name: entry for entry in _extract_container_registries(full_config)}
+        existing = existing_map.get(name)
+
+        operations: List[Dict[str, Any]] = []
+        if not body.enabled:
+            operations.append({"op": "set", "path": ["container", "registry", name, "disable"]})
+        elif existing and not existing.enabled:
+            operations.append({"op": "delete", "path": ["container", "registry", name, "disable"]})
+
+        if body.insecure:
+            operations.append({"op": "set", "path": ["container", "registry", name, "insecure"]})
+        elif existing and existing.insecure:
+            operations.append({"op": "delete", "path": ["container", "registry", name, "insecure"]})
+
+        if username:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["container", "registry", name, "authentication", "username", username],
+                }
+            )
+        elif existing and existing.username:
+            operations.append(
+                {"op": "delete", "path": ["container", "registry", name, "authentication", "username"]}
+            )
+
+        if password:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["container", "registry", name, "authentication", "password", password],
+                }
+            )
+
+        if mirror_address:
+            operations.append(
+                {"op": "set", "path": ["container", "registry", name, "mirror", "address", mirror_address]}
+            )
+        elif existing and existing.mirror and existing.mirror.address:
+            operations.append(
+                {"op": "delete", "path": ["container", "registry", name, "mirror", "address"]}
+            )
+
+        if mirror_host_name:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["container", "registry", name, "mirror", "host-name", mirror_host_name],
+                }
+            )
+        elif existing and existing.mirror and existing.mirror.host_name:
+            operations.append(
+                {"op": "delete", "path": ["container", "registry", name, "mirror", "host-name"]}
+            )
+
+        if mirror_port is not None:
+            operations.append(
+                {"op": "set", "path": ["container", "registry", name, "mirror", "port", str(mirror_port)]}
+            )
+        elif existing and existing.mirror and existing.mirror.port is not None:
+            operations.append({"op": "delete", "path": ["container", "registry", name, "mirror", "port"]})
+
+        if mirror_path:
+            operations.append(
+                {"op": "set", "path": ["container", "registry", name, "mirror", "path", mirror_path]}
+            )
+        elif existing and existing.mirror and existing.mirror.path:
+            operations.append({"op": "delete", "path": ["container", "registry", name, "mirror", "path"]})
+
+        if operations:
+            response = await run_in_threadpool(service.apply_operations, operations)
+            if response.status != 200:
+                status_code = 400 if response.status == 400 else 500
+                raise HTTPException(
+                    status_code=status_code,
+                    detail=f"Failed to update container registry '{name}': {response.error or 'Unknown VyOS error'}",
+                )
+
+        refreshed = await run_in_threadpool(service.get_full_config, refresh=True)
+        refreshed_map = {entry.name: entry for entry in _extract_container_registries(refreshed)}
+        updated = refreshed_map.get(name)
+        if not updated:
+            raise HTTPException(status_code=500, detail=f"Container registry '{name}' was not found after update")
+        return updated
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to update container registry: {exc}")
+
+
+@router.delete("/registries/{registry_name}", response_model=ContainerRegistryOperationResponse)
+async def delete_container_registry(
+    request: Request,
+    registry_name: str,
+) -> ContainerRegistryOperationResponse:
+    """Delete a configured container registry."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        name = _normalize_registry_name_or_400(registry_name)
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        existing_map = {entry.name: entry for entry in _extract_container_registries(full_config)}
+        if name not in existing_map:
+            raise HTTPException(status_code=404, detail=f"Container registry '{name}' not found")
+
+        response = await run_in_threadpool(
+            service.apply_operations,
+            [{"op": "delete", "path": ["container", "registry", name]}],
+        )
+        if response.status != 200:
+            status_code = 400 if response.status == 400 else 500
+            raise HTTPException(
+                status_code=status_code,
+                detail=f"Failed to delete container registry '{name}': {response.error or 'Unknown VyOS error'}",
+            )
+
+        await run_in_threadpool(service.get_full_config, refresh=True)
+        return ContainerRegistryOperationResponse(
+            success=True,
+            registry=name,
+            message=f"Container registry '{name}' deleted",
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to delete container registry: {exc}")
+
+
 @router.post("/bootstrap", response_model=ContainerBootstrapStatusResponse)
 async def bootstrap_container_automation(
     request: Request,
@@ -1147,50 +2224,7 @@ async def upsert_container(
 
     try:
         name = _normalize_name_or_400(container_name)
-        image = body.image.strip()
-        if not image:
-            raise HTTPException(status_code=400, detail="Container image is required")
-
-        allow_host_networks = body.allow_host_networks
-        network = body.network.strip() if body.network else None
-        network_address = body.network_address.strip() if body.network_address else None
-        description = body.description.strip() if body.description else None
-        entrypoint = body.entrypoint.strip() if body.entrypoint else None
-        command = body.command.strip() if body.command else None
-        arguments = body.arguments.strip() if body.arguments else None
-        host_name = body.host_name.strip() if body.host_name else None
-
-        environment = _normalize_environment_or_400(body.environment)
-        ports = _normalize_ports_or_400(body.ports)
-        volumes = _normalize_volumes_or_400(body.volumes)
-
-        if allow_host_networks and network:
-            raise HTTPException(
-                status_code=400,
-                detail="allow_host_networks cannot be combined with network",
-            )
-        if network_address and not network:
-            raise HTTPException(
-                status_code=400,
-                detail="network_address requires a network name",
-            )
-
-        normalized_body = ContainerUpsertRequest(
-            image=image,
-            description=description,
-            entrypoint=entrypoint,
-            command=command,
-            arguments=arguments,
-            host_name=host_name,
-            restart=body.restart,
-            enabled=body.enabled,
-            allow_host_networks=allow_host_networks,
-            network=network,
-            network_address=network_address,
-            environment=environment,
-            ports=ports,
-            volumes=volumes,
-        )
+        normalized_body = _normalize_container_upsert_request_or_400(body)
 
         service = get_session_vyos_service(request)
         full_config = await run_in_threadpool(service.get_full_config, refresh=True)
@@ -1305,50 +2339,8 @@ async def install_container(
 
     try:
         name = _normalize_name_or_400(container_name)
-        image = body.image.strip()
-        if not image:
-            raise HTTPException(status_code=400, detail="Container image is required")
-
-        allow_host_networks = body.allow_host_networks
-        network = body.network.strip() if body.network else None
-        network_address = body.network_address.strip() if body.network_address else None
-        description = body.description.strip() if body.description else None
-        entrypoint = body.entrypoint.strip() if body.entrypoint else None
-        command = body.command.strip() if body.command else None
-        arguments = body.arguments.strip() if body.arguments else None
-        host_name = body.host_name.strip() if body.host_name else None
-
-        environment = _normalize_environment_or_400(body.environment)
-        ports = _normalize_ports_or_400(body.ports)
-        volumes = _normalize_volumes_or_400(body.volumes)
-
-        if allow_host_networks and network:
-            raise HTTPException(
-                status_code=400,
-                detail="allow_host_networks cannot be combined with network",
-            )
-        if network_address and not network:
-            raise HTTPException(
-                status_code=400,
-                detail="network_address requires a network name",
-            )
-
-        normalized_body = ContainerUpsertRequest(
-            image=image,
-            description=description,
-            entrypoint=entrypoint,
-            command=command,
-            arguments=arguments,
-            host_name=host_name,
-            restart=body.restart,
-            enabled=body.enabled,
-            allow_host_networks=allow_host_networks,
-            network=network,
-            network_address=network_address,
-            environment=environment,
-            ports=ports,
-            volumes=volumes,
-        )
+        normalized_body = _normalize_container_upsert_request_or_400(body)
+        image = normalized_body.image
 
         # Ensure we can run op-mode `add` commands via SSH.
         await _ensure_container_automation_bootstrap(request)
@@ -1359,7 +2351,9 @@ async def install_container(
             raise HTTPException(status_code=500, detail="Unable to resolve SSH host for active instance")
 
         # Ensure host volume directories exist (restricted to /config/containers/*).
-        volume_paths = [vol.source for vol in volumes if vol.source.startswith("/config/containers/")]
+        volume_paths = [
+            vol.source for vol in normalized_body.volumes if vol.source.startswith("/config/containers/")
+        ]
         if volume_paths:
             await run_in_threadpool(ssh_mkdir_p, host, volume_paths, prefix="/config/containers/")
 
@@ -1588,6 +2582,65 @@ async def container_action(
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to run container action: {exc}")
+
+
+@router.get("/{container_name}/inspect", response_model=ContainerInspectResponse)
+async def inspect_container(
+    request: Request,
+    container_name: str,
+) -> ContainerInspectResponse:
+    """Return raw operational details for a container."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        name = _normalize_name_or_400(container_name)
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=False)
+        configured = _extract_container_config(full_config)
+        if name not in configured:
+            raise HTTPException(status_code=404, detail=f"Container '{name}' not found")
+
+        attempts = [
+            ("show container inspect <name>", lambda: service.device.show(path=["container", "inspect", name])),
+            ("generate container inspect <name>", lambda: service.device.generate(path=["container", "inspect", name])),
+            ("show container <name>", lambda: service.device.show(path=["container", name])),
+            ("show container", lambda: service.device.show(path=["container"])),
+        ]
+
+        first_error = None
+        output = ""
+        selected_method = None
+        for method_name, attempt in attempts:
+            try:
+                response = await run_in_threadpool(attempt)
+            except Exception as exc:
+                if first_error is None:
+                    first_error = f"{method_name}: {exc}"
+                continue
+            if response.status == 200:
+                payload = _extract_show_output(response.result)
+                if payload.strip():
+                    output = payload
+                    selected_method = method_name
+                    break
+            if first_error is None:
+                first_error = f"{method_name}: {response.error or f'status {response.status}'}"
+
+        if not output:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to inspect container '{name}': {first_error or 'unknown command failure'}",
+            )
+
+        return ContainerInspectResponse(
+            name=name,
+            method=selected_method,
+            output=output,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to inspect container: {exc}")
 
 
 @router.get("/{container_name}/logs", response_model=ContainerLogsResponse)

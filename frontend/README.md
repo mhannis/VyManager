@@ -317,6 +317,34 @@ npm run lint
 npm run lint -- --fix
 ```
 
+### Runtime UI Smoke Test
+
+This catches client-side crashes that compile/build checks can miss.
+
+```bash
+# Fast runtime gate (server reachable + fatal Next runtime signatures absent)
+npm run smoke:runtime
+
+# Full browser gate (login + route probes + fail on pageerror/application error)
+# Requires running frontend/backend stack and reachable login page
+npm run smoke:ui
+```
+
+Optional environment overrides:
+
+- `SMOKE_BASE_URL` (default: `http://127.0.0.1:3000`)
+- `SMOKE_USERNAME` (default: `smoke-ui`)
+- `SMOKE_PASSWORD` (default: `SmokeUiPass123!`)
+- `SMOKE_ROUTES` (comma-separated routes)
+- `SMOKE_ARTIFACT_DIR` (default: `smoke-artifacts`)
+- `SMOKE_TMUX_SESSION` (default: `vm-ui`, used by `smoke:runtime`)
+
+If Playwright reports missing host libraries, install them once:
+
+```bash
+sudo npx playwright install-deps
+```
+
 ## 📱 Responsive Design
 
 All pages are responsive using Tailwind breakpoints:

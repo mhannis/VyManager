@@ -17,8 +17,14 @@ class DummyVyOSResponse:
 
 
 class DummyService:
-    def __init__(self, hostname: str, full_config: dict):
+    def __init__(
+        self,
+        hostname: str,
+        full_config: dict,
+        show_outputs: dict[tuple[str, ...], str] | None = None,
+    ):
         self._full_config = full_config
+        self._show_outputs = show_outputs or {}
         self.device = self.DummyDevice(self)
 
         class DummyConfig:
@@ -139,8 +145,13 @@ class DummyService:
             return DummyVyOSResponse(status=200)
 
         def show(self, path=None):
-            # Not used by these tests (overview is patched for install).
-            return DummyVyOSResponse(status=200, result={"data": ""})
+            key = tuple(path or [])
+            payload = self._parent._show_outputs.get(key, "")
+            if isinstance(payload, DummyVyOSResponse):
+                return payload
+            if isinstance(payload, dict):
+                return DummyVyOSResponse(status=200, result=payload)
+            return DummyVyOSResponse(status=200, result={"data": str(payload)})
 
 
 @pytest.fixture()
@@ -318,3 +329,251 @@ def test_bootstrap_allows_network_setup_without_ssh_automation(monkeypatch, app)
     assert data["networks"][0]["mtu"] == 1500
     assert data["networks"][0]["vrf"] == "main"
     assert data["networks"][0]["dns_disabled"] is True
+
+
+def test_build_container_set_operations_includes_advanced_fields():
+    body = containers_router.ContainerUpsertRequest(
+        image="ghcr.io/example/app:1.0",
+        description="Example",
+        enabled=True,
+        allow_host_networks=False,
+        allow_host_pid=True,
+        network="containers-lan",
+        network_address="172.20.20.10",
+        name_servers=["1.1.1.1", "9.9.9.9"],
+        uid=1000,
+        gid=1000,
+        cpu_quota=50000,
+        memory=512,
+        capabilities=["NET_ADMIN"],
+        tmpfs=[containers_router.ContainerTmpfsMapping(name="cache", destination="/tmp/cache", size_mb=64)],
+        devices=[
+            containers_router.ContainerDeviceMapping(
+                name="tun",
+                source="/dev/net/tun",
+                destination="/dev/net/tun",
+            )
+        ],
+        sysctls=[containers_router.ContainerKeyValue(key="net.ipv4.ip_forward", value="1")],
+        labels=[containers_router.ContainerKeyValue(key="com.example.role", value="dns")],
+        health_check_enabled=True,
+        health_check_command="/usr/bin/healthcheck",
+        health_check_interval="30s",
+        health_check_timeout="5s",
+        health_check_retries=3,
+        log_driver="journald",
+        environment=[],
+        ports=[],
+        volumes=[],
+    )
+
+    operations = containers_router._build_container_set_operations(
+        name="example",
+        body=body,
+        replace_existing=False,
+    )
+    set_paths = {tuple(op["path"]) for op in operations if op.get("op") == "set"}
+
+    assert ("container", "name", "example", "allow-host-pid") in set_paths
+    assert ("container", "name", "example", "name-server", "1.1.1.1") in set_paths
+    assert ("container", "name", "example", "uid", "1000") in set_paths
+    assert ("container", "name", "example", "gid", "1000") in set_paths
+    assert ("container", "name", "example", "cpu-quota", "50000") in set_paths
+    assert ("container", "name", "example", "memory", "512") in set_paths
+    assert ("container", "name", "example", "capability", "NET_ADMIN") in set_paths
+    assert (
+        "container",
+        "name",
+        "example",
+        "tmpfs",
+        "cache",
+        "destination",
+        "/tmp/cache",
+    ) in set_paths
+    assert (
+        "container",
+        "name",
+        "example",
+        "tmpfs",
+        "cache",
+        "size",
+        "64",
+    ) in set_paths
+    assert (
+        "container",
+        "name",
+        "example",
+        "device",
+        "tun",
+        "source",
+        "/dev/net/tun",
+    ) in set_paths
+    assert (
+        "container",
+        "name",
+        "example",
+        "sysctl",
+        "parameter",
+        "net.ipv4.ip_forward",
+        "value",
+        "1",
+    ) in set_paths
+    assert (
+        "container",
+        "name",
+        "example",
+        "label",
+        "com.example.role",
+        "value",
+        "dns",
+    ) in set_paths
+    assert ("container", "name", "example", "health-check") in set_paths
+    assert (
+        "container",
+        "name",
+        "example",
+        "health-check",
+        "command",
+        "/usr/bin/healthcheck",
+    ) in set_paths
+    assert ("container", "name", "example", "log-driver", "journald") in set_paths
+
+
+def test_parse_container_from_config_reads_advanced_fields():
+    raw = {
+        "image": "ghcr.io/example/app:1.0",
+        "allow-host-pid": {},
+        "name-server": {"1.1.1.1": {}, "9.9.9.9": {}},
+        "uid": "1000",
+        "gid": "1000",
+        "cpu-quota": "50000",
+        "memory": "512",
+        "capability": {"NET_ADMIN": {}},
+        "tmpfs": {
+            "cache": {
+                "destination": "/tmp/cache",
+                "size": "64",
+            }
+        },
+        "device": {
+            "tun": {
+                "source": "/dev/net/tun",
+                "destination": "/dev/net/tun",
+            }
+        },
+        "sysctl": {
+            "parameter": {
+                "net.ipv4.ip_forward": {"value": "1"},
+            }
+        },
+        "label": {
+            "com.example.role": {"value": "dns"},
+        },
+        "health-check": {
+            "command": "/usr/bin/healthcheck",
+            "interval": "30s",
+            "timeout": "5s",
+            "retries": "3",
+        },
+        "log-driver": "journald",
+    }
+
+    summary = containers_router._parse_container_from_config("example", raw)
+    assert summary.allow_host_pid is True
+    assert summary.name_servers == ["1.1.1.1", "9.9.9.9"]
+    assert summary.uid == 1000
+    assert summary.gid == 1000
+    assert summary.cpu_quota == 50000
+    assert summary.memory == 512
+    assert summary.capabilities == ["NET_ADMIN"]
+    assert len(summary.tmpfs) == 1
+    assert summary.tmpfs[0].name == "cache"
+    assert summary.tmpfs[0].destination == "/tmp/cache"
+    assert summary.tmpfs[0].size_mb == 64
+    assert len(summary.devices) == 1
+    assert summary.devices[0].name == "tun"
+    assert summary.devices[0].source == "/dev/net/tun"
+    assert summary.devices[0].destination == "/dev/net/tun"
+    assert summary.sysctls == [containers_router.ContainerKeyValue(key="net.ipv4.ip_forward", value="1")]
+    assert summary.labels == [containers_router.ContainerKeyValue(key="com.example.role", value="dns")]
+    assert summary.health_check_enabled is True
+    assert summary.health_check_command == "/usr/bin/healthcheck"
+    assert summary.health_check_interval == "30s"
+    assert summary.health_check_timeout == "5s"
+    assert summary.health_check_retries == 3
+    assert summary.log_driver == "journald"
+
+
+def test_get_container_images_merges_runtime_and_configured(monkeypatch, app):
+    async def allow_read(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(containers_router, "require_read_permission", allow_read)
+
+    full_config = {
+        "container": {
+            "name": {
+                "pihole": {"image": "pihole/pihole:latest"},
+                "grafana": {"image": "grafana/grafana:latest"},
+            }
+        }
+    }
+    service = DummyService(
+        hostname="192.0.2.10",
+        full_config=full_config,
+        show_outputs={
+            ("container", "image"): "pihole/pihole:latest\nquay.io/prom/node-exporter:latest\n",
+        },
+    )
+    monkeypatch.setattr(containers_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    resp = client.get("/vyos/containers/images?refresh=true")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["configured_images"] == ["grafana/grafana:latest", "pihole/pihole:latest"]
+
+    runtime_map = {entry["reference"]: entry["source"] for entry in data["runtime_images"]}
+    assert runtime_map["pihole/pihole:latest"] == "runtime"
+    assert runtime_map["quay.io/prom/node-exporter:latest"] == "runtime"
+    assert runtime_map["grafana/grafana:latest"] == "configured"
+
+
+def test_get_container_registries_returns_summary(monkeypatch, app):
+    async def allow_read(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(containers_router, "require_read_permission", allow_read)
+
+    full_config = {
+        "container": {
+            "registry": {
+                "docker.io": {
+                    "insecure": {},
+                    "authentication": {"username": "robot", "password": "secret"},
+                    "mirror": {"host-name": "cache.local", "port": "5443"},
+                },
+                "quay.io": {
+                    "disable": {},
+                },
+            }
+        }
+    }
+    service = DummyService(hostname="192.0.2.10", full_config=full_config)
+    monkeypatch.setattr(containers_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    resp = client.get("/vyos/containers/registries?refresh=true")
+    assert resp.status_code == 200
+    data = resp.json()
+    registry_map = {entry["name"]: entry for entry in data}
+
+    assert registry_map["docker.io"]["enabled"] is True
+    assert registry_map["docker.io"]["insecure"] is True
+    assert registry_map["docker.io"]["username"] == "robot"
+    assert registry_map["docker.io"]["password_set"] is True
+    assert registry_map["docker.io"]["mirror"]["host_name"] == "cache.local"
+    assert registry_map["docker.io"]["mirror"]["port"] == 5443
+
+    assert registry_map["quay.io"]["enabled"] is False
+    assert registry_map["quay.io"]["insecure"] is False

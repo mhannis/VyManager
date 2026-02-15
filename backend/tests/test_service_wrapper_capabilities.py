@@ -15,8 +15,10 @@ import routers.console_server_service.console_server_service as console_server_r
 import routers.salt_minion_service.salt_minion_service as salt_minion_router
 import routers.suricata_service.suricata_service as suricata_router
 import routers.broadcast_relay_service.broadcast_relay_service as broadcast_relay_router
+import routers.config_sync_service.config_sync_service as config_sync_router
 import routers.conntrack_sync_service.conntrack_sync_service as conntrack_sync_router
 import routers.event_handler_service.event_handler_service as event_handler_router
+import routers.router_advert_service.router_advert_service as router_advert_router
 import routers.monitoring_service.monitoring_service as monitoring_router
 import routers.webproxy_service.webproxy_service as webproxy_router
 import routers.pppoe_server_service.pppoe_server_service as pppoe_server_router
@@ -37,8 +39,10 @@ ROUTER_MODULES = (
     salt_minion_router,
     suricata_router,
     broadcast_relay_router,
+    config_sync_router,
     conntrack_sync_router,
     event_handler_router,
+    router_advert_router,
     monitoring_router,
     webproxy_router,
     pppoe_server_router,
@@ -115,6 +119,12 @@ class DummyService:
                         },
                     },
                 },
+                "config-sync": {
+                    "mode": "load",
+                    "secondary": {
+                        "address": "192.0.2.20",
+                    },
+                },
                 "conntrack-sync": {
                     "listen-address": "192.0.2.10",
                 },
@@ -123,6 +133,15 @@ class DummyService:
                         "INTERFACE_DOWN": {
                             "script": {
                                 "path": "/config/scripts/if-down.sh",
+                            },
+                        },
+                    },
+                },
+                "router-advert": {
+                    "interface": {
+                        "eth0": {
+                            "prefix": {
+                                "2001:db8:2::/64": {},
                             },
                         },
                     },
@@ -173,8 +192,10 @@ def app():
     app.include_router(salt_minion_router.router)
     app.include_router(suricata_router.router)
     app.include_router(broadcast_relay_router.router)
+    app.include_router(config_sync_router.router)
     app.include_router(conntrack_sync_router.router)
     app.include_router(event_handler_router.router)
+    app.include_router(router_advert_router.router)
     app.include_router(monitoring_router.router)
     app.include_router(webproxy_router.router)
     app.include_router(pppoe_server_router.router)
@@ -217,8 +238,10 @@ def mock_service(monkeypatch):
         "/vyos/service-salt-minion/capabilities",
         "/vyos/service-suricata/capabilities",
         "/vyos/service-broadcast-relay/capabilities",
+        "/vyos/service-config-sync/capabilities",
         "/vyos/service-conntrack-sync/capabilities",
         "/vyos/service-event-handler/capabilities",
+        "/vyos/service-router-advert/capabilities",
         "/vyos/service-monitoring/capabilities",
         "/vyos/service-webproxy/capabilities",
         "/vyos/service-pppoe-server/capabilities",
@@ -251,8 +274,10 @@ def test_service_wrapper_capabilities_payload(app, allow_permissions, mock_servi
         ("/vyos/service-salt-minion/config", "master"),
         ("/vyos/service-suricata/config", "interface"),
         ("/vyos/service-broadcast-relay/config", "id"),
+        ("/vyos/service-config-sync/config", "mode"),
         ("/vyos/service-conntrack-sync/config", "listen-address"),
         ("/vyos/service-event-handler/config", "event"),
+        ("/vyos/service-router-advert/config", "interface"),
         ("/vyos/service-monitoring/config", "prometheus"),
         ("/vyos/service-webproxy/config", "default-port"),
         ("/vyos/service-pppoe-server/config", "interface"),
@@ -333,6 +358,11 @@ def test_service_wrapper_config_payload(app, allow_permissions, mock_service, pa
             "set service conntrack-sync listen-address 192.0.2.2",
         ),
         (
+            "/vyos/service-config-sync/batch",
+            "set service config-sync mode load",
+            "set service conntrack-sync listen-address 192.0.2.10",
+        ),
+        (
             "/vyos/service-conntrack-sync/batch",
             "set service conntrack-sync listen-address 192.0.2.10",
             "set service broadcast-relay id 1 port 1900",
@@ -341,6 +371,11 @@ def test_service_wrapper_config_payload(app, allow_permissions, mock_service, pa
             "/vyos/service-event-handler/batch",
             "set service event-handler event TEST script path /config/scripts/test.sh",
             "set service conntrack-sync listen-address 192.0.2.10",
+        ),
+        (
+            "/vyos/service-router-advert/batch",
+            "set service router-advert interface eth0 prefix 2001:db8:2::/64",
+            "set service config-sync mode load",
         ),
         (
             "/vyos/service-monitoring/batch",

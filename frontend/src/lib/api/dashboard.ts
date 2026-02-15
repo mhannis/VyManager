@@ -13,8 +13,14 @@ export interface DashboardCard {
   config?: Record<string, any>; // card-specific configuration
 }
 
+export interface DashboardLayoutSettings {
+  columns?: number; // 2-4 columns
+  gap_px?: number; // 8-24 px
+}
+
 export interface DashboardLayout {
   cards: DashboardCard[];
+  settings?: DashboardLayoutSettings;
 }
 
 export interface DashboardLayoutResponse {

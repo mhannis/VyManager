@@ -71,6 +71,16 @@ interface CreateDHCPServerModalProps {
   onSuccess: () => void;
   capabilities: DHCPCapabilitiesResponse | null;
   existingNetwork?: string;
+  prefill?: {
+    network_name?: string;
+    subnet?: string;
+    default_router?: string;
+    domain_name?: string;
+    lease?: string;
+    name_servers?: string[];
+    range_start?: string;
+    range_stop?: string;
+  } | null;
 }
 
 export function CreateDHCPServerModal({
@@ -79,6 +89,7 @@ export function CreateDHCPServerModal({
   onSuccess,
   capabilities,
   existingNetwork,
+  prefill,
 }: CreateDHCPServerModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -131,8 +142,34 @@ export function CreateDHCPServerModal({
       }
       calculateNextSubnetId();
       loadExistingNetworks();
+
+      if (prefill && !existingNetwork) {
+        if (prefill.network_name) setNetworkName(prefill.network_name);
+        if (prefill.subnet) setSubnet(prefill.subnet);
+        if (prefill.default_router) {
+          setDefaultRouter(prefill.default_router);
+          setNameServers(
+            prefill.name_servers && prefill.name_servers.length > 0
+              ? prefill.name_servers
+              : [prefill.default_router]
+          );
+        } else if (prefill.name_servers && prefill.name_servers.length > 0) {
+          setNameServers(prefill.name_servers);
+        }
+        if (prefill.domain_name) setDomainName(prefill.domain_name);
+        if (prefill.lease) setLease(prefill.lease);
+        if (prefill.range_start && prefill.range_stop) {
+          setRanges([
+            {
+              range_id: "0",
+              start: prefill.range_start,
+              stop: prefill.range_stop,
+            },
+          ]);
+        }
+      }
     }
-  }, [open, existingNetwork]);
+  }, [open, existingNetwork, prefill]);
 
   const loadExistingNetworks = async () => {
     try {
@@ -244,10 +281,6 @@ export function CreateDHCPServerModal({
 
     // Name servers validation
     const validNameServers = nameServers.filter((ns) => ns.trim());
-    if (validNameServers.length === 0) {
-      setError("At least one name server is required");
-      return false;
-    }
     for (const ns of validNameServers) {
       if (!isValidIPv4(ns.trim())) {
         setError(`Invalid name server IP address: ${ns}`);
@@ -346,6 +379,12 @@ export function CreateDHCPServerModal({
 
     try {
       const targetNetworkName = mode === "new" ? networkName.trim() : selectedNetwork;
+      const resolvedNameServers =
+        nameServers
+          .map((entry) => entry.trim())
+          .filter((entry) => entry.length > 0).length > 0
+          ? nameServers.map((entry) => entry.trim()).filter((entry) => entry.length > 0)
+          : [defaultRouter.trim()];
 
       // Calculate subnet ID if needed for VyOS 1.5
       let calculatedSubnetId: number | undefined = undefined;
@@ -372,7 +411,7 @@ export function CreateDHCPServerModal({
         subnet: subnet.trim(),
         subnet_id: calculatedSubnetId,
         default_router: defaultRouter.trim(),
-        name_servers: nameServers.filter((ns) => ns.trim()),
+        name_servers: resolvedNameServers,
         domain_name: domainName.trim(),
         lease: lease.trim(),
         ranges: ranges.filter((r) => r.start && r.stop),
@@ -658,6 +697,9 @@ export function CreateDHCPServerModal({
                     Add Name Server
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  If left blank, DHCP defaults DNS to the gateway IP.
+                </p>
               </div>
 
               <div>

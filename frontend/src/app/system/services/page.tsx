@@ -73,12 +73,14 @@ import { ConsoleServerServiceTab } from "@/components/system/ConsoleServerServic
 import { SaltMinionServiceTab } from "@/components/system/SaltMinionServiceTab";
 import { SuricataServiceTab } from "@/components/system/SuricataServiceTab";
 import { BroadcastRelayServiceTab } from "@/components/system/BroadcastRelayServiceTab";
+import { ConfigSyncServiceTab } from "@/components/system/ConfigSyncServiceTab";
 import { ConntrackSyncServiceTab } from "@/components/system/ConntrackSyncServiceTab";
 import { EventHandlerServiceTab } from "@/components/system/EventHandlerServiceTab";
 import { MonitoringServiceTab } from "@/components/system/MonitoringServiceTab";
 import { WebproxyServiceTab } from "@/components/system/WebproxyServiceTab";
 import { PppoeServerServiceTab } from "@/components/system/PppoeServerServiceTab";
 import { IpoeServerServiceTab } from "@/components/system/IpoeServerServiceTab";
+import { RouterAdvertServiceTab } from "@/components/system/RouterAdvertServiceTab";
 import { formatInterfaceDisplayName } from "@/lib/utils";
 
 const EMPTY_SERVER: NtpServerConfig = {
@@ -101,29 +103,32 @@ const LLDP_MODE_OPTIONS: { value: LldpInterfaceMode; label: string }[] = [
 
 type ServiceTab =
   | "broadcast-relay"
+  | "config-sync"
   | "console-server"
   | "conntrack-sync"
-  | "ipoe-server"
-  | "ntp"
-  | "lldp"
-  | "mdns"
-  | "monitoring"
-  | "pppoe-server"
-  | "ssh"
-  | "webproxy"
-  | "salt-minion"
-  | "https-api"
-  | "snmp"
-  | "suricata"
-  | "tftp-server"
+  | "dhcp-relay"
   | "dns-forwarder"
   | "dns-resolver"
   | "dynamic-dns"
   | "event-handler"
-  | "dhcp-relay";
+  | "https-api"
+  | "ipoe-server"
+  | "lldp"
+  | "mdns"
+  | "monitoring"
+  | "ntp"
+  | "pppoe-server"
+  | "router-advert"
+  | "salt-minion"
+  | "snmp"
+  | "ssh"
+  | "suricata"
+  | "tftp-server"
+  | "webproxy";
 
 const SERVICE_TAB_VALUES: ServiceTab[] = [
   "broadcast-relay",
+  "config-sync",
   "console-server",
   "conntrack-sync",
   "dhcp-relay",
@@ -138,6 +143,7 @@ const SERVICE_TAB_VALUES: ServiceTab[] = [
   "monitoring",
   "ntp",
   "pppoe-server",
+  "router-advert",
   "salt-minion",
   "snmp",
   "ssh",
@@ -152,6 +158,7 @@ const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
   mdns: "mDNS Repeater",
   ssh: "SSH",
   "broadcast-relay": "Broadcast Relay",
+  "config-sync": "Config Sync",
   "console-server": "Console Server",
   "conntrack-sync": "Conntrack Sync",
   "salt-minion": "Salt Minion",
@@ -168,6 +175,7 @@ const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
   "dns-resolver": "DNS Resolver",
   "dynamic-dns": "Dynamic DNS",
   "dhcp-relay": "DHCP Relay",
+  "router-advert": "Router Advert",
 };
 
 function normalizeServiceTab(raw: string | null): ServiceTab | null {
@@ -758,6 +766,7 @@ function SystemServicesPageContent() {
           {!singleServiceView && (
             <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
               <TabsTrigger value="broadcast-relay">Broadcast Relay</TabsTrigger>
+              <TabsTrigger value="config-sync">Config Sync</TabsTrigger>
               <TabsTrigger value="console-server">Console Server</TabsTrigger>
               <TabsTrigger value="conntrack-sync">Conntrack Sync</TabsTrigger>
               <TabsTrigger value="dhcp-relay">DHCP Relay</TabsTrigger>
@@ -768,12 +777,16 @@ function SystemServicesPageContent() {
               <TabsTrigger value="https-api">HTTP API</TabsTrigger>
               <TabsTrigger value="lldp">LLDP</TabsTrigger>
               <TabsTrigger value="mdns">mDNS Repeater</TabsTrigger>
+              <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
               <TabsTrigger value="ntp">NTP</TabsTrigger>
+              <TabsTrigger value="router-advert">Router Advert</TabsTrigger>
+              <TabsTrigger value="pppoe-server">PPPoE Server</TabsTrigger>
               <TabsTrigger value="salt-minion">Salt Minion</TabsTrigger>
               <TabsTrigger value="snmp">SNMP</TabsTrigger>
               <TabsTrigger value="ssh">SSH</TabsTrigger>
               <TabsTrigger value="suricata">Suricata</TabsTrigger>
               <TabsTrigger value="tftp-server">TFTP Server</TabsTrigger>
+              <TabsTrigger value="webproxy">Webproxy</TabsTrigger>
             </TabsList>
           )}
 
@@ -1646,6 +1659,14 @@ function SystemServicesPageContent() {
             />
           </TabsContent>
 
+          <TabsContent value="config-sync" className="space-y-6">
+            <ConfigSyncServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "config-sync"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
           <TabsContent value="conntrack-sync" className="space-y-6">
             <ConntrackSyncServiceTab
               canEdit={canEditSystem}
@@ -1690,6 +1711,14 @@ function SystemServicesPageContent() {
             <PppoeServerServiceTab
               canEdit={canEditSystem}
               active={activeTab === "pppoe-server"}
+              refreshNonce={serviceRefreshNonce}
+            />
+          </TabsContent>
+
+          <TabsContent value="router-advert" className="space-y-6">
+            <RouterAdvertServiceTab
+              canEdit={canEditSystem}
+              active={activeTab === "router-advert"}
               refreshNonce={serviceRefreshNonce}
             />
           </TabsContent>

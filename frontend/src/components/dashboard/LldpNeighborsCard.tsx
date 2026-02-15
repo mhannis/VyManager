@@ -140,6 +140,12 @@ export function LldpNeighborsCard({ onRemove, span = 1, onSpanChange }: LldpNeig
               <Badge variant="secondary">{neighbors.length} neighbor(s)</Badge>
             </div>
 
+            {status?.error ? (
+              <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-800">
+                {status.error}
+              </div>
+            ) : null}
+
             {neighbors.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No LLDP neighbors discovered yet.

@@ -13,6 +13,7 @@ SSH_USERNAME_DEFAULT = "vyos"
 SSH_PORT_DEFAULT = 22
 
 _RE_IMAGE_REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,200}(:[A-Za-z0-9][A-Za-z0-9._-]{0,127})?$")
+_RE_IMAGE_DELETE_TARGET = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,255}$")
 _RE_ABS_PATH_SAFE = re.compile(r"^/[A-Za-z0-9._/-]{1,4095}$")
 
 
@@ -232,4 +233,39 @@ def ssh_pull_container_image(host: str, image: str) -> SshResult:
     """
     image_ref = validate_image_ref_or_raise(image)
     cmd = "sudo -n /opt/vyatta/bin/vyatta-op-cmd-wrapper add container image " + shlex.quote(image_ref)
+    return ssh_run(host, cmd, timeout_seconds=900)
+
+
+def validate_image_delete_target_or_raise(target: str) -> str:
+    clean = (target or "").strip()
+    if not clean:
+        raise ValueError("Image delete target is required")
+    if clean == "all":
+        return clean
+    if not _RE_IMAGE_DELETE_TARGET.match(clean):
+        raise ValueError("Invalid image delete target format")
+    return clean
+
+
+def ssh_update_container_image(host: str, image: str) -> SshResult:
+    """
+    Update a container image using VyOS op-mode wrapper.
+
+    VyOS command: `update container image <image>`
+    """
+    image_ref = validate_image_ref_or_raise(image)
+    cmd = "sudo -n /opt/vyatta/bin/vyatta-op-cmd-wrapper update container image " + shlex.quote(image_ref)
+    return ssh_run(host, cmd, timeout_seconds=900)
+
+
+def ssh_delete_container_image(host: str, target: str, *, force: bool = False) -> SshResult:
+    """
+    Delete one image or all images.
+
+    VyOS command: `delete container image <image id|all> [force]`
+    """
+    delete_target = validate_image_delete_target_or_raise(target)
+    cmd = "sudo -n /opt/vyatta/bin/vyatta-op-cmd-wrapper delete container image " + shlex.quote(delete_target)
+    if force:
+        cmd += " force"
     return ssh_run(host, cmd, timeout_seconds=900)

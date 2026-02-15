@@ -1,6 +1,6 @@
 # CONFIG_COVERAGE_MATRIX
 
-Generated: `2026-02-14T23:59:20Z`
+Generated: `2026-02-15T14:38:06Z`
 Source: `https://docs.vyos.io/en/latest/configuration/`
 
 ## Status Summary

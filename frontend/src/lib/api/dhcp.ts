@@ -158,6 +158,7 @@ export interface CreateSubnetConfig {
   domain_name: string;
   lease: string;
   ranges: DHCPRange[];
+  static_mappings?: DHCPStaticMapping[];
   excludes?: string[];
   domain_search?: string[];
   ping_check?: boolean;
@@ -213,6 +214,34 @@ export interface UpdateSubnetConfig {
 // ============================================================================
 
 class DHCPService {
+  private getNextAvailableSubnetId(config: DHCPConfigResponse): number {
+    const used = new Set<number>();
+    config.shared_networks.forEach((network) => {
+      network.subnets.forEach((subnet) => {
+        if (typeof subnet.subnet_id === "number") {
+          used.add(subnet.subnet_id);
+        }
+      });
+    });
+
+    let nextId = 1;
+    while (used.has(nextId)) {
+      nextId += 1;
+    }
+    return nextId;
+  }
+
+  private resolveNameServers(nameServers: string[] | undefined, fallbackGateway?: string): string[] {
+    const normalized = (nameServers ?? [])
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+    if (normalized.length > 0) {
+      return normalized;
+    }
+    const gateway = (fallbackGateway || "").trim();
+    return gateway ? [gateway] : [];
+  }
+
   /**
    * Get DHCP server capabilities based on VyOS version
    */
@@ -258,6 +287,16 @@ class DHCPService {
    */
   async createSubnet(config: CreateSubnetConfig): Promise<VyOSResponse> {
     const operations: DHCPBatchOperation[] = [];
+    const resolvedNameServers = this.resolveNameServers(
+      config.name_servers,
+      config.default_router,
+    );
+
+    // Keep DHCP bound to the interface/gateway IP for this subnet.
+    operations.push({
+      op: "set_listen_address",
+      value: config.default_router,
+    });
 
     // Create shared network if it doesn't exist (idempotent operation)
     operations.push({ op: "set_shared_network" });
@@ -279,8 +318,8 @@ class DHCPService {
       value: config.default_router,
     });
 
-    // Set name servers (required, can be multiple)
-    for (const ns of config.name_servers) {
+    // Set name servers
+    for (const ns of resolvedNameServers) {
       operations.push({ op: "set_subnet_name_server", value: ns });
     }
 
@@ -304,6 +343,35 @@ class DHCPService {
           op: "set_subnet_range_stop",
           value: `${range.range_id}|${range.stop}`,
         });
+      }
+    }
+
+    // Optional: static mappings
+    if (config.static_mappings) {
+      for (const mapping of config.static_mappings) {
+        const mappingName = (mapping.name || "").trim();
+        if (!mappingName) continue;
+
+        if (mapping.ip_address?.trim()) {
+          operations.push({
+            op: "set_static_mapping_ip_address",
+            value: `${mappingName}|${mapping.ip_address.trim()}`,
+          });
+        }
+
+        if (mapping.mac_address?.trim()) {
+          operations.push({
+            op: "set_static_mapping_mac_address",
+            value: `${mappingName}|${mapping.mac_address.trim()}`,
+          });
+        }
+
+        if (mapping.disable) {
+          operations.push({
+            op: "set_static_mapping_disable",
+            value: mappingName,
+          });
+        }
       }
     }
 
@@ -410,10 +478,18 @@ class DHCPService {
         op: "set_subnet_default_router",
         value: config.default_router,
       });
+      operations.push({
+        op: "set_listen_address",
+        value: config.default_router,
+      });
     }
 
     // Update name servers (delete old ones, then set new ones)
     if (config.name_servers !== undefined) {
+      const nextNameServers = this.resolveNameServers(
+        config.name_servers,
+        config.default_router || currentSubnet?.default_router,
+      );
       // Delete existing name servers
       if (currentSubnet?.name_servers) {
         for (const ns of currentSubnet.name_servers) {
@@ -421,7 +497,7 @@ class DHCPService {
         }
       }
       // Set new name servers
-      for (const ns of config.name_servers) {
+      for (const ns of nextNameServers) {
         operations.push({ op: "set_subnet_name_server", value: ns });
       }
     }
@@ -601,6 +677,108 @@ class DHCPService {
       subnet: config.subnet,
       operations,
     });
+  }
+
+  /**
+   * Move a subnet from one shared network to another (rename shared network for that subnet).
+   * Keeps subnet settings and static mappings, then removes the old subnet.
+   */
+  async moveSubnetToSharedNetwork(
+    currentNetworkName: string,
+    targetNetworkName: string,
+    subnetCidr: string,
+    updates: Omit<UpdateSubnetConfig, "network_name" | "subnet">,
+  ): Promise<VyOSResponse> {
+    const fromNetwork = currentNetworkName.trim();
+    const toNetwork = targetNetworkName.trim();
+    const subnet = subnetCidr.trim();
+
+    if (!fromNetwork || !toNetwork || !subnet) {
+      throw new Error("Current network, target network, and subnet are required.");
+    }
+
+    if (fromNetwork === toNetwork) {
+      return this.updateSubnet({
+        ...updates,
+        network_name: fromNetwork,
+        subnet,
+      });
+    }
+
+    const [currentConfig, capabilities] = await Promise.all([
+      this.getConfig(true),
+      this.getCapabilities(),
+    ]);
+
+    const currentNetwork = currentConfig.shared_networks.find((network) => network.name === fromNetwork);
+    const currentSubnet = currentNetwork?.subnets.find((entry) => entry.subnet === subnet);
+    if (!currentSubnet) {
+      throw new Error(`Subnet '${subnet}' not found in shared network '${fromNetwork}'.`);
+    }
+
+    const effectiveDefaultRouter = (updates.default_router || currentSubnet.default_router || "").trim();
+    if (!effectiveDefaultRouter) {
+      throw new Error("Default router is required to move a DHCP subnet.");
+    }
+
+    const effectiveNameServers = this.resolveNameServers(
+      updates.name_servers ?? currentSubnet.name_servers,
+      effectiveDefaultRouter,
+    );
+    const effectiveDomainName = (updates.domain_name || currentSubnet.domain_name || currentNetwork?.domain_name || "lan").trim();
+    const effectiveLease = (updates.lease || currentSubnet.lease || "86400").trim();
+    const effectiveRanges = updates.ranges ?? currentSubnet.ranges;
+    if (!effectiveRanges || effectiveRanges.length === 0) {
+      throw new Error("At least one DHCP range is required.");
+    }
+
+    const subnetId = capabilities.has_subnet_id
+      ? (
+          updates.subnet_id ??
+          this.getNextAvailableSubnetId(currentConfig)
+        )
+      : undefined;
+
+    await this.createSubnet({
+      network_name: toNetwork,
+      subnet,
+      subnet_id: subnetId,
+      default_router: effectiveDefaultRouter,
+      name_servers: effectiveNameServers,
+      domain_name: effectiveDomainName,
+      lease: effectiveLease,
+      ranges: effectiveRanges,
+      static_mappings: currentSubnet.static_mappings,
+      excludes: updates.excludes ?? currentSubnet.excludes,
+      domain_search: updates.domain_search ?? currentSubnet.domain_search,
+      ping_check: updates.ping_check ?? currentSubnet.ping_check,
+      enable_failover: updates.enable_failover ?? currentSubnet.enable_failover,
+      bootfile_name: updates.bootfile_name ?? currentSubnet.bootfile_name,
+      bootfile_server: updates.bootfile_server ?? currentSubnet.bootfile_server,
+      tftp_server_name: updates.tftp_server_name ?? currentSubnet.tftp_server_name,
+      time_servers: updates.time_servers ?? currentSubnet.time_servers,
+      ntp_servers: updates.ntp_servers ?? currentSubnet.ntp_servers,
+      wins_servers: updates.wins_servers ?? currentSubnet.wins_servers,
+      time_offset: updates.time_offset ?? currentSubnet.time_offset,
+      client_prefix_length: updates.client_prefix_length ?? currentSubnet.client_prefix_length,
+      wpad_url: updates.wpad_url ?? currentSubnet.wpad_url,
+    });
+
+    await this.deleteSubnet(fromNetwork, subnet);
+
+    if (currentNetwork && currentNetwork.subnets.length <= 1) {
+      await this.deleteSharedNetwork(fromNetwork);
+    }
+
+    return {
+      success: true,
+      data: {
+        from_network: fromNetwork,
+        to_network: toNetwork,
+        subnet,
+      },
+      error: undefined,
+    };
   }
 
   /**

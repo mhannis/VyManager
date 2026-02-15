@@ -160,3 +160,24 @@ Two tiers:
 - Prefer worktrees for parallel work; each HEAVY task must run in its own worktree or sequentially.
 - When running commands on the host, record OS and toolchain versions (node/python/go as applicable) and command outcomes in `PROJECT_MEMORY.md` under “Work In Progress”.
 
+CONTINUOUS EXECUTION MODE (DO NOT STOP)
+
+You are running in continuous execution mode. Completing a phase is NOT a stopping condition.
+
+You must continue executing work cycles until the global “MVP Parity Done” criteria is met.
+
+After each cycle:
+1) Update PROJECT_MEMORY.md / CURRENT_FEATURE.md / FEATURE_STATE.json
+2) Immediately start the next highest-priority tasks from FEATURE_STATE.json
+3) Create and work a new feature branch as needed
+4) Implement, test, document, and merge (or open PR) without waiting for human approval
+
+You may only stop work and return control to the human if:
+A) MVP Parity Done is achieved, OR
+B) A BLOCKING QUESTION exists that cannot be resolved by (1) the docs tree or (2) CLI inspection in the sandbox.
+
+If neither A nor B is true, you MUST continue.
+
+Phase completion is only a milestone and must automatically transition into the next phase.
+
+
