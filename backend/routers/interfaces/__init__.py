@@ -21,6 +21,8 @@ from . import (
     vxlan,
     wireless,
     wwan,
+    loopback,
+    pppoe,
 )
 
 __all__ = [
@@ -40,4 +42,6 @@ __all__ = [
     "vxlan",
     "wireless",
     "wwan",
+    "loopback",
+    "pppoe",
 ]

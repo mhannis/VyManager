@@ -301,10 +301,16 @@ export default function InterfacesPage() {
                 <Link href="/network/interfaces/l2tpv3">L2TPv3 Interfaces</Link>
               </Button>
               <Button asChild variant="outline">
+                <Link href="/network/interfaces/loopback">Loopback Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
                 <Link href="/network/interfaces/macsec">MACsec Interfaces</Link>
               </Button>
               <Button asChild variant="outline">
                 <Link href="/network/interfaces/openvpn">OpenVPN Interfaces</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/pppoe">PPPoE Interfaces</Link>
               </Button>
               <Button asChild variant="outline">
                 <Link href="/network/interfaces/pseudo-ethernet">Pseudo-Ethernet Interfaces</Link>

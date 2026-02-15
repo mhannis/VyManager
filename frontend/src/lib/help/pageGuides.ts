@@ -6,8 +6,10 @@ export const pageGuides: Record<
   | "bridgeInterfaces"
   | "geneveInterfaces"
   | "l2tpv3Interfaces"
+  | "loopbackInterfaces"
   | "macsecInterfaces"
   | "openvpnInterfaces"
+  | "pppoeInterfaces"
   | "pseudoEthernetInterfaces"
   | "sstpClientInterfaces"
   | "virtualEthernetInterfaces"
@@ -182,6 +184,36 @@ export const pageGuides: Record<
       },
     ],
   },
+  loopbackInterfaces: {
+    title: "Loopback Interfaces How-To",
+    summary:
+      "Use loopback interfaces for stable router/service addresses and protocol IDs that should not depend on physical link state.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/interfaces/loopback.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Create or edit loopback interfaces with descriptive names and descriptions first.",
+          "Assign host-style addresses (`/32` IPv4 or `/128` IPv6) for router IDs and control-plane services.",
+          "Reference loopback addresses from routing protocol, VPN, and management workflows as needed.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Confirm loopback entries and addresses are present after save and refresh.",
+          "Verify dependent services (routing IDs, management endpoints) resolve to loopback addresses as intended.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Address overlap with other interfaces can cause route ambiguity; keep loopback subnets unique.",
+          "If dependent features fail, verify they reference the correct loopback interface/address.",
+        ],
+      },
+    ],
+  },
   macsecInterfaces: {
     title: "MACsec Interfaces How-To",
     summary:
@@ -209,6 +241,37 @@ export const pageGuides: Record<
         items: [
           "Handshake failures usually indicate CAK/CKN/static-key mismatch or incorrect source-interface binding.",
           "If traffic drops intermittently, review replay-window and peer state consistency first.",
+        ],
+      },
+    ],
+  },
+  pppoeInterfaces: {
+    title: "PPPoE Interfaces How-To",
+    summary:
+      "Configure PPPoE uplinks with source-interface, authentication, route behavior, and MSS/IPv6 tuning from a single workflow.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/interfaces/pppoe.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Create PPPoE interface and pick the correct source interface first.",
+          "Apply authentication username/password and optional service/access-concentrator constraints.",
+          "Configure route behavior (`no-default-route`, distance, peer DNS) before advanced MSS and IPv6 controls.",
+          "Enable on-demand mode only when dial behavior and idle timers are explicitly planned.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Confirm PPPoE interface is enabled and has expected peer/session details after apply.",
+          "Verify default route and DNS behavior match your selected options.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Authentication failures are usually credential/service-name mismatches with ISP requirements.",
+          "If traffic is unstable, tune MTU/MRU and MSS settings and verify firewall/NAT policy on the PPPoE interface.",
         ],
       },
     ],

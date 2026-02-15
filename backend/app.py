@@ -34,6 +34,8 @@ from routers.interfaces import (
     vxlan,
     wireless,
     wwan,
+    loopback,
+    pppoe,
 )
 from routers.firewall import groups
 from routers.firewall import ipv4 as firewall_ipv4
@@ -341,6 +343,8 @@ app.include_router(vti.router)
 app.include_router(vxlan.router)
 app.include_router(wireless.router)
 app.include_router(wwan.router)
+app.include_router(loopback.router)
+app.include_router(pppoe.router)
 app.include_router(groups.router)
 app.include_router(firewall_ipv4.router)
 app.include_router(firewall_ipv6.router)

@@ -19,6 +19,8 @@ import routers.interfaces.vti as vti_router
 import routers.interfaces.vxlan as vxlan_router
 import routers.interfaces.wireless as wireless_router
 import routers.interfaces.wwan as wwan_router
+import routers.interfaces.loopback as loopback_router
+import routers.interfaces.pppoe as pppoe_router
 import routers.load_balancing.load_balancing as load_balancing_router
 import routers.pki.pki as pki_router
 import routers.traffic_policy.traffic_policy as traffic_policy_router
@@ -133,6 +135,24 @@ class DummyService:
                         "address": ["dhcp"],
                     }
                 },
+                "loopback": {
+                    "lo": {
+                        "description": "router-id loopback",
+                        "address": ["10.255.255.1/32"],
+                    }
+                },
+                "pppoe": {
+                    "pppoe0": {
+                        "source-interface": "eth0",
+                        "authentication": {
+                            "username": "isp-user",
+                            "password": "isp-pass",
+                        },
+                        "ip": {
+                            "source-validation": "strict",
+                        },
+                    }
+                },
             },
             "vrf": {
                 "name": {
@@ -207,6 +227,8 @@ def app():
     app.include_router(vxlan_router.router)
     app.include_router(wireless_router.router)
     app.include_router(wwan_router.router)
+    app.include_router(loopback_router.router)
+    app.include_router(pppoe_router.router)
     app.include_router(vrf_router.router)
     app.include_router(load_balancing_router.router)
     app.include_router(high_availability_router.router)
@@ -255,6 +277,8 @@ def mock_service(monkeypatch):
         "/vyos/vxlan-interface/capabilities",
         "/vyos/wireless-interface/capabilities",
         "/vyos/wwan-interface/capabilities",
+        "/vyos/loopback-interface/capabilities",
+        "/vyos/pppoe-interface/capabilities",
         "/vyos/vrf/capabilities",
         "/vyos/load-balancing/capabilities",
         "/vyos/high-availability/capabilities",
@@ -290,6 +314,8 @@ def test_config_tree_wrapper_capabilities_payload(app, allow_permissions, mock_s
         ("/vyos/vxlan-interface/config", "vxlan", "vxlan241"),
         ("/vyos/wireless-interface/config", "wireless", "wlan0"),
         ("/vyos/wwan-interface/config", "wwan", "wwan0"),
+        ("/vyos/loopback-interface/config", "loopback", "lo"),
+        ("/vyos/pppoe-interface/config", "pppoe", "pppoe0"),
         ("/vyos/vrf/config", "vrf", "name"),
         ("/vyos/load-balancing/config", "load_balancing", "wan"),
         ("/vyos/high-availability/config", "high_availability", "vrrp"),
@@ -395,6 +421,16 @@ def test_wireless_config_includes_country_code(app, allow_permissions, mock_serv
             "/vyos/wwan-interface/batch",
             "set interfaces wwan wwan0 apn internet.example",
             "set interfaces wireless wlan0 ssid LabWifi",
+        ),
+        (
+            "/vyos/loopback-interface/batch",
+            "set interfaces loopback lo description router-id loopback",
+            "set interfaces wwan wwan0 apn internet.example",
+        ),
+        (
+            "/vyos/pppoe-interface/batch",
+            "set interfaces pppoe pppoe0 source-interface eth0",
+            "set interfaces loopback lo description router-id loopback",
         ),
         (
             "/vyos/vrf/batch",

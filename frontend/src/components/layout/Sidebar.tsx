@@ -124,6 +124,11 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.INTERFACES,
       },
       {
+        title: "Loopback Interfaces",
+        href: "/network/interfaces/loopback",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
         title: "MACsec Interfaces",
         href: "/network/interfaces/macsec",
         requiredPermission: FeatureGroup.INTERFACES,
@@ -131,6 +136,11 @@ const navigation: NavItem[] = [
       {
         title: "OpenVPN Interfaces",
         href: "/network/interfaces/openvpn",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "PPPoE Interfaces",
+        href: "/network/interfaces/pppoe",
         requiredPermission: FeatureGroup.INTERFACES,
       },
       {
