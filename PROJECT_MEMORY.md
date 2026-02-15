@@ -54,44 +54,44 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Polish dashboard configurability and monitoring usefulness (layout flexibility + additional card coverage).
-- Keep container UX operator-friendly by exposing editable instance host and collapsing low-frequency sections by default.
+- Polish dashboard configurability and monitoring usefulness with additional high-value operational cards.
+- Continue reducing dashboard layout friction by aligning card span options with configurable column layouts.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) after every slice.
 
 ## Current Feature Spec
-Feature: **Dashboard + Container UX polish (layout settings, LLDP card, gateway metrics)**
+Feature: **Dashboard monitoring expansion + 4-column card spans**
 
 Acceptance criteria:
-- Dashboard supports persisted per-layout settings for column count and spacing.
-- Dashboard card catalog includes LLDP neighbor monitoring card.
-- Gateway card includes RTT/RTTsd/Loss metrics when probe data is available and degrades gracefully when unavailable.
-- Container Management allows editing instance host directly from the page.
-- Container Networks section defaults to compact summary with on-demand expansion for full CRUD controls.
-- End-to-end validation passes: backend pytest + frontend `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
+- Dashboard includes a service-health card with actionable status details.
+- New card is available in Add Card and renders in dashboard layout.
+- Existing cards support selecting 4-column width in edit mode.
+- Drag-and-drop card placement respects current layout column count when spans are wider than available space.
+- End-to-end validation passes: frontend `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- Gateway probe metrics are best-effort via ping; unavailable probe commands should not fail the card/API response.
-- Existing dashboard card span controls remain capped at 3 columns for now even when layout columns are set to 4.
-- This slice remains additive and contract-safe; existing API clients continue to work.
+- Service checks are best-effort and endpoint failures should render unknown state instead of breaking the dashboard.
+- Service deep links should use current single-service view query routing where dedicated pages are not exposed.
+- This slice remains frontend-only and contract-safe for existing API clients.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: dashboard/container polish implemented and validated; commit pending.
+- Status: dashboard monitoring/card-span polish implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `backend/routers/show.py`
-- `backend/tests/test_gateway_summary.py`
 - `frontend/src/app/page.tsx`
+- `frontend/src/components/dashboard/ServicesStatusCard.tsx`
 - `frontend/src/components/dashboard/AddCardModal.tsx`
+- `frontend/src/components/dashboard/SystemInformationCard.tsx`
+- `frontend/src/components/dashboard/NtpStatusCard.tsx`
+- `frontend/src/components/dashboard/DiskUsageCard.tsx`
+- `frontend/src/components/dashboard/InterfaceStatisticsCard.tsx`
+- `frontend/src/components/dashboard/InterfaceOverviewCard.tsx`
 - `frontend/src/components/dashboard/GatewayStatusCard.tsx`
 - `frontend/src/components/dashboard/LldpNeighborsCard.tsx`
-- `frontend/src/lib/api/show.ts`
-- `frontend/src/app/system/containers/page.tsx`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py tests/test_containers_automation_v1.py` -> pass
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
 - `cd frontend && npm run -s build` -> pass

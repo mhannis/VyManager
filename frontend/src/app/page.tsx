@@ -21,6 +21,7 @@ import { NtpStatusCard } from "@/components/dashboard/NtpStatusCard";
 import { DiskUsageCard } from "@/components/dashboard/DiskUsageCard";
 import { GatewayStatusCard } from "@/components/dashboard/GatewayStatusCard";
 import { LldpNeighborsCard } from "@/components/dashboard/LldpNeighborsCard";
+import { ServicesStatusCard } from "@/components/dashboard/ServicesStatusCard";
 import { AddCardModal } from "@/components/dashboard/AddCardModal";
 import {
   DropdownMenu,
@@ -469,7 +470,7 @@ export default function Home() {
       return;
     }
 
-    const cardSpan = activeCard.span || 1;
+    const cardSpan = getCardSpan(activeCard, layoutSettings.columns);
     let targetColumn = 0;
     let targetPosition = 0;
 
@@ -688,6 +689,8 @@ export default function Home() {
         return <GatewayStatusCard {...baseProps} />;
       case "lldp-neighbors":
         return <LldpNeighborsCard {...baseProps} />;
+      case "services-status":
+        return <ServicesStatusCard {...baseProps} />;
       default:
         return null;
     }

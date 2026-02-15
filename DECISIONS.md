@@ -170,3 +170,6 @@
 - 2026-02-15: Gateway dashboard metrics (`RTT`, `RTTsd`, `Loss`) are implemented as best-effort ping probes in `/vyos/show/gateway-summary`; failures append warnings and do not fail the endpoint.
 - 2026-02-15: Added `LLDP Neighbors` dashboard card to improve monitoring value using existing `/vyos/system/lldp-status` API, keeping implementation additive with no new backend routes.
 - 2026-02-15: Container Networks controls were intentionally collapsed behind `Manage Networks` with summary badges shown by default to reduce page density while preserving full CRUD in-place.
+- 2026-02-15: Added `Services Status` dashboard card to provide at-a-glance operational state for core services (SSH, DNS Forwarder, DHCP Server, NTP, LLDP, mDNS) with best-effort multi-endpoint loading.
+- 2026-02-15: Expanded all dashboard card width menus to include `Full (4 columns)` so card controls align with dashboard layouts configured for four columns.
+- 2026-02-15: Updated dashboard drag/drop placement to clamp active card span by current layout column count, preventing out-of-range placement math after column-count changes.

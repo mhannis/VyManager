@@ -1,75 +1,82 @@
 {
-  "feature_id": "dashboard-containers-polish-r1-2026-02-15",
-  "title": "Dashboard flexibility + container UX polish",
+  "feature_id": "dashboard-polish-services-card-r2-2026-02-15",
+  "title": "Dashboard monitoring expansion + 4-column card spans",
   "status": "in_review",
   "acceptance_criteria": [
-    "Dashboard supports persisted layout settings for column count and spacing.",
-    "Dashboard card catalog includes LLDP neighbors monitoring card.",
-    "Gateway dashboard card displays RTT, RTTsd, and Loss when probe metrics are available.",
-    "Container Management allows editing active instance host from the page.",
-    "Container Networks section is collapsed by default and expands on demand.",
-    "Backend and frontend validation gates pass for this slice."
+    "Dashboard includes a services health card with useful at-a-glance operational status.",
+    "Services card is available in Add Card and renders correctly in dashboard grid.",
+    "All dashboard cards support selecting a 4-column width option.",
+    "Dashboard drag placement respects current column count when card spans exceed layout width.",
+    "Frontend validation gates pass (tsc, lint, build, runtime smoke, UI smoke)."
   ],
   "assumptions": [
-    "Gateway probe metrics are best-effort and may be unavailable on some VyOS builds without failing the API/card.",
-    "Card-level width menus remain 1-3 columns for now, while grid layout supports 2-4 columns globally.",
+    "Service checks are best-effort and partial API failures should degrade to unknown status rather than failing the card.",
+    "Services links should route to existing system pages via single-service query params where available.",
     "Existing unrelated working tree changes remain untouched."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "Backend",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "backend/routers/show.py",
-        "backend/tests/test_gateway_summary.py"
+        "frontend/src/components/dashboard/ServicesStatusCard.tsx",
+        "frontend/src/components/dashboard/AddCardModal.tsx",
+        "frontend/src/app/page.tsx"
       ],
-      "notes": "Added optional gateway probe metrics and parser coverage without changing existing endpoint contract shape for callers."
+      "notes": "Added a new dashboard services-health card, card catalog entry, and renderer support."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/page.tsx",
-        "frontend/src/components/dashboard/AddCardModal.tsx",
+        "frontend/src/components/dashboard/SystemInformationCard.tsx",
+        "frontend/src/components/dashboard/NtpStatusCard.tsx",
+        "frontend/src/components/dashboard/DiskUsageCard.tsx",
+        "frontend/src/components/dashboard/InterfaceStatisticsCard.tsx",
+        "frontend/src/components/dashboard/InterfaceOverviewCard.tsx",
         "frontend/src/components/dashboard/GatewayStatusCard.tsx",
-        "frontend/src/components/dashboard/LldpNeighborsCard.tsx",
-        "frontend/src/lib/api/show.ts",
-        "frontend/src/app/system/containers/page.tsx"
+        "frontend/src/components/dashboard/LldpNeighborsCard.tsx"
       ],
-      "notes": "Implemented dashboard layout settings, LLDP card, gateway metrics display, container instance-host editing, and collapsed network management UX."
+      "notes": "Extended card width menus with a 4-column option across all existing dashboard cards."
     },
     {
       "id": "T3",
-      "owner_role": "Test",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "backend/tests/test_gateway_summary.py"
+        "frontend/src/app/page.tsx"
       ],
-      "notes": "Ran backend pytest and frontend typecheck/lint/build/runtime+UI smoke gates."
+      "notes": "Clamped active drag span against current layout column count to prevent out-of-range placement behavior."
     },
     {
       "id": "T4",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [],
+      "notes": "Executed frontend tsc/lint/build + runtime/browser smoke checks after implementation."
+    },
+    {
+      "id": "T5",
       "owner_role": "Reviewer",
       "status": "doing",
       "files": [
-        "backend/routers/show.py",
-        "frontend/src/app/page.tsx",
-        "frontend/src/app/system/containers/page.tsx"
+        "frontend/src/components/dashboard/ServicesStatusCard.tsx",
+        "frontend/src/app/page.tsx"
       ],
-      "notes": "Manual review in progress for UX/operational behavior on live instance before final commit."
+      "notes": "Manual UX/runtime review in progress on live instance."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py tests/test_containers_automation_v1.py && cd ../frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
+    "test": "cd frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Dashboard and container UX polish with validation gates",
+      "purpose": "Dashboard monitoring/card configurability polish",
       "status": "active"
     }
   ]

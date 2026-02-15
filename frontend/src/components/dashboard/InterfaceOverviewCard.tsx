@@ -359,6 +359,12 @@ export function InterfaceOverviewCard({
                         {span === 3 && <span className="ml-2 text-primary">✓</span>}
                       </div>
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onSpanChange(4)}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>Full (4 columns)</span>
+                        {span === 4 && <span className="ml-2 text-primary">✓</span>}
+                      </div>
+                    </DropdownMenuItem>
                   </>
                 )}
                 {onConfigChange && (

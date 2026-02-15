@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock3, HardDrive, Link2, Network, Plus, Route, Server, Waypoints } from "lucide-react";
+import { Activity, Clock3, HardDrive, Link2, Network, Plus, Route, Server, Waypoints } from "lucide-react";
 
 interface AvailableCard {
   type: string;
@@ -61,6 +61,12 @@ const AVAILABLE_CARDS: AvailableCard[] = [
     name: "LLDP Neighbors",
     description: "Track discovered neighbors by local interface, system name, and port",
     icon: Waypoints,
+  },
+  {
+    type: "services-status",
+    name: "Services Status",
+    description: "Quick health view for SSH, DNS, DHCP, NTP, LLDP, and mDNS services",
+    icon: Activity,
   },
   // Future cards will be added here
 ];
