@@ -1,69 +1,58 @@
 {
-  "feature_id": "lldp-cpu-firewall-guides-r1-2026-02-15",
-  "title": "LLDP dashboard visibility and firewall guide UX pass",
+  "feature_id": "gateway-probe-metrics-r2-2026-02-15",
+  "title": "Gateway Status card RTT/RTTsd/Loss hardening",
   "status": "in_review",
   "acceptance_criteria": [
-    "LLDP Neighbors dashboard card refreshes live and displays discovered neighbors when LLDP is active.",
-    "System Information card always shows CPU temperature state (numeric value or Unavailable).",
-    "Firewall pages include in-page How-To dialogs: policies, groups, global options, bridge, and flowtables.",
-    "Guide validation content is GUI-first and no longer instructs CLI command checks.",
-    "Frontend validation gates pass (tsc, lint, build, runtime smoke, UI smoke)."
+    "Gateway summary parses RTT/Loss from multiple ping output formats including reduced summaries.",
+    "Gateway summary derives probe target from DHCP lease routers when route next-hop is unavailable.",
+    "Gateway probe attempts multiple ping command variants and falls back to generate when show ping is unsupported.",
+    "Backend tests cover parser and fallback behavior.",
+    "Runtime smoke checks pass after backend restart."
   ],
   "assumptions": [
-    "LLDP card stale state came from non-refresh reads against cached config paths.",
-    "Help-guide text changes are UX-only and do not alter backend behavior.",
-    "Existing unrelated worktree changes remain untouched."
+    "Some VyOS builds output ping stats without mdev/stddev fields.",
+    "DHCP WAN default routes can be reported as default dev <iface> without explicit next-hop.",
+    "Unrelated dirty files in the working tree are pre-existing and out of scope for this hotfix."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "UI",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/src/components/dashboard/LldpNeighborsCard.tsx",
-        "frontend/src/components/dashboard/SystemInformationCard.tsx",
-        "frontend/src/lib/help/pageGuides.ts",
-        "frontend/src/app/firewall/bridge/page.tsx",
-        "frontend/src/app/firewall/flowtables/page.tsx",
-        "frontend/src/app/firewall/global-options/page.tsx",
-        "frontend/src/app/firewall/groups/page.tsx",
-        "frontend/src/app/firewall/policies/page.tsx"
+        "backend/routers/show.py"
       ],
-      "notes": "Implemented LLDP refresh behavior, CPU temp always-visible badge, and firewall how-to coverage with GUI-first validation text."
+      "notes": "Hardened route parser, ping metric parsing, DHCP lease gateway extraction, and ping command fallbacks."
     },
     {
       "id": "T2",
       "owner_role": "Test",
       "status": "done",
-      "files": [],
-      "notes": "Executed frontend tsc/lint/build plus runtime/browser smoke validation."
+      "files": [
+        "backend/tests/test_gateway_summary.py"
+      ],
+      "notes": "Added parser/fallback tests and ran targeted backend suites."
     },
     {
       "id": "T3",
       "owner_role": "Reviewer",
-      "status": "doing",
+      "status": "done",
       "files": [
-        "frontend/src/components/dashboard/LldpNeighborsCard.tsx",
-        "frontend/src/components/dashboard/SystemInformationCard.tsx",
-        "frontend/src/lib/help/pageGuides.ts",
-        "frontend/src/app/firewall/bridge/page.tsx",
-        "frontend/src/app/firewall/flowtables/page.tsx",
-        "frontend/src/app/firewall/global-options/page.tsx",
-        "frontend/src/app/firewall/groups/page.tsx",
-        "frontend/src/app/firewall/policies/page.tsx"
+        "backend/routers/show.py",
+        "backend/tests/test_gateway_summary.py"
       ],
-      "notes": "Manual verification pending in live UI."
+      "notes": "Manual review completed; no API contract changes introduced."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py tests/test_system_lldp_parsing.py tests/test_system_dashboard_temperature.py tests/test_safe_apply.py",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Dashboard/runtime and firewall guide UX refinement",
+      "purpose": "Gateway dashboard probe metrics hardening",
       "status": "active"
     }
   ]

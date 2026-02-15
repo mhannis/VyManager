@@ -12,6 +12,7 @@ import asyncio
 from datetime import datetime, timezone
 import logging
 import re
+import statistics
 import threading
 from starlette.concurrency import run_in_threadpool
 
@@ -241,11 +242,16 @@ def parse_active_ipv4_default_route(output: str) -> Tuple[Optional[str], Optiona
     # FRR "Routing entry for ..." detailed output.
     if re.search(r"\bRouting entry for\s+0\.0\.0\.0/0\b", cleaned, re.IGNORECASE):
         for line in lines:
-            match = re.match(rf"^\s*\*\s+{ipv4}\s*,\s*via\s+{iface}\b", line, re.IGNORECASE)
+            # Handle variants such as:
+            #   * 203.0.113.1, via eth0, weight 1, 00:00:10
+            #   * 203.0.113.1, from 203.0.113.2, via eth0, 00:00:10
+            match = re.match(rf"^\s*\*\s+{ipv4}\b(?P<rest>.*)$", line, re.IGNORECASE)
             if not match:
                 continue
             gw = match.group("gw").strip()
-            iface_name = match.group("iface").strip()
+            rest = match.group("rest") or ""
+            iface_match = re.search(rf"\bvia\s+{iface}\b", rest, re.IGNORECASE)
+            iface_name = iface_match.group("iface").strip() if iface_match else ""
             if _is_valid_ipv4(gw) and iface_name:
                 return gw, iface_name, protocol
 
@@ -317,6 +323,23 @@ def parse_ping_probe_metrics(output: str) -> Tuple[Optional[float], Optional[flo
             loss_percent = float(loss_match.group(1))
         except Exception:
             loss_percent = None
+    else:
+        # Fallback parser for summaries like:
+        #   "3 packets transmitted, 3 received"
+        #   "3 packets transmitted, 0 packets received"
+        tx_rx_match = re.search(
+            r"\b(\d+)\s+packets transmitted,\s*(\d+)\s+(?:packets\s+)?received\b",
+            cleaned,
+            re.IGNORECASE,
+        )
+        if tx_rx_match:
+            try:
+                transmitted = int(tx_rx_match.group(1))
+                received = int(tx_rx_match.group(2))
+                if transmitted > 0:
+                    loss_percent = max(0.0, min(100.0, ((transmitted - received) / transmitted) * 100.0))
+            except Exception:
+                loss_percent = None
 
     # Linux ping style: rtt min/avg/max/mdev = 0.045/0.045/0.045/0.000 ms
     rtt_match = re.search(
@@ -341,6 +364,30 @@ def parse_ping_probe_metrics(output: str) -> Tuple[Optional[float], Optional[flo
             return float(round_trip_match.group(2)), float(round_trip_match.group(4)), loss_percent
         except Exception:
             return None, None, loss_percent
+
+    # Reduced summary format on some ping variants:
+    #   rtt min/avg/max = 0.123/0.456/0.789 ms
+    short_rtt_match = re.search(
+        r"(?:rtt|round-trip)\s+min/avg/max\s*=\s*([0-9.]+)/([0-9.]+)/([0-9.]+)\s*ms",
+        cleaned,
+        re.IGNORECASE,
+    )
+    if short_rtt_match:
+        try:
+            return float(short_rtt_match.group(2)), None, loss_percent
+        except Exception:
+            return None, None, loss_percent
+
+    # Per-echo fallback. If summary lines are missing or non-standard, derive
+    # average and stddev from individual response times.
+    samples = [
+        float(raw)
+        for raw in re.findall(r"\btime[=<]?\s*([0-9]+(?:\.[0-9]+)?)\s*ms\b", cleaned, re.IGNORECASE)
+    ]
+    if samples:
+        avg = sum(samples) / len(samples)
+        stddev = statistics.pstdev(samples) if len(samples) > 1 else 0.0
+        return avg, stddev, loss_percent
 
     return None, None, loss_percent
 
@@ -744,6 +791,71 @@ def _parse_dhcp_client_leases_by_interface(output: str) -> Dict[str, List[str]]:
             mapping[iface] = addresses
 
     return mapping
+
+
+def _parse_dhcp_lease_gateway_ips(output: str, interface_name: Optional[str] = None) -> List[str]:
+    """
+    Parse DHCP lease output and return discovered gateway/router IPv4 addresses.
+
+    Supports common forms such as:
+      option routers 192.168.1.1;
+      routers 192.168.1.1, 192.168.1.254;
+      gateway 192.168.1.1
+      Router: 192.168.1.1
+    """
+    if not output or not isinstance(output, str):
+        return []
+
+    cleaned_output = re.sub(r"\x1B\[[0-?]*[ -/]*[@-~]", "", output)
+    search_text = cleaned_output
+
+    if interface_name:
+        # Narrow to a single interface block when present.
+        block_lines: List[str] = []
+        in_target_block = False
+
+        for raw_line in cleaned_output.splitlines():
+            line = raw_line.rstrip("\r")
+            stripped = line.strip()
+            if not stripped:
+                continue
+
+            iface_match = re.match(
+                r"(?i)^\s*interface\s*(?:[:=]\s*|\s+)\s*([A-Za-z0-9._:-]+)\b",
+                stripped,
+            )
+            if iface_match:
+                in_target_block = iface_match.group(1) == interface_name
+                if in_target_block:
+                    block_lines.append(line)
+                continue
+
+            if in_target_block:
+                block_lines.append(line)
+
+        if block_lines:
+            search_text = "\n".join(block_lines)
+
+    found: List[str] = []
+    seen = set()
+
+    # Lease-file style routers option (can contain comma-separated IPs).
+    for match in re.finditer(r"(?i)\b(?:option\s+)?routers?\s+([^;\n]+)", search_text):
+        for ip in re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", match.group(1)):
+            if _is_valid_ipv4(ip) and ip not in seen:
+                seen.add(ip)
+                found.append(ip)
+
+    # Human-readable status style.
+    for ip in re.findall(
+        r"(?i)\b(?:gateway|router)\b\s*(?:[:=]\s*|\s+)((?:\d{1,3}\.){3}\d{1,3})\b",
+        search_text,
+    ):
+        if _is_valid_ipv4(ip) and ip not in seen:
+            seen.add(ip)
+            found.append(ip)
+
+    return found
 
 
 def _collect_dhcp_lease_output_for_interface(service: Any, interface_name: str) -> str:
@@ -1452,26 +1564,70 @@ async def get_gateway_summary(request: Request, refresh: bool = False) -> Gatewa
         probe_target: Optional[str] = next_hop
         if not probe_target and configured_ipv4_default and configured_ipv4_default.next_hops:
             probe_target = configured_ipv4_default.next_hops[0]
-
-        if probe_target and _is_valid_ipv4(probe_target):
+        if not probe_target and selected_interface:
             try:
-                ping_response = await run_in_threadpool(
-                    service.device.show,
-                    path=["ping", probe_target, "count", "3", "deadline", "4"],
+                lease_output = await run_in_threadpool(
+                    _collect_dhcp_lease_output_for_interface,
+                    service,
+                    selected_interface,
                 )
-                if ping_response.status == 200:
-                    ping_output = extract_show_output(ping_response.result)
-                    (
-                        rtt_ms,
-                        rttsd_ms,
-                        loss_percent,
-                    ) = parse_ping_probe_metrics(ping_output)
-                else:
-                    error_text = ping_response.error or "unsupported"
-                    warnings.append(f"Gateway probe unavailable for {probe_target}: {error_text}")
+                lease_gateways = _parse_dhcp_lease_gateway_ips(
+                    lease_output,
+                    interface_name=selected_interface,
+                )
+                if lease_gateways:
+                    probe_target = lease_gateways[0]
             except Exception as e:
                 warnings.append(
-                    f"Gateway probe unavailable for {probe_target}: {type(e).__name__}: {str(e)}"
+                    f"Gateway lease probe failed for {selected_interface}: {type(e).__name__}: {str(e)}"
+                )
+
+        if probe_target and _is_valid_ipv4(probe_target):
+            probe_paths: List[List[str]] = []
+            if selected_interface:
+                probe_paths.extend(
+                    [
+                        ["ping", probe_target, "interface", selected_interface, "count", "3", "deadline", "4"],
+                        ["ping", probe_target, "interface", selected_interface, "count", "3"],
+                    ]
+                )
+            probe_paths.extend(
+                [
+                    ["ping", probe_target, "count", "3", "deadline", "4"],
+                    ["ping", probe_target, "count", "3"],
+                    ["ping", probe_target],
+                ]
+            )
+            probe_succeeded = False
+            last_error: Optional[str] = None
+
+            for ping_path in probe_paths:
+                try:
+                    ping_response = await run_in_threadpool(service.device.show, path=ping_path)
+                except Exception as e:
+                    # Fallback to generate path on builds where show ping is unavailable.
+                    try:
+                        ping_response = await run_in_threadpool(service.device.generate, path=ping_path)
+                    except Exception as generate_error:
+                        last_error = f"{type(generate_error).__name__}: {str(generate_error)}"
+                        continue
+
+                if ping_response.status != 200:
+                    last_error = ping_response.error or "unsupported"
+                    continue
+
+                ping_output = extract_show_output(ping_response.result)
+                (
+                    rtt_ms,
+                    rttsd_ms,
+                    loss_percent,
+                ) = parse_ping_probe_metrics(ping_output)
+                probe_succeeded = True
+                break
+
+            if not probe_succeeded:
+                warnings.append(
+                    f"Gateway probe unavailable for {probe_target}: {last_error or 'unsupported'}"
                 )
 
         return GatewaySummaryResponse(

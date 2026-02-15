@@ -179,3 +179,4 @@
 - 2026-02-15: LLDP dashboard card now always fetches status with `refresh=true` for initial and periodic updates to avoid stale zero-neighbor state caused by cached config reads.
 - 2026-02-15: System Information card now always shows a CPU temperature badge and uses `Unavailable` when no sensor data is reported, improving clarity versus conditionally hiding the metric.
 - 2026-02-15: Added How-To dialogs to firewall Policies, Groups, Global Options, Bridge, and Flowtables pages; guide validation sections were rewritten to GUI-first steps and removed CLI command-check instructions.
+- 2026-02-15: Gateway probe metrics now use layered fallbacks: expanded ping output parsing (`mdev/stddev`, short min/avg/max, per-echo samples), DHCP lease router extraction when default route has no next-hop, and show->generate ping fallback across interface/non-interface probe variants.

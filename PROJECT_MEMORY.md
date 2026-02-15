@@ -54,49 +54,42 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Fix dashboard/runtime visibility issues and continue GUI-first usability polish.
-- Ensure firewall pages expose in-page How-To guidance consistently.
-- Keep all help content validation guidance GUI-first (avoid CLI-centric validation steps).
-- Keep strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) after every UX slice.
+- Fix Gateway Status card probe metrics so `RTT`, `RTTsd`, and `Loss` populate on more VyOS builds.
+- Preserve existing API contracts and keep implementation thin within `backend/routers/show.py`.
+- Keep runtime safety gate after backend changes (`pytest -> restart vm-api -> smoke:runtime -> smoke:ui`).
 
 ## Current Feature Spec
-Feature: **LLDP dashboard visibility + CPU temp UX + firewall how-to coverage**
+Feature: **Gateway Status probe metrics hardening**
 
 Acceptance criteria:
-- LLDP Neighbors dashboard card refreshes against live status and shows neighbors when LLDP is active.
-- System Information card always exposes CPU temperature status (`value` or `Unavailable`).
-- Firewall pages (Policies, Groups, Global Options, Bridge, Flowtables, existing Zones) have in-page How-To access.
-- Help text validation sections are GUI-first and do not instruct CLI command checks.
-- End-to-end validation passes: frontend `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
+- Gateway endpoint parses additional ping summary formats and packet-loss variants.
+- Gateway endpoint derives probe target from DHCP lease routers when route next-hop is unavailable.
+- Gateway endpoint attempts multiple ping path variants and falls back to `generate` when `show ping` is unsupported.
+- Gateway backend tests pass for parser and fallback scenarios.
+- Runtime remains healthy after restart (`smoke:runtime`, `smoke:ui` pass).
 
 Assumptions:
-- LLDP card stale state was caused by non-refresh status fetches on cached config.
-- Help content changes are documentation/UX only and do not alter backend behavior.
+- Active default route can be `default dev <iface>` with no explicit next-hop on DHCP WAN.
+- Some VyOS builds expose different ping output formats (`mdev/stddev` may be absent).
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: LLDP/CPU/firewall-how-to UX slice implemented and validated; commit pending.
+- Status: gateway probe metrics slice implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/components/dashboard/LldpNeighborsCard.tsx`
-- `frontend/src/components/dashboard/SystemInformationCard.tsx`
-- `frontend/src/lib/help/pageGuides.ts`
-- `frontend/src/app/firewall/bridge/page.tsx`
-- `frontend/src/app/firewall/flowtables/page.tsx`
-- `frontend/src/app/firewall/global-options/page.tsx`
-- `frontend/src/app/firewall/groups/page.tsx`
-- `frontend/src/app/firewall/policies/page.tsx`
+- `backend/routers/show.py`
+- `backend/tests/test_gateway_summary.py`
 
 ### Validation This Cycle
-- `cd frontend && npx tsc --noEmit --pretty false` -> pass
-- `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
-- `cd frontend && npm run -s build` -> pass
-- Restarted runtime process:
-  - `tmux kill-session -t vm-ui || true`
-  - `tmux new-session -d -s vm-ui 'cd /home/redhot/VyOS/VyManager/frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000'`
-  - `ss -ltnp | rg ':3000'` -> listening
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py` -> pass (`14 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py tests/test_system_dashboard_temperature.py` -> pass (`6 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_safe_apply.py` -> pass (`5 passed`)
+- Restarted API process:
+  - `tmux kill-session -t vm-api || true`
+  - `tmux new-session -d -s vm-api 'cd /home/redhot/VyOS/VyManager/backend && set -a; [ -f .env ] && source .env; set +a; ./.venv/bin/python -m uvicorn app:app --host 0.0.0.0 --port 8000 --proxy-headers'`
+  - `ss -ltnp | rg ':8000'` -> listening
 - `cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime` -> pass
 - `cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui` -> pass
 
@@ -217,3 +210,6 @@ Assumptions:
 - Container Management now includes container network CRUD (backend endpoints `/vyos/containers/networks*` and GUI editing/listing in `frontend/src/app/system/containers/page.tsx`).
 - Added dedicated Dummy Interfaces management page at `/network/interfaces/dummy` with create/edit/delete via `/vyos/dummy/batch`; navigation now links this page under `Network`.
 - Runtime smoke route sets now include `/network/interfaces/dummy` in both `check-runtime.sh` and `smoke-ui.mjs` so regressions on the new page are caught pre-handoff.
+- Gateway probe parser now supports reduced ping summaries (`min/avg/max`) and per-echo time fallback to compute average/stddev when summary lines are absent.
+- Gateway probe target now falls back to DHCP lease router extraction for DHCP default routes that only expose `default dev <iface>`.
+- Gateway probe now tries interface-scoped and generic ping variants and falls back from `show` to `generate` on unsupported builds.

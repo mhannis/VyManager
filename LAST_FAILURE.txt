@@ -1,8 +1,15 @@
-2026-02-15T03:56:00Z
-failing command: jq . FEATURE_STATE.json >/dev/null && echo OK
-error summary: Validation helper command failed because jq is not installed in this environment. Feature state file still appears syntactically valid from direct write path, but machine-check command could not run.
+2026-02-15T08:20:00Z
+failing command: cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py
+error summary: Newly added DHCP-lease fallback test failed because the dummy device raised AssertionError for unsupported lease probe command paths, causing lease-target derivation to abort in test scaffolding.
 
 last output excerpt:
-/bin/bash: line 1: jq: command not found
+............F.
+=================================== FAILURES ===================================
+__________ test_gateway_summary_probe_target_derived_from_dhcp_lease ___________
+E       assert None == 2.0 ± 2.0e-06
+E         Obtained: None
+E         Expected: 2.0 ± 2.0e-06
+FAILED tests/test_gateway_summary.py::test_gateway_summary_probe_target_derived_from_dhcp_lease
+1 failed, 13 passed in 0.46s
 
-suspected cause + next step: Missing optional CLI dependency. Use Python (python3 -m json.tool FEATURE_STATE.json) for JSON validation instead of jq on this host.
+suspected cause + next step: Test dummy response behavior was too strict. Updated dummy to return HTTP 400 for unknown paths instead of throwing, then reran tests successfully.
