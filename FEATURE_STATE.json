@@ -1,59 +1,54 @@
 {
-  "feature_id": "traffic-policy-qos-depth-2026-02-15",
-  "title": "Traffic Policy parity deepening: traffic-policy + qos policy structured editors",
+  "feature_id": "high-availability-virtual-server-depth-2026-02-15",
+  "title": "High Availability virtual-server parity deepening (IPVS virtual-server + real-server CRUD)",
   "status": "done",
   "acceptance_criteria": [
-    "Backend exposes scoped `/vyos/qos` config-tree wrapper endpoints without replacing existing VyOS service architecture.",
-    "`/network/traffic-policy` supports both `traffic-policy` and `qos policy` trees with structured form inputs (no free-form command text entry).",
-    "Save path emits scoped diff-based set/delete operations for both trees.",
+    "`/network/high-availability` supports form-driven CRUD for `high-availability virtual-server` entries.",
+    "Nested real-server CRUD supports `port`, `connection-timeout`, and `health-check script` leaves.",
+    "Save path emits diff-based set/delete operations for both VRRP and virtual-server subtrees without API contract changes.",
     "Validation passes: backend test_app, frontend tsc/lint/build, runtime smoke, and browser smoke."
   ],
   "assumptions": [
-    "This slice covers high-value policy-level QoS options; class-level QoS subtrees remain additive follow-up work.",
-    "Interface-level policy assignment remains under interface configuration pages.",
+    "Existing backend high-availability tree wrapper is sufficient for virtual-server operations.",
+    "Virtual-server names use token forms aligned with current VyOS documentation examples.",
     "Unrelated dirty files in this worktree remain untouched."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "Backend",
-      "status": "done",
-      "files": [
-        "backend/routers/qos/__init__.py",
-        "backend/routers/qos/qos.py",
-        "backend/app.py"
-      ],
-      "notes": "Added thin config-tree wrapper router for qos under existing API model."
-    },
-    {
-      "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/network/traffic-policy/page.tsx",
-        "frontend/src/lib/api/qos.ts"
+        "frontend/src/app/network/high-availability/page.tsx"
       ],
-      "notes": "Implemented combined traffic-policy + qos policy form editors and diff-based saves."
+      "notes": "Added virtual-server + real-server CRUD sections and integrated state parsing from config tree."
+    },
+    {
+      "id": "T2",
+      "owner_role": "Backend",
+      "status": "done",
+      "files": [
+        "backend/routers/high_availability/high_availability.py"
+      ],
+      "notes": "No backend changes required; existing scoped config-tree wrapper already supports this subtree."
     },
     {
       "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/app.py",
-        "frontend/src/app/network/traffic-policy/page.tsx"
+        "frontend/src/app/network/high-availability/page.tsx"
       ],
-      "notes": "Validated backend route import and full frontend runtime smoke gates."
+      "notes": "Validated via backend pytest, frontend tsc/lint/build, runtime smoke, and UI smoke."
     },
     {
       "id": "T4",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/app/network/traffic-policy/page.tsx",
-        "backend/routers/qos/qos.py"
+        "frontend/src/app/network/high-availability/page.tsx"
       ],
-      "notes": "Manual review completed; no blocking issues found."
+      "notes": "Manual review completed in-session; no blocking issues found."
     }
   ],
   "commands": {
@@ -64,7 +59,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Parity implementation and validation",
+      "purpose": "Parity implementation and runtime validation",
       "status": "active"
     }
   ]

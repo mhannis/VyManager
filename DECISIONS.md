@@ -127,3 +127,6 @@
 - 2026-02-15: Added a dedicated thin `/vyos/qos` config-tree router so Traffic Policy UI can manage guide-covered `qos policy` commands without broad backend refactors.
 - 2026-02-15: `/network/traffic-policy` now intentionally covers both `traffic-policy` and `qos policy` trees in one form-driven surface to reduce navigation sprawl and improve parity velocity.
 - 2026-02-15: Backlog now includes a mandatory post-parity robustness relook sweep across all previously implemented domains before declaring completion.
+- 2026-02-15: Deepened `/network/high-availability` with form-driven `virtual-server` and nested `real-server` CRUD on the existing page instead of adding a new route; this keeps IA stable while extending IPVS parity coverage.
+- 2026-02-15: Reused existing `/vyos/high-availability` config-tree wrapper for `virtual-server` operations (no backend API change) to preserve contracts and reduce regression risk.
+- 2026-02-15: Implemented virtual-server save behavior as diff-based set/delete command generation (including nested real-server leaves) to avoid destructive subtree resets and keep Safe Apply changes scoped.

@@ -86,6 +86,25 @@ type SyncGroup = {
   healthCheck: HealthCheck;
 };
 
+type RealServer = {
+  address: string;
+  port: string;
+  connectionTimeout: string;
+  healthCheckScript: string;
+};
+
+type VirtualServer = {
+  name: string;
+  algorithm: string;
+  delayLoop: string;
+  forwardMethod: string;
+  fwmark: string;
+  port: string;
+  persistenceTimeout: string;
+  protocol: string;
+  realServers: RealServer[];
+};
+
 const EMPTY_HEALTH_CHECK: HealthCheck = {
   script: "",
   interval: "",
@@ -139,6 +158,38 @@ const EMPTY_SYNC_DRAFT: SyncGroup = {
   members: [],
   healthCheck: { ...EMPTY_HEALTH_CHECK },
 };
+
+const EMPTY_VIRTUAL_SERVER_DRAFT: VirtualServer = {
+  name: "",
+  algorithm: "least-connection",
+  delayLoop: "",
+  forwardMethod: "nat",
+  fwmark: "",
+  port: "",
+  persistenceTimeout: "",
+  protocol: "tcp",
+  realServers: [],
+};
+
+const EMPTY_REAL_SERVER_DRAFT: RealServer = {
+  address: "",
+  port: "",
+  connectionTimeout: "",
+  healthCheckScript: "",
+};
+
+const VS_ALGORITHM_OPTIONS = [
+  "round-robin",
+  "weighted-round-robin",
+  "least-connection",
+  "weighted-least-connection",
+  "source-hashing",
+  "destination-hashing",
+  "locality-based-least-connection",
+];
+
+const VS_FORWARD_METHOD_OPTIONS = ["nat", "direct", "tunnel"];
+const VS_PROTOCOL_OPTIONS = ["tcp", "udp"];
 
 function normalizeText(value: string): string {
   return value.trim();
@@ -231,6 +282,37 @@ function syncGroupEqual(left: SyncGroup, right: SyncGroup): boolean {
   );
 }
 
+function realServerEqual(left: RealServer, right: RealServer): boolean {
+  return (
+    left.address === right.address &&
+    left.port === right.port &&
+    left.connectionTimeout === right.connectionTimeout &&
+    left.healthCheckScript === right.healthCheckScript
+  );
+}
+
+function virtualServerEqual(left: VirtualServer, right: VirtualServer): boolean {
+  const leftRealServers = [...left.realServers].sort((a, b) =>
+    a.address.localeCompare(b.address, undefined, { numeric: true })
+  );
+  const rightRealServers = [...right.realServers].sort((a, b) =>
+    a.address.localeCompare(b.address, undefined, { numeric: true })
+  );
+
+  return (
+    left.name === right.name &&
+    left.algorithm === right.algorithm &&
+    left.delayLoop === right.delayLoop &&
+    left.forwardMethod === right.forwardMethod &&
+    left.fwmark === right.fwmark &&
+    left.port === right.port &&
+    left.persistenceTimeout === right.persistenceTimeout &&
+    left.protocol === right.protocol &&
+    leftRealServers.length === rightRealServers.length &&
+    leftRealServers.every((entry, index) => realServerEqual(entry, rightRealServers[index]))
+  );
+}
+
 function asObject(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return {};
@@ -254,12 +336,14 @@ export default function HighAvailabilityPage() {
 
   const [groups, setGroups] = useState<VrrpGroup[]>([]);
   const [syncGroups, setSyncGroups] = useState<SyncGroup[]>([]);
+  const [virtualServers, setVirtualServers] = useState<VirtualServer[]>([]);
 
   const [globalParams, setGlobalParams] = useState<GlobalParams>(EMPTY_GLOBAL_PARAMS);
 
   const [currentGroups, setCurrentGroups] = useState<VrrpGroup[]>([]);
   const [currentSyncGroups, setCurrentSyncGroups] = useState<SyncGroup[]>([]);
   const [currentGlobalParams, setCurrentGlobalParams] = useState<GlobalParams>(EMPTY_GLOBAL_PARAMS);
+  const [currentVirtualServers, setCurrentVirtualServers] = useState<VirtualServer[]>([]);
 
   const [groupDraft, setGroupDraft] = useState<VrrpGroup>(EMPTY_VRRP_DRAFT);
   const [groupAddressesInput, setGroupAddressesInput] = useState("");
@@ -268,6 +352,11 @@ export default function HighAvailabilityPage() {
 
   const [syncDraft, setSyncDraft] = useState<SyncGroup>(EMPTY_SYNC_DRAFT);
   const [syncMembersInput, setSyncMembersInput] = useState("");
+  const [virtualServerDraft, setVirtualServerDraft] = useState<VirtualServer>(EMPTY_VIRTUAL_SERVER_DRAFT);
+  const [editingVirtualServerName, setEditingVirtualServerName] = useState<string | null>(null);
+  const [selectedVirtualServerName, setSelectedVirtualServerName] = useState("");
+  const [realServerDraft, setRealServerDraft] = useState<RealServer>(EMPTY_REAL_SERVER_DRAFT);
+  const [editingRealServerAddress, setEditingRealServerAddress] = useState<string | null>(null);
 
   const [interfaceOptions, setInterfaceOptions] = useState<Array<{ value: string; label: string }>>([]);
 
@@ -283,6 +372,11 @@ export default function HighAvailabilityPage() {
   const groupNames = useMemo(
     () => groups.map((group) => group.name).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
     [groups]
+  );
+
+  const selectedVirtualServer = useMemo(
+    () => virtualServers.find((entry) => entry.name === selectedVirtualServerName) || null,
+    [virtualServers, selectedVirtualServerName]
   );
 
   const loadData = useCallback(async (refresh = false) => {
@@ -386,6 +480,41 @@ export default function HighAvailabilityPage() {
         .filter((entry) => entry.name)
         .sort((left, right) => left.name.localeCompare(right.name, undefined, { numeric: true }));
 
+      const virtualServerRoot = asObject(config["virtual-server"]);
+      const parsedVirtualServers: VirtualServer[] = Object.entries(virtualServerRoot)
+        .map(([name, value]) => {
+          const root = asObject(value);
+          const realServerRoot = asObject(root["real-server"]);
+
+          const parsedRealServers: RealServer[] = Object.entries(realServerRoot)
+            .map(([address, realValue]) => {
+              const realRoot = asObject(realValue);
+              const healthRoot = asObject(realRoot["health-check"]);
+              return {
+                address: normalizeText(address),
+                port: normalizeText(asText(realRoot.port)),
+                connectionTimeout: normalizeText(asText(realRoot["connection-timeout"])),
+                healthCheckScript: normalizeText(asText(healthRoot.script)),
+              };
+            })
+            .filter((entry) => entry.address)
+            .sort((left, right) => left.address.localeCompare(right.address, undefined, { numeric: true }));
+
+          return {
+            name: normalizeText(name),
+            algorithm: normalizeText(asText(root.algorithm || "least-connection")) || "least-connection",
+            delayLoop: normalizeText(asText(root["delay-loop"])),
+            forwardMethod: normalizeText(asText(root["forward-method"] || "nat")) || "nat",
+            fwmark: normalizeText(asText(root.fwmark)),
+            port: normalizeText(asText(root.port)),
+            persistenceTimeout: normalizeText(asText(root["persistence-timeout"])),
+            protocol: normalizeText(asText(root.protocol || "tcp")) || "tcp",
+            realServers: parsedRealServers,
+          };
+        })
+        .filter((entry) => entry.name)
+        .sort((left, right) => left.name.localeCompare(right.name, undefined, { numeric: true }));
+
       const interfaceNames = new Set<string>();
       const descriptionByName = ethernetConfig.interfaces.reduce<Record<string, string | null>>(
         (acc, iface) => {
@@ -414,9 +543,11 @@ export default function HighAvailabilityPage() {
       setGlobalParams(parsedGlobal);
       setGroups(parsedGroups);
       setSyncGroups(parsedSyncGroups);
+      setVirtualServers(parsedVirtualServers);
       setCurrentGlobalParams(parsedGlobal);
       setCurrentGroups(parsedGroups);
       setCurrentSyncGroups(parsedSyncGroups);
+      setCurrentVirtualServers(parsedVirtualServers);
 
       setGroupDraft({ ...EMPTY_VRRP_DRAFT, interface: normalizedInterfaces[0]?.value || "" });
       setGroupAddressesInput("");
@@ -424,6 +555,11 @@ export default function HighAvailabilityPage() {
       setGroupTrackInput("");
       setSyncDraft(EMPTY_SYNC_DRAFT);
       setSyncMembersInput("");
+      setVirtualServerDraft(EMPTY_VIRTUAL_SERVER_DRAFT);
+      setEditingVirtualServerName(null);
+      setSelectedVirtualServerName(parsedVirtualServers[0]?.name || "");
+      setRealServerDraft(EMPTY_REAL_SERVER_DRAFT);
+      setEditingRealServerAddress(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load high-availability configuration");
     } finally {
@@ -542,6 +678,197 @@ export default function HighAvailabilityPage() {
 
   const removeSyncGroup = (name: string) => {
     setSyncGroups((previous) => previous.filter((entry) => entry.name !== name));
+  };
+
+  const resetVirtualServerDraft = () => {
+    setVirtualServerDraft(EMPTY_VIRTUAL_SERVER_DRAFT);
+    setEditingVirtualServerName(null);
+  };
+
+  const saveVirtualServerDraft = () => {
+    setError(null);
+
+    const entry: VirtualServer = {
+      name: normalizeText(virtualServerDraft.name),
+      algorithm: normalizeText(virtualServerDraft.algorithm) || "least-connection",
+      delayLoop: normalizeText(virtualServerDraft.delayLoop),
+      forwardMethod: normalizeText(virtualServerDraft.forwardMethod) || "nat",
+      fwmark: normalizeText(virtualServerDraft.fwmark),
+      port: normalizeText(virtualServerDraft.port),
+      persistenceTimeout: normalizeText(virtualServerDraft.persistenceTimeout),
+      protocol: normalizeText(virtualServerDraft.protocol) || "tcp",
+      realServers:
+        virtualServers.find((item) => item.name === (editingVirtualServerName || virtualServerDraft.name))
+          ?.realServers || [],
+    };
+
+    if (!entry.name) {
+      setError("Virtual server requires an address or alias name.");
+      return;
+    }
+
+    if (!entry.port && !entry.fwmark) {
+      setError("Virtual server requires either a port or an fwmark.");
+      return;
+    }
+
+    if (!editingVirtualServerName && virtualServers.some((item) => item.name === entry.name)) {
+      setError("Virtual server name already exists.");
+      return;
+    }
+
+    if (
+      editingVirtualServerName &&
+      editingVirtualServerName !== entry.name &&
+      virtualServers.some((item) => item.name === entry.name)
+    ) {
+      setError("Another virtual server already uses this name.");
+      return;
+    }
+
+    setVirtualServers((previous) => {
+      const withoutEdited = editingVirtualServerName
+        ? previous.filter((item) => item.name !== editingVirtualServerName)
+        : previous;
+      return [...withoutEdited, entry].sort((left, right) =>
+        left.name.localeCompare(right.name, undefined, { numeric: true })
+      );
+    });
+
+    setSelectedVirtualServerName(entry.name);
+    resetVirtualServerDraft();
+  };
+
+  const editVirtualServer = (name: string) => {
+    const entry = virtualServers.find((item) => item.name === name);
+    if (!entry) return;
+    setVirtualServerDraft({
+      name: entry.name,
+      algorithm: entry.algorithm || "least-connection",
+      delayLoop: entry.delayLoop,
+      forwardMethod: entry.forwardMethod || "nat",
+      fwmark: entry.fwmark,
+      port: entry.port,
+      persistenceTimeout: entry.persistenceTimeout,
+      protocol: entry.protocol || "tcp",
+      realServers: [],
+    });
+    setEditingVirtualServerName(name);
+    setSelectedVirtualServerName(name);
+  };
+
+  const removeVirtualServer = (name: string) => {
+    setVirtualServers((previous) => {
+      const remaining = previous.filter((item) => item.name !== name);
+      if (selectedVirtualServerName === name) {
+        setSelectedVirtualServerName(remaining[0]?.name || "");
+      }
+      return remaining;
+    });
+    if (editingVirtualServerName === name) {
+      resetVirtualServerDraft();
+    }
+    if (realServerDraft.address || editingRealServerAddress) {
+      setRealServerDraft(EMPTY_REAL_SERVER_DRAFT);
+      setEditingRealServerAddress(null);
+    }
+  };
+
+  const resetRealServerDraft = () => {
+    setRealServerDraft(EMPTY_REAL_SERVER_DRAFT);
+    setEditingRealServerAddress(null);
+  };
+
+  const editRealServer = (virtualServerName: string, address: string) => {
+    const virtualServer = virtualServers.find((item) => item.name === virtualServerName);
+    const realServer = virtualServer?.realServers.find((item) => item.address === address);
+    if (!realServer) return;
+    setSelectedVirtualServerName(virtualServerName);
+    setRealServerDraft({
+      address: realServer.address,
+      port: realServer.port,
+      connectionTimeout: realServer.connectionTimeout,
+      healthCheckScript: realServer.healthCheckScript,
+    });
+    setEditingRealServerAddress(address);
+  };
+
+  const saveRealServerDraft = () => {
+    setError(null);
+    const virtualServerName = normalizeText(selectedVirtualServerName);
+    if (!virtualServerName) {
+      setError("Select a virtual server before adding real servers.");
+      return;
+    }
+
+    const entry: RealServer = {
+      address: normalizeText(realServerDraft.address),
+      port: normalizeText(realServerDraft.port),
+      connectionTimeout: normalizeText(realServerDraft.connectionTimeout),
+      healthCheckScript: normalizeText(realServerDraft.healthCheckScript),
+    };
+
+    if (!entry.address) {
+      setError("Real server address is required.");
+      return;
+    }
+
+    if (!entry.port) {
+      setError("Real server port is required (use 0 with fwmark virtual servers).");
+      return;
+    }
+
+    const targetVirtualServer = virtualServers.find((item) => item.name === virtualServerName);
+    if (!targetVirtualServer) {
+      setError("Selected virtual server no longer exists.");
+      return;
+    }
+
+    const realServersWithoutEdited = editingRealServerAddress
+      ? targetVirtualServer.realServers.filter((item) => item.address !== editingRealServerAddress)
+      : targetVirtualServer.realServers;
+
+    if (!editingRealServerAddress && realServersWithoutEdited.some((item) => item.address === entry.address)) {
+      setError("Real server address already exists for this virtual server.");
+      return;
+    }
+
+    if (
+      editingRealServerAddress &&
+      editingRealServerAddress !== entry.address &&
+      realServersWithoutEdited.some((item) => item.address === entry.address)
+    ) {
+      setError("Another real server already uses this address.");
+      return;
+    }
+
+    setVirtualServers((previous) =>
+      previous.map((server) => {
+        if (server.name !== virtualServerName) return server;
+
+        return {
+          ...server,
+          realServers: [...realServersWithoutEdited, entry].sort((left, right) =>
+            left.address.localeCompare(right.address, undefined, { numeric: true })
+          ),
+        };
+      })
+    );
+
+    resetRealServerDraft();
+  };
+
+  const removeRealServer = (virtualServerName: string, address: string) => {
+    setVirtualServers((previous) =>
+      previous.map((server) =>
+        server.name === virtualServerName
+          ? { ...server, realServers: server.realServers.filter((item) => item.address !== address) }
+          : server
+      )
+    );
+    if (editingRealServerAddress === address && selectedVirtualServerName === virtualServerName) {
+      resetRealServerDraft();
+    }
   };
 
   const handleSave = async () => {
@@ -813,6 +1140,104 @@ export default function HighAvailabilityPage() {
           operations.push(`set high-availability vrrp sync-group ${name} health-check success-count ${desiredHealth.successCount}`);
         } else if (currentHealth.successCount) {
           operations.push(`delete high-availability vrrp sync-group ${name} health-check success-count`);
+        }
+      }
+
+      const currentVirtualMap = new Map(currentVirtualServers.map((entry) => [entry.name, entry]));
+      const desiredVirtualMap = new Map(virtualServers.map((entry) => [entry.name, entry]));
+
+      for (const [name] of currentVirtualMap.entries()) {
+        if (!desiredVirtualMap.has(name)) {
+          operations.push(`delete high-availability virtual-server ${name}`);
+        }
+      }
+
+      for (const [name, desired] of desiredVirtualMap.entries()) {
+        const current = currentVirtualMap.get(name);
+        if (current && virtualServerEqual(current, desired)) {
+          continue;
+        }
+
+        if (desired.algorithm) {
+          operations.push(`set high-availability virtual-server ${name} algorithm ${desired.algorithm}`);
+        } else if (current?.algorithm) {
+          operations.push(`delete high-availability virtual-server ${name} algorithm`);
+        }
+
+        if (desired.delayLoop) {
+          operations.push(`set high-availability virtual-server ${name} delay-loop ${desired.delayLoop}`);
+        } else if (current?.delayLoop) {
+          operations.push(`delete high-availability virtual-server ${name} delay-loop`);
+        }
+
+        if (desired.forwardMethod) {
+          operations.push(`set high-availability virtual-server ${name} forward-method ${desired.forwardMethod}`);
+        } else if (current?.forwardMethod) {
+          operations.push(`delete high-availability virtual-server ${name} forward-method`);
+        }
+
+        if (desired.fwmark) {
+          operations.push(`set high-availability virtual-server ${name} fwmark ${desired.fwmark}`);
+        } else if (current?.fwmark) {
+          operations.push(`delete high-availability virtual-server ${name} fwmark`);
+        }
+
+        if (desired.port) {
+          operations.push(`set high-availability virtual-server ${name} port ${desired.port}`);
+        } else if (current?.port) {
+          operations.push(`delete high-availability virtual-server ${name} port`);
+        }
+
+        if (desired.persistenceTimeout) {
+          operations.push(
+            `set high-availability virtual-server ${name} persistence-timeout ${desired.persistenceTimeout}`
+          );
+        } else if (current?.persistenceTimeout) {
+          operations.push(`delete high-availability virtual-server ${name} persistence-timeout`);
+        }
+
+        if (desired.protocol) {
+          operations.push(`set high-availability virtual-server ${name} protocol ${desired.protocol}`);
+        } else if (current?.protocol) {
+          operations.push(`delete high-availability virtual-server ${name} protocol`);
+        }
+
+        const currentRealMap = new Map((current?.realServers || []).map((entry) => [entry.address, entry]));
+        const desiredRealMap = new Map(desired.realServers.map((entry) => [entry.address, entry]));
+
+        for (const [address] of currentRealMap.entries()) {
+          if (!desiredRealMap.has(address)) {
+            operations.push(`delete high-availability virtual-server ${name} real-server ${address}`);
+          }
+        }
+
+        for (const [address, desiredReal] of desiredRealMap.entries()) {
+          const currentReal = currentRealMap.get(address);
+          if (currentReal && realServerEqual(currentReal, desiredReal)) {
+            continue;
+          }
+
+          if (desiredReal.port) {
+            operations.push(`set high-availability virtual-server ${name} real-server ${address} port ${desiredReal.port}`);
+          } else if (currentReal?.port) {
+            operations.push(`delete high-availability virtual-server ${name} real-server ${address} port`);
+          }
+
+          if (desiredReal.connectionTimeout) {
+            operations.push(
+              `set high-availability virtual-server ${name} real-server ${address} connection-timeout ${desiredReal.connectionTimeout}`
+            );
+          } else if (currentReal?.connectionTimeout) {
+            operations.push(`delete high-availability virtual-server ${name} real-server ${address} connection-timeout`);
+          }
+
+          if (desiredReal.healthCheckScript) {
+            operations.push(
+              `set high-availability virtual-server ${name} real-server ${address} health-check script ${JSON.stringify(desiredReal.healthCheckScript)}`
+            );
+          } else if (currentReal?.healthCheckScript) {
+            operations.push(`delete high-availability virtual-server ${name} real-server ${address} health-check script`);
+          }
         }
       }
 
@@ -1540,6 +1965,361 @@ export default function HighAvailabilityPage() {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Virtual Servers (IPVS)</CardTitle>
+            <CardDescription>
+              Configure load-balanced virtual services under <code>high-availability virtual-server</code>.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-4">
+              <div className="space-y-2">
+                <Label>Virtual Server Name / Address</Label>
+                <Input
+                  value={virtualServerDraft.name}
+                  onChange={(event) =>
+                    setVirtualServerDraft((previous) => ({ ...previous, name: event.target.value }))
+                  }
+                  placeholder="203.0.113.1"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Algorithm</Label>
+                <Select
+                  value={virtualServerDraft.algorithm || "least-connection"}
+                  onValueChange={(value) =>
+                    setVirtualServerDraft((previous) => ({ ...previous, algorithm: value }))
+                  }
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VS_ALGORITHM_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Forward Method</Label>
+                <Select
+                  value={virtualServerDraft.forwardMethod || "nat"}
+                  onValueChange={(value) =>
+                    setVirtualServerDraft((previous) => ({ ...previous, forwardMethod: value }))
+                  }
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VS_FORWARD_METHOD_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Protocol</Label>
+                <Select
+                  value={virtualServerDraft.protocol || "tcp"}
+                  onValueChange={(value) =>
+                    setVirtualServerDraft((previous) => ({ ...previous, protocol: value }))
+                  }
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VS_PROTOCOL_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-4">
+              <div className="space-y-2">
+                <Label>Port</Label>
+                <Input
+                  value={virtualServerDraft.port}
+                  onChange={(event) =>
+                    setVirtualServerDraft((previous) => ({ ...previous, port: event.target.value }))
+                  }
+                  placeholder="8280"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Fwmark</Label>
+                <Input
+                  value={virtualServerDraft.fwmark}
+                  onChange={(event) =>
+                    setVirtualServerDraft((previous) => ({ ...previous, fwmark: event.target.value }))
+                  }
+                  placeholder="111"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Delay Loop</Label>
+                <Input
+                  value={virtualServerDraft.delayLoop}
+                  onChange={(event) =>
+                    setVirtualServerDraft((previous) => ({ ...previous, delayLoop: event.target.value }))
+                  }
+                  placeholder="10"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Persistence Timeout</Label>
+                <Input
+                  value={virtualServerDraft.persistenceTimeout}
+                  onChange={(event) =>
+                    setVirtualServerDraft((previous) => ({
+                      ...previous,
+                      persistenceTimeout: event.target.value,
+                    }))
+                  }
+                  placeholder="300"
+                  disabled={!canEdit}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" onClick={saveVirtualServerDraft} disabled={!canEdit}>
+                <Plus className="mr-2 h-4 w-4" />
+                {editingVirtualServerName ? "Update Virtual Server" : "Add Virtual Server"}
+              </Button>
+              {editingVirtualServerName && (
+                <Button type="button" variant="ghost" onClick={resetVirtualServerDraft} disabled={!canEdit}>
+                  Cancel Edit
+                </Button>
+              )}
+            </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Virtual Server</TableHead>
+                  <TableHead>Algorithm</TableHead>
+                  <TableHead>Protocol</TableHead>
+                  <TableHead>Port / Fwmark</TableHead>
+                  <TableHead>Real Servers</TableHead>
+                  <TableHead className="w-[180px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {virtualServers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-muted-foreground">
+                      No virtual servers configured.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  virtualServers.map((entry) => (
+                    <TableRow key={entry.name}>
+                      <TableCell className="font-medium">{entry.name}</TableCell>
+                      <TableCell>{entry.algorithm || "-"}</TableCell>
+                      <TableCell>{entry.protocol || "-"}</TableCell>
+                      <TableCell>{entry.port ? `port ${entry.port}` : `fwmark ${entry.fwmark}`}</TableCell>
+                      <TableCell>{entry.realServers.length}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedVirtualServerName(entry.name);
+                              editVirtualServer(entry.name);
+                            }}
+                            disabled={!canEdit}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeVirtualServer(entry.name)}
+                            disabled={!canEdit}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Real Servers</CardTitle>
+            <CardDescription>
+              Add per-backend real servers with port, timeout, and optional health-check script.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-5">
+              <div className="space-y-2">
+                <Label>Virtual Server</Label>
+                <Select
+                  value={selectedVirtualServerName || "__unset__"}
+                  onValueChange={(value) => setSelectedVirtualServerName(value === "__unset__" ? "" : value)}
+                  disabled={!canEdit || virtualServers.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select virtual server" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__unset__">Select virtual server</SelectItem>
+                    {virtualServers.map((entry) => (
+                      <SelectItem key={entry.name} value={entry.name}>
+                        {entry.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Real Server Address</Label>
+                <Input
+                  value={realServerDraft.address}
+                  onChange={(event) =>
+                    setRealServerDraft((previous) => ({ ...previous, address: event.target.value }))
+                  }
+                  placeholder="192.0.2.11"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Port</Label>
+                <Input
+                  value={realServerDraft.port}
+                  onChange={(event) =>
+                    setRealServerDraft((previous) => ({ ...previous, port: event.target.value }))
+                  }
+                  placeholder="80"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Connection Timeout</Label>
+                <Input
+                  value={realServerDraft.connectionTimeout}
+                  onChange={(event) =>
+                    setRealServerDraft((previous) => ({
+                      ...previous,
+                      connectionTimeout: event.target.value,
+                    }))
+                  }
+                  placeholder="30"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Health Script</Label>
+                <Input
+                  value={realServerDraft.healthCheckScript}
+                  onChange={(event) =>
+                    setRealServerDraft((previous) => ({
+                      ...previous,
+                      healthCheckScript: event.target.value,
+                    }))
+                  }
+                  placeholder="/config/scripts/check-real-server.sh"
+                  disabled={!canEdit}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" onClick={saveRealServerDraft} disabled={!canEdit}>
+                <Plus className="mr-2 h-4 w-4" />
+                {editingRealServerAddress ? "Update Real Server" : "Add Real Server"}
+              </Button>
+              {editingRealServerAddress && (
+                <Button type="button" variant="ghost" onClick={resetRealServerDraft} disabled={!canEdit}>
+                  Cancel Edit
+                </Button>
+              )}
+            </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Port</TableHead>
+                  <TableHead>Connection Timeout</TableHead>
+                  <TableHead>Health Script</TableHead>
+                  <TableHead className="w-[180px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {!selectedVirtualServer ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-muted-foreground">
+                      Select a virtual server to manage its real servers.
+                    </TableCell>
+                  </TableRow>
+                ) : selectedVirtualServer.realServers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-muted-foreground">
+                      No real servers configured for {selectedVirtualServer.name}.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  selectedVirtualServer.realServers.map((entry) => (
+                    <TableRow key={entry.address}>
+                      <TableCell className="font-medium">{entry.address}</TableCell>
+                      <TableCell>{entry.port}</TableCell>
+                      <TableCell>{entry.connectionTimeout || "-"}</TableCell>
+                      <TableCell>{entry.healthCheckScript || "-"}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => editRealServer(selectedVirtualServer.name, entry.address)}
+                            disabled={!canEdit}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeRealServer(selectedVirtualServer.name, entry.address)}
+                            disabled={!canEdit}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

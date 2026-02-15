@@ -1,11 +1,11 @@
-feature_id: traffic-policy-qos-depth-2026-02-15
+feature_id: high-availability-virtual-server-depth-2026-02-15
 status: done
-title: Traffic Policy parity deepening (traffic-policy + qos policy structured editors)
+title: High Availability virtual-server parity deepening (IPVS virtual-server + real-server CRUD)
 branch: feature/containers-automation-v1
 commits:
-  - 1b96f27
+  - pending
 notes:
-  - Added backend `/vyos/qos/*` thin wrapper router (config + capabilities + batch) without changing existing service architecture.
-  - Expanded `/network/traffic-policy` to manage both `traffic-policy` and `qos policy` trees via form-driven editors.
-  - Added diff-based command generation for traffic-policy fields (including queue-limit/reordering) and QoS policy fields.
+  - Added form-driven management for `high-availability virtual-server` objects on `/network/high-availability`.
+  - Added nested real-server CRUD with per-server port, connection-timeout, and health-check script support.
+  - Save path now emits diff-based commands for both VRRP/sync-group and virtual-server trees in one apply operation.
   - Validated with backend test_app, frontend tsc/lint/build, runtime smoke, and browser smoke.
