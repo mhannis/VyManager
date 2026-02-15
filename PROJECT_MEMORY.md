@@ -54,42 +54,32 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Polish dashboard configurability and monitoring usefulness with additional high-value operational cards.
-- Continue reducing dashboard layout friction by aligning card span options with configurable column layouts.
+- Harden firewall rule UX consistency by ensuring interface selectors are description-first across create/edit flows.
+- Continue applying global interface-labeling convention (`Description (ethX)`) to high-traffic forms.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) after every slice.
 
 ## Current Feature Spec
-Feature: **Dashboard monitoring expansion + 4-column card spans**
+Feature: **Firewall rule modal interface-label robustness**
 
 Acceptance criteria:
-- Dashboard includes a service-health card with actionable status details.
-- New card is available in Add Card and renders in dashboard layout.
-- Existing cards support selecting 4-column width in edit mode.
-- Drag-and-drop card placement respects current layout column count when spans are wider than available space.
+- Firewall create/edit modals show description-first interface labels.
+- Interface dropdown values remain canonical interface names for API compatibility.
+- Fallback labeling remains safe for interfaces with no description.
 - End-to-end validation passes: frontend `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- Service checks are best-effort and endpoint failures should render unknown state instead of breaking the dashboard.
-- Service deep links should use current single-service view query routing where dedicated pages are not exposed.
+- Interface descriptions sourced from ethernet config are sufficient to label the broader show-interface set by name.
 - This slice remains frontend-only and contract-safe for existing API clients.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: dashboard monitoring/card-span polish implemented and validated; commit pending.
+- Status: firewall interface-label polish implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/app/page.tsx`
-- `frontend/src/components/dashboard/ServicesStatusCard.tsx`
-- `frontend/src/components/dashboard/AddCardModal.tsx`
-- `frontend/src/components/dashboard/SystemInformationCard.tsx`
-- `frontend/src/components/dashboard/NtpStatusCard.tsx`
-- `frontend/src/components/dashboard/DiskUsageCard.tsx`
-- `frontend/src/components/dashboard/InterfaceStatisticsCard.tsx`
-- `frontend/src/components/dashboard/InterfaceOverviewCard.tsx`
-- `frontend/src/components/dashboard/GatewayStatusCard.tsx`
-- `frontend/src/components/dashboard/LldpNeighborsCard.tsx`
+- `frontend/src/components/firewall/CreateFirewallRuleModal.tsx`
+- `frontend/src/components/firewall/EditFirewallRuleModal.tsx`
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
@@ -117,6 +107,8 @@ Assumptions:
 - Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Firewall Create/Edit rule modals now enrich interface selectors using ethernet descriptions and render labels as `Description (ethX)` while preserving canonical interface names for actual rule values.
+- Interface-label enrichment merges `show all interfaces` + `ethernet config` in-modal, so non-ethernet/non-described interfaces still appear and fall back to raw names.
 - Dashboard layout now persists `settings.columns` (2-4) and `settings.gap_px` (8-24) alongside card positions; the dashboard renderer applies these settings to both masonry grid and drag-drop overlays.
 - Added `LLDP Neighbors` dashboard card (`frontend/src/components/dashboard/LldpNeighborsCard.tsx`) with auto-refresh, summary badges, and top-neighbor preview rows.
 - `Gateway Summary` backend/DTO now includes best-effort probe metrics (`rtt_ms`, `rttsd_ms`, `loss_percent`) parsed from ping output; gateway API remains non-fatal when probe command is unavailable.

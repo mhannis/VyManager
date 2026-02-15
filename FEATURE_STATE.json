@@ -1,17 +1,17 @@
 {
-  "feature_id": "dashboard-polish-services-card-r2-2026-02-15",
-  "title": "Dashboard monitoring expansion + 4-column card spans",
+  "feature_id": "firewall-interface-labels-r3-2026-02-15",
+  "title": "Firewall rule modal interface-label robustness",
   "status": "in_review",
   "acceptance_criteria": [
-    "Dashboard includes a services health card with useful at-a-glance operational status.",
-    "Services card is available in Add Card and renders correctly in dashboard grid.",
-    "All dashboard cards support selecting a 4-column width option.",
-    "Dashboard drag placement respects current column count when card spans exceed layout width.",
+    "Create Firewall Rule modal shows interface selectors with description-first labels where descriptions exist.",
+    "Edit Firewall Rule modal shows interface selectors with description-first labels where descriptions exist.",
+    "Underlying selected values remain canonical interface names for write operations.",
+    "Feature degrades safely to raw interface names when descriptions are unavailable.",
     "Frontend validation gates pass (tsc, lint, build, runtime smoke, UI smoke)."
   ],
   "assumptions": [
-    "Service checks are best-effort and partial API failures should degrade to unknown status rather than failing the card.",
-    "Services links should route to existing system pages via single-service query params where available.",
+    "Interface descriptions should be sourced from ethernet config and mapped onto the broader show-interface list where names match.",
+    "Rule APIs should continue receiving interface names only; labels are display-only.",
     "Existing unrelated working tree changes remain untouched."
   ],
   "tasks": [
@@ -20,52 +20,27 @@
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/dashboard/ServicesStatusCard.tsx",
-        "frontend/src/components/dashboard/AddCardModal.tsx",
-        "frontend/src/app/page.tsx"
+        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
+        "frontend/src/components/firewall/EditFirewallRuleModal.tsx"
       ],
-      "notes": "Added a new dashboard services-health card, card catalog entry, and renderer support."
+      "notes": "Added ethernet config description hydration and description-first labels for inbound/outbound interface selectors."
     },
     {
       "id": "T2",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/components/dashboard/SystemInformationCard.tsx",
-        "frontend/src/components/dashboard/NtpStatusCard.tsx",
-        "frontend/src/components/dashboard/DiskUsageCard.tsx",
-        "frontend/src/components/dashboard/InterfaceStatisticsCard.tsx",
-        "frontend/src/components/dashboard/InterfaceOverviewCard.tsx",
-        "frontend/src/components/dashboard/GatewayStatusCard.tsx",
-        "frontend/src/components/dashboard/LldpNeighborsCard.tsx"
-      ],
-      "notes": "Extended card width menus with a 4-column option across all existing dashboard cards."
-    },
-    {
-      "id": "T3",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/page.tsx"
-      ],
-      "notes": "Clamped active drag span against current layout column count to prevent out-of-range placement behavior."
-    },
-    {
-      "id": "T4",
       "owner_role": "Test",
       "status": "done",
       "files": [],
-      "notes": "Executed frontend tsc/lint/build + runtime/browser smoke checks after implementation."
+      "notes": "Executed frontend tsc/lint/build + runtime/browser smoke checks."
     },
     {
-      "id": "T5",
+      "id": "T3",
       "owner_role": "Reviewer",
       "status": "doing",
       "files": [
-        "frontend/src/components/dashboard/ServicesStatusCard.tsx",
-        "frontend/src/app/page.tsx"
+        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
+        "frontend/src/components/firewall/EditFirewallRuleModal.tsx"
       ],
-      "notes": "Manual UX/runtime review in progress on live instance."
+      "notes": "Manual verification pending on live firewall rule create/edit flows."
     }
   ],
   "commands": {
@@ -76,7 +51,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Dashboard monitoring/card configurability polish",
+      "purpose": "Firewall interface-label consistency hardening",
       "status": "active"
     }
   ]

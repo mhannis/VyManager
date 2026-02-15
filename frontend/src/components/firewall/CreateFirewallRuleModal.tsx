@@ -29,7 +29,9 @@ import { firewallIPv6Service } from "@/lib/api/firewall-ipv6";
 import { firewallGroupsService, type FirewallGroup } from "@/lib/api/firewall-groups";
 import { flowtablesService, type Flowtable } from "@/lib/api/firewall-flowtables";
 import { showService } from "@/lib/api/show";
+import { ethernetService } from "@/lib/api/ethernet";
 import type { NetworkInterface } from "@/lib/api/interfaces";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 import { CountryMultiSelect } from "./CountryMultiSelect";
 import {
   getIPAddressError,
@@ -148,6 +150,7 @@ export function CreateFirewallRuleModal({
   // Data for dropdowns
   const [groups, setGroups] = useState<FirewallGroup[]>([]);
   const [interfaces, setInterfaces] = useState<NetworkInterface[]>([]);
+  const [interfaceLabelByName, setInterfaceLabelByName] = useState<Record<string, string>>({});
   const [customChains, setCustomChains] = useState<string[]>([]);
   const [flowtables, setFlowtables] = useState<Flowtable[]>([]);
 
@@ -198,20 +201,37 @@ export function CreateFirewallRuleModal({
   const loadInterfaces = async () => {
     try {
       // Use getAllInterfaces to get all interfaces from config (including inactive ones and VLANs)
-      const response = await showService.getAllInterfaces();
+      const [response, ethernetConfig] = await Promise.all([
+        showService.getAllInterfaces(),
+        ethernetService.getConfig().catch(() => null),
+      ]);
       if (response.interfaces) {
+        const descriptionByName: Record<string, string | null> = {};
+        if (ethernetConfig?.interfaces) {
+          for (const entry of ethernetConfig.interfaces) {
+            const name = entry.name?.trim();
+            if (!name) continue;
+            descriptionByName[name] = entry.description?.trim() || null;
+          }
+        }
+
         // Map interface names to NetworkInterface objects
         const networkInterfaces: NetworkInterface[] = response.interfaces.map(i => ({
           name: i.name,
           type: "ethernet" as const,
           addresses: [],
-          description: null,
+          description: descriptionByName[i.name] ?? null,
           vrf: null,
           "hw-id": null,
           "source-interface": null,
           authentication: null,
         }));
+        const labels = networkInterfaces.reduce<Record<string, string>>((acc, iface) => {
+          acc[iface.name] = formatInterfaceDisplayName(iface.name, iface.description ?? null);
+          return acc;
+        }, {});
         setInterfaces(networkInterfaces);
+        setInterfaceLabelByName(labels);
       }
     } catch (err) {
       console.error("Failed to load interfaces:", err);
@@ -1406,7 +1426,7 @@ export function CreateFirewallRuleModal({
                   <SelectItem value="any">Any</SelectItem>
                   {interfaces.map((iface) => (
                     <SelectItem key={iface.name} value={iface.name}>
-                      {iface.name}
+                      {interfaceLabelByName[iface.name] || iface.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1423,7 +1443,7 @@ export function CreateFirewallRuleModal({
                   <SelectItem value="any">Any</SelectItem>
                   {interfaces.map((iface) => (
                     <SelectItem key={iface.name} value={iface.name}>
-                      {iface.name}
+                      {interfaceLabelByName[iface.name] || iface.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

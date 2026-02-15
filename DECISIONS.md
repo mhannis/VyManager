@@ -173,3 +173,4 @@
 - 2026-02-15: Added `Services Status` dashboard card to provide at-a-glance operational state for core services (SSH, DNS Forwarder, DHCP Server, NTP, LLDP, mDNS) with best-effort multi-endpoint loading.
 - 2026-02-15: Expanded all dashboard card width menus to include `Full (4 columns)` so card controls align with dashboard layouts configured for four columns.
 - 2026-02-15: Updated dashboard drag/drop placement to clamp active card span by current layout column count, preventing out-of-range placement math after column-count changes.
+- 2026-02-15: Firewall Create/Edit rule modals now hydrate interface descriptions from ethernet config and display interface selectors as `Description (ethX)` while continuing to store canonical interface-name values in rule payloads.
