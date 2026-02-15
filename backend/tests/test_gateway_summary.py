@@ -48,6 +48,17 @@ def test_parse_active_ipv4_default_route_default_dev():
     assert proto == "kernel"
 
 
+def test_parse_ping_probe_metrics():
+    output = """
+3 packets transmitted, 3 received, 0% packet loss, time 2002ms
+rtt min/avg/max/mdev = 10.123/12.456/14.789/0.321 ms
+"""
+    rtt, rttsd, loss = show_router.parse_ping_probe_metrics(output)
+    assert rtt == pytest.approx(12.456)
+    assert rttsd == pytest.approx(0.321)
+    assert loss == pytest.approx(0.0)
+
+
 def test_extract_configured_ipv4_default_gateway():
     full_config = {
         "protocols": {
@@ -103,6 +114,13 @@ def test_gateway_summary_endpoint_happy_path(monkeypatch):
                     "duplex: Full\n"
                     "link detected: yes\n"
                 )
+            if path == ["ping", "192.168.1.1", "count", "3", "deadline", "4"]:
+                return DummyResponse(
+                    output=(
+                        "3 packets transmitted, 3 received, 0% packet loss, time 2002ms\n"
+                        "rtt min/avg/max/mdev = 10.123/12.456/14.789/0.321 ms\n"
+                    )
+                )
             raise AssertionError(f"Unexpected show path: {path}")
 
     class DummyService:
@@ -140,6 +158,9 @@ def test_gateway_summary_endpoint_happy_path(monkeypatch):
     assert data["interface"]["name"] == "eth0"
     assert data["interface"]["link_up"] is True
     assert data["configured_ipv4_default"]["next_hops"] == ["192.168.1.1"]
+    assert data["rtt_ms"] == pytest.approx(12.456)
+    assert data["rttsd_ms"] == pytest.approx(0.321)
+    assert data["loss_percent"] == pytest.approx(0.0)
     assert data["warnings"] == []
 
 
@@ -152,6 +173,12 @@ def test_gateway_summary_endpoint_fallback_to_table(monkeypatch):
                 return DummyResponse(output="S>* 0.0.0.0/0 [1/0] via 198.51.100.1, eth1\n")
             if path == ["interfaces", "ethernet", "eth1", "physical"]:
                 return DummyResponse(output="link detected: no\n")
+            if path == ["ping", "198.51.100.1", "count", "3", "deadline", "4"]:
+                return DummyResponse(
+                    output=(
+                        "3 packets transmitted, 0 received, 100% packet loss, time 2002ms\n"
+                    )
+                )
             raise AssertionError(f"Unexpected show path: {path}")
 
     class DummyService:
@@ -178,6 +205,7 @@ def test_gateway_summary_endpoint_fallback_to_table(monkeypatch):
     assert data["ipv4_default"]["source"] == "opstate-fallback"
     assert any("Fell back" in warning for warning in data["warnings"])
     assert data["interface"]["link_up"] is False
+    assert data["loss_percent"] == pytest.approx(100.0)
 
 
 def test_gateway_summary_endpoint_unparsable_output_warns(monkeypatch):

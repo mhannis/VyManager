@@ -54,41 +54,44 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Re-look `Firewall`, `Interfaces`, and `Containers` against the VyOS configuration guide and harden weak spots with form-driven UX.
-- Keep first-run container setup deterministic by exposing bootstrap network configuration directly in the UI.
+- Polish dashboard configurability and monitoring usefulness (layout flexibility + additional card coverage).
+- Keep container UX operator-friendly by exposing editable instance host and collapsing low-frequency sections by default.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) after every slice.
 
 ## Current Feature Spec
-Feature: **Firewall/Interfaces/Containers robustness relook pass**
+Feature: **Dashboard + Container UX polish (layout settings, LLDP card, gateway metrics)**
 
 Acceptance criteria:
-- Containers bootstrap flow allows configuring default container network parameters during setup.
-- Firewall zone create/edit supports discovered-interface selection with description-first labels.
-- Interfaces cards display description-first naming while preserving canonical interface names.
-- Backend coverage includes bootstrap network setup path.
-- End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
+- Dashboard supports persisted per-layout settings for column count and spacing.
+- Dashboard card catalog includes LLDP neighbor monitoring card.
+- Gateway card includes RTT/RTTsd/Loss metrics when probe data is available and degrades gracefully when unavailable.
+- Container Management allows editing instance host directly from the page.
+- Container Networks section defaults to compact summary with on-demand expansion for full CRUD controls.
+- End-to-end validation passes: backend pytest + frontend `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- Container bootstrap should still default to enabling SSH automation and key installation.
-- Interface selection in zone forms can blend checkbox-driven discovered entries with optional manual override text.
-- This slice includes additive contract-safe backend behavior; existing API clients remain valid.
+- Gateway probe metrics are best-effort via ping; unavailable probe commands should not fail the card/API response.
+- Existing dashboard card span controls remain capped at 3 columns for now even when layout columns are set to 4.
+- This slice remains additive and contract-safe; existing API clients continue to work.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: firewall/interfaces/containers robustness relook implemented and validated; commit pending.
+- Status: dashboard/container polish implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `backend/routers/containers.py`
-- `backend/tests/test_containers_automation_v1.py`
-- `frontend/src/lib/api/containers.ts`
-- `frontend/src/app/firewall/zones/page.tsx`
+- `backend/routers/show.py`
+- `backend/tests/test_gateway_summary.py`
+- `frontend/src/app/page.tsx`
+- `frontend/src/components/dashboard/AddCardModal.tsx`
+- `frontend/src/components/dashboard/GatewayStatusCard.tsx`
+- `frontend/src/components/dashboard/LldpNeighborsCard.tsx`
+- `frontend/src/lib/api/show.ts`
 - `frontend/src/app/system/containers/page.tsx`
-- `frontend/src/app/network/interfaces/page.tsx`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_containers_automation_v1.py tests/test_firewall_zones_local_zone.py` -> pass
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py tests/test_containers_automation_v1.py` -> pass
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
 - `cd frontend && npm run -s build` -> pass
@@ -114,6 +117,11 @@ Assumptions:
 - Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Dashboard layout now persists `settings.columns` (2-4) and `settings.gap_px` (8-24) alongside card positions; the dashboard renderer applies these settings to both masonry grid and drag-drop overlays.
+- Added `LLDP Neighbors` dashboard card (`frontend/src/components/dashboard/LldpNeighborsCard.tsx`) with auto-refresh, summary badges, and top-neighbor preview rows.
+- `Gateway Summary` backend/DTO now includes best-effort probe metrics (`rtt_ms`, `rttsd_ms`, `loss_percent`) parsed from ping output; gateway API remains non-fatal when probe command is unavailable.
+- Gateway card now renders `RTT`, `RTTsd`, and `Loss` fields and shows `-` when probe metrics are unavailable.
+- `System -> Containers` now supports inline editing of active instance host and refreshes session/overview after save; container-network CRUD controls are collapsed behind `Manage Networks` by default with summary badges visible.
 - Removed obsolete routing helper components `ProtocolCommandContent` and `ProtocolSimpleListEditor`; all routing pages now use dedicated form-first content components.
 - `/network/traffic-policy` QoS policy editor now includes CAKE `flow-isolation` selection and corresponding save/parse support (`set/delete qos policy cake <name> flow-isolation <value>`).
 - `/network/traffic-policy` QoS policy editor now includes default subtree fields (`default bandwidth`, `default burst`, `default ceiling`, `default priority`, `default queue-type`) with parse/save coverage.

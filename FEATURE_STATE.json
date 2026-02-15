@@ -1,18 +1,19 @@
 {
-  "feature_id": "firewall-interfaces-containers-robustness-r2-2026-02-15",
-  "title": "Firewall/Interfaces/Containers robustness relook pass",
-  "status": "done",
+  "feature_id": "dashboard-containers-polish-r1-2026-02-15",
+  "title": "Dashboard flexibility + container UX polish",
+  "status": "in_review",
   "acceptance_criteria": [
-    "Containers first-run setup supports configurable default network creation in the bootstrap flow.",
-    "Container bootstrap endpoint accepts setup payload without breaking existing API callers.",
-    "Firewall zones create/edit workflows support interface selection from discovered interfaces with description-first labels.",
-    "Interface cards show description-first display while preserving canonical interface identifiers.",
-    "Backend tests cover bootstrap network setup path and frontend validation gates pass."
+    "Dashboard supports persisted layout settings for column count and spacing.",
+    "Dashboard card catalog includes LLDP neighbors monitoring card.",
+    "Gateway dashboard card displays RTT, RTTsd, and Loss when probe metrics are available.",
+    "Container Management allows editing active instance host from the page.",
+    "Container Networks section is collapsed by default and expands on demand.",
+    "Backend and frontend validation gates pass for this slice."
   ],
   "assumptions": [
-    "Bootstrap setup should keep SSH automation enabled by default while allowing optional default-network creation.",
-    "Discovered interface checkbox selection plus manual override input is sufficient for advanced zone interface naming.",
-    "Existing unrelated working-tree changes remain untouched."
+    "Gateway probe metrics are best-effort and may be unavailable on some VyOS builds without failing the API/card.",
+    "Card-level width menus remain 1-3 columns for now, while grid layout supports 2-4 columns globally.",
+    "Existing unrelated working tree changes remain untouched."
   ],
   "tasks": [
     {
@@ -20,54 +21,55 @@
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/containers.py",
-        "backend/tests/test_containers_automation_v1.py"
+        "backend/routers/show.py",
+        "backend/tests/test_gateway_summary.py"
       ],
-      "notes": "Extended /vyos/containers/bootstrap to accept setup payload and added pytest coverage for network-only bootstrap mode."
+      "notes": "Added optional gateway probe metrics and parser coverage without changing existing endpoint contract shape for callers."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/containers.ts",
-        "frontend/src/app/system/containers/page.tsx",
-        "frontend/src/app/firewall/zones/page.tsx",
-        "frontend/src/app/network/interfaces/page.tsx"
+        "frontend/src/app/page.tsx",
+        "frontend/src/components/dashboard/AddCardModal.tsx",
+        "frontend/src/components/dashboard/GatewayStatusCard.tsx",
+        "frontend/src/components/dashboard/LldpNeighborsCard.tsx",
+        "frontend/src/lib/api/show.ts",
+        "frontend/src/app/system/containers/page.tsx"
       ],
-      "notes": "Implemented bootstrap setup form fields, wired payload submission, added zone interface selectors, and made interface cards description-first."
+      "notes": "Implemented dashboard layout settings, LLDP card, gateway metrics display, container instance-host editing, and collapsed network management UX."
     },
     {
       "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_containers_automation_v1.py"
+        "backend/tests/test_gateway_summary.py"
       ],
-      "notes": "Executed backend pytest plus frontend typecheck/lint/build/runtime smoke/browser smoke."
+      "notes": "Ran backend pytest and frontend typecheck/lint/build/runtime+UI smoke gates."
     },
     {
       "id": "T4",
       "owner_role": "Reviewer",
-      "status": "done",
+      "status": "doing",
       "files": [
-        "backend/routers/containers.py",
-        "frontend/src/app/system/containers/page.tsx",
-        "frontend/src/app/firewall/zones/page.tsx",
-        "frontend/src/app/network/interfaces/page.tsx"
+        "backend/routers/show.py",
+        "frontend/src/app/page.tsx",
+        "frontend/src/app/system/containers/page.tsx"
       ],
-      "notes": "Manual reviewer checklist completed; reviewer-agent dispatch was blocked by thread cap."
+      "notes": "Manual review in progress for UX/operational behavior on live instance before final commit."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_containers_automation_v1.py tests/test_firewall_zones_local_zone.py && cd ../frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py tests/test_containers_automation_v1.py && cd ../frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Firewall/interfaces/containers robustness and validation",
+      "purpose": "Dashboard and container UX polish with validation gates",
       "status": "active"
     }
   ]

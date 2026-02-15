@@ -2,20 +2,36 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Save, Edit3, X } from "lucide-react";
+import { Loader2, Plus, Save, Edit3, SlidersHorizontal, X } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Github, Globe, MessageCircle, Sparkles } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { useSessionStore } from "@/store/session-store";
-import { dashboardService, DashboardCard, DashboardLayout } from "@/lib/api/dashboard";
+import {
+  dashboardService,
+  DashboardCard,
+  DashboardLayout,
+  DashboardLayoutSettings,
+} from "@/lib/api/dashboard";
 import { InterfaceStatisticsCard } from "@/components/dashboard/InterfaceStatisticsCard";
 import { InterfaceOverviewCard } from "@/components/dashboard/InterfaceOverviewCard";
 import { SystemInformationCard } from "@/components/dashboard/SystemInformationCard";
 import { NtpStatusCard } from "@/components/dashboard/NtpStatusCard";
 import { DiskUsageCard } from "@/components/dashboard/DiskUsageCard";
 import { GatewayStatusCard } from "@/components/dashboard/GatewayStatusCard";
+import { LldpNeighborsCard } from "@/components/dashboard/LldpNeighborsCard";
 import { AddCardModal } from "@/components/dashboard/AddCardModal";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   DndContext,
   DragEndEvent,
@@ -34,19 +50,51 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-const GRID_COLUMNS = 3;
+const DEFAULT_GRID_COLUMNS = 3;
+const MIN_GRID_COLUMNS = 2;
+const MAX_GRID_COLUMNS = 4;
 const MAX_GRID_SCAN_ROWS = 200;
 const MASONRY_ROW_HEIGHT_PX = 1;
-const DASHBOARD_GRID_GAP_PX = 15;
+const DEFAULT_DASHBOARD_GAP_PX = 15;
+const MIN_DASHBOARD_GAP_PX = 8;
+const MAX_DASHBOARD_GAP_PX = 24;
 
-function getCardSpan(card: DashboardCard): number {
+interface RuntimeLayoutSettings {
+  columns: number;
+  gapPx: number;
+}
+
+function clampNumber(value: number, minimum: number, maximum: number): number {
+  return Math.max(minimum, Math.min(maximum, value));
+}
+
+function normalizeLayoutSettings(settings?: DashboardLayoutSettings | null): RuntimeLayoutSettings {
+  const requestedColumns = Number(settings?.columns ?? DEFAULT_GRID_COLUMNS);
+  const requestedGap = Number(settings?.gap_px ?? DEFAULT_DASHBOARD_GAP_PX);
+
+  const columns = clampNumber(
+    Number.isFinite(requestedColumns) ? Math.floor(requestedColumns) : DEFAULT_GRID_COLUMNS,
+    MIN_GRID_COLUMNS,
+    MAX_GRID_COLUMNS
+  );
+
+  const gapPx = clampNumber(
+    Number.isFinite(requestedGap) ? Math.floor(requestedGap) : DEFAULT_DASHBOARD_GAP_PX,
+    MIN_DASHBOARD_GAP_PX,
+    MAX_DASHBOARD_GAP_PX
+  );
+
+  return { columns, gapPx };
+}
+
+function getCardSpan(card: DashboardCard, columns: number): number {
   if (!card.span || card.span < 1) return 1;
-  if (card.span > GRID_COLUMNS) return GRID_COLUMNS;
+  if (card.span > columns) return columns;
   return Math.floor(card.span);
 }
 
-function buildStartColumnOrder(preferredColumn: number, span: number): number[] {
-  const maxStartColumn = GRID_COLUMNS - span;
+function buildStartColumnOrder(preferredColumn: number, span: number, columns: number): number[] {
+  const maxStartColumn = columns - span;
   const clampedPreferred = Math.max(0, Math.min(preferredColumn, maxStartColumn));
   const ordered = [clampedPreferred];
 
@@ -92,7 +140,7 @@ function markOccupied(
   }
 }
 
-function compactCards(cards: DashboardCard[]): DashboardCard[] {
+function compactCards(cards: DashboardCard[], columns: number): DashboardCard[] {
   const occupancy: Map<number, Set<number>> = new Map();
   const cardsInPlacementOrder = [...cards].sort((left, right) => {
     if (left.position !== right.position) return left.position - right.position;
@@ -106,8 +154,8 @@ function compactCards(cards: DashboardCard[]): DashboardCard[] {
   >();
 
   for (const card of cardsInPlacementOrder) {
-    const span = getCardSpan(card);
-    const startColumns = buildStartColumnOrder(card.column, span);
+    const span = getCardSpan(card, columns);
+    const startColumns = buildStartColumnOrder(card.column, span, columns);
 
     let placed = false;
     for (let row = 0; row < MAX_GRID_SCAN_ROWS && !placed; row++) {
@@ -138,7 +186,7 @@ function compactCards(cards: DashboardCard[]): DashboardCard[] {
 
   return cards.map((card) => {
     const placement = placementById.get(card.id);
-    if (!placement) return { ...card, span: getCardSpan(card) };
+    if (!placement) return { ...card, span: getCardSpan(card, columns) };
     return {
       ...card,
       column: placement.column,
@@ -220,15 +268,19 @@ function DroppableColumnOverlay({
 
 function DashboardMasonryItem({
   card,
+  columns,
+  gapPx,
   children,
 }: {
   card: DashboardCard;
+  columns: number;
+  gapPx: number;
   children: React.ReactNode;
 }) {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [rowSpan, setRowSpan] = useState(1);
-  const span = getCardSpan(card);
-  const maxStartColumn = GRID_COLUMNS - span;
+  const span = getCardSpan(card, columns);
+  const maxStartColumn = columns - span;
   const startColumn = Math.max(0, Math.min(card.column, maxStartColumn)) + 1;
 
   const recalculateRowSpan = useCallback(() => {
@@ -238,15 +290,15 @@ function DashboardMasonryItem({
     const height = element.getBoundingClientRect().height;
     const computedSpan = Math.max(
       1,
-      Math.ceil((height + DASHBOARD_GRID_GAP_PX) / MASONRY_ROW_HEIGHT_PX)
+      Math.ceil((height + gapPx) / MASONRY_ROW_HEIGHT_PX)
     );
 
     setRowSpan((previous) => (previous === computedSpan ? previous : computedSpan));
-  }, []);
+  }, [gapPx]);
 
   useLayoutEffect(() => {
     recalculateRowSpan();
-  }, [recalculateRowSpan, span, card.column, card.id]);
+  }, [recalculateRowSpan, span, card.column, card.id, columns, gapPx]);
 
   useEffect(() => {
     const element = contentRef.current;
@@ -285,6 +337,9 @@ export default function Home() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [layoutSettings, setLayoutSettings] = useState<RuntimeLayoutSettings>(
+    normalizeLayoutSettings()
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -299,6 +354,9 @@ export default function Home() {
     try {
       const response = await dashboardService.getLayout();
       if (response.exists && response.layout) {
+        const normalizedSettings = normalizeLayoutSettings(response.layout.settings);
+        setLayoutSettings(normalizedSettings);
+
         // Ensure all cards have a span property (backward compatibility)
         const cardsWithSpan = (response.layout.cards || []).map((card) => {
           if (card.span === undefined) {
@@ -310,8 +368,9 @@ export default function Home() {
           }
           return card;
         });
-        setCards(compactCards(cardsWithSpan));
+        setCards(compactCards(cardsWithSpan, normalizedSettings.columns));
       } else {
+        setLayoutSettings(normalizeLayoutSettings());
         setCards([]);
       }
     } catch (err: unknown) {
@@ -440,7 +499,7 @@ export default function Home() {
 
     // SMART VALIDATION: Adjust column if span would overflow
     // A card can only start at a column where it won't exceed column 2
-    const maxStartColumn = 3 - cardSpan; // span 1: max col 2, span 2: max col 1, span 3: max col 0
+    const maxStartColumn = Math.max(0, layoutSettings.columns - cardSpan);
     if (targetColumn > maxStartColumn) {
       targetColumn = maxStartColumn;
     }
@@ -450,9 +509,9 @@ export default function Home() {
     for (const card of cards) {
       if (card.id === activeCard.id) continue;
 
-      const span = card.span || 1;
+      const span = getCardSpan(card, layoutSettings.columns);
       const startCol = card.column;
-      const endCol = Math.min(startCol + span - 1, 2);
+      const endCol = Math.min(startCol + span - 1, layoutSettings.columns - 1);
 
       if (!rowOccupancy.has(card.position)) {
         rowOccupancy.set(card.position, new Set());
@@ -506,7 +565,7 @@ export default function Home() {
 
     console.log(`[Drag] Placed card: column=${targetColumn}, position=${finalPosition}, span=${cardSpan}`);
 
-    setCards(compactCards(updatedCards));
+    setCards(compactCards(updatedCards, layoutSettings.columns));
     setHasUnsavedChanges(true);
   };
 
@@ -522,25 +581,25 @@ export default function Home() {
       type: cardType,
       column: 0,
       position: 0,
-      span: defaultSpan,
+      span: Math.min(defaultSpan, layoutSettings.columns),
     };
 
-    setCards(compactCards([...cards, newCard]));
+    setCards(compactCards([...cards, newCard], layoutSettings.columns));
     setHasUnsavedChanges(true);
   };
 
   const handleRemoveCard = (cardId: string) => {
-    setCards(compactCards(cards.filter((c) => c.id !== cardId)));
+    setCards(compactCards(cards.filter((c) => c.id !== cardId), layoutSettings.columns));
     setHasUnsavedChanges(true);
   };
 
   const handleCardSpanChange = (cardId: string, newSpan: number) => {
     setCards(compactCards(cards.map((c) => {
       if (c.id === cardId) {
-        return { ...c, span: newSpan };
+        return { ...c, span: Math.max(1, Math.min(newSpan, layoutSettings.columns)) };
       }
       return c;
-    })));
+    }), layoutSettings.columns));
     setHasUnsavedChanges(true);
   };
 
@@ -558,7 +617,13 @@ export default function Home() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const layout: DashboardLayout = { cards };
+      const layout: DashboardLayout = {
+        cards,
+        settings: {
+          columns: layoutSettings.columns,
+          gap_px: layoutSettings.gapPx,
+        },
+      };
       await dashboardService.saveLayout(layout);
       setHasUnsavedChanges(false);
     } catch (err) {
@@ -572,6 +637,31 @@ export default function Home() {
     // Reload the dashboard from the saved state, discarding changes
     await loadDashboard();
     setHasUnsavedChanges(false);
+  };
+
+  const handleColumnCountChange = (value: string) => {
+    const nextColumns = clampNumber(
+      Number.parseInt(value, 10) || DEFAULT_GRID_COLUMNS,
+      MIN_GRID_COLUMNS,
+      MAX_GRID_COLUMNS
+    );
+    const nextSettings: RuntimeLayoutSettings = {
+      ...layoutSettings,
+      columns: nextColumns,
+    };
+    setLayoutSettings(nextSettings);
+    setCards((previousCards) => compactCards(previousCards, nextColumns));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleGapChange = (nextGap: number) => {
+    const gapPx = clampNumber(nextGap, MIN_DASHBOARD_GAP_PX, MAX_DASHBOARD_GAP_PX);
+    if (layoutSettings.gapPx === gapPx) return;
+    setLayoutSettings((previous) => ({
+      ...previous,
+      gapPx,
+    }));
+    setHasUnsavedChanges(true);
   };
 
   const renderCard = (card: DashboardCard) => {
@@ -596,6 +686,8 @@ export default function Home() {
         return <InterfaceOverviewCard {...baseProps} />;
       case "gateway-status":
         return <GatewayStatusCard {...baseProps} />;
+      case "lldp-neighbors":
+        return <LldpNeighborsCard {...baseProps} />;
       default:
         return null;
     }
@@ -632,10 +724,51 @@ export default function Home() {
                 </>
               )}
               {editMode && (
-                <Button onClick={() => setAddCardModalOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Card
-                </Button>
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline">
+                        <SlidersHorizontal className="h-4 w-4 mr-2" />
+                        Layout
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-64">
+                      <DropdownMenuLabel>Columns</DropdownMenuLabel>
+                      <DropdownMenuRadioGroup
+                        value={String(layoutSettings.columns)}
+                        onValueChange={handleColumnCountChange}
+                      >
+                        <DropdownMenuRadioItem value="2">2 columns</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="3">3 columns</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="4">4 columns</DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Card Spacing</DropdownMenuLabel>
+                      <DropdownMenuCheckboxItem
+                        checked={layoutSettings.gapPx === 10}
+                        onCheckedChange={() => handleGapChange(10)}
+                      >
+                        Tight (10px)
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={layoutSettings.gapPx === 15}
+                        onCheckedChange={() => handleGapChange(15)}
+                      >
+                        Standard (15px)
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={layoutSettings.gapPx === 20}
+                        onCheckedChange={() => handleGapChange(20)}
+                      >
+                        Relaxed (20px)
+                      </DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button onClick={() => setAddCardModalOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Card
+                  </Button>
+                </>
               )}
               <Button
                 variant={editMode ? "default" : "outline"}
@@ -726,7 +859,14 @@ export default function Home() {
             {/* Wrapper for grid and overlays */}
             <div className="relative">
               {/* Main masonry grid */}
-              <div className="grid grid-cols-3 gap-x-6 gap-y-0 auto-rows-[1px] grid-flow-row-dense relative z-0">
+              <div
+                className="grid auto-rows-[1px] grid-flow-row-dense relative z-0"
+                style={{
+                  gridTemplateColumns: `repeat(${layoutSettings.columns}, minmax(0, 1fr))`,
+                  columnGap: `${layoutSettings.gapPx}px`,
+                  rowGap: 0,
+                }}
+              >
                 <SortableContext
                   items={orderedCards.map((c) => c.id)}
                   strategy={verticalListSortingStrategy}
@@ -742,7 +882,12 @@ export default function Home() {
                     );
 
                     return (
-                      <DashboardMasonryItem key={card.id} card={card}>
+                      <DashboardMasonryItem
+                        key={card.id}
+                        card={card}
+                        columns={layoutSettings.columns}
+                        gapPx={layoutSettings.gapPx}
+                      >
                         {cardElement}
                       </DashboardMasonryItem>
                     );
@@ -752,22 +897,21 @@ export default function Home() {
 
               {/* Droppable column overlays (always visible in edit mode) */}
               {editMode && (
-                <div className={`absolute inset-0 grid grid-cols-3 gap-6 z-20 ${activeId ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-                  <DroppableColumnOverlay
-                    columnId="column-0"
-                    editMode={editMode}
-                    isDragging={!!activeId}
-                  />
-                  <DroppableColumnOverlay
-                    columnId="column-1"
-                    editMode={editMode}
-                    isDragging={!!activeId}
-                  />
-                  <DroppableColumnOverlay
-                    columnId="column-2"
-                    editMode={editMode}
-                    isDragging={!!activeId}
-                  />
+                <div
+                  className={`absolute inset-0 grid z-20 ${activeId ? "pointer-events-auto" : "pointer-events-none"}`}
+                  style={{
+                    gridTemplateColumns: `repeat(${layoutSettings.columns}, minmax(0, 1fr))`,
+                    columnGap: `${layoutSettings.gapPx}px`,
+                  }}
+                >
+                  {Array.from({ length: layoutSettings.columns }, (_, index) => (
+                    <DroppableColumnOverlay
+                      key={`column-${index}`}
+                      columnId={`column-${index}`}
+                      editMode={editMode}
+                      isDragging={!!activeId}
+                    />
+                  ))}
                 </div>
               )}
             </div>

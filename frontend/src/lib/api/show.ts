@@ -93,6 +93,9 @@ export interface GatewaySummaryResponse {
   ipv4_default: ActiveDefaultGateway | null;
   configured_ipv4_default: ConfiguredDefaultGateway | null;
   interface: GatewayInterfaceStatus | null;
+  rtt_ms: number | null;
+  rttsd_ms: number | null;
+  loss_percent: number | null;
   warnings: string[];
 }
 

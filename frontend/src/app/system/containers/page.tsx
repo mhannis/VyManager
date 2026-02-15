@@ -5,6 +5,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,8 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { ethernetService } from "@/lib/api/ethernet";
 import { pageGuides } from "@/lib/help/pageGuides";
 import { FeatureGroup } from "@/lib/api/user-management";
+import { sessionService } from "@/lib/api/session";
+import { useSessionStore } from "@/store/session-store";
 import {
   containersService,
   type ContainerBootstrapStatusResponse,
@@ -40,6 +43,7 @@ import {
   ExternalLink,
   FileText,
   Loader2,
+  Pencil,
   Play,
   Plus,
   RefreshCw,
@@ -646,6 +650,7 @@ const CONTAINER_TEMPLATES: ContainerTemplateDefinition[] = [
 
 export default function SystemContainersPage() {
   const { canWrite } = usePermissions();
+  const { activeSession, loadSession } = useSessionStore();
   const canEditSystem = canWrite(FeatureGroup.SYSTEM);
 
   const localTimezone = useMemo(() => detectBrowserTimezone(), []);
@@ -660,6 +665,10 @@ export default function SystemContainersPage() {
   const [bootstrapNetworkMtu, setBootstrapNetworkMtu] = useState("");
   const [bootstrapNetworkVrf, setBootstrapNetworkVrf] = useState("");
   const [bootstrapDisableNetworkDns, setBootstrapDisableNetworkDns] = useState(false);
+  const [editingInstanceHost, setEditingInstanceHost] = useState(false);
+  const [instanceHostDraft, setInstanceHostDraft] = useState("");
+  const [savingInstanceHost, setSavingInstanceHost] = useState(false);
+  const [networksExpanded, setNetworksExpanded] = useState(false);
 
   const [overview, setOverview] = useState<ContainersOverviewResponse | null>(null);
   const [draft, setDraft] = useState<ContainerDraft>({ ...EMPTY_DRAFT });
@@ -739,6 +748,10 @@ export default function SystemContainersPage() {
     () => ensureArray<ContainerNetworkSummary>(bootstrapStatus?.networks),
     [bootstrapStatus?.networks],
   );
+  const displayedInstanceHost = useMemo(
+    () => activeSession?.host?.trim() || overview?.connection_host?.trim() || "",
+    [activeSession?.host, overview?.connection_host],
+  );
 
   const lanIpValidationIssue = useMemo(() => {
     if (!selectedLanSegment || !serviceLanIp.trim()) return null;
@@ -811,7 +824,14 @@ export default function SystemContainersPage() {
     loadBootstrapStatus();
     loadOverview(true);
     loadLanSegments();
-  }, [loadBootstrapStatus, loadLanSegments, loadOverview]);
+    loadSession();
+  }, [loadBootstrapStatus, loadLanSegments, loadOverview, loadSession]);
+
+  useEffect(() => {
+    if (!editingInstanceHost) {
+      setInstanceHostDraft(displayedInstanceHost);
+    }
+  }, [displayedInstanceHost, editingInstanceHost]);
 
   useEffect(() => {
     const instanceHost = overview?.connection_host?.trim();
@@ -1064,6 +1084,41 @@ export default function SystemContainersPage() {
       setBootstrapError(err instanceof Error ? err.message : "Failed to enable container automation.");
     } finally {
       setBootstrapping(false);
+    }
+  };
+
+  const saveInstanceHost = async () => {
+    if (!canEditSystem) {
+      setError("You currently have read-only access for System features.");
+      return;
+    }
+
+    const instanceId = activeSession?.instance_id;
+    const host = instanceHostDraft.trim();
+
+    if (!instanceId) {
+      setError("No active instance is connected.");
+      return;
+    }
+    if (!host) {
+      setError("Instance host is required.");
+      return;
+    }
+
+    setSavingInstanceHost(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await sessionService.updateInstance(instanceId, { host });
+      await loadSession();
+      await loadOverview(true);
+      await loadBootstrapStatus();
+      setEditingInstanceHost(false);
+      setSuccess(`Instance host updated to ${host}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update instance host.");
+    } finally {
+      setSavingInstanceHost(false);
     }
   };
 
@@ -1422,10 +1477,49 @@ export default function SystemContainersPage() {
             <p className="text-muted-foreground mt-2">
               Configure and control VyOS containers, then launch exposed web UIs directly.
             </p>
-            {overview?.connection_host && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Instance host: <span className="font-mono">{overview.connection_host}</span>
-              </p>
+            {displayedInstanceHost && (
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>
+                  Instance host: <span className="font-mono">{displayedInstanceHost}</span>
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2"
+                  onClick={() => setEditingInstanceHost((previous) => !previous)}
+                  disabled={!canEditSystem || savingInstanceHost}
+                >
+                  <Pencil className="h-3 w-3 mr-1" />
+                  {editingInstanceHost ? "Close" : "Edit Host"}
+                </Button>
+              </div>
+            )}
+            {editingInstanceHost && (
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                  value={instanceHostDraft}
+                  onChange={(event) => setInstanceHostDraft(event.target.value)}
+                  placeholder="192.168.10.242"
+                  className="h-8 w-full sm:w-[300px] font-mono text-xs"
+                  disabled={savingInstanceHost}
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={saveInstanceHost} disabled={savingInstanceHost || !canEditSystem}>
+                    {savingInstanceHost ? "Saving..." : "Save Host"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingInstanceHost(false);
+                      setInstanceHostDraft(displayedInstanceHost);
+                    }}
+                    disabled={savingInstanceHost}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
             )}
             {linkHostOptions.length > 0 && (
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -1483,161 +1577,185 @@ export default function SystemContainersPage() {
         )}
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Network className="h-4 w-4" />
-              Container Networks
-            </CardTitle>
-            <CardDescription>
-              Configure user-defined container networks for service isolation and static addressing.
-            </CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Network className="h-4 w-4" />
+                Container Networks
+              </CardTitle>
+              <CardDescription>
+                Configure user-defined container networks for service isolation and static addressing.
+              </CardDescription>
+            </div>
+            <Button
+              size="sm"
+              variant={networksExpanded ? "default" : "outline"}
+              onClick={() => setNetworksExpanded((previous) => !previous)}
+            >
+              {networksExpanded ? "Collapse" : "Manage Networks"}
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             {containerNetworks.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No container networks configured yet.
-              </p>
+              <p className="text-sm text-muted-foreground">No container networks configured yet.</p>
             ) : (
-              <div className="space-y-2">
-                {containerNetworks.map((network) => (
-                  <div key={network.name} className="rounded-md border p-3 space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <div className="font-medium">{network.name}</div>
-                        {network.description && (
-                          <div className="text-xs text-muted-foreground">{network.description}</div>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {network.dns_disabled && <Badge variant="secondary">DNS Disabled</Badge>}
-                        {network.mtu != null && <Badge variant="outline">MTU {network.mtu}</Badge>}
-                        {network.vrf && <Badge variant="outline">VRF {network.vrf}</Badge>}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => editNetwork(network)}
-                          disabled={savingNetwork || saving || installing}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => removeNetwork(network.name)}
-                          disabled={!canEditSystem || savingNetwork || saving || installing}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {ensureArray<string>(network.prefixes).map((prefix) => (
-                        <Badge key={`${network.name}-${prefix}`} variant="secondary" className="font-mono">
-                          {prefix}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline">{containerNetworks.length} configured</Badge>
+                {containerNetworks.slice(0, 3).map((network) => (
+                  <Badge key={`summary-${network.name}`} variant="secondary">
+                    {network.name}
+                  </Badge>
                 ))}
-              </div>
-            )}
-
-            <div className="rounded-md border p-4 space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold">
-                  {editingNetworkName ? `Edit Network: ${editingNetworkName}` : "Create Network"}
-                </h3>
-                {editingNetworkName && (
-                  <Button size="sm" variant="ghost" onClick={resetNetworkDraft} disabled={savingNetwork}>
-                    Cancel Edit
-                  </Button>
+                {containerNetworks.length > 3 && (
+                  <Badge variant="secondary">+{containerNetworks.length - 3} more</Badge>
                 )}
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Name</Label>
-                  <Input
-                    value={networkDraft.name}
-                    onChange={(event) =>
-                      setNetworkDraft((previous) => ({ ...previous, name: event.target.value }))
-                    }
-                    placeholder="containers-lan"
-                    disabled={savingNetwork || saving || installing || Boolean(editingNetworkName)}
-                  />
+            )}
+            <Collapsible open={networksExpanded} onOpenChange={setNetworksExpanded}>
+              <CollapsibleContent className="space-y-4">
+                {containerNetworks.length > 0 && (
+                  <div className="space-y-2">
+                    {containerNetworks.map((network) => (
+                      <div key={network.name} className="rounded-md border p-3 space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <div className="font-medium">{network.name}</div>
+                            {network.description && (
+                              <div className="text-xs text-muted-foreground">{network.description}</div>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {network.dns_disabled && <Badge variant="secondary">DNS Disabled</Badge>}
+                            {network.mtu != null && <Badge variant="outline">MTU {network.mtu}</Badge>}
+                            {network.vrf && <Badge variant="outline">VRF {network.vrf}</Badge>}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => editNetwork(network)}
+                              disabled={savingNetwork || saving || installing}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => removeNetwork(network.name)}
+                              disabled={!canEditSystem || savingNetwork || saving || installing}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {ensureArray<string>(network.prefixes).map((prefix) => (
+                            <Badge key={`${network.name}-${prefix}`} variant="secondary" className="font-mono">
+                              {prefix}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="rounded-md border p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold">
+                      {editingNetworkName ? `Edit Network: ${editingNetworkName}` : "Create Network"}
+                    </h3>
+                    {editingNetworkName && (
+                      <Button size="sm" variant="ghost" onClick={resetNetworkDraft} disabled={savingNetwork}>
+                        Cancel Edit
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Name</Label>
+                      <Input
+                        value={networkDraft.name}
+                        onChange={(event) =>
+                          setNetworkDraft((previous) => ({ ...previous, name: event.target.value }))
+                        }
+                        placeholder="containers-lan"
+                        disabled={savingNetwork || saving || installing || Boolean(editingNetworkName)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Prefixes (comma-separated)</Label>
+                      <Input
+                        value={networkDraft.prefixes}
+                        onChange={(event) =>
+                          setNetworkDraft((previous) => ({ ...previous, prefixes: event.target.value }))
+                        }
+                        placeholder="172.20.20.0/24"
+                        disabled={savingNetwork || saving || installing}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description (optional)</Label>
+                      <Input
+                        value={networkDraft.description}
+                        onChange={(event) =>
+                          setNetworkDraft((previous) => ({ ...previous, description: event.target.value }))
+                        }
+                        placeholder="Container services network"
+                        disabled={savingNetwork || saving || installing}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>VRF (optional)</Label>
+                      <Input
+                        value={networkDraft.vrf}
+                        onChange={(event) =>
+                          setNetworkDraft((previous) => ({ ...previous, vrf: event.target.value }))
+                        }
+                        placeholder="main"
+                        disabled={savingNetwork || saving || installing}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>MTU (optional)</Label>
+                      <Input
+                        value={networkDraft.mtu}
+                        onChange={(event) =>
+                          setNetworkDraft((previous) => ({ ...previous, mtu: event.target.value }))
+                        }
+                        placeholder="1500"
+                        disabled={savingNetwork || saving || installing}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 mt-7">
+                      <Checkbox
+                        checked={networkDraft.dnsDisabled}
+                        onCheckedChange={(checked) =>
+                          setNetworkDraft((previous) => ({ ...previous, dnsDisabled: checked === true }))
+                        }
+                        disabled={savingNetwork || saving || installing}
+                      />
+                      <Label>Disable DNS name server for this network</Label>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      onClick={saveNetwork}
+                      disabled={!canEditSystem || savingNetwork || saving || installing}
+                    >
+                      <Save className={`h-4 w-4 mr-2 ${savingNetwork ? "animate-pulse" : ""}`} />
+                      {savingNetwork ? "Saving..." : editingNetworkName ? "Update Network" : "Create Network"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={loadBootstrapStatus}
+                      disabled={savingNetwork || saving || installing}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh Networks
+                    </Button>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Prefixes (comma-separated)</Label>
-                  <Input
-                    value={networkDraft.prefixes}
-                    onChange={(event) =>
-                      setNetworkDraft((previous) => ({ ...previous, prefixes: event.target.value }))
-                    }
-                    placeholder="172.20.20.0/24"
-                    disabled={savingNetwork || saving || installing}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Description (optional)</Label>
-                  <Input
-                    value={networkDraft.description}
-                    onChange={(event) =>
-                      setNetworkDraft((previous) => ({ ...previous, description: event.target.value }))
-                    }
-                    placeholder="Container services network"
-                    disabled={savingNetwork || saving || installing}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>VRF (optional)</Label>
-                  <Input
-                    value={networkDraft.vrf}
-                    onChange={(event) =>
-                      setNetworkDraft((previous) => ({ ...previous, vrf: event.target.value }))
-                    }
-                    placeholder="main"
-                    disabled={savingNetwork || saving || installing}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>MTU (optional)</Label>
-                  <Input
-                    value={networkDraft.mtu}
-                    onChange={(event) =>
-                      setNetworkDraft((previous) => ({ ...previous, mtu: event.target.value }))
-                    }
-                    placeholder="1500"
-                    disabled={savingNetwork || saving || installing}
-                  />
-                </div>
-                <div className="flex items-center gap-2 mt-7">
-                  <Checkbox
-                    checked={networkDraft.dnsDisabled}
-                    onCheckedChange={(checked) =>
-                      setNetworkDraft((previous) => ({ ...previous, dnsDisabled: checked === true }))
-                    }
-                    disabled={savingNetwork || saving || installing}
-                  />
-                  <Label>Disable DNS name server for this network</Label>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  onClick={saveNetwork}
-                  disabled={!canEditSystem || savingNetwork || saving || installing}
-                >
-                  <Save className={`h-4 w-4 mr-2 ${savingNetwork ? "animate-pulse" : ""}`} />
-                  {savingNetwork ? "Saving..." : editingNetworkName ? "Update Network" : "Create Network"}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={loadBootstrapStatus}
-                  disabled={savingNetwork || saving || installing}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Networks
-                </Button>
-              </div>
-            </div>
+              </CollapsibleContent>
+            </Collapsible>
           </CardContent>
         </Card>
 

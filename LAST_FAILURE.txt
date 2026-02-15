@@ -1,8 +1,8 @@
-2026-02-15T03:31:00Z
-failing command: spawn_agent (reviewer pass for firewall/interfaces/containers robustness diff)
-error summary: Reviewer-agent dispatch failed because the collaboration thread cap is saturated (`max 6`). Automated reviewer handoff could not run in this cycle.
+2026-02-15T03:56:00Z
+failing command: jq . FEATURE_STATE.json >/dev/null && echo OK
+error summary: Validation helper command failed because jq is not installed in this environment. Feature state file still appears syntactically valid from direct write path, but machine-check command could not run.
 
 last output excerpt:
-collab spawn failed: agent thread limit reached (max 6)
+/bin/bash: line 1: jq: command not found
 
-suspected cause + next step: Long-lived agent threads from prior cycles are still active. Proceed with manual reviewer checklist now and retry reviewer-agent dispatch in a later cycle when thread slots are available.
+suspected cause + next step: Missing optional CLI dependency. Use Python (python3 -m json.tool FEATURE_STATE.json) for JSON validation instead of jq on this host.

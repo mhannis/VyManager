@@ -166,3 +166,7 @@
 - 2026-02-15: `Firewall -> Zones` create/edit forms now use discovered-interface checkboxes with description-first labels; manual comma-list override remains for non-discovered/advanced interface names.
 - 2026-02-15: `Network -> Interfaces` cards now render description-first names to align global interface labeling expectations while preserving canonical interface IDs.
 - 2026-02-15: Reviewer-agent dispatch remained unavailable due thread cap (`max 6`); manual review fallback used and recorded in `LAST_FAILURE.txt`.
+- 2026-02-15: Dashboard now persists layout settings (`columns`, `gap_px`) inside existing `dashboard/layout` payload; no backend schema change was required because the layout column already stores arbitrary JSON.
+- 2026-02-15: Gateway dashboard metrics (`RTT`, `RTTsd`, `Loss`) are implemented as best-effort ping probes in `/vyos/show/gateway-summary`; failures append warnings and do not fail the endpoint.
+- 2026-02-15: Added `LLDP Neighbors` dashboard card to improve monitoring value using existing `/vyos/system/lldp-status` API, keeping implementation additive with no new backend routes.
+- 2026-02-15: Container Networks controls were intentionally collapsed behind `Manage Networks` with summary badges shown by default to reduce page density while preserving full CRUD in-place.

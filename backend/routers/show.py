@@ -125,6 +125,9 @@ class GatewaySummaryResponse(BaseModel):
     ipv4_default: Optional[ActiveDefaultGateway] = None
     configured_ipv4_default: Optional[ConfiguredDefaultGateway] = None
     interface: Optional[GatewayInterfaceStatus] = None
+    rtt_ms: Optional[float] = None
+    rttsd_ms: Optional[float] = None
+    loss_percent: Optional[float] = None
     warnings: List[str] = []
 
 
@@ -293,6 +296,53 @@ def parse_active_ipv4_default_route(output: str) -> Tuple[Optional[str], Optiona
                 return None, iface_name, protocol
 
     return None, None, protocol
+
+
+def parse_ping_probe_metrics(output: str) -> Tuple[Optional[float], Optional[float], Optional[float]]:
+    """
+    Parse packet-loss and RTT metrics from ping output.
+
+    Returns:
+        (rtt_avg_ms, rtt_stddev_ms, loss_percent)
+    """
+    if not output or not isinstance(output, str):
+        return None, None, None
+
+    cleaned = _strip_ansi(output)
+
+    loss_percent: Optional[float] = None
+    loss_match = re.search(r"(\d+(?:\.\d+)?)%\s+packet loss", cleaned, re.IGNORECASE)
+    if loss_match:
+        try:
+            loss_percent = float(loss_match.group(1))
+        except Exception:
+            loss_percent = None
+
+    # Linux ping style: rtt min/avg/max/mdev = 0.045/0.045/0.045/0.000 ms
+    rtt_match = re.search(
+        r"rtt\s+min/avg/max/(?:mdev|stddev)\s*=\s*([0-9.]+)/([0-9.]+)/([0-9.]+)/([0-9.]+)\s*ms",
+        cleaned,
+        re.IGNORECASE,
+    )
+    if rtt_match:
+        try:
+            return float(rtt_match.group(2)), float(rtt_match.group(4)), loss_percent
+        except Exception:
+            return None, None, loss_percent
+
+    # BSD ping style: round-trip min/avg/max/stddev = ...
+    round_trip_match = re.search(
+        r"round-trip\s+min/avg/max/stddev\s*=\s*([0-9.]+)/([0-9.]+)/([0-9.]+)/([0-9.]+)\s*ms",
+        cleaned,
+        re.IGNORECASE,
+    )
+    if round_trip_match:
+        try:
+            return float(round_trip_match.group(2)), float(round_trip_match.group(4)), loss_percent
+        except Exception:
+            return None, None, loss_percent
+
+    return None, None, loss_percent
 
 
 def extract_configured_ipv4_default_gateway(
@@ -1364,6 +1414,9 @@ async def get_gateway_summary(request: Request, refresh: bool = False) -> Gatewa
 
         selected_interface = iface_name or configured_iface_name
         interface: Optional[GatewayInterfaceStatus] = None
+        rtt_ms: Optional[float] = None
+        rttsd_ms: Optional[float] = None
+        loss_percent: Optional[float] = None
 
         if selected_interface:
             try:
@@ -1396,11 +1449,39 @@ async def get_gateway_summary(request: Request, refresh: bool = False) -> Gatewa
                 )
                 interface = GatewayInterfaceStatus(name=selected_interface)
 
+        probe_target: Optional[str] = next_hop
+        if not probe_target and configured_ipv4_default and configured_ipv4_default.next_hops:
+            probe_target = configured_ipv4_default.next_hops[0]
+
+        if probe_target and _is_valid_ipv4(probe_target):
+            try:
+                ping_response = await run_in_threadpool(
+                    service.device.show,
+                    path=["ping", probe_target, "count", "3", "deadline", "4"],
+                )
+                if ping_response.status == 200:
+                    ping_output = extract_show_output(ping_response.result)
+                    (
+                        rtt_ms,
+                        rttsd_ms,
+                        loss_percent,
+                    ) = parse_ping_probe_metrics(ping_output)
+                else:
+                    error_text = ping_response.error or "unsupported"
+                    warnings.append(f"Gateway probe unavailable for {probe_target}: {error_text}")
+            except Exception as e:
+                warnings.append(
+                    f"Gateway probe unavailable for {probe_target}: {type(e).__name__}: {str(e)}"
+                )
+
         return GatewaySummaryResponse(
             generated_at=generated_at,
             ipv4_default=ipv4_default,
             configured_ipv4_default=configured_ipv4_default,
             interface=interface,
+            rtt_ms=rtt_ms,
+            rttsd_ms=rttsd_ms,
+            loss_percent=loss_percent,
             warnings=warnings,
         )
 
