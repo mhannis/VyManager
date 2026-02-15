@@ -44,6 +44,8 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { CreateFlowtableModal } from "@/components/firewall/CreateFlowtableModal";
 import { EditFlowtableModal } from "@/components/firewall/EditFlowtableModal";
 import { DeleteFlowtableModal } from "@/components/firewall/DeleteFlowtableModal";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
+import { pageGuides } from "@/lib/help/pageGuides";
 
 export default function FlowtablesPage() {
   // Data state
@@ -132,6 +134,7 @@ export default function FlowtablesPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <PageGuideDialog guide={pageGuides.firewallFlowtables} />
               <Button
                 variant="outline"
                 size="icon"

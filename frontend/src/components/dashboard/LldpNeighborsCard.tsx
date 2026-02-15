@@ -31,7 +31,7 @@ export function LldpNeighborsCard({ onRemove, span = 1, onSpanChange }: LldpNeig
   const [error, setError] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  const loadData = async (refresh: boolean = false) => {
+  const loadData = async (refresh: boolean = true) => {
     try {
       setError(null);
       const response = await systemService.getLldpStatus(refresh);
@@ -44,10 +44,10 @@ export function LldpNeighborsCard({ onRemove, span = 1, onSpanChange }: LldpNeig
   };
 
   useEffect(() => {
-    loadData(false);
+    loadData(true);
 
     if (!autoRefresh) return;
-    const interval = setInterval(() => loadData(false), 15000);
+    const interval = setInterval(() => loadData(true), 15000);
     return () => clearInterval(interval);
   }, [autoRefresh]);
 

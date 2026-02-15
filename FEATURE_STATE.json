@@ -1,17 +1,17 @@
 {
-  "feature_id": "containers-ux-simplification-r1-2026-02-15",
-  "title": "Container management progressive disclosure UX",
+  "feature_id": "lldp-cpu-firewall-guides-r1-2026-02-15",
+  "title": "LLDP dashboard visibility and firewall guide UX pass",
   "status": "in_review",
   "acceptance_criteria": [
-    "System -> Containers keeps all existing create/edit functionality.",
-    "Optional/advanced sections are collapsed by default and expandable on demand.",
-    "Template action clearly indicates it only loads values and does not install.",
-    "LAN helper is optional, collapsible, and keeps description-first interface labels.",
+    "LLDP Neighbors dashboard card refreshes live and displays discovered neighbors when LLDP is active.",
+    "System Information card always shows CPU temperature state (numeric value or Unavailable).",
+    "Firewall pages include in-page How-To dialogs: policies, groups, global options, bridge, and flowtables.",
+    "Guide validation content is GUI-first and no longer instructs CLI command checks.",
     "Frontend validation gates pass (tsc, lint, build, runtime smoke, UI smoke)."
   ],
   "assumptions": [
-    "Reducing default visible form density improves ease of use without removing capability.",
-    "This is a frontend-only change and must keep backend/API contracts unchanged.",
+    "LLDP card stale state came from non-refresh reads against cached config paths.",
+    "Help-guide text changes are UX-only and do not alter backend behavior.",
     "Existing unrelated worktree changes remain untouched."
   ],
   "tasks": [
@@ -20,25 +20,39 @@
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/system/containers/page.tsx"
+        "frontend/src/components/dashboard/LldpNeighborsCard.tsx",
+        "frontend/src/components/dashboard/SystemInformationCard.tsx",
+        "frontend/src/lib/help/pageGuides.ts",
+        "frontend/src/app/firewall/bridge/page.tsx",
+        "frontend/src/app/firewall/flowtables/page.tsx",
+        "frontend/src/app/firewall/global-options/page.tsx",
+        "frontend/src/app/firewall/groups/page.tsx",
+        "frontend/src/app/firewall/policies/page.tsx"
       ],
-      "notes": "Implemented collapsible advanced sections and clearer template/helper UX."
+      "notes": "Implemented LLDP refresh behavior, CPU temp always-visible badge, and firewall how-to coverage with GUI-first validation text."
     },
     {
       "id": "T2",
       "owner_role": "Test",
       "status": "done",
       "files": [],
-      "notes": "Executed frontend tsc/lint/build + runtime/browser smoke checks."
+      "notes": "Executed frontend tsc/lint/build plus runtime/browser smoke validation."
     },
     {
       "id": "T3",
       "owner_role": "Reviewer",
       "status": "doing",
       "files": [
-        "frontend/src/app/system/containers/page.tsx"
+        "frontend/src/components/dashboard/LldpNeighborsCard.tsx",
+        "frontend/src/components/dashboard/SystemInformationCard.tsx",
+        "frontend/src/lib/help/pageGuides.ts",
+        "frontend/src/app/firewall/bridge/page.tsx",
+        "frontend/src/app/firewall/flowtables/page.tsx",
+        "frontend/src/app/firewall/global-options/page.tsx",
+        "frontend/src/app/firewall/groups/page.tsx",
+        "frontend/src/app/firewall/policies/page.tsx"
       ],
-      "notes": "Manual review pending against UX goals in live UI."
+      "notes": "Manual verification pending in live UI."
     }
   ],
   "commands": {
@@ -49,7 +63,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Container management UX simplification",
+      "purpose": "Dashboard/runtime and firewall guide UX refinement",
       "status": "active"
     }
   ]

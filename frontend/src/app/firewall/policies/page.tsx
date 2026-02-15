@@ -54,6 +54,8 @@ import { CreateCustomChainModal } from "@/components/firewall/CreateCustomChainM
 import { DeleteCustomChainModal } from "@/components/firewall/DeleteCustomChainModal";
 import { FirewallRuleRow } from "@/components/firewall/FirewallRuleRow";
 import { FirewallReorderBanner } from "@/components/firewall/FirewallReorderBanner";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
+import { pageGuides } from "@/lib/help/pageGuides";
 
 type ChainType = "forward" | "input" | "output";
 
@@ -910,6 +912,7 @@ export default function FirewallPoliciesPage() {
                 </h2>
               </div>
               <div className="flex items-center gap-2">
+                <PageGuideDialog guide={pageGuides.firewallPolicies} />
                 <Button
                   variant="outline"
                   size="icon"

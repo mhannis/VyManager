@@ -29,6 +29,8 @@ import {
   type FirewallGlobalOptionsCapabilities,
 } from "@/lib/api/firewall-global-options";
 import { cn } from "@/lib/utils";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
+import { pageGuides } from "@/lib/help/pageGuides";
 
 export default function FirewallGlobalOptionsPage() {
   const [config, setConfig] = useState<FirewallGlobalOptionsConfig | null>(null);
@@ -439,6 +441,7 @@ export default function FirewallGlobalOptionsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <PageGuideDialog guide={pageGuides.firewallGlobalOptions} />
             <Button variant="outline" size="sm" onClick={() => loadData()} disabled={saving}>
               <RefreshCw className={cn("h-4 w-4 mr-1.5", loading && "animate-spin")} />
               Refresh

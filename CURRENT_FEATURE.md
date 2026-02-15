@@ -1,12 +1,12 @@
-feature_id: containers-ux-simplification-r1-2026-02-15
+feature_id: lldp-cpu-firewall-guides-r1-2026-02-15
 status: in_review
-title: Container management progressive disclosure UX
+title: LLDP dashboard visibility and firewall guide UX pass
 branch: feature/containers-automation-v1
 commits:
   - pending
 notes:
-  - Simplified `System -> Containers` create/edit flow with collapsible sections for optional/advanced settings.
-  - Added progressive disclosure controls for LAN helper, runtime overrides, environment variables, port mappings, and volume mappings.
-  - Updated template action wording to `Load Template` and clarified it does not install containers.
-  - Preserved all existing container fields and API payload behavior.
+  - LLDP dashboard card now fetches live status with refresh enabled on load/auto-refresh cycles.
+  - System Information card now always shows CPU temperature badge (value or `Unavailable`).
+  - Added How-To dialogs to firewall Policies, Groups, Global Options, Bridge, and Flowtables pages.
+  - Updated guide validation language to GUI-first validation steps (removed CLI-centric checks).
   - Validated with frontend tsc/lint/build + runtime/browser smoke.

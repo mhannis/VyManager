@@ -54,32 +54,40 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Continue UI simplification without removing functionality, starting with high-density forms.
-- Apply progressive disclosure patterns so advanced fields are hidden until needed.
+- Fix dashboard/runtime visibility issues and continue GUI-first usability polish.
+- Ensure firewall pages expose in-page How-To guidance consistently.
+- Keep all help content validation guidance GUI-first (avoid CLI-centric validation steps).
 - Keep strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) after every UX slice.
 
 ## Current Feature Spec
-Feature: **Container management form simplification (progressive disclosure)**
+Feature: **LLDP dashboard visibility + CPU temp UX + firewall how-to coverage**
 
 Acceptance criteria:
-- `System -> Containers` create/edit flow keeps all existing fields and save/install behavior.
-- High-noise optional sections are collapsed by default and expandable on demand.
-- Template action messaging makes it explicit that template loading does not install.
-- LAN helper remains available but optional, hidden by default, and uses description-first interface labels.
+- LLDP Neighbors dashboard card refreshes against live status and shows neighbors when LLDP is active.
+- System Information card always exposes CPU temperature status (`value` or `Unavailable`).
+- Firewall pages (Policies, Groups, Global Options, Bridge, Flowtables, existing Zones) have in-page How-To access.
+- Help text validation sections are GUI-first and do not instruct CLI command checks.
 - End-to-end validation passes: frontend `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- Operators benefit from reduced always-visible form density more than always-expanded advanced controls.
-- Preserving API payload shape is mandatory; this is a frontend-only UX slice.
+- LLDP card stale state was caused by non-refresh status fetches on cached config.
+- Help content changes are documentation/UX only and do not alter backend behavior.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: container form simplification implemented and validated; commit pending.
+- Status: LLDP/CPU/firewall-how-to UX slice implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/app/system/containers/page.tsx`
+- `frontend/src/components/dashboard/LldpNeighborsCard.tsx`
+- `frontend/src/components/dashboard/SystemInformationCard.tsx`
+- `frontend/src/lib/help/pageGuides.ts`
+- `frontend/src/app/firewall/bridge/page.tsx`
+- `frontend/src/app/firewall/flowtables/page.tsx`
+- `frontend/src/app/firewall/global-options/page.tsx`
+- `frontend/src/app/firewall/groups/page.tsx`
+- `frontend/src/app/firewall/policies/page.tsx`
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
@@ -107,6 +115,10 @@ Assumptions:
 - Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- LLDP Neighbors dashboard card now performs live-refresh fetches (`refresh=true`) on initial load and auto-refresh cycles to avoid stale enabled/neighbor state from cached config.
+- System Information dashboard card now always renders CPU temperature status badge; when temperature is unavailable, badge shows `Unavailable` instead of disappearing.
+- Added shared firewall how-to guides for Policies, Groups, Global Options, Bridge, and Flowtables, and integrated `PageGuideDialog` buttons into those page headers.
+- Existing guide content (Interfaces, DHCP, Zones, Containers, IPsec) was updated so Validation sections are GUI-first and no longer depend on CLI command checks.
 - `System -> Containers` create/edit form now uses progressive disclosure: LAN helper, runtime overrides, environment variables, port mappings, and volume mappings can be collapsed/expanded independently, with safe defaults and no payload contract changes.
 - Template action text now says `Load Template` and clarifies that loading does not install, reducing install-flow confusion.
 - LAN helper segment selector now uses `formatInterfaceDisplayName(...)` for consistent description-first labels.

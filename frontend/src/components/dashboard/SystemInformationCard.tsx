@@ -182,12 +182,13 @@ export function SystemInformationCard({
                     Sockets: {displayOrDash(summary.cpu_socket_count)}
                   </Badge>
                   <Badge variant="secondary">Cores: {displayOrDash(summary.cpu_cores)}</Badge>
-                  {summary.cpu_temperature_celsius !== null && summary.cpu_temperature_celsius !== undefined && (
-                    <Badge variant="outline" className="gap-1">
-                      <Thermometer className="h-3 w-3" />
-                      {summary.cpu_temperature_celsius.toFixed(1)}°C
-                    </Badge>
-                  )}
+                  <Badge variant="outline" className="gap-1">
+                    <Thermometer className="h-3 w-3" />
+                    {summary.cpu_temperature_celsius !== null &&
+                    summary.cpu_temperature_celsius !== undefined
+                      ? `${summary.cpu_temperature_celsius.toFixed(1)}°C`
+                      : "Unavailable"}
+                  </Badge>
                 </div>
               </div>
 

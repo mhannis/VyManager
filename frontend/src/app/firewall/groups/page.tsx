@@ -13,6 +13,8 @@ import type { FirewallGroup, GroupsConfigResponse, FirewallGroupsCapabilities, G
 import { CreateGroupModal } from "@/components/firewall/CreateGroupModal";
 import { EditGroupModal } from "@/components/firewall/EditGroupModal";
 import { DeleteGroupModal } from "@/components/firewall/DeleteGroupModal";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
+import { pageGuides } from "@/lib/help/pageGuides";
 
 export default function FirewallGroupsPage() {
   const [groups, setGroups] = useState<GroupsConfigResponse | null>(null);
@@ -142,6 +144,13 @@ export default function FirewallGroupsPage() {
             <p className="text-muted-foreground mt-1">
               Manage firewall groups for use in firewall rules
             </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <PageGuideDialog guide={pageGuides.firewallGroups} />
+            <Button variant="outline" size="sm" onClick={loadData}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
           </div>
         </div>
 

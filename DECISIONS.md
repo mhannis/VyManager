@@ -176,3 +176,6 @@
 - 2026-02-15: Firewall Create/Edit rule modals now hydrate interface descriptions from ethernet config and display interface selectors as `Description (ethX)` while continuing to store canonical interface-name values in rule payloads.
 - 2026-02-15: NAT Create/Edit modals (source/destination/static) now use description-first interface labels (including VLAN subinterfaces) based on config snapshot metadata while preserving raw interface-name writes.
 - 2026-02-15: `System -> Containers` create/edit UX now uses progressive disclosure (collapsible LAN helper, runtime overrides, environment, ports, and volumes) so common tasks stay simple while advanced controls remain available.
+- 2026-02-15: LLDP dashboard card now always fetches status with `refresh=true` for initial and periodic updates to avoid stale zero-neighbor state caused by cached config reads.
+- 2026-02-15: System Information card now always shows a CPU temperature badge and uses `Unavailable` when no sensor data is reported, improving clarity versus conditionally hiding the metric.
+- 2026-02-15: Added How-To dialogs to firewall Policies, Groups, Global Options, Bridge, and Flowtables pages; guide validation sections were rewritten to GUI-first steps and removed CLI command-check instructions.

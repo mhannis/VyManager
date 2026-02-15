@@ -64,6 +64,8 @@ import { CreateCustomBridgeChainModal } from "@/components/firewall/CreateCustom
 import { DeleteCustomBridgeChainModal } from "@/components/firewall/DeleteCustomBridgeChainModal";
 import { BridgeRuleRow } from "@/components/firewall/BridgeRuleRow";
 import { BridgeReorderBanner } from "@/components/firewall/BridgeReorderBanner";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
+import { pageGuides } from "@/lib/help/pageGuides";
 
 export default function BridgeFirewallPage() {
   const [config, setConfig] = useState<BridgeConfigResponse | null>(null);
@@ -602,6 +604,7 @@ export default function BridgeFirewallPage() {
                 </h2>
               </div>
               <div className="flex items-center gap-2">
+                <PageGuideDialog guide={pageGuides.firewallBridge} />
                 <Button
                   variant="outline"
                   size="icon"
