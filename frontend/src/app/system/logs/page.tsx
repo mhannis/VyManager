@@ -24,6 +24,30 @@ import {
 import { systemService, type SystemLogsResponse, type SystemLogSource } from "@/lib/api/system";
 import { AlertCircle, Download, RefreshCw, Search } from "lucide-react";
 
+type LogServiceFilter =
+  | "all"
+  | "ipsec"
+  | "dhcp"
+  | "dns"
+  | "ssh"
+  | "ntp"
+  | "lldp"
+  | "mdns"
+  | "container"
+  | `process:${string}`;
+
+const SERVICE_FILTERS: Array<{ value: Exclude<LogServiceFilter, `process:${string}`>; label: string; tokens: string[] }> = [
+  { value: "all", label: "All services", tokens: [] },
+  { value: "ipsec", label: "IPsec / IKE", tokens: ["charon", "pluto", "ipsec", "ike"] },
+  { value: "dhcp", label: "DHCP", tokens: ["dhcp", "kea"] },
+  { value: "dns", label: "DNS", tokens: ["dns", "unbound", "bind", "named", "resolver"] },
+  { value: "ssh", label: "SSH", tokens: ["ssh", "sshd"] },
+  { value: "ntp", label: "NTP", tokens: ["ntp", "chrony", "chronyd"] },
+  { value: "lldp", label: "LLDP", tokens: ["lldp", "lldpd"] },
+  { value: "mdns", label: "mDNS", tokens: ["mdns", "avahi"] },
+  { value: "container", label: "Containers", tokens: ["container", "docker", "podman"] },
+];
+
 function severityColor(severity?: string | null): string {
   const normalized = (severity || "").toLowerCase();
   if (["emerg", "alert", "crit", "err"].includes(normalized)) {
@@ -50,6 +74,7 @@ export default function SystemLogsPage() {
 
   const [lineCount, setLineCount] = useState("200");
   const [logSource, setLogSource] = useState<SystemLogSource>("auto");
+  const [serviceFilter, setServiceFilter] = useState<LogServiceFilter>("all");
   const [searchInput, setSearchInput] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
   const [logs, setLogs] = useState<SystemLogsResponse | null>(null);
@@ -81,10 +106,69 @@ export default function SystemLogsPage() {
     return () => clearInterval(interval);
   }, [autoRefresh, lineCount, searchFilter, logSource]);
 
+  const entries = useMemo(() => logs?.entries || [], [logs]);
+  const availableProcesses = useMemo(() => {
+    const discovered = new Set<string>();
+    for (const entry of entries) {
+      const processValue = (entry.process || "").trim();
+      if (!processValue) {
+        continue;
+      }
+      discovered.add(processValue);
+    }
+    return Array.from(discovered).sort((left, right) => left.localeCompare(right));
+  }, [entries]);
+
+  const filteredEntries = useMemo(() => {
+    if (serviceFilter === "all") {
+      return entries;
+    }
+
+    if (serviceFilter.startsWith("process:")) {
+      const expected = serviceFilter.slice("process:".length).toLowerCase();
+      return entries.filter((entry) => (entry.process || "").toLowerCase() === expected);
+    }
+
+    const filter = SERVICE_FILTERS.find((item) => item.value === serviceFilter);
+    if (!filter || filter.tokens.length === 0) {
+      return entries;
+    }
+
+    return entries.filter((entry) => {
+      const processValue = (entry.process || "").toLowerCase();
+      const messageValue = (entry.message || "").toLowerCase();
+      const rawValue = (entry.raw || "").toLowerCase();
+      return filter.tokens.some(
+        (token) => processValue.includes(token) || messageValue.includes(token) || rawValue.includes(token),
+      );
+    });
+  }, [entries, serviceFilter]);
+
   const handleDownload = async () => {
     try {
       setError(null);
       setDownloading(true);
+
+      if (serviceFilter !== "all") {
+        if (filteredEntries.length === 0) {
+          throw new Error("No log entries match the selected service filter.");
+        }
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const serviceLabel =
+          serviceFilter.startsWith("process:") ? serviceFilter.slice("process:".length) : serviceFilter;
+        const content = filteredEntries.map((entry) => entry.raw || entry.message || "").join("\n");
+        const blob = new Blob([content.endsWith("\n") ? content : `${content}\n`], { type: "text/plain" });
+        const url = window.URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = `vyos-${logSource}-logs-${serviceLabel}-${timestamp}.log`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        window.URL.revokeObjectURL(url);
+        return;
+      }
 
       const params = new URLSearchParams({
         lines: String(effectiveLineCount),
@@ -140,8 +224,6 @@ export default function SystemLogsPage() {
     }
   };
 
-  const entries = useMemo(() => logs?.entries || [], [logs]);
-
   return (
     <AppLayout>
       <div className="space-y-6 p-6">
@@ -149,7 +231,7 @@ export default function SystemLogsPage() {
           <div>
             <h1 className="text-3xl font-bold text-foreground">System Logs</h1>
             <p className="text-muted-foreground mt-1">
-              View recent VyOS log messages and filter by text.
+              View recent VyOS log messages and filter by text or service.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -181,7 +263,7 @@ export default function SystemLogsPage() {
           <Card>
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground">Returned</p>
-              <p className="mt-1 text-2xl font-bold">{logs?.returned_lines || 0}</p>
+              <p className="mt-1 text-2xl font-bold">{filteredEntries.length}</p>
             </CardContent>
           </Card>
           <Card>
@@ -215,7 +297,7 @@ export default function SystemLogsPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Filters</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-4">
+          <CardContent className="grid gap-3 md:grid-cols-5">
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Line Count</p>
               <Select value={lineCount} onValueChange={setLineCount}>
@@ -242,6 +324,26 @@ export default function SystemLogsPage() {
                   <SelectItem value="syslog">Syslog (show log)</SelectItem>
                   <SelectItem value="tail">Tail (show log tail)</SelectItem>
                   <SelectItem value="system">System (show system logs)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Service</p>
+              <Select value={serviceFilter} onValueChange={(value) => setServiceFilter(value as LogServiceFilter)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SERVICE_FILTERS.map((filter) => (
+                    <SelectItem key={filter.value} value={filter.value}>
+                      {filter.label}
+                    </SelectItem>
+                  ))}
+                  {availableProcesses.map((processName) => (
+                    <SelectItem key={processName} value={`process:${processName}`}>
+                      Process: {processName}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -278,7 +380,7 @@ export default function SystemLogsPage() {
           <CardContent>
             {loading ? (
               <div className="py-8 text-center text-sm text-muted-foreground">Loading logs...</div>
-            ) : entries.length === 0 ? (
+            ) : filteredEntries.length === 0 ? (
               <div className="py-8 text-center text-sm text-muted-foreground">No log entries found.</div>
             ) : (
               <div className="overflow-x-auto rounded-md border">
@@ -292,7 +394,7 @@ export default function SystemLogsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {entries.map((entry, index) => (
+                    {filteredEntries.map((entry, index) => (
                       <TableRow key={`${entry.timestamp || "ts"}-${entry.process || "proc"}-${index}`}>
                         <TableCell className="font-mono text-xs">
                           {entry.timestamp || "-"}

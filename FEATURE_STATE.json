@@ -1,17 +1,17 @@
 {
-  "feature_id": "cross-domain-page-guides-2026-02-15",
-  "title": "Cross-domain workflow guides for key operations pages",
+  "feature_id": "system-logs-service-filtering-2026-02-15",
+  "title": "Service-aware system logs filtering and export",
   "status": "done",
   "acceptance_criteria": [
-    "A shared guide registry exists for non-routing operational workflows.",
-    "PageGuideDialog is wired into Interfaces, DHCP Server, Firewall Zones, Container Management, and IPsec pages.",
-    "Containers page exposes guide access in loading, bootstrap, and active management views.",
-    "Network Interfaces keeps always-visible Create Interface and Create VLAN/QinQ actions with VLAN below interface action.",
+    "System Logs page supports service filtering by curated service buckets and discovered process names.",
+    "Service filtering updates visible log table entries and returned-count metric.",
+    "Download action exports filtered log entries when a service filter is active.",
+    "Existing line count, source, and search behavior remain unchanged.",
     "Frontend typecheck/lint/build and runtime/browser smoke pass."
   ],
   "assumptions": [
-    "Guide text remains concise and links to upstream docs for exhaustive references.",
-    "This slice is frontend-only and preserves backend/API contracts.",
+    "Service matching based on process/message/raw token matching is sufficient for this slice.",
+    "Filtered download can be generated client-side without backend API changes.",
     "Unrelated dirty files in this worktree remain untouched."
   ],
   "tasks": [
@@ -20,26 +20,16 @@
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/lib/help/pageGuides.ts",
-        "frontend/src/app/network/interfaces/page.tsx",
-        "frontend/src/app/network/dhcp/page.tsx",
-        "frontend/src/app/firewall/zones/page.tsx",
-        "frontend/src/app/system/containers/page.tsx",
-        "frontend/src/app/vpn/ipsec/page.tsx"
+        "frontend/src/app/system/logs/page.tsx"
       ],
-      "notes": "Added cross-domain how-to guide content and integrated dialog entry points on core operations pages."
+      "notes": "Added service filter selector, dynamic process filter options, filtered table view, and filtered download behavior."
     },
     {
       "id": "T2",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "frontend/src/lib/help/pageGuides.ts",
-        "frontend/src/app/network/interfaces/page.tsx",
-        "frontend/src/app/network/dhcp/page.tsx",
-        "frontend/src/app/firewall/zones/page.tsx",
-        "frontend/src/app/system/containers/page.tsx",
-        "frontend/src/app/vpn/ipsec/page.tsx"
+        "frontend/src/app/system/logs/page.tsx"
       ],
       "notes": "Validated with tsc, lint, build, runtime smoke, and browser smoke."
     },
@@ -48,14 +38,9 @@
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/lib/help/pageGuides.ts",
-        "frontend/src/app/network/interfaces/page.tsx",
-        "frontend/src/app/network/dhcp/page.tsx",
-        "frontend/src/app/firewall/zones/page.tsx",
-        "frontend/src/app/system/containers/page.tsx",
-        "frontend/src/app/vpn/ipsec/page.tsx"
+        "frontend/src/app/system/logs/page.tsx"
       ],
-      "notes": "Manual review approved: additive UI guidance only, no API contract changes, and no runtime regressions in smoke."
+      "notes": "Manual review approved: additive frontend-only UX enhancement with no API contract changes."
     }
   ],
   "commands": {

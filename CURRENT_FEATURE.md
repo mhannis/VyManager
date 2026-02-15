@@ -1,12 +1,12 @@
-feature_id: cross-domain-page-guides-2026-02-15
+feature_id: system-logs-service-filtering-2026-02-15
 status: done
-title: Cross-domain workflow guides for key operations pages
+title: Service-aware system logs filtering and export
 branch: feature/containers-automation-v1
 commits:
   - pending
 notes:
-  - Added shared `pageGuides` registry for non-routing workflows (interfaces, DHCP, zones, containers, IPsec).
-  - Integrated `PageGuideDialog` into each target page with canonical VyOS docs links and setup/validation/troubleshooting sections.
-  - Kept Network Interfaces action layout with always-visible `Create Interface` and `Create VLAN / QinQ` buttons.
-  - Added guide access to container loading/bootstrap/active states for consistent operator onboarding.
+  - Added service filter support in `System -> Logs` using both curated service groups and live discovered process names.
+  - Filter now applies to table output and returned-count metric.
+  - Download now exports the current filtered log view when a service filter is active.
+  - Existing line count/source/search behavior remains intact.
   - Validated with frontend tsc/build and runtime + browser smoke.

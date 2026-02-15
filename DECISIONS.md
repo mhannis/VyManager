@@ -155,3 +155,5 @@
 - 2026-02-15: Added shared `frontend/src/lib/help/pageGuides.ts` registry and integrated `PageGuideDialog` into Interfaces, DHCP Server, Firewall Zones, Container Management, and IPsec pages.
 - 2026-02-15: Container Management now exposes guide access consistently in loading, bootstrap, and active-management states to keep first-run setup and steady-state ops aligned.
 - 2026-02-15: Network Interfaces action controls now always show `Create Interface` plus `Create VLAN / QinQ` (VLAN button positioned below interface button), removing filter-dependent button swapping.
+- 2026-02-15: `System -> Logs` now supports service-aware filtering (preset service buckets plus discovered process selectors) and applies that filter to visible entries/counts.
+- 2026-02-15: When a service filter is active, log download exports the currently filtered rows client-side to provide targeted troubleshooting bundles without backend API changes.

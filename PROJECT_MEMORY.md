@@ -54,37 +54,33 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Continue post-parity robustness pass by extending built-in how-to guidance across high-impact operational pages.
-- Keep GUI form-driven (no free-form CLI entry) and add embedded setup/validation/troubleshooting instructions.
-- Preserve requested IA/action behavior while hardening runtime stability (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
+- Continue post-parity robustness pass by improving `System -> Logs` with service-level filtering and clearer operational workflow.
+- Keep GUI form-driven (no free-form CLI entry) while making troubleshooting tasks (service-specific log triage + export) faster.
+- Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) after every slice.
 
 ## Current Feature Spec
-Feature: **Cross-domain workflow guides for key operations pages**
+Feature: **Service-aware system logs filtering and export**
 
 Acceptance criteria:
-- Add shared guide registry for non-routing workflows.
-- Wire `PageGuideDialog` into `Network Interfaces`, `DHCP Server`, `Firewall Zones`, `Container Management`, and `IPsec`.
-- Keep Containers bootstrap and active-management views covered by the same guide entry point.
-- Keep Network Interfaces action layout with always-visible `Create Interface` and `Create VLAN / QinQ` buttons (VLAN button below interface button).
+- Add service filter control on `System -> Logs` with both curated service buckets and discovered process names.
+- Apply service filter to displayed entries and visible returned-count metrics.
+- Support filtered log download when a service filter is active.
+- Preserve existing line-count/source/search flows and backend contracts.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- Guide content remains concise and links to canonical VyOS docs for exhaustive option reference.
+- Service matching can be implemented as token matching over process/message/raw text without backend API changes.
+- Downloading filtered entries client-side is acceptable when a service filter is active.
 - This slice is frontend-only and does not change backend/API contracts.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: cross-domain guide slice implemented and validated; commit pending.
+- Status: service-aware logs slice implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/lib/help/pageGuides.ts` (new)
-- `frontend/src/app/network/interfaces/page.tsx`
-- `frontend/src/app/network/dhcp/page.tsx`
-- `frontend/src/app/firewall/zones/page.tsx`
-- `frontend/src/app/system/containers/page.tsx`
-- `frontend/src/app/vpn/ipsec/page.tsx`
+- `frontend/src/app/system/logs/page.tsx`
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
@@ -188,3 +184,5 @@ Assumptions:
 - Added shared non-routing guide registry `pageGuides` and wired page-level help dialogs into Interfaces, DHCP Server, Firewall Zones, Container Management, and IPsec.
 - Container Management now exposes the same guide entry in loading, bootstrap, and active-management states so first-run and steady-state operators get identical setup guidance.
 - Network Interfaces page action row now keeps both `Create Interface` and `Create VLAN / QinQ` visible at all times, with VLAN action positioned below interface action to avoid filter-dependent button switching.
+- `System -> Logs` now supports service-aware filtering (preset service buckets plus discovered process names) and applies that filter to the visible entries/returned count.
+- When a service filter is active, log download now exports the currently filtered rows directly from the UI so operators can capture targeted troubleshooting bundles.
