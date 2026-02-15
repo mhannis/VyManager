@@ -3,7 +3,7 @@ status: done
 title: Phase1 parity closure batch - VRF, Load Balancing, High Availability, Traffic Policy, PKI, Configuration Index
 branch: feature/containers-automation-v1
 commits:
-  - pending
+  - 6f2aca9
 notes:
   - Added thin backend config-tree wrappers and routers for all remaining uncovered non-routing domains.
   - Replaced placeholder pages with form-driven GUI editors for VRF, Load Balancing, High Availability, Traffic Policy, and PKI.

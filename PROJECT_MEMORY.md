@@ -75,7 +75,7 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: non-routing parity closure batch implemented and validated; pending commit/push in this cycle.
+- Status: non-routing parity closure batch implemented, validated, and committed (`6f2aca9`); pending push.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
