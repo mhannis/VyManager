@@ -54,30 +54,41 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Continue robustness sweep by removing obsolete routing command/list editor components that are no longer referenced after form-first page replacements.
-- Keep GUI form-driven (no free-form CLI entry) while aligning each page to the corresponding VyOS command tree semantics.
+- Continue post-parity robustness pass by adding built-in page how-to guidance and removing selector-shell flicker/perf issues.
+- Keep GUI form-driven (no free-form CLI entry) while improving operator clarity without external documentation lookup.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) each slice.
 
 ## Current Feature Spec
-Feature: **Routing editor cleanup (remove dead command/list editor components)**
+Feature: **Routing how-to guides + selector stability hardening**
 
 Acceptance criteria:
-- Unused `frontend/src/components/routing/ProtocolCommandContent.tsx` and `frontend/src/components/routing/ProtocolSimpleListEditor.tsx` are removed.
-- Frontend build/typecheck remains green with no unresolved references after deletion.
+- Add reusable page-level help dialog component and shared routing guide content.
+- Wire guide dialogs into OSPF, IS-IS, OpenFabric, RIP, and MPLS protocol pages.
+- Remove `setState`-in-effect selector patterns on `/routing/unicast-protocols`, `/routing/infrastructure`, and `/routing/multicast`.
+- Frontend build/typecheck remains green with no route/runtime regressions.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- The removed components are fully superseded by dedicated form-first pages and are not imported by active routes.
+- Guide content can be practical and operator-focused while still linking to canonical VyOS docs for exhaustive reference.
+- Selector pages continue to render selected content inline (not route-changing) in this slice; only selection-state mechanics are hardened.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: routing editor cleanup implemented and validated; commit pending.
+- Status: routing guide + selector-stability slice implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/components/routing/ProtocolCommandContent.tsx` (deleted)
-- `frontend/src/components/routing/ProtocolSimpleListEditor.tsx` (deleted)
+- `frontend/src/components/common/PageGuideDialog.tsx` (new)
+- `frontend/src/lib/help/routingProtocolGuides.ts` (new)
+- `frontend/src/components/routing/OspfContent.tsx`
+- `frontend/src/components/routing/IsisContent.tsx`
+- `frontend/src/components/routing/OpenfabricContent.tsx`
+- `frontend/src/components/routing/RipContent.tsx`
+- `frontend/src/components/routing/MplsContent.tsx`
+- `frontend/src/app/routing/unicast-protocols/page.tsx`
+- `frontend/src/app/routing/infrastructure/page.tsx`
+- `frontend/src/app/routing/multicast/page.tsx`
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
@@ -172,3 +183,6 @@ Assumptions:
 - Reviewer-agent spawn can fail due thread cap (`max 6`); manual reviewer pass is the fallback and must be logged in `LAST_FAILURE.txt`.
 - PKI CA editor now uses guide-aligned fields (`certificate`, `crl`, `description`, `private key`, `private password-protected`) and removed the prior non-standard passphrase text model.
 - PKI certificate editor now includes `description`, `private password-protected`, `revoke`, and full ACME metadata (`domain-name`, `email`, `listen-address`, `rsa-key-size`, `url`) with diff-based set/delete commands.
+- Added reusable `PageGuideDialog` component for inline operator help with docs link plus ordered setup/validation/troubleshooting sections.
+- Added shared routing how-to content registry (`routingProtocolGuides`) and wired it into OSPF, IS-IS, OpenFabric, RIP, and MPLS pages.
+- Removed effect-driven selector resets in unicast/infrastructure/multicast routing shells by deriving active selection from permissions + optional user selection, eliminating `react-hooks/set-state-in-effect` warnings and reducing selector flicker risk.

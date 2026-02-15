@@ -23,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { ripService } from "@/lib/api/rip";
 import { ethernetService } from "@/lib/api/ethernet";
@@ -30,6 +31,7 @@ import { showService } from "@/lib/api/show";
 import { routeMapService } from "@/lib/api/route-map";
 import { accessListService } from "@/lib/api/access-list";
 import { prefixListService } from "@/lib/api/prefix-list";
+import { routingProtocolGuides } from "@/lib/help/routingProtocolGuides";
 import { formatInterfaceDisplayName } from "@/lib/utils";
 
 type InterfaceOption = {
@@ -846,6 +848,7 @@ export function RipContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <PageGuideDialog guide={routingProtocolGuides.rip} />
           <Button variant="outline" size="sm" onClick={() => loadData(true)}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh

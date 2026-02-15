@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import {
   Select,
   SelectContent,
@@ -26,6 +27,7 @@ import {
 import { ethernetService } from "@/lib/api/ethernet";
 import { openfabricService } from "@/lib/api/openfabric";
 import { showService } from "@/lib/api/show";
+import { routingProtocolGuides } from "@/lib/help/routingProtocolGuides";
 import { formatInterfaceDisplayName } from "@/lib/utils";
 
 type InterfaceOption = {
@@ -565,6 +567,7 @@ export function OpenfabricContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <PageGuideDialog guide={routingProtocolGuides.openfabric} />
           <Button variant="outline" size="sm" onClick={() => loadData(true)}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
@@ -953,4 +956,3 @@ export function OpenfabricContent() {
     </div>
   );
 }
-

@@ -1,16 +1,16 @@
 {
-  "feature_id": "routing-editor-cleanup-2026-02-15",
-  "title": "Routing editor cleanup (remove obsolete command/list components)",
+  "feature_id": "routing-help-and-selector-stability-2026-02-15",
+  "title": "Routing help guides and selector-state stability hardening",
   "status": "done",
   "acceptance_criteria": [
-    "Unused `frontend/src/components/routing/ProtocolCommandContent.tsx` is removed.",
-    "Unused `frontend/src/components/routing/ProtocolSimpleListEditor.tsx` is removed.",
-    "Frontend typecheck and build succeed with no unresolved imports.",
-    "Runtime smoke and browser smoke pass after cleanup."
+    "A reusable help dialog component exists for page-level operator guidance.",
+    "Routing protocol how-to guides are available from OSPF, IS-IS, OpenFabric, RIP, and MPLS pages.",
+    "Routing selector shells avoid setState-in-effect patterns and derive selected panel deterministically.",
+    "Frontend typecheck/build and runtime/browser smoke pass after changes."
   ],
   "assumptions": [
-    "All active routing pages now rely on dedicated form-first components and do not need the removed generic editors.",
-    "No backend/API changes are required for this cleanup.",
+    "Guide content can focus on operational setup and verification while linking to upstream VyOS docs for complete option references.",
+    "Selector pages will remain inline panel switchers in this slice (no route refactor).",
     "Unrelated dirty files in this worktree remain untouched."
   ],
   "tasks": [
@@ -19,30 +19,62 @@
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/routing/ProtocolCommandContent.tsx",
-        "frontend/src/components/routing/ProtocolSimpleListEditor.tsx"
+        "frontend/src/components/common/PageGuideDialog.tsx",
+        "frontend/src/lib/help/routingProtocolGuides.ts",
+        "frontend/src/components/routing/OspfContent.tsx",
+        "frontend/src/components/routing/IsisContent.tsx",
+        "frontend/src/components/routing/OpenfabricContent.tsx",
+        "frontend/src/components/routing/RipContent.tsx",
+        "frontend/src/components/routing/MplsContent.tsx"
       ],
-      "notes": "Removed dead components after confirming zero imports."
+      "notes": "Added reusable help dialog and integrated page-level guides for five protocol pages."
     },
     {
       "id": "T2",
-      "owner_role": "Test",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/routing/ProtocolCommandContent.tsx",
-        "frontend/src/components/routing/ProtocolSimpleListEditor.tsx"
+        "frontend/src/app/routing/unicast-protocols/page.tsx",
+        "frontend/src/app/routing/infrastructure/page.tsx",
+        "frontend/src/app/routing/multicast/page.tsx"
       ],
-      "notes": "Validated with frontend tsc/build plus runtime and browser smoke checks."
+      "notes": "Removed effect-driven selection resets and switched to derived-selection state for stability and reduced flicker."
     },
     {
       "id": "T3",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "frontend/src/components/common/PageGuideDialog.tsx",
+        "frontend/src/lib/help/routingProtocolGuides.ts",
+        "frontend/src/components/routing/OspfContent.tsx",
+        "frontend/src/components/routing/IsisContent.tsx",
+        "frontend/src/components/routing/OpenfabricContent.tsx",
+        "frontend/src/components/routing/RipContent.tsx",
+        "frontend/src/components/routing/MplsContent.tsx",
+        "frontend/src/app/routing/unicast-protocols/page.tsx",
+        "frontend/src/app/routing/infrastructure/page.tsx",
+        "frontend/src/app/routing/multicast/page.tsx"
+      ],
+      "notes": "Validated with tsc, lint, build, runtime smoke, and browser smoke."
+    },
+    {
+      "id": "T4",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/components/routing/ProtocolCommandContent.tsx",
-        "frontend/src/components/routing/ProtocolSimpleListEditor.tsx"
+        "frontend/src/components/common/PageGuideDialog.tsx",
+        "frontend/src/lib/help/routingProtocolGuides.ts",
+        "frontend/src/components/routing/OspfContent.tsx",
+        "frontend/src/components/routing/IsisContent.tsx",
+        "frontend/src/components/routing/OpenfabricContent.tsx",
+        "frontend/src/components/routing/RipContent.tsx",
+        "frontend/src/components/routing/MplsContent.tsx",
+        "frontend/src/app/routing/unicast-protocols/page.tsx",
+        "frontend/src/app/routing/infrastructure/page.tsx",
+        "frontend/src/app/routing/multicast/page.tsx"
       ],
-      "notes": "Manual in-session review completed; no blocking issues found."
+      "notes": "Manual review: no contract changes, no free-form CLI UX regressions, and no route-level runtime crashes observed in smoke."
     }
   ],
   "commands": {
@@ -53,7 +85,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Parity implementation and runtime validation",
+      "purpose": "Parity and robustness implementation with runtime validation",
       "status": "active"
     }
   ]

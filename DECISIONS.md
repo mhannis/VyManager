@@ -146,3 +146,6 @@
 - 2026-02-15: Added CAKE `flow-isolation` control to the QoS policy editor and mapped it to `qos policy cake <name> flow-isolation <mode>` operations.
 - 2026-02-15: During CAKE parser extension, TypeScript validation failed due missing helper; fixed by adding `parseDirectOrKey(...)` in traffic-policy parser helpers and rerunning full validation gates.
 - 2026-02-15: Removed unused routing generic editor components (`ProtocolCommandContent`, `ProtocolSimpleListEditor`) after dedicated form-first pages fully replaced their usage.
+- 2026-02-15: Added reusable `PageGuideDialog` and shared routing guide registry so high-use protocol pages can provide built-in setup/validation/troubleshooting steps without external lookup.
+- 2026-02-15: Applied routing help dialogs first to OSPF, IS-IS, OpenFabric, RIP, and MPLS as an initial vertical slice, preserving existing protocol API contracts and form-driven workflows.
+- 2026-02-15: Removed `setState`-inside-`useEffect` selector reset patterns in `/routing/unicast-protocols`, `/routing/infrastructure`, and `/routing/multicast`; active selection is now derived from permitted items + optional explicit user choice to reduce flicker and rerender churn.

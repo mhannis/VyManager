@@ -8,7 +8,7 @@ import { RpkiContent } from "@/components/routing/RpkiContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Settings, ChevronRight, Activity, Box, Globe, Shield } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
@@ -31,19 +31,15 @@ export default function InfrastructurePage() {
     return allInfrastructure.filter(infra => canRead(infra.permission));
   }, [canRead, isLoading]);
 
-  const [selectedInfra, setSelectedInfra] = useState<InfraType | null>(null);
+  const [infraSelection, setInfraSelection] = useState<InfraType | null>(null);
 
-  // Auto-select first available infrastructure component and reset invalid selections.
-  useEffect(() => {
-    if (infrastructure.length === 0) {
-      setSelectedInfra(null);
-      return;
+  const selectedInfra = useMemo<InfraType | null>(() => {
+    if (infrastructure.length === 0) return null;
+    if (infraSelection && infrastructure.some((item) => item.id === infraSelection)) {
+      return infraSelection;
     }
-
-    if (!selectedInfra || !infrastructure.some((item) => item.id === selectedInfra)) {
-      setSelectedInfra(infrastructure[0].id);
-    }
-  }, [infrastructure, selectedInfra]);
+    return infrastructure[0].id;
+  }, [infrastructure, infraSelection]);
 
   return (
     <AppLayout>
@@ -81,7 +77,7 @@ export default function InfrastructurePage() {
                 return (
                   <button
                     key={infra.id}
-                    onClick={() => setSelectedInfra(infra.id)}
+                    onClick={() => setInfraSelection(infra.id)}
                     className={cn(
                       "w-full text-left rounded-lg px-3 py-3 transition-all",
                       selectedInfra === infra.id

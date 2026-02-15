@@ -7,7 +7,7 @@ import { Pim6Content } from "@/components/routing/Pim6Content";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Radio, ChevronRight, Wifi } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
@@ -29,19 +29,15 @@ export default function MulticastPage() {
     return allMulticast.filter(protocol => canRead(protocol.permission));
   }, [canRead, isLoading]);
 
-  const [selectedMulticast, setSelectedMulticast] = useState<MulticastType | null>(null);
+  const [multicastSelection, setMulticastSelection] = useState<MulticastType | null>(null);
 
-  // Auto-select first available protocol and reset invalid selections.
-  useEffect(() => {
-    if (multicast.length === 0) {
-      setSelectedMulticast(null);
-      return;
+  const selectedMulticast = useMemo<MulticastType | null>(() => {
+    if (multicast.length === 0) return null;
+    if (multicastSelection && multicast.some((protocol) => protocol.id === multicastSelection)) {
+      return multicastSelection;
     }
-
-    if (!selectedMulticast || !multicast.some((protocol) => protocol.id === selectedMulticast)) {
-      setSelectedMulticast(multicast[0].id);
-    }
-  }, [multicast, selectedMulticast]);
+    return multicast[0].id;
+  }, [multicast, multicastSelection]);
 
   return (
     <AppLayout>
@@ -79,7 +75,7 @@ export default function MulticastPage() {
                   return (
                     <button
                       key={protocol.id}
-                      onClick={() => setSelectedMulticast(protocol.id)}
+                      onClick={() => setMulticastSelection(protocol.id)}
                       className={cn(
                         "w-full text-left rounded-lg px-3 py-3 transition-all",
                         selectedMulticast === protocol.id

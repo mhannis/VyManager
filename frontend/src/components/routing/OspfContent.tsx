@@ -24,10 +24,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { ospfService } from "@/lib/api/ospf";
 import { ethernetService } from "@/lib/api/ethernet";
 import { showService } from "@/lib/api/show";
 import { routeMapService } from "@/lib/api/route-map";
+import { routingProtocolGuides } from "@/lib/help/routingProtocolGuides";
 import { formatInterfaceDisplayName } from "@/lib/utils";
 
 type AreaNetworkEntry = {
@@ -743,6 +745,7 @@ export function OspfContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <PageGuideDialog guide={routingProtocolGuides.ospf} />
           <Button variant="outline" size="sm" onClick={() => loadData(true)}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh

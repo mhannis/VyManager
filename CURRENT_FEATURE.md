@@ -1,10 +1,11 @@
-feature_id: routing-editor-cleanup-2026-02-15
+feature_id: routing-help-and-selector-stability-2026-02-15
 status: done
-title: Routing editor cleanup (remove obsolete command/list components)
+title: Routing help guides and selector-state stability hardening
 branch: feature/containers-automation-v1
 commits:
   - pending
 notes:
-  - Removed unused `ProtocolCommandContent` and `ProtocolSimpleListEditor` components.
-  - Confirmed no remaining imports and no routing pages depend on command-box/list-editor fallback components.
+  - Added reusable page-level how-to dialog and guide content for core routing protocols.
+  - Integrated guides into OSPF, IS-IS, OpenFabric, RIP, and MPLS pages.
+  - Reworked routing selector shell state to remove effect-driven setState patterns and reduce flicker.
   - Validated with frontend tsc/build and runtime + browser smoke.

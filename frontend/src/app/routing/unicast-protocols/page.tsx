@@ -10,7 +10,7 @@ import { OpenfabricContent } from "@/components/routing/OpenfabricContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Network, ChevronRight } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
@@ -35,19 +35,15 @@ export default function UnicastProtocolsPage() {
     return allProtocols.filter(protocol => canRead(protocol.permission));
   }, [canRead, isLoading]);
 
-  const [selectedProtocol, setSelectedProtocol] = useState<ProtocolType | null>(null);
+  const [protocolSelection, setProtocolSelection] = useState<ProtocolType | null>(null);
 
-  // Auto-select first available protocol and reset invalid selections.
-  useEffect(() => {
-    if (protocols.length === 0) {
-      setSelectedProtocol(null);
-      return;
+  const selectedProtocol = useMemo<ProtocolType | null>(() => {
+    if (protocols.length === 0) return null;
+    if (protocolSelection && protocols.some((protocol) => protocol.id === protocolSelection)) {
+      return protocolSelection;
     }
-
-    if (!selectedProtocol || !protocols.some((protocol) => protocol.id === selectedProtocol)) {
-      setSelectedProtocol(protocols[0].id);
-    }
-  }, [protocols, selectedProtocol]);
+    return protocols[0].id;
+  }, [protocols, protocolSelection]);
 
   return (
     <AppLayout>
@@ -83,7 +79,7 @@ export default function UnicastProtocolsPage() {
                 protocols.map((protocol) => (
                 <button
                   key={protocol.id}
-                  onClick={() => setSelectedProtocol(protocol.id)}
+                  onClick={() => setProtocolSelection(protocol.id)}
                   className={cn(
                     "w-full text-left rounded-lg px-3 py-3 transition-all",
                     selectedProtocol === protocol.id
