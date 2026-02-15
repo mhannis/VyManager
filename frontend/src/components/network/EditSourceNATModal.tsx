@@ -14,12 +14,15 @@ import { AlertCircle } from "lucide-react";
 import { natService } from "@/lib/api/nat";
 import { firewallGroupsService } from "@/lib/api/firewall-groups";
 import { configService } from "@/lib/api/config";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 import type { FirewallGroup } from "@/lib/api/types/firewall-groups";
 import type { SourceNATRule } from "@/lib/api/nat";
 
 interface SimpleInterface {
   name: string;
   type: string;
+  description?: string | null;
+  label: string;
 }
 
 interface EditSourceNATModalProps {
@@ -304,15 +307,31 @@ export function EditSourceNATModal({ open, onOpenChange, rule, onSuccess }: Edit
         const typeInterfaces = interfacesConfig[ifaceType];
         if (typeInterfaces && typeof typeInterfaces === "object") {
           for (const ifaceName of Object.keys(typeInterfaces)) {
-            allInterfaces.push({ name: ifaceName, type: ifaceType });
+            const ifaceConfig = typeInterfaces[ifaceName];
+            const ifaceDescription =
+              typeof ifaceConfig?.description === "string"
+                ? ifaceConfig.description.trim()
+                : null;
+            allInterfaces.push({
+              name: ifaceName,
+              type: ifaceType,
+              description: ifaceDescription,
+              label: formatInterfaceDisplayName(ifaceName, ifaceDescription),
+            });
 
             // Check for VLANs (vif) under ethernet/bonding/bridge interfaces
-            const ifaceConfig = typeInterfaces[ifaceName];
             if (ifaceConfig?.vif && typeof ifaceConfig.vif === "object") {
               for (const vlanId of Object.keys(ifaceConfig.vif)) {
+                const vlanConfig = ifaceConfig.vif[vlanId];
+                const vlanDescription =
+                  typeof vlanConfig?.description === "string"
+                    ? vlanConfig.description.trim()
+                    : null;
                 allInterfaces.push({
                   name: `${ifaceName}.${vlanId}`,
                   type: "vlan",
+                  description: vlanDescription,
+                  label: formatInterfaceDisplayName(`${ifaceName}.${vlanId}`, vlanDescription),
                 });
               }
             }
@@ -546,7 +565,7 @@ export function EditSourceNATModal({ open, onOpenChange, rule, onSuccess }: Edit
                     <SelectContent>
                       {interfaces.map((iface) => (
                         <SelectItem key={iface.name} value={iface.name}>
-                          {iface.name}
+                          {iface.label || iface.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -54,15 +54,15 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Harden firewall rule UX consistency by ensuring interface selectors are description-first across create/edit flows.
+- Harden NAT rule UX consistency by ensuring interface selectors are description-first across create/edit flows.
 - Continue applying global interface-labeling convention (`Description (ethX)`) to high-traffic forms.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) after every slice.
 
 ## Current Feature Spec
-Feature: **Firewall rule modal interface-label robustness**
+Feature: **NAT modal interface-label robustness**
 
 Acceptance criteria:
-- Firewall create/edit modals show description-first interface labels.
+- NAT create/edit modals show description-first interface labels.
 - Interface dropdown values remain canonical interface names for API compatibility.
 - Fallback labeling remains safe for interfaces with no description.
 - End-to-end validation passes: frontend `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
@@ -74,12 +74,16 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: firewall interface-label polish implemented and validated; commit pending.
+- Status: NAT interface-label polish implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/components/firewall/CreateFirewallRuleModal.tsx`
-- `frontend/src/components/firewall/EditFirewallRuleModal.tsx`
+- `frontend/src/components/network/CreateSourceNATModal.tsx`
+- `frontend/src/components/network/EditSourceNATModal.tsx`
+- `frontend/src/components/network/CreateDestinationNATModal.tsx`
+- `frontend/src/components/network/EditDestinationNATModal.tsx`
+- `frontend/src/components/network/CreateStaticNATModal.tsx`
+- `frontend/src/components/network/EditStaticNATModal.tsx`
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
@@ -107,6 +111,8 @@ Assumptions:
 - Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- NAT Create/Edit modals (source, destination, static) now derive interface labels from config descriptions and render selectors as `Description (ethX)` while still submitting raw interface names.
+- VLAN `vif` entries in NAT modals now also pick up per-subinterface descriptions from config where present and fall back to interface IDs otherwise.
 - Firewall Create/Edit rule modals now enrich interface selectors using ethernet descriptions and render labels as `Description (ethX)` while preserving canonical interface names for actual rule values.
 - Interface-label enrichment merges `show all interfaces` + `ethernet config` in-modal, so non-ethernet/non-described interfaces still appear and fall back to raw names.
 - Dashboard layout now persists `settings.columns` (2-4) and `settings.gap_px` (8-24) alongside card positions; the dashboard renderer applies these settings to both masonry grid and drag-drop overlays.

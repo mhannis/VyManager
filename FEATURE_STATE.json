@@ -1,17 +1,18 @@
 {
-  "feature_id": "firewall-interface-labels-r3-2026-02-15",
-  "title": "Firewall rule modal interface-label robustness",
+  "feature_id": "nat-interface-labels-r4-2026-02-15",
+  "title": "NAT modal interface-label robustness",
   "status": "in_review",
   "acceptance_criteria": [
-    "Create Firewall Rule modal shows interface selectors with description-first labels where descriptions exist.",
-    "Edit Firewall Rule modal shows interface selectors with description-first labels where descriptions exist.",
-    "Underlying selected values remain canonical interface names for write operations.",
-    "Feature degrades safely to raw interface names when descriptions are unavailable.",
+    "Source NAT create/edit modals show interface selectors as description-first labels.",
+    "Destination NAT create/edit modals show interface selectors as description-first labels.",
+    "Static NAT create/edit modals show interface selectors as description-first labels.",
+    "VLAN subinterfaces are labeled with description-first fallback behavior when descriptions exist.",
+    "NAT API payload values remain canonical interface names.",
     "Frontend validation gates pass (tsc, lint, build, runtime smoke, UI smoke)."
   ],
   "assumptions": [
-    "Interface descriptions should be sourced from ethernet config and mapped onto the broader show-interface list where names match.",
-    "Rule APIs should continue receiving interface names only; labels are display-only.",
+    "NAT modal interface options are sourced from running config snapshot and may include non-ethernet interfaces without descriptions.",
+    "Label enrichment should remain display-only and not change backend command semantics.",
     "Existing unrelated working tree changes remain untouched."
   ],
   "tasks": [
@@ -20,10 +21,14 @@
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
-        "frontend/src/components/firewall/EditFirewallRuleModal.tsx"
+        "frontend/src/components/network/CreateSourceNATModal.tsx",
+        "frontend/src/components/network/EditSourceNATModal.tsx",
+        "frontend/src/components/network/CreateDestinationNATModal.tsx",
+        "frontend/src/components/network/EditDestinationNATModal.tsx",
+        "frontend/src/components/network/CreateStaticNATModal.tsx",
+        "frontend/src/components/network/EditStaticNATModal.tsx"
       ],
-      "notes": "Added ethernet config description hydration and description-first labels for inbound/outbound interface selectors."
+      "notes": "Added description hydration + formatted display labels for all NAT interface selectors."
     },
     {
       "id": "T2",
@@ -37,10 +42,14 @@
       "owner_role": "Reviewer",
       "status": "doing",
       "files": [
-        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
-        "frontend/src/components/firewall/EditFirewallRuleModal.tsx"
+        "frontend/src/components/network/CreateSourceNATModal.tsx",
+        "frontend/src/components/network/EditSourceNATModal.tsx",
+        "frontend/src/components/network/CreateDestinationNATModal.tsx",
+        "frontend/src/components/network/EditDestinationNATModal.tsx",
+        "frontend/src/components/network/CreateStaticNATModal.tsx",
+        "frontend/src/components/network/EditStaticNATModal.tsx"
       ],
-      "notes": "Manual verification pending on live firewall rule create/edit flows."
+      "notes": "Manual verification pending on live NAT create/edit forms."
     }
   ],
   "commands": {
@@ -51,7 +60,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Firewall interface-label consistency hardening",
+      "purpose": "NAT interface-label consistency hardening",
       "status": "active"
     }
   ]
