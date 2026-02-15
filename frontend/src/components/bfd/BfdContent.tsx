@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
@@ -31,6 +32,7 @@ import {
   BfdPeer,
   BfdProfile,
 } from "@/lib/api/bfd";
+import { routingProtocolGuides } from "@/lib/help/routingProtocolGuides";
 import { BfdPeerModal } from "./BfdPeerModal";
 import { DeleteBfdPeerModal } from "./DeleteBfdPeerModal";
 import { BfdProfileModal } from "./BfdProfileModal";
@@ -170,14 +172,17 @@ export function BfdContent() {
                 Bidirectional Forwarding Detection for rapid failure detection
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => loadData(true)}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <PageGuideDialog guide={routingProtocolGuides.bfd} />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadData(true)}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
           </div>
 
           {error && (

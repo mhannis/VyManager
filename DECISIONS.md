@@ -149,3 +149,5 @@
 - 2026-02-15: Added reusable `PageGuideDialog` and shared routing guide registry so high-use protocol pages can provide built-in setup/validation/troubleshooting steps without external lookup.
 - 2026-02-15: Applied routing help dialogs first to OSPF, IS-IS, OpenFabric, RIP, and MPLS as an initial vertical slice, preserving existing protocol API contracts and form-driven workflows.
 - 2026-02-15: Removed `setState`-inside-`useEffect` selector reset patterns in `/routing/unicast-protocols`, `/routing/infrastructure`, and `/routing/multicast`; active selection is now derived from permitted items + optional explicit user choice to reduce flicker and rerender churn.
+- 2026-02-15: Extended the same in-page help model to infrastructure/multicast protocol pages (BFD, RPKI, IGMP Proxy, PIM, PIM6) to keep operator guidance consistent across routing domains.
+- 2026-02-15: Kept guide integration frontend-only and additive; no backend router/service/API contract changes were introduced for this UX slice.

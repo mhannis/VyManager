@@ -5,6 +5,7 @@ import { Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -26,6 +27,7 @@ import {
 import { pim6Service } from "@/lib/api/pim6";
 import { ethernetService } from "@/lib/api/ethernet";
 import { showService } from "@/lib/api/show";
+import { routingProtocolGuides } from "@/lib/help/routingProtocolGuides";
 import { formatInterfaceDisplayName } from "@/lib/utils";
 
 type InterfaceOption = {
@@ -481,6 +483,7 @@ export function Pim6Content() {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
+            <PageGuideDialog guide={routingProtocolGuides.pim6} />
             <Button variant="outline" onClick={() => loadData(true)} disabled={loading || saving}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh

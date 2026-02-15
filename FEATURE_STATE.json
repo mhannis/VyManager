@@ -4,7 +4,7 @@
   "status": "done",
   "acceptance_criteria": [
     "A reusable help dialog component exists for page-level operator guidance.",
-    "Routing protocol how-to guides are available from OSPF, IS-IS, OpenFabric, RIP, and MPLS pages.",
+    "Routing protocol how-to guides are available from OSPF, IS-IS, OpenFabric, RIP, MPLS, BFD, RPKI, IGMP Proxy, PIM, and PIM6 pages.",
     "Routing selector shells avoid setState-in-effect patterns and derive selected panel deterministically.",
     "Frontend typecheck/build and runtime/browser smoke pass after changes."
   ],
@@ -25,9 +25,14 @@
         "frontend/src/components/routing/IsisContent.tsx",
         "frontend/src/components/routing/OpenfabricContent.tsx",
         "frontend/src/components/routing/RipContent.tsx",
-        "frontend/src/components/routing/MplsContent.tsx"
+        "frontend/src/components/routing/MplsContent.tsx",
+        "frontend/src/components/bfd/BfdContent.tsx",
+        "frontend/src/components/routing/RpkiContent.tsx",
+        "frontend/src/components/routing/IgmpProxyContent.tsx",
+        "frontend/src/components/routing/PimContent.tsx",
+        "frontend/src/components/routing/Pim6Content.tsx"
       ],
-      "notes": "Added reusable help dialog and integrated page-level guides for five protocol pages."
+      "notes": "Added reusable help dialog and integrated page-level guides across core unicast, infrastructure, and multicast protocol pages."
     },
     {
       "id": "T2",
@@ -52,6 +57,11 @@
         "frontend/src/components/routing/OpenfabricContent.tsx",
         "frontend/src/components/routing/RipContent.tsx",
         "frontend/src/components/routing/MplsContent.tsx",
+        "frontend/src/components/bfd/BfdContent.tsx",
+        "frontend/src/components/routing/RpkiContent.tsx",
+        "frontend/src/components/routing/IgmpProxyContent.tsx",
+        "frontend/src/components/routing/PimContent.tsx",
+        "frontend/src/components/routing/Pim6Content.tsx",
         "frontend/src/app/routing/unicast-protocols/page.tsx",
         "frontend/src/app/routing/infrastructure/page.tsx",
         "frontend/src/app/routing/multicast/page.tsx"
@@ -70,6 +80,11 @@
         "frontend/src/components/routing/OpenfabricContent.tsx",
         "frontend/src/components/routing/RipContent.tsx",
         "frontend/src/components/routing/MplsContent.tsx",
+        "frontend/src/components/bfd/BfdContent.tsx",
+        "frontend/src/components/routing/RpkiContent.tsx",
+        "frontend/src/components/routing/IgmpProxyContent.tsx",
+        "frontend/src/components/routing/PimContent.tsx",
+        "frontend/src/components/routing/Pim6Content.tsx",
         "frontend/src/app/routing/unicast-protocols/page.tsx",
         "frontend/src/app/routing/infrastructure/page.tsx",
         "frontend/src/app/routing/multicast/page.tsx"

@@ -6,6 +6,6 @@ commits:
   - pending
 notes:
   - Added reusable page-level how-to dialog and guide content for core routing protocols.
-  - Integrated guides into OSPF, IS-IS, OpenFabric, RIP, and MPLS pages.
+  - Integrated guides into OSPF, IS-IS, OpenFabric, RIP, MPLS, BFD, RPKI, IGMP Proxy, PIM, and PIM6 pages.
   - Reworked routing selector shell state to remove effect-driven setState patterns and reduce flicker.
   - Validated with frontend tsc/build and runtime + browser smoke.

@@ -5,6 +5,7 @@ import { Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { ethernetService } from "@/lib/api/ethernet";
+import { routingProtocolGuides } from "@/lib/help/routingProtocolGuides";
 import { igmpProxyService } from "@/lib/api/igmp-proxy";
 import { showService } from "@/lib/api/show";
 import { formatInterfaceDisplayName } from "@/lib/utils";
@@ -369,6 +371,7 @@ export function IgmpProxyContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <PageGuideDialog guide={routingProtocolGuides.igmpProxy} />
           <Button variant="outline" size="sm" onClick={() => loadData(true)}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
@@ -532,4 +535,3 @@ export function IgmpProxyContent() {
     </div>
   );
 }
-

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { RefreshCw, Save, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { rpkiService } from "@/lib/api/rpki";
+import { routingProtocolGuides } from "@/lib/help/routingProtocolGuides";
 
 type RpkiGlobals = {
   pollingPeriod: string;
@@ -301,6 +303,7 @@ export function RpkiContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <PageGuideDialog guide={routingProtocolGuides.rpki} />
           <Button variant="outline" size="sm" onClick={() => loadData(true)}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh

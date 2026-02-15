@@ -63,7 +63,7 @@ Feature: **Routing how-to guides + selector stability hardening**
 
 Acceptance criteria:
 - Add reusable page-level help dialog component and shared routing guide content.
-- Wire guide dialogs into OSPF, IS-IS, OpenFabric, RIP, and MPLS protocol pages.
+- Wire guide dialogs into OSPF, IS-IS, OpenFabric, RIP, MPLS, BFD, RPKI, IGMP Proxy, PIM, and PIM6 protocol pages.
 - Remove `setState`-in-effect selector patterns on `/routing/unicast-protocols`, `/routing/infrastructure`, and `/routing/multicast`.
 - Frontend build/typecheck remains green with no route/runtime regressions.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
@@ -86,6 +86,11 @@ Assumptions:
 - `frontend/src/components/routing/OpenfabricContent.tsx`
 - `frontend/src/components/routing/RipContent.tsx`
 - `frontend/src/components/routing/MplsContent.tsx`
+- `frontend/src/components/bfd/BfdContent.tsx`
+- `frontend/src/components/routing/RpkiContent.tsx`
+- `frontend/src/components/routing/IgmpProxyContent.tsx`
+- `frontend/src/components/routing/PimContent.tsx`
+- `frontend/src/components/routing/Pim6Content.tsx`
 - `frontend/src/app/routing/unicast-protocols/page.tsx`
 - `frontend/src/app/routing/infrastructure/page.tsx`
 - `frontend/src/app/routing/multicast/page.tsx`
@@ -186,3 +191,5 @@ Assumptions:
 - Added reusable `PageGuideDialog` component for inline operator help with docs link plus ordered setup/validation/troubleshooting sections.
 - Added shared routing how-to content registry (`routingProtocolGuides`) and wired it into OSPF, IS-IS, OpenFabric, RIP, and MPLS pages.
 - Removed effect-driven selector resets in unicast/infrastructure/multicast routing shells by deriving active selection from permissions + optional user selection, eliminating `react-hooks/set-state-in-effect` warnings and reducing selector flicker risk.
+- Expanded `routingProtocolGuides` to include BFD, RPKI, IGMP Proxy, PIM, and PIM6 and integrated guide dialogs into each corresponding page header.
+- BFD now exposes in-page guidance without changing peer/profile CRUD contracts; infrastructure and multicast protocols now follow the same help-entry UX as unicast protocol pages.
