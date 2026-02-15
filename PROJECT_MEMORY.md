@@ -59,12 +59,13 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) each slice.
 
 ## Current Feature Spec
-Feature: **Traffic Policy deepening (`qos traffic-match-group` + `qos policy default`)**
+Feature: **Traffic Policy deepening (`qos traffic-match-group` + `qos policy default` + CAKE flow-isolation)**
 
 Acceptance criteria:
 - Frontend `/network/traffic-policy` exposes a form-driven QoS traffic-match-group editor (`name`, `match[]`, `match-group[]`) without free-form command entry.
 - Frontend `/network/traffic-policy` exposes QoS policy default subtree fields (`default bandwidth/burst/ceiling/priority/queue-type`) in the QoS policy editor.
-- Save path emits scoped diff-based commands for both `qos traffic-match-group` and `qos policy <type> <name> default ...` while preserving existing traffic-policy/qos/class/interface behaviors.
+- Frontend `/network/traffic-policy` exposes CAKE `flow-isolation` selection in the QoS policy editor.
+- Save path emits scoped diff-based commands for `qos traffic-match-group`, `qos policy <type> <name> default ...`, and `qos policy cake <name> flow-isolation ...` while preserving existing traffic-policy/qos/class/interface behaviors.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
@@ -105,6 +106,7 @@ Assumptions:
 - Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- `/network/traffic-policy` QoS policy editor now includes CAKE `flow-isolation` selection and corresponding save/parse support (`set/delete qos policy cake <name> flow-isolation <value>`).
 - `/network/traffic-policy` QoS policy editor now includes default subtree fields (`default bandwidth`, `default burst`, `default ceiling`, `default priority`, `default queue-type`) with parse/save coverage.
 - `/network/traffic-policy` now includes a dedicated `QoS Traffic Match Groups` section that supports CRUD for `qos traffic-match-group <name> match ...` and `match-group ...`, with diff-based set/delete generation in save flow.
 - Replaced `/routing/static-failover/failover` command-text workflow with a structured failover route editor that supports route/next-hop plus check target/timeout/type/policy, interface, and metric fields with diff-based set/delete saves.

@@ -92,6 +92,7 @@ type QosPolicyEntry = {
   flows: string;
   codelQuantum: string;
   rtt: string;
+  flowIsolation: string;
   defaultBandwidth: string;
   defaultBurst: string;
   defaultCeiling: string;
@@ -165,6 +166,7 @@ const EMPTY_QOS_POLICY_DRAFT: QosPolicyEntry = {
   flows: "",
   codelQuantum: "",
   rtt: "",
+  flowIsolation: "",
   defaultBandwidth: "",
   defaultBurst: "",
   defaultCeiling: "",
@@ -219,6 +221,16 @@ function asObject(value: unknown): Record<string, unknown> {
 function asText(value: unknown): string {
   if (value === null || value === undefined) return "";
   return String(value).trim();
+}
+
+function parseDirectOrKey(value: unknown): string {
+  const direct = asText(value);
+  if (direct) {
+    return direct;
+  }
+  const root = asObject(value);
+  const first = Object.keys(root)[0];
+  return first || "";
 }
 
 function trafficPolicyKey(entry: TrafficPolicyEntry): string {
@@ -306,6 +318,7 @@ function qosPolicyEqual(left: QosPolicyEntry, right: QosPolicyEntry): boolean {
     left.flows === right.flows &&
     left.codelQuantum === right.codelQuantum &&
     left.rtt === right.rtt &&
+    left.flowIsolation === right.flowIsolation &&
     left.defaultBandwidth === right.defaultBandwidth &&
     left.defaultBurst === right.defaultBurst &&
     left.defaultCeiling === right.defaultCeiling &&
@@ -518,6 +531,9 @@ export default function TrafficPolicyPage() {
             flows: normalizeText(asText(root.flows)),
             codelQuantum: normalizeText(asText(root["codel-quantum"])),
             rtt: normalizeText(asText(root.rtt)),
+            flowIsolation: normalizeText(
+              parseDirectOrKey(root["flow-isolation"] ?? root.flow_isolation)
+            ),
             defaultBandwidth: normalizeText(asText(defaultRoot.bandwidth)),
             defaultBurst: normalizeText(asText(defaultRoot.burst)),
             defaultCeiling: normalizeText(asText(defaultRoot.ceiling)),
@@ -667,6 +683,7 @@ export default function TrafficPolicyPage() {
       flows: normalizeText(qosPolicyDraft.flows),
       codelQuantum: normalizeText(qosPolicyDraft.codelQuantum),
       rtt: normalizeText(qosPolicyDraft.rtt),
+      flowIsolation: normalizeText(qosPolicyDraft.flowIsolation),
       defaultBandwidth: normalizeText(qosPolicyDraft.defaultBandwidth),
       defaultBurst: normalizeText(qosPolicyDraft.defaultBurst),
       defaultCeiling: normalizeText(qosPolicyDraft.defaultCeiling),
@@ -971,6 +988,7 @@ export default function TrafficPolicyPage() {
         { key: "flows", cliKey: "flows" },
         { key: "codelQuantum", cliKey: "codel-quantum" },
         { key: "rtt", cliKey: "rtt" },
+        { key: "flowIsolation", cliKey: "flow-isolation" },
         { key: "defaultBandwidth", cliKey: "default bandwidth" },
         { key: "defaultBurst", cliKey: "default burst" },
         { key: "defaultCeiling", cliKey: "default ceiling" },
@@ -1528,7 +1546,7 @@ export default function TrafficPolicyPage() {
               </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-4">
               <div className="space-y-2">
                 <Label>Flows</Label>
                 <Input
@@ -1561,6 +1579,35 @@ export default function TrafficPolicyPage() {
                   placeholder="100ms"
                   disabled={!canEdit}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>Flow Isolation (CAKE)</Label>
+                <Select
+                  value={qosPolicyDraft.flowIsolation || "__unset__"}
+                  onValueChange={(value) =>
+                    setQosPolicyDraft((previous) => ({
+                      ...previous,
+                      flowIsolation: value === "__unset__" ? "" : value,
+                    }))
+                  }
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Default" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__unset__">Default</SelectItem>
+                    <SelectItem value="blind">blind</SelectItem>
+                    <SelectItem value="dst-host">dst-host</SelectItem>
+                    <SelectItem value="dual-dst-host">dual-dst-host</SelectItem>
+                    <SelectItem value="dual-src-host">dual-src-host</SelectItem>
+                    <SelectItem value="flow">flow</SelectItem>
+                    <SelectItem value="host">host</SelectItem>
+                    <SelectItem value="nat">nat</SelectItem>
+                    <SelectItem value="src-host">src-host</SelectItem>
+                    <SelectItem value="triple-isolate">triple-isolate</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

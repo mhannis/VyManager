@@ -1,11 +1,12 @@
 {
-  "feature_id": "traffic-policy-qos-default-subtree-2026-02-15",
-  "title": "Traffic Policy parity deepening (QoS default subtree + traffic-match-group)",
+  "feature_id": "traffic-policy-qos-advanced-subtrees-2026-02-15",
+  "title": "Traffic Policy parity deepening (traffic-match-group, defaults, CAKE flow-isolation)",
   "status": "done",
   "acceptance_criteria": [
     "`/network/traffic-policy` provides form-driven CRUD for `qos traffic-match-group` entries.",
     "`/network/traffic-policy` QoS policy editor supports `default bandwidth/burst/ceiling/priority/queue-type` fields.",
-    "Save path emits scoped diff-based commands for both subtrees while preserving existing policy/class/interface logic.",
+    "`/network/traffic-policy` QoS policy editor supports CAKE `flow-isolation` selection.",
+    "Save path emits scoped diff-based commands for all three subtrees while preserving existing policy/class/interface logic.",
     "Validation passes: frontend tsc/build, runtime smoke, and browser smoke."
   ],
   "assumptions": [
@@ -21,7 +22,7 @@
       "files": [
         "frontend/src/app/network/traffic-policy/page.tsx"
       ],
-      "notes": "Added traffic-match-group editor and default subtree fields with parse/state/save integration."
+      "notes": "Added traffic-match-group editor, default subtree fields, and CAKE flow-isolation support with parse/state/save integration."
     },
     {
       "id": "T2",

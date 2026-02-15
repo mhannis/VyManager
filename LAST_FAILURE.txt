@@ -1,10 +1,8 @@
-2026-02-15T01:19:15Z
-failing command: cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime
-error summary: Runtime smoke probe failed on `/` because the frontend service was not yet accepting connections on port 3000. This happened while startup and smoke commands were launched in parallel.
+2026-02-15T01:56:47Z
+failing command: cd frontend && npx tsc --noEmit --pretty false
+error summary: TypeScript build failed in `src/app/network/traffic-policy/page.tsx` because `parseDirectOrKey` was referenced but not defined after adding CAKE flow-isolation parsing.
 
 last output excerpt:
-[runtime-check] Probing http://localhost:3000
-curl: (7) Failed to connect to localhost port 3000 after 0 ms: Couldn't connect to server
-[runtime-check] ERROR: Probe failed for /
+src/app/network/traffic-policy/page.tsx(525,15): error TS2304: Cannot find name 'parseDirectOrKey'.
 
-suspected cause + next step: startup race caused by parallel execution. Rerun runtime smoke sequentially after confirming listeners are up.
+suspected cause + next step: helper function omission during refactor; add `parseDirectOrKey` utility near other parser helpers and rerun typecheck/build/smoke.

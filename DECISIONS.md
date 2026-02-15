@@ -143,3 +143,5 @@
 - 2026-02-15: Extended `/network/traffic-policy` with form-driven `qos traffic-match-group` CRUD to cover a missing guide subtree without introducing backend changes.
 - 2026-02-15: Implemented traffic-match-group save logic as diff-based set/delete operations and used full-group replacement on changed entries to keep behavior deterministic.
 - 2026-02-15: Extended QoS policy editor with `default` subtree fields (`bandwidth`, `burst`, `ceiling`, `priority`, `queue-type`) to close a guide-documented gap for shaper/limiter-style policies.
+- 2026-02-15: Added CAKE `flow-isolation` control to the QoS policy editor and mapped it to `qos policy cake <name> flow-isolation <mode>` operations.
+- 2026-02-15: During CAKE parser extension, TypeScript validation failed due missing helper; fixed by adding `parseDirectOrKey(...)` in traffic-policy parser helpers and rerunning full validation gates.
