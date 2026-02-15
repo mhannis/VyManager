@@ -1,11 +1,11 @@
-feature_id: pki-form-depth-2026-02-15
+feature_id: traffic-policy-qos-depth-2026-02-15
 status: done
-title: PKI parity deepening (CA metadata + certificate revoke/ACME options)
+title: Traffic Policy parity deepening (traffic-policy + qos policy structured editors)
 branch: feature/containers-automation-v1
 commits:
-  - 14d81a5
+  - pending-local-commit
 notes:
-  - Expanded `/system/pki` to include CA CRL/description/private password-protected and certificate description/private password-protected/revoke/ACME fields.
-  - Replaced non-guide passphrase model with guide-aligned `private password-protected` toggles.
-  - Added ACME domain list + email/listen-address/rsa-key-size/url command generation with set/delete diffing.
-  - Validated with tsc, lint (0 errors), build, runtime smoke, and browser smoke.
+  - Added backend `/vyos/qos/*` thin wrapper router (config + capabilities + batch) without changing existing service architecture.
+  - Expanded `/network/traffic-policy` to manage both `traffic-policy` and `qos policy` trees via form-driven editors.
+  - Added diff-based command generation for traffic-policy fields (including queue-limit/reordering) and QoS policy fields.
+  - Validated with backend test_app, frontend tsc/lint/build, runtime smoke, and browser smoke.

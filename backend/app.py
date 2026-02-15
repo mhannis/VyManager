@@ -83,6 +83,7 @@ from routers.vrf import vrf as vrf_router
 from routers.load_balancing import load_balancing as load_balancing_router
 from routers.high_availability import high_availability as high_availability_router
 from routers.traffic_policy import traffic_policy as traffic_policy_router
+from routers.qos import qos as qos_router
 from routers.pki import pki as pki_router
 from routers import system
 from routers import power as power_router
@@ -373,6 +374,7 @@ app.include_router(vrf_router.router)
 app.include_router(load_balancing_router.router)
 app.include_router(high_availability_router.router)
 app.include_router(traffic_policy_router.router)
+app.include_router(qos_router.router)
 app.include_router(pki_router.router)
 app.include_router(system.router)
 app.include_router(power_router.router)

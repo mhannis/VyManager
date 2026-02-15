@@ -124,3 +124,6 @@
 - 2026-02-15: Reviewer agent dispatch may fail due session thread cap (`max 6`); use manual reviewer pass for the current slice and log the failure in `LAST_FAILURE.txt`.
 - 2026-02-15: PKI UI moved from a passphrase text field to guide-aligned `private password-protected` toggles for CA and certificate keys (`set pki ... private password-protected`).
 - 2026-02-15: PKI certificate form now models ACME metadata (`domain-name`, `email`, `listen-address`, `rsa-key-size`, `url`) with diff-based set/delete generation to avoid subtree resets.
+- 2026-02-15: Added a dedicated thin `/vyos/qos` config-tree router so Traffic Policy UI can manage guide-covered `qos policy` commands without broad backend refactors.
+- 2026-02-15: `/network/traffic-policy` now intentionally covers both `traffic-policy` and `qos policy` trees in one form-driven surface to reduce navigation sprawl and improve parity velocity.
+- 2026-02-15: Backlog now includes a mandatory post-parity robustness relook sweep across all previously implemented domains before declaring completion.

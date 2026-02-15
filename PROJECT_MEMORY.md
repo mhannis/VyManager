@@ -54,39 +54,46 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Deepen option-level parity in the remaining non-routing domains, now focused on `pki`.
-- Keep GUI form-driven (no free-form CLI entry) while aligning PKI options with VyOS guide semantics.
+- Deepen option-level parity in the remaining non-routing domains, now focused on `traffic-policy`/`qos`.
+- Keep GUI form-driven (no free-form CLI entry) while aligning policy controls with VyOS guide semantics.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) each slice.
 
 ## Current Feature Spec
-Feature: **PKI parity deepening (CA metadata + certificate revoke/ACME options)**
+Feature: **Traffic Policy parity deepening (traffic-policy + qos policy structured editors)**
 
 Acceptance criteria:
-- Frontend PKI page supports CA metadata fields (`crl`, `description`, and `private password-protected`) in addition to certificate/private key references.
-- Frontend PKI page supports certificate fields for `description`, `private password-protected`, `revoke`, and ACME (`domain-name`, `email`, `listen-address`, `rsa-key-size`, `url`).
-- Diff-based save emits scoped `pki ...` commands only, with proper set/delete semantics.
+- Backend exposes scoped `/vyos/qos` wrapper endpoints while preserving the existing backend architecture and API style.
+- Frontend Traffic Policy page supports both `traffic-policy` and `qos policy` trees with structured form-driven inputs.
+- Diff-based save emits scoped commands under `traffic-policy ...` and `qos ...` only, with proper set/delete semantics.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- PKI values are entered as single-line values expected by VyOS CLI command arguments.
+- This slice targets policy-level QoS controls first; class-level QoS editors remain follow-up work.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: PKI parity deepening implemented, validated, and committed (`14d81a5`); pending push.
+- Status: traffic-policy/qos parity deepening implemented and validated locally; pending commit/push.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/app/system/pki/page.tsx`
+- `backend/routers/qos/__init__.py`
+- `backend/routers/qos/qos.py`
+- `backend/app.py`
+- `frontend/src/lib/api/qos.ts`
+- `frontend/src/app/network/traffic-policy/page.tsx`
 
 ### Validation This Cycle
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_app.py` -> pass
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
 - `cd frontend && npm run -s build` -> pass
-- Restarted `vm-ui` process:
-  - `tmux kill-session -t vm-ui`
+- Restarted runtime processes:
+  - `tmux kill-session -t vm-api || true`
+  - `tmux kill-session -t vm-ui || true`
+  - `tmux new-session -d -s vm-api 'cd /home/redhot/VyOS/VyManager/backend && set -a && source .env && set +a && PYTHONPATH=. ./.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --proxy-headers'`
   - `tmux new-session -d -s vm-ui 'cd /home/redhot/VyOS/VyManager/frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000'`
-  - `ss -ltnp | rg ':3000'` -> listening
+  - `ss -ltnp | rg ':(8000|3000)'` -> listening
 - `cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime` -> pass
 - `cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui` -> pass
 
@@ -101,6 +108,7 @@ Assumptions:
 - Deepen option-level coverage for `traffic-policy`.
 - Add PKI op-mode helper workflows (generate/import guidance) as optional UX accelerators.
 - Add live fixture-seeding and CLI alignment checks (`show configuration commands`) for the new domains.
+- After all config-guide features are implemented, run a full robustness relook sweep across all previously implemented domains and harden weak spots before final completion report.
 - Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
