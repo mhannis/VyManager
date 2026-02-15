@@ -96,6 +96,7 @@ export interface GatewaySummaryResponse {
   rtt_ms: number | null;
   rttsd_ms: number | null;
   loss_percent: number | null;
+  probe_supported?: boolean | null;
   warnings: string[];
 }
 

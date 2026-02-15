@@ -105,6 +105,7 @@ export function GatewayStatusCard({ onRemove, span = 1, onSpanChange }: GatewayS
   const active = summary?.ipv4_default ?? null;
   const configured = summary?.configured_ipv4_default ?? null;
   const iface = summary?.interface ?? null;
+  const showProbeMetrics = summary?.probe_supported !== false;
   const activeInterfaceName = active?.interface || iface?.name || "";
   const egressInterfaceLabel = activeInterfaceName ? formatInterfaceDisplayName(activeInterfaceName, null) : "-";
   const dhcpInterfacesLabel =
@@ -229,20 +230,22 @@ export function GatewayStatusCard({ onRemove, span = 1, onSpanChange }: GatewayS
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-              <div className="space-y-1">
-                <p className="text-muted-foreground">RTT</p>
-                <p className="font-medium font-mono text-xs">{formatMetric(summary?.rtt_ms, " ms")}</p>
+            {showProbeMetrics && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                <div className="space-y-1">
+                  <p className="text-muted-foreground">RTT</p>
+                  <p className="font-medium font-mono text-xs">{formatMetric(summary?.rtt_ms, " ms")}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-muted-foreground">RTTsd</p>
+                  <p className="font-medium font-mono text-xs">{formatMetric(summary?.rttsd_ms, " ms")}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-muted-foreground">Loss</p>
+                  <p className="font-medium font-mono text-xs">{formatMetric(summary?.loss_percent, "%")}</p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-muted-foreground">RTTsd</p>
-                <p className="font-medium font-mono text-xs">{formatMetric(summary?.rttsd_ms, " ms")}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-muted-foreground">Loss</p>
-                <p className="font-medium font-mono text-xs">{formatMetric(summary?.loss_percent, "%")}</p>
-              </div>
-            </div>
+            )}
 
             {configured && (
               <div className="rounded-lg border p-3 space-y-2">

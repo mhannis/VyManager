@@ -48,6 +48,7 @@ export interface SystemDashboardSummary {
   cpu_socket_count: number | null;
   cpu_cores: number | null;
   cpu_temperature_celsius: number | null;
+  cpu_temperature_supported: boolean | null;
   memory_total_human: string | null;
   memory_free_human: string | null;
   memory_used_human: string | null;

@@ -86,9 +86,10 @@ def test_dashboard_summary_temperature_falls_back_to_generate_when_show_invalid(
     assert response.status_code == 200
     payload = response.json()
     assert payload["cpu_temperature_celsius"] == 57.0
+    assert payload["cpu_temperature_supported"] is True
 
 
-def test_dashboard_summary_temperature_falls_back_to_ssh_when_api_sensors_unavailable(monkeypatch):
+def test_dashboard_summary_temperature_marked_unsupported_when_sensor_commands_absent(monkeypatch):
     class DummyResponse:
         def __init__(self, status: int = 200, output: str = "", error: str = ""):
             self.status = status
@@ -110,28 +111,17 @@ def test_dashboard_summary_temperature_falls_back_to_ssh_when_api_sensors_unavai
         def generate(self, path=None):
             return DummyResponse(status=400, error=f"unsupported generate path: {path}")
 
-    class DummyConfig:
-        hostname = "192.168.10.242"
-
     class DummyService:
         device = DummyDevice()
-        config = DummyConfig()
 
         def get_full_config(self, refresh=False):
             return {"system": {"host-name": "vyos-lab1"}}
-
-    class DummySshResult:
-        output = (
-            "coretemp-isa-0000\n"
-            "Package id 0:  +61.0°C  (high = +80.0°C, crit = +100.0°C)\n"
-        )
 
     async def allow_read(*_args, **_kwargs):
         return None
 
     monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: DummyService())
     monkeypatch.setattr(system_router, "require_read_permission", allow_read)
-    monkeypatch.setattr(system_router, "ssh_run", lambda host, command, timeout_seconds=15: DummySshResult())
 
     app = FastAPI()
     app.include_router(system_router.router)
@@ -140,4 +130,5 @@ def test_dashboard_summary_temperature_falls_back_to_ssh_when_api_sensors_unavai
     response = client.get("/vyos/system/dashboard-summary")
     assert response.status_code == 200
     payload = response.json()
-    assert payload["cpu_temperature_celsius"] == 61.0
+    assert payload["cpu_temperature_celsius"] is None
+    assert payload["cpu_temperature_supported"] is False

@@ -19,7 +19,6 @@ import { InterfaceOverviewCard } from "@/components/dashboard/InterfaceOverviewC
 import { SystemInformationCard } from "@/components/dashboard/SystemInformationCard";
 import { NtpStatusCard } from "@/components/dashboard/NtpStatusCard";
 import { DiskUsageCard } from "@/components/dashboard/DiskUsageCard";
-import { GatewayStatusCard } from "@/components/dashboard/GatewayStatusCard";
 import { LldpNeighborsCard } from "@/components/dashboard/LldpNeighborsCard";
 import { ServicesStatusCard } from "@/components/dashboard/ServicesStatusCard";
 import { AddCardModal } from "@/components/dashboard/AddCardModal";
@@ -59,6 +58,15 @@ const MASONRY_ROW_HEIGHT_PX = 1;
 const DEFAULT_DASHBOARD_GAP_PX = 15;
 const MIN_DASHBOARD_GAP_PX = 8;
 const MAX_DASHBOARD_GAP_PX = 24;
+const SUPPORTED_DASHBOARD_CARD_TYPES = new Set([
+  "system-information",
+  "ntp-status",
+  "disk-usage",
+  "interface-statistics",
+  "interface-overview",
+  "lldp-neighbors",
+  "services-status",
+]);
 
 interface RuntimeLayoutSettings {
   columns: number;
@@ -359,7 +367,9 @@ export default function Home() {
         setLayoutSettings(normalizedSettings);
 
         // Ensure all cards have a span property (backward compatibility)
-        const cardsWithSpan = (response.layout.cards || []).map((card) => {
+        const cardsWithSpan = (response.layout.cards || [])
+          .filter((card) => SUPPORTED_DASHBOARD_CARD_TYPES.has(card.type))
+          .map((card) => {
           if (card.span === undefined) {
             // Set default span based on card type
             if (card.type === "interface-statistics" || card.type === "interface-overview") {
@@ -685,8 +695,6 @@ export default function Home() {
         return <InterfaceStatisticsCard {...baseProps} />;
       case "interface-overview":
         return <InterfaceOverviewCard {...baseProps} />;
-      case "gateway-status":
-        return <GatewayStatusCard {...baseProps} />;
       case "lldp-neighbors":
         return <LldpNeighborsCard {...baseProps} />;
       case "services-status":

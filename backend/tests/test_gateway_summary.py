@@ -346,10 +346,11 @@ def test_gateway_summary_probe_falls_back_to_generate_when_show_ping_invalid(mon
     assert data["rtt_ms"] == pytest.approx(0.4)
     assert data["rttsd_ms"] == pytest.approx(0.05)
     assert data["loss_percent"] == pytest.approx(0.0)
+    assert data["probe_supported"] is True
     assert data["warnings"] == []
 
 
-def test_gateway_summary_probe_falls_back_to_ssh_when_api_ping_unavailable(monkeypatch):
+def test_gateway_summary_probe_marked_unsupported_when_ping_not_in_api(monkeypatch):
     class DummyDevice:
         def show(self, path=None):
             if path == ["ip", "route", "0.0.0.0/0"]:
@@ -365,28 +366,17 @@ def test_gateway_summary_probe_falls_back_to_ssh_when_api_ping_unavailable(monke
                 return DummyResponse(status=400, error="HTTP Error 400: Invalid command: generate [ping]")
             return DummyResponse(status=400, error=f"unsupported generate path: {path}")
 
-    class DummyConfig:
-        hostname = "192.168.10.242"
-
     class DummyService:
         device = DummyDevice()
-        config = DummyConfig()
 
         def get_full_config(self, refresh=False):
             return {}
-
-    class DummySshResult:
-        output = (
-            "3 packets transmitted, 3 received, 0% packet loss, time 2002ms\n"
-            "rtt min/avg/max/mdev = 1.000/1.500/2.000/0.250 ms\n"
-        )
 
     async def allow_read(*_args, **_kwargs):
         return None
 
     monkeypatch.setattr(show_router, "get_session_vyos_service", lambda _req: DummyService())
     monkeypatch.setattr(show_router, "require_read_permission", allow_read)
-    monkeypatch.setattr(show_router, "ssh_run", lambda host, command, timeout_seconds=20: DummySshResult())
 
     app = FastAPI()
     app.include_router(show_router.router)
@@ -395,9 +385,10 @@ def test_gateway_summary_probe_falls_back_to_ssh_when_api_ping_unavailable(monke
     resp = client.get("/vyos/show/gateway-summary")
     assert resp.status_code == 200
     data = resp.json()
-    assert data["rtt_ms"] == pytest.approx(1.5)
-    assert data["rttsd_ms"] == pytest.approx(0.25)
-    assert data["loss_percent"] == pytest.approx(0.0)
+    assert data["rtt_ms"] is None
+    assert data["rttsd_ms"] is None
+    assert data["loss_percent"] is None
+    assert data["probe_supported"] is False
     assert data["warnings"] == []
 
 

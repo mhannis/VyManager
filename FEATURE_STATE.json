@@ -1,17 +1,17 @@
 {
-  "feature_id": "gateway-temp-telemetry-r4-2026-02-15",
-  "title": "Gateway ping and sensor telemetry SSH fallback hardening",
+  "feature_id": "dashboard-capability-prune-r5-2026-02-15",
+  "title": "Remove Gateway card and enforce native-only telemetry capability",
   "status": "in_review",
   "acceptance_criteria": [
-    "Gateway summary retries via generate when show ping is invalid.",
-    "Gateway summary falls back to SSH ping when API ping commands are unavailable.",
-    "System dashboard summary falls back to SSH sensors when API sensor commands are unavailable.",
-    "Gateway and dashboard temperature regression tests cover API-to-SSH fallback behavior.",
-    "Runtime smoke checks pass after backend restart."
+    "Gateway Status is removed from Add Card options.",
+    "Saved gateway-status cards are filtered out on dashboard load.",
+    "Gateway probe capability is marked unsupported when API ping commands are unavailable.",
+    "CPU temperature capability is marked unsupported when API sensor commands are unavailable.",
+    "Unsupported telemetry is hidden in UI instead of showing repeated failing warnings.",
+    "Backend tests and runtime smoke pass after restart."
   ],
   "assumptions": [
-    "Some VyOS builds reject op-mode ping and sensors through HTTPS API commands.",
-    "SSH automation key access can be unavailable on some systems; endpoint should still fail gracefully with warning.",
+    "Native API support is the only allowed capability source for gateway probe and CPU temperature telemetry.",
     "Unrelated dirty files in the working tree are pre-existing and out of scope for this hotfix."
   ],
   "tasks": [
@@ -23,29 +23,31 @@
         "backend/routers/show.py",
         "backend/routers/system.py"
       ],
-      "notes": "Added SSH fallback for gateway ping probes and dashboard sensor collection while preserving API contract."
+      "notes": "Removed SSH fallback, added capability flags (probe_supported/cpu_temperature_supported), and kept API contracts additive."
     },
     {
       "id": "T2",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/components/dashboard/AddCardModal.tsx",
+        "frontend/src/app/page.tsx",
+        "frontend/src/components/dashboard/SystemInformationCard.tsx",
+        "frontend/src/components/dashboard/GatewayStatusCard.tsx",
+        "frontend/src/lib/api/show.ts",
+        "frontend/src/lib/api/system.ts"
+      ],
+      "notes": "Removed Gateway card from dashboard surface and hid unsupported telemetry fields in card UI."
+    },
+    {
+      "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
         "backend/tests/test_gateway_summary.py",
         "backend/tests/test_system_dashboard_temperature.py"
       ],
-      "notes": "Added regressions for API invalid-command fallback to SSH paths."
-    },
-    {
-      "id": "T3",
-      "owner_role": "Reviewer",
-      "status": "done",
-      "files": [
-        "backend/routers/show.py",
-        "backend/routers/system.py",
-        "backend/tests/test_gateway_summary.py",
-        "backend/tests/test_system_dashboard_temperature.py"
-      ],
-      "notes": "Manual review completed; changes remain additive and thin-wrapper compliant."
+      "notes": "Replaced SSH fallback assertions with unsupported-capability assertions and validated targeted suites."
     }
   ],
   "commands": {
@@ -56,7 +58,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Gateway + temperature API compatibility fixes with SSH fallback",
+      "purpose": "Native-only telemetry capability pruning",
       "status": "active"
     }
   ]

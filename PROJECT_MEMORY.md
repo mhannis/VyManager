@@ -54,32 +54,29 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Fix Gateway Status probe failures on platforms that reject both `show ping` and `generate ping`.
-- Make CPU temperature collection resilient when sensor data is only available via CLI `sensors`.
-- Preserve existing API contracts and keep implementation thin within `backend/routers/show.py` and `backend/routers/system.py`.
+- Remove Gateway Status card from dashboard capability surface entirely.
+- Keep telemetry features native-API-only: if gateway probe or CPU temp are unsupported by API commands, do not present those capabilities in the UI.
+- Preserve existing API contracts and keep implementation thin within existing routers/components.
 - Keep runtime safety gate after backend changes (`pytest -> restart vm-api -> smoke:runtime -> smoke:ui`).
 
 ## Current Feature Spec
-Feature: **Gateway + Temperature telemetry hardening**
+Feature: **Capability Prune: Gateway Card removal + native-only telemetry**
 
 Acceptance criteria:
-- Gateway endpoint parses additional ping summary formats and packet-loss variants.
-- Gateway endpoint derives probe target from DHCP lease routers when route next-hop is unavailable.
-- Gateway endpoint falls back to `generate ping` when `show ping` returns `400 Invalid command`.
-- Gateway endpoint falls back to SSH ping when API op-mode ping is unavailable.
-- Dashboard summary falls back to SSH `sensors` when API sensor commands are unavailable.
-- Gateway backend tests pass for parser and fallback scenarios.
+- Gateway Status card no longer appears in Add Card options.
+- Existing saved `gateway-status` cards are filtered out when loading dashboard layouts.
+- Gateway probe capability is marked unsupported (`probe_supported=false`) when both `show ping` and `generate ping` are invalid-command paths.
+- CPU temp capability is marked unsupported (`cpu_temperature_supported=false`) when API sensor commands are unavailable.
+- UI hides unsupported telemetry controls/fields instead of showing persistent failing warnings.
 - Runtime remains healthy after restart (`smoke:runtime`, `smoke:ui` pass).
 
 Assumptions:
-- Active default route can be `default dev <iface>` with no explicit next-hop on DHCP WAN.
-- Some VyOS builds expose different ping output formats (`mdev/stddev` may be absent) and reject op-mode probes under `show`.
-- Some builds reject ping/sensors via API and require CLI execution over SSH.
+- Native API support is the only allowed capability source for these telemetry features.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: gateway + temperature compatibility slice implemented and validated; commit pending.
+- Status: gateway-card removal and native-capability gating implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
@@ -87,15 +84,27 @@ Assumptions:
 - `backend/routers/system.py`
 - `backend/tests/test_gateway_summary.py`
 - `backend/tests/test_system_dashboard_temperature.py`
+- `frontend/src/components/dashboard/AddCardModal.tsx`
+- `frontend/src/app/page.tsx`
+- `frontend/src/lib/api/show.ts`
+- `frontend/src/lib/api/system.ts`
+- `frontend/src/components/dashboard/SystemInformationCard.tsx`
+- `frontend/src/components/dashboard/GatewayStatusCard.tsx`
 
 ### Validation This Cycle
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py tests/test_system_dashboard_temperature.py` -> pass (`22 passed`)
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py` -> pass
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_safe_apply.py` -> pass (`5 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py tests/test_safe_apply.py` -> pass (`7 passed`)
+- `cd frontend && npx tsc --noEmit --pretty false` -> pass
+- `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
+- `cd frontend && npm run -s build` -> pass
 - Restarted API process:
   - `tmux kill-session -t vm-api || true`
   - `tmux new-session -d -s vm-api 'cd /home/redhot/VyOS/VyManager/backend && set -a; [ -f .env ] && source .env; set +a; ./.venv/bin/python -m uvicorn app:app --host 0.0.0.0 --port 8000 --proxy-headers'`
   - `ss -ltnp | rg ':8000'` -> listening
+- Restarted UI process:
+  - `tmux kill-session -t vm-ui || true`
+  - `tmux new-session -d -s vm-ui 'cd /home/redhot/VyOS/VyManager/frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000'`
+  - `ss -ltnp | rg ':3000'` -> listening
 - `cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime` -> pass
 - `cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui` -> pass
 

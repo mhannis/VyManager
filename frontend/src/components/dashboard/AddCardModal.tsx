@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Clock3, HardDrive, Link2, Network, Plus, Route, Server, Waypoints } from "lucide-react";
+import { Activity, Clock3, HardDrive, Link2, Network, Plus, Server, Waypoints } from "lucide-react";
 
 interface AvailableCard {
   type: string;
@@ -49,12 +49,6 @@ const AVAILABLE_CARDS: AvailableCard[] = [
     name: "Interface Overview",
     description: "pfSense-style snapshot of link state, role, and addresses",
     icon: Link2,
-  },
-  {
-    type: "gateway-status",
-    name: "Gateway Status",
-    description: "pfSense-style view of the default gateway and link state",
-    icon: Route,
   },
   {
     type: "lldp-neighbors",

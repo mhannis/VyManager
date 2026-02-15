@@ -18,7 +18,6 @@ import re
 from session_vyos_service import get_session_vyos_service
 from fastapi_permissions import require_read_permission, require_write_permission
 from rbac_permissions import FeatureGroup
-from utils.ssh_exec import ssh_run, SshCommandError
 
 # Router for system endpoints
 router = APIRouter(prefix="/vyos/system", tags=["system"])
@@ -236,32 +235,6 @@ def _parse_cpu_temperature_output(output: str) -> Dict[str, Optional[float]]:
         return {"cpu_temperature_celsius": None}
 
     return {"cpu_temperature_celsius": max(candidates)}
-
-
-def _collect_temperature_via_ssh(host: Optional[str]) -> str:
-    """
-    Best-effort sensor collection via SSH for builds where API show/generate
-    does not expose sensors output.
-    """
-    resolved_host = str(host).strip() if host else ""
-    if not resolved_host:
-        return ""
-
-    for command in ("sensors", "/usr/bin/sensors"):
-        try:
-            result = ssh_run(
-                resolved_host,
-                command,
-                timeout_seconds=15,
-            )
-            if result.output.strip():
-                return result.output
-        except SshCommandError:
-            continue
-        except Exception:
-            continue
-
-    return ""
 
 
 def _parse_memory_output(output: str) -> Dict[str, Optional[float | int | str]]:
@@ -517,6 +490,7 @@ class SystemDashboardSummary(BaseModel):
     cpu_socket_count: Optional[int] = None
     cpu_cores: Optional[int] = None
     cpu_temperature_celsius: Optional[float] = None
+    cpu_temperature_supported: Optional[bool] = None
 
     memory_total_human: Optional[str] = None
     memory_free_human: Optional[str] = None
@@ -1940,6 +1914,7 @@ async def get_dashboard_summary(request: Request, refresh: bool = False) -> Syst
             summary = summary.model_copy(update=_parse_memory_output(memory_output))
 
         temperature_output = ""
+        temperature_supported = False
         for command_path in (
             ["hardware", "temperature"],
             ["system", "temperature"],
@@ -1961,15 +1936,14 @@ async def get_dashboard_summary(request: Request, refresh: bool = False) -> Syst
 
             if response is None or getattr(response, "status", None) != 200:
                 continue
+            temperature_supported = True
 
             candidate = _extract_show_output(getattr(response, "result", ""))
             if candidate.strip():
                 temperature_output = candidate
                 break
 
-        if not temperature_output:
-            ssh_host = getattr(getattr(service, "config", None), "hostname", None)
-            temperature_output = await run_in_threadpool(_collect_temperature_via_ssh, ssh_host)
+        summary = summary.model_copy(update={"cpu_temperature_supported": temperature_supported})
 
         if temperature_output:
             summary = summary.model_copy(update=_parse_cpu_temperature_output(temperature_output))
