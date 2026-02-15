@@ -43,61 +43,98 @@ class DummyService:
 
             # Minimal state updates for bootstrap tests.
             for op in op_path or []:
-                if op.get("op") != "set":
-                    continue
+                op_type = op.get("op")
                 path = op.get("path") or []
-                if path == ["service", "ssh"]:
-                    self._parent._full_config.setdefault("service", {})["ssh"] = {}
-                if (
-                    len(path) >= 9
-                    and path[:8]
-                    == [
-                        "system",
-                        "login",
-                        "user",
-                        "vyos",
-                        "authentication",
-                        "public-keys",
-                        "vymanager",
-                        "key",
-                    ]
-                ):
-                    key_value = path[8]
-                    entry = (
-                        self._parent._full_config.setdefault("system", {})
-                        .setdefault("login", {})
-                        .setdefault("user", {})
-                        .setdefault("vyos", {})
-                        .setdefault("authentication", {})
-                        .setdefault("public-keys", {})
-                        .setdefault("vymanager", {})
-                    )
-                    entry["key"] = key_value
-                if (
-                    len(path) >= 9
-                    and path[:8]
-                    == [
-                        "system",
-                        "login",
-                        "user",
-                        "vyos",
-                        "authentication",
-                        "public-keys",
-                        "vymanager",
-                        "type",
-                    ]
-                ):
-                    type_value = path[8]
-                    entry = (
-                        self._parent._full_config.setdefault("system", {})
-                        .setdefault("login", {})
-                        .setdefault("user", {})
-                        .setdefault("vyos", {})
-                        .setdefault("authentication", {})
-                        .setdefault("public-keys", {})
-                        .setdefault("vymanager", {})
-                    )
-                    entry["type"] = type_value
+                if not path:
+                    continue
+
+                if op_type == "set":
+                    if path == ["service", "ssh"]:
+                        self._parent._full_config.setdefault("service", {})["ssh"] = {}
+
+                    if (
+                        len(path) >= 9
+                        and path[:8]
+                        == [
+                            "system",
+                            "login",
+                            "user",
+                            "vyos",
+                            "authentication",
+                            "public-keys",
+                            "vymanager",
+                            "key",
+                        ]
+                    ):
+                        key_value = path[8]
+                        entry = (
+                            self._parent._full_config.setdefault("system", {})
+                            .setdefault("login", {})
+                            .setdefault("user", {})
+                            .setdefault("vyos", {})
+                            .setdefault("authentication", {})
+                            .setdefault("public-keys", {})
+                            .setdefault("vymanager", {})
+                        )
+                        entry["key"] = key_value
+
+                    if (
+                        len(path) >= 9
+                        and path[:8]
+                        == [
+                            "system",
+                            "login",
+                            "user",
+                            "vyos",
+                            "authentication",
+                            "public-keys",
+                            "vymanager",
+                            "type",
+                        ]
+                    ):
+                        type_value = path[8]
+                        entry = (
+                            self._parent._full_config.setdefault("system", {})
+                            .setdefault("login", {})
+                            .setdefault("user", {})
+                            .setdefault("vyos", {})
+                            .setdefault("authentication", {})
+                            .setdefault("public-keys", {})
+                            .setdefault("vymanager", {})
+                        )
+                        entry["type"] = type_value
+
+                    if len(path) >= 4 and path[:2] == ["container", "network"]:
+                        network_name = path[2]
+                        network_node = (
+                            self._parent._full_config.setdefault("container", {})
+                            .setdefault("network", {})
+                            .setdefault(network_name, {})
+                        )
+                        tail = path[3:]
+                        if not tail:
+                            continue
+                        if tail[0] == "prefix" and len(tail) >= 2:
+                            network_node.setdefault("prefix", {})[tail[1]] = {}
+                        elif tail[0] == "description" and len(tail) >= 2:
+                            network_node["description"] = tail[1]
+                        elif tail[0] == "mtu" and len(tail) >= 2:
+                            network_node["mtu"] = tail[1]
+                        elif tail[0] == "vrf" and len(tail) >= 2:
+                            network_node["vrf"] = tail[1]
+                        elif tail[0] == "no-name-server":
+                            network_node["no-name-server"] = {}
+                elif op_type == "delete":
+                    if len(path) >= 3 and path[:2] == ["container", "network"]:
+                        network_name = path[2]
+                        container_root = self._parent._full_config.get("container", {})
+                        network_root = container_root.get("network", {})
+                        if network_name in network_root and len(path) == 3:
+                            del network_root[network_name]
+                        elif network_name in network_root and len(path) >= 4:
+                            node = network_root[network_name]
+                            key = path[3]
+                            node.pop(key, None)
 
             return DummyVyOSResponse(status=200)
 
@@ -240,3 +277,44 @@ def test_install_pulls_image_creates_dirs_and_commits_config(monkeypatch, app):
     assert mkdir_calls == [("192.0.2.10", ["/config/containers/pihole/etc-pihole"])]
     assert pull_calls == [("192.0.2.10", "pihole/pihole:latest")]
     assert service.device.configure_calls, "Expected install to commit container configuration"
+
+
+def test_bootstrap_allows_network_setup_without_ssh_automation(monkeypatch, app):
+    async def allow_write(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(containers_router, "require_write_permission", allow_write)
+
+    def _should_not_run(*_args, **_kwargs):
+        raise AssertionError("ensure_ssh_keypair should not run when enable_automation=false")
+
+    monkeypatch.setattr(containers_router, "ensure_ssh_keypair", _should_not_run)
+
+    service = DummyService(hostname="192.0.2.20", full_config={})
+    monkeypatch.setattr(containers_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    payload = {
+        "enable_automation": False,
+        "create_default_network": True,
+        "network_name": "containers-lan",
+        "network_prefix": "172.20.20.0/24",
+        "network_description": "Container services network",
+        "network_mtu": 1500,
+        "network_vrf": "main",
+        "disable_network_dns": True,
+    }
+
+    resp = client.post("/vyos/containers/bootstrap", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["ssh_enabled"] is False
+    assert data["ssh_key_installed"] is False
+    assert data["network_count"] == 1
+    assert len(data["networks"]) == 1
+    assert data["networks"][0]["name"] == "containers-lan"
+    assert data["networks"][0]["prefixes"] == ["172.20.20.0/24"]
+    assert data["networks"][0]["description"] == "Container services network"
+    assert data["networks"][0]["mtu"] == 1500
+    assert data["networks"][0]["vrf"] == "main"
+    assert data["networks"][0]["dns_disabled"] is True

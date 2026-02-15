@@ -1,9 +1,8 @@
-2026-02-15T03:18:13Z
-failing command: cd /home/redhot/VyOS/VyManager/frontend && npx tsc --noEmit --pretty false && npm run -s lint && npm run -s build
-error summary: Frontend typecheck failed after container-network UI changes because `ContainerBootstrapStatusResponse` in `frontend/src/lib/api/containers.ts` did not include `networks` and `network_count` fields now consumed by `System -> Containers`.
+2026-02-15T03:31:00Z
+failing command: spawn_agent (reviewer pass for firewall/interfaces/containers robustness diff)
+error summary: Reviewer-agent dispatch failed because the collaboration thread cap is saturated (`max 6`). Automated reviewer handoff could not run in this cycle.
 
 last output excerpt:
-src/app/system/containers/page.tsx(731,65): error TS2339: Property 'networks' does not exist on type 'ContainerBootstrapStatusResponse'.
-src/app/system/containers/page.tsx(732,23): error TS2339: Property 'networks' does not exist on type 'ContainerBootstrapStatusResponse'.
+collab spawn failed: agent thread limit reached (max 6)
 
-suspected cause + next step: API type drift between backend bootstrap response and frontend types; add `automation_ready`, `network_count`, and `networks` fields to `ContainerBootstrapStatusResponse` in `frontend/src/lib/api/containers.ts` and rerun full frontend validation.
+suspected cause + next step: Long-lived agent threads from prior cycles are still active. Proceed with manual reviewer checklist now and retry reviewer-agent dispatch in a later cycle when thread slots are available.

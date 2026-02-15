@@ -1,12 +1,12 @@
-feature_id: firewall-interfaces-containers-robustness-2026-02-15
+feature_id: firewall-interfaces-containers-robustness-r2-2026-02-15
 status: done
-title: Firewall/Interfaces/Containers robustness hardening
+title: Firewall/Interfaces/Containers robustness relook pass
 branch: feature/containers-automation-v1
 commits:
   - pending
 notes:
-  - Added firewall zone `local-zone` support end-to-end in backend parser/upsert logic and frontend zone forms/overview.
-  - Added container network CRUD endpoints and wired full GUI management in `System -> Containers`.
-  - Added dedicated `Network -> Dummy Interfaces` page for create/edit/delete over existing `/vyos/dummy/batch`.
-  - Added sidebar/interfaces-page navigation for dummy interfaces and expanded smoke route coverage.
+  - Completed container bootstrap setup workflow so first-run automation can also create a configurable default container network.
+  - Added backend bootstrap coverage for network-only setup (`enable_automation=false`) in `test_containers_automation_v1.py`.
+  - Improved firewall zone create/edit UX with interface checkbox selectors backed by discovered interfaces plus manual override entry.
+  - Updated interface cards to show description-first labels while retaining canonical interface names.
   - Validated with backend pytest + frontend tsc/lint/build and runtime + browser smoke.

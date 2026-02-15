@@ -141,6 +141,17 @@ export interface ContainerNetworkOperationResponse {
   message: string;
 }
 
+export interface ContainerInitialSetupRequest {
+  enable_automation: boolean;
+  create_default_network: boolean;
+  network_name: string;
+  network_prefix: string;
+  network_description?: string | null;
+  network_mtu?: number | null;
+  network_vrf?: string | null;
+  disable_network_dns: boolean;
+}
+
 class ContainersService {
   async getOverview(refresh: boolean = false): Promise<ContainersOverviewResponse> {
     return apiClient.get<ContainersOverviewResponse>("/vyos/containers/overview", {
@@ -166,8 +177,10 @@ class ContainersService {
     return apiClient.delete<ContainerNetworkOperationResponse>(`/vyos/containers/networks/${encodeURIComponent(name)}`);
   }
 
-  async bootstrapAutomation(): Promise<ContainerBootstrapStatusResponse> {
-    return apiClient.post<ContainerBootstrapStatusResponse>("/vyos/containers/bootstrap");
+  async bootstrapAutomation(
+    body?: Partial<ContainerInitialSetupRequest>,
+  ): Promise<ContainerBootstrapStatusResponse> {
+    return apiClient.post<ContainerBootstrapStatusResponse>("/vyos/containers/bootstrap", body || {});
   }
 
   async upsertContainer(

@@ -1011,7 +1011,10 @@ async def delete_container_network(request: Request, network_name: str) -> Conta
 
 
 @router.post("/bootstrap", response_model=ContainerBootstrapStatusResponse)
-async def bootstrap_container_automation(request: Request) -> ContainerBootstrapStatusResponse:
+async def bootstrap_container_automation(
+    request: Request,
+    body: Optional[ContainerInitialSetupRequest] = None,
+) -> ContainerBootstrapStatusResponse:
     """
     Enable SSH service and install the VyManager automation public key (idempotent).
 
@@ -1021,52 +1024,100 @@ async def bootstrap_container_automation(request: Request) -> ContainerBootstrap
     await require_write_permission(request, FeatureGroup.SYSTEM)
 
     try:
-        _private_key_path, pub_type, pub_key = await run_in_threadpool(
-            ensure_ssh_keypair, comment="vymanager"
-        )
+        setup = body or ContainerInitialSetupRequest()
+
+        pub_type = None
+        pub_key = None
+        if setup.enable_automation:
+            _private_key_path, pub_type, pub_key = await run_in_threadpool(
+                ensure_ssh_keypair, comment="vymanager"
+            )
 
         service = get_session_vyos_service(request)
         full_config = await run_in_threadpool(service.get_full_config, refresh=True)
         status = _bootstrap_status_from_config(full_config)
 
         operations: List[Dict[str, Any]] = []
-        if not status.ssh_enabled:
-            operations.append({"op": "set", "path": ["service", "ssh"]})
+        if setup.enable_automation:
+            if not status.ssh_enabled:
+                operations.append({"op": "set", "path": ["service", "ssh"]})
 
-        ident = status.ssh_key_identifier
-        if not status.ssh_key_installed or status.ssh_key_type != pub_type:
-            operations.extend(
-                [
-                    {
-                        "op": "set",
-                        "path": [
-                            "system",
-                            "login",
-                            "user",
-                            SSH_USERNAME_DEFAULT,
-                            "authentication",
-                            "public-keys",
-                            ident,
-                            "key",
-                            pub_key,
-                        ],
-                    },
-                    {
-                        "op": "set",
-                        "path": [
-                            "system",
-                            "login",
-                            "user",
-                            SSH_USERNAME_DEFAULT,
-                            "authentication",
-                            "public-keys",
-                            ident,
-                            "type",
-                            pub_type,
-                        ],
-                    },
-                ]
+            ident = status.ssh_key_identifier
+            if not status.ssh_key_installed or status.ssh_key_type != pub_type:
+                operations.extend(
+                    [
+                        {
+                            "op": "set",
+                            "path": [
+                                "system",
+                                "login",
+                                "user",
+                                SSH_USERNAME_DEFAULT,
+                                "authentication",
+                                "public-keys",
+                                ident,
+                                "key",
+                                pub_key,
+                            ],
+                        },
+                        {
+                            "op": "set",
+                            "path": [
+                                "system",
+                                "login",
+                                "user",
+                                SSH_USERNAME_DEFAULT,
+                                "authentication",
+                                "public-keys",
+                                ident,
+                                "type",
+                                pub_type,
+                            ],
+                        },
+                    ]
+                )
+
+        if setup.create_default_network:
+            network_name = _normalize_container_network_name_or_400(setup.network_name)
+            network_prefix = _normalize_container_network_prefix_or_400(setup.network_prefix)
+            network_mtu = _normalize_container_network_mtu_or_400(setup.network_mtu)
+            network_description = _string_or_none(setup.network_description)
+            network_vrf = _string_or_none(setup.network_vrf)
+
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["container", "network", network_name, "prefix", network_prefix],
+                }
             )
+            if network_description:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["container", "network", network_name, "description", network_description],
+                    }
+                )
+            if network_mtu is not None:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["container", "network", network_name, "mtu", str(network_mtu)],
+                    }
+                )
+            if network_vrf:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["container", "network", network_name, "vrf", network_vrf],
+                    }
+                )
+            if setup.disable_network_dns:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["container", "network", network_name, "no-name-server"],
+                    }
+                )
 
         if operations:
             response = await run_in_threadpool(service.apply_operations, operations)

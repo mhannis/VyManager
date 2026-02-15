@@ -161,3 +161,8 @@
 - 2026-02-15: Added explicit container network CRUD endpoints (`/vyos/containers/networks*`) and integrated management UI in `System -> Containers` rather than keeping network handling bootstrap-only.
 - 2026-02-15: Added dedicated `Network -> Dummy Interfaces` page using the existing `/vyos/dummy/batch` contract for robust non-ethernet interface management.
 - 2026-02-15: Expanded runtime/browser smoke route sets to include `/network/interfaces/dummy` so new interfaces domain pages are automatically regression-tested pre-handoff.
+- 2026-02-15: Container bootstrap was extended to accept optional setup payload so first-run UI can configure default container network parameters without breaking existing no-body bootstrap callers.
+- 2026-02-15: `System -> Containers` setup screen now includes network bootstrap controls (name/prefix/description/MTU/VRF/no-name-server) and validates required fields/MTU before apply.
+- 2026-02-15: `Firewall -> Zones` create/edit forms now use discovered-interface checkboxes with description-first labels; manual comma-list override remains for non-discovered/advanced interface names.
+- 2026-02-15: `Network -> Interfaces` cards now render description-first names to align global interface labeling expectations while preserving canonical interface IDs.
+- 2026-02-15: Reviewer-agent dispatch remained unavailable due thread cap (`max 6`); manual review fallback used and recorded in `LAST_FAILURE.txt`.

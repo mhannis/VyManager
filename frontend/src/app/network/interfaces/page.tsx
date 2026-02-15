@@ -329,18 +329,29 @@ export default function InterfacesPage() {
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-2">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
-                                <Cable className="h-4 w-4 text-blue-500" />
-                              </div>
-                              <div>
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
+                              <Cable className="h-4 w-4 text-blue-500" />
+                            </div>
+                            <div>
+                              {iface.description ? (
+                                <div className="font-semibold text-foreground text-base truncate" title={iface.description}>
+                                  {iface.description}
+                                </div>
+                              ) : (
                                 <code className="font-semibold font-mono text-foreground text-base">
                                   {iface.name}
                                 </code>
-                                {vlanCount > 0 && (
-                                  <div className="text-xs text-muted-foreground mt-0.5">
-                                    {vlanCount} VLAN(s)
-                                  </div>
-                                )}
+                              )}
+                              {iface.description && (
+                                <code className="text-xs font-mono text-muted-foreground">
+                                  {iface.name}
+                                </code>
+                              )}
+                              {vlanCount > 0 && (
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  {vlanCount} VLAN(s)
+                                </div>
+                              )}
                               </div>
                             </div>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -364,12 +375,6 @@ export default function InterfacesPage() {
                           </div>
 
                           <div className="space-y-2 text-sm">
-                            {iface.description && (
-                              <div className="text-muted-foreground truncate">
-                                {iface.description}
-                              </div>
-                            )}
-
                             <div className="flex flex-wrap gap-2">
                               <Badge
                                 variant="outline"
@@ -458,9 +463,20 @@ export default function InterfacesPage() {
                               <Network className="h-4 w-4 text-purple-500" />
                             </div>
                             <div>
-                              <code className="font-semibold font-mono text-foreground text-base">
-                                {vlan.fullName}
-                              </code>
+                              {vlan.description ? (
+                                <div className="font-semibold text-foreground text-base truncate" title={vlan.description}>
+                                  {vlan.description}
+                                </div>
+                              ) : (
+                                <code className="font-semibold font-mono text-foreground text-base">
+                                  {vlan.fullName}
+                                </code>
+                              )}
+                              {vlan.description && (
+                                <code className="text-xs font-mono text-muted-foreground">
+                                  {vlan.fullName}
+                                </code>
+                              )}
                               <div className="text-xs text-muted-foreground mt-0.5">
                                 Parent: {vlan.parentInterface} | {VLAN_KIND_LABELS[vlan.kind]}
                               </div>
@@ -487,12 +503,6 @@ export default function InterfacesPage() {
                         </div>
 
                         <div className="space-y-2 text-sm">
-                          {vlan.description && (
-                            <div className="text-muted-foreground truncate">
-                              {vlan.description}
-                            </div>
-                          )}
-
                           {vlan.addresses && vlan.addresses.length > 0 && (
                             <div className="flex flex-wrap gap-1.5">
                               {vlan.addresses.slice(0, 2).map((addr, idx) => (

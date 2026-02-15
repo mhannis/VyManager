@@ -1,19 +1,18 @@
 {
-  "feature_id": "firewall-interfaces-containers-robustness-2026-02-15",
-  "title": "Firewall/Interfaces/Containers robustness hardening",
+  "feature_id": "firewall-interfaces-containers-robustness-r2-2026-02-15",
+  "title": "Firewall/Interfaces/Containers robustness relook pass",
   "status": "done",
   "acceptance_criteria": [
-    "Firewall Zones supports local-zone configuration in parser, API payload, and UI forms.",
-    "Container networks are manageable through GUI-backed CRUD endpoints.",
-    "Dummy interfaces are manageable in a dedicated Network page using existing backend batch APIs.",
-    "Navigation exposes the dummy interface page and smoke routes include it.",
-    "Backend test coverage added for local-zone parser behavior.",
-    "Frontend typecheck/lint/build and runtime/browser smoke pass."
+    "Containers first-run setup supports configurable default network creation in the bootstrap flow.",
+    "Container bootstrap endpoint accepts setup payload without breaking existing API callers.",
+    "Firewall zones create/edit workflows support interface selection from discovered interfaces with description-first labels.",
+    "Interface cards show description-first display while preserving canonical interface identifiers.",
+    "Backend tests cover bootstrap network setup path and frontend validation gates pass."
   ],
   "assumptions": [
-    "Container network edits can be modeled as prefix-diff plus leaf set/delete operations.",
-    "Dummy interface management can remain on the existing batch endpoint without backend contract changes.",
-    "Unrelated dirty files in this worktree remain untouched."
+    "Bootstrap setup should keep SSH automation enabled by default while allowing optional default-network creation.",
+    "Discovered interface checkbox selection plus manual override input is sufficient for advanced zone interface naming.",
+    "Existing unrelated working-tree changes remain untouched."
   ],
   "tasks": [
     {
@@ -21,61 +20,54 @@
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/firewall/zones.py",
         "backend/routers/containers.py",
-        "backend/tests/test_firewall_zones_local_zone.py"
+        "backend/tests/test_containers_automation_v1.py"
       ],
-      "notes": "Implemented zone local-zone handling and container network CRUD endpoints; added parser tests for local-zone behavior."
+      "notes": "Extended /vyos/containers/bootstrap to accept setup payload and added pytest coverage for network-only bootstrap mode."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/zones.ts",
         "frontend/src/lib/api/containers.ts",
-        "frontend/src/lib/api/dummy.ts",
-        "frontend/src/app/firewall/zones/page.tsx",
         "frontend/src/app/system/containers/page.tsx",
-        "frontend/src/app/network/interfaces/page.tsx",
-        "frontend/src/app/network/interfaces/dummy/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx"
+        "frontend/src/app/firewall/zones/page.tsx",
+        "frontend/src/app/network/interfaces/page.tsx"
       ],
-      "notes": "Added zone local-zone controls, container network management card, and full dummy interfaces page with navigation."
+      "notes": "Implemented bootstrap setup form fields, wired payload submission, added zone interface selectors, and made interface cards description-first."
     },
     {
       "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "frontend/scripts/check-runtime.sh",
-        "frontend/scripts/smoke-ui.mjs",
-        "backend/tests/test_firewall_zones_local_zone.py"
+        "backend/tests/test_containers_automation_v1.py"
       ],
-      "notes": "Expanded smoke route coverage for new interfaces page and validated backend/frontend gates."
+      "notes": "Executed backend pytest plus frontend typecheck/lint/build/runtime smoke/browser smoke."
     },
     {
       "id": "T4",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/routers/firewall/zones.py",
         "backend/routers/containers.py",
-        "frontend/src/app/network/interfaces/dummy/page.tsx",
-        "frontend/src/app/system/containers/page.tsx"
+        "frontend/src/app/system/containers/page.tsx",
+        "frontend/src/app/firewall/zones/page.tsx",
+        "frontend/src/app/network/interfaces/page.tsx"
       ],
-      "notes": "Manual review approved: additive, guide-aligned robustness improvements with preserved existing API contracts."
+      "notes": "Manual reviewer checklist completed; reviewer-agent dispatch was blocked by thread cap."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_zones_local_zone.py && cd ../frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_containers_automation_v1.py tests/test_firewall_zones_local_zone.py && cd ../frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Parity and robustness implementation with runtime validation",
+      "purpose": "Firewall/interfaces/containers robustness and validation",
       "status": "active"
     }
   ]

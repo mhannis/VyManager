@@ -55,47 +55,40 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 
 ## Current Objective
 - Re-look `Firewall`, `Interfaces`, and `Containers` against the VyOS configuration guide and harden weak spots with form-driven UX.
-- Remove remaining domain-level capability gaps by exposing missing but already-supported backend features and adding missing backend write paths where required.
+- Keep first-run container setup deterministic by exposing bootstrap network configuration directly in the UI.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) after every slice.
 
 ## Current Feature Spec
-Feature: **Firewall/Interfaces/Containers robustness pass**
+Feature: **Firewall/Interfaces/Containers robustness relook pass**
 
 Acceptance criteria:
-- Add firewall zone `local-zone` support end-to-end (read, edit, create, save).
-- Add container network CRUD in GUI backed by explicit backend endpoints.
-- Add dummy interface management UI under Network and wire it into navigation.
-- Expand runtime smoke routes to include newly added interface page.
+- Containers bootstrap flow allows configuring default container network parameters during setup.
+- Firewall zone create/edit supports discovered-interface selection with description-first labels.
+- Interfaces cards display description-first naming while preserving canonical interface names.
+- Backend coverage includes bootstrap network setup path.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- Container network writes can be safely represented with prefix-diff + leaf set/delete operations under `container network <name> ...`.
-- Dummy interface management can use existing `/vyos/dummy/batch` backend contract without introducing a new backend abstraction.
-- This slice includes additive backend endpoints only; no existing API contracts are broken.
+- Container bootstrap should still default to enabling SSH automation and key installation.
+- Interface selection in zone forms can blend checkbox-driven discovered entries with optional manual override text.
+- This slice includes additive contract-safe backend behavior; existing API clients remain valid.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: firewall/interfaces/containers robustness slice implemented and validated; commit pending.
+- Status: firewall/interfaces/containers robustness relook implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `backend/routers/firewall/zones.py`
 - `backend/routers/containers.py`
-- `backend/tests/test_firewall_zones_local_zone.py`
-- `frontend/src/lib/api/zones.ts`
+- `backend/tests/test_containers_automation_v1.py`
 - `frontend/src/lib/api/containers.ts`
-- `frontend/src/lib/api/dummy.ts` (new)
 - `frontend/src/app/firewall/zones/page.tsx`
 - `frontend/src/app/system/containers/page.tsx`
 - `frontend/src/app/network/interfaces/page.tsx`
-- `frontend/src/app/network/interfaces/dummy/page.tsx` (new)
-- `frontend/src/components/layout/Sidebar.tsx`
-- `frontend/scripts/check-runtime.sh`
-- `frontend/scripts/smoke-ui.mjs`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_zones_local_zone.py` -> pass
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_containers_automation_v1.py tests/test_firewall_zones_local_zone.py` -> pass
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
 - `cd frontend && npm run -s build` -> pass
@@ -188,6 +181,10 @@ Assumptions:
 - Reviewer-agent spawn can fail due thread cap (`max 6`); manual reviewer pass is the fallback and must be logged in `LAST_FAILURE.txt`.
 - PKI CA editor now uses guide-aligned fields (`certificate`, `crl`, `description`, `private key`, `private password-protected`) and removed the prior non-standard passphrase text model.
 - PKI certificate editor now includes `description`, `private password-protected`, `revoke`, and full ACME metadata (`domain-name`, `email`, `listen-address`, `rsa-key-size`, `url`) with diff-based set/delete commands.
+- Containers setup flow now includes first-run default network fields (name/prefix/description/MTU/VRF/DNS toggle) and posts this payload to `/vyos/containers/bootstrap`.
+- `/vyos/containers/bootstrap` now accepts optional setup payload while preserving no-body behavior for existing callers.
+- Firewall zone create/edit now supports discovered interface checkbox selection while retaining manual interface override input for advanced names.
+- Interface cards in `Network -> Interfaces` now prefer description-first headings with canonical names shown beneath.
 - Added reusable `PageGuideDialog` component for inline operator help with docs link plus ordered setup/validation/troubleshooting sections.
 - Added shared routing how-to content registry (`routingProtocolGuides`) and wired it into OSPF, IS-IS, OpenFabric, RIP, and MPLS pages.
 - Removed effect-driven selector resets in unicast/infrastructure/multicast routing shells by deriving active selection from permissions + optional user selection, eliminating `react-hooks/set-state-in-effect` warnings and reducing selector flicker risk.

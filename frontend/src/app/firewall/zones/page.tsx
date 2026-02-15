@@ -72,6 +72,15 @@ function parseCsvList(value: string): string[] {
   return out;
 }
 
+function toggleCsvValue(current: string, item: string, enabled: boolean): string {
+  const values = parseCsvList(current);
+  const filtered = values.filter((entry) => entry !== item);
+  if (enabled) {
+    filtered.push(item);
+  }
+  return filtered.join(", ");
+}
+
 function policyListFromZone(zone: FirewallZone): ZonePolicyUpdate[] {
   return Object.entries(zone.from || {}).map(([from_zone, policy]) => ({
     from_zone,
@@ -125,6 +134,8 @@ export default function FirewallZonesPage() {
     }
     return labels;
   }, [interfaceOptions]);
+  const createInterfaceSelection = useMemo(() => new Set(parseCsvList(createInterfaces)), [createInterfaces]);
+  const editInterfaceSelection = useMemo(() => new Set(parseCsvList(editInterfaces)), [editInterfaces]);
 
   const loadData = async () => {
     try {
@@ -634,13 +645,37 @@ export default function FirewallZonesPage() {
                 </Select>
               </div>
               <div>
-                <Label>Interfaces (comma-separated)</Label>
+                <Label>Interfaces</Label>
+                <div className="mt-2 rounded-md border p-3 max-h-[180px] overflow-y-auto space-y-2">
+                  {interfaceOptions.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No interfaces discovered yet.</p>
+                  ) : (
+                    interfaceOptions.map((option) => (
+                      <label key={`create-iface-${option.name}`} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={createInterfaceSelection.has(option.name)}
+                          disabled={!canEdit || saving}
+                          onCheckedChange={(checked) => {
+                            setCreateInterfaces((previous) =>
+                              toggleCsvValue(previous, option.name, checked === true)
+                            );
+                          }}
+                        />
+                        <span>{option.label}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
                 <Input
                   value={createInterfaces}
                   onChange={(event) => setCreateInterfaces(event.target.value)}
-                  placeholder="eth1, eth2.10"
+                  placeholder="Optional manual interface list (comma-separated)"
                   disabled={!canEdit || saving}
+                  className="mt-2"
                 />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Discovered interfaces can be toggled above. Manual values are supported for advanced interface names.
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -720,11 +755,33 @@ export default function FirewallZonesPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label>Interfaces (comma-separated)</Label>
+                    <Label>Interfaces</Label>
+                    <div className="mt-2 rounded-md border p-3 max-h-[180px] overflow-y-auto space-y-2">
+                      {interfaceOptions.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No interfaces discovered yet.</p>
+                      ) : (
+                        interfaceOptions.map((option) => (
+                          <label key={`edit-iface-${option.name}`} className="flex items-center gap-2 text-sm">
+                            <Checkbox
+                              checked={editInterfaceSelection.has(option.name)}
+                              disabled={!canEdit || saving}
+                              onCheckedChange={(checked) => {
+                                setEditInterfaces((previous) =>
+                                  toggleCsvValue(previous, option.name, checked === true)
+                                );
+                              }}
+                            />
+                            <span>{option.label}</span>
+                          </label>
+                        ))
+                      )}
+                    </div>
                     <Input
                       value={editInterfaces}
                       onChange={(event) => setEditInterfaces(event.target.value)}
+                      placeholder="Optional manual interface list (comma-separated)"
                       disabled={!canEdit || saving}
+                      className="mt-2"
                     />
                   </div>
                   <div className="flex items-center gap-2">

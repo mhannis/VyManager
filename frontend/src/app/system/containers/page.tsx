@@ -25,6 +25,7 @@ import {
   containersService,
   type ContainerBootstrapStatusResponse,
   type ContainerEnvironmentVar,
+  type ContainerInitialSetupRequest,
   type ContainerNetworkSummary,
   type ContainerWebLink,
   type ContainerPortMapping,
@@ -652,6 +653,13 @@ export default function SystemContainersPage() {
   const [loadingBootstrap, setLoadingBootstrap] = useState(true);
   const [bootstrapping, setBootstrapping] = useState(false);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+  const [bootstrapCreateDefaultNetwork, setBootstrapCreateDefaultNetwork] = useState(true);
+  const [bootstrapNetworkName, setBootstrapNetworkName] = useState("containers-lan");
+  const [bootstrapNetworkPrefix, setBootstrapNetworkPrefix] = useState("172.20.20.0/24");
+  const [bootstrapNetworkDescription, setBootstrapNetworkDescription] = useState("VyManager default container network");
+  const [bootstrapNetworkMtu, setBootstrapNetworkMtu] = useState("");
+  const [bootstrapNetworkVrf, setBootstrapNetworkVrf] = useState("");
+  const [bootstrapDisableNetworkDns, setBootstrapDisableNetworkDns] = useState(false);
 
   const [overview, setOverview] = useState<ContainersOverviewResponse | null>(null);
   const [draft, setDraft] = useState<ContainerDraft>({ ...EMPTY_DRAFT });
@@ -1003,15 +1011,55 @@ export default function SystemContainersPage() {
       return;
     }
 
+    const setupNetwork = bootstrapCreateDefaultNetwork;
+    const networkName = bootstrapNetworkName.trim();
+    const networkPrefix = bootstrapNetworkPrefix.trim();
+    const networkDescription = bootstrapNetworkDescription.trim();
+    const networkMtuRaw = bootstrapNetworkMtu.trim();
+    const networkVrf = bootstrapNetworkVrf.trim();
+
+    if (setupNetwork && !networkName) {
+      setBootstrapError("Container network name is required when default network setup is enabled.");
+      return;
+    }
+    if (setupNetwork && !networkPrefix) {
+      setBootstrapError("Container network prefix is required when default network setup is enabled.");
+      return;
+    }
+
+    let networkMtu: number | null = null;
+    if (setupNetwork && networkMtuRaw) {
+      if (!/^\d+$/.test(networkMtuRaw)) {
+        setBootstrapError("Network MTU must be a numeric value.");
+        return;
+      }
+      networkMtu = Number(networkMtuRaw);
+    }
+
+    const payload: ContainerInitialSetupRequest = {
+      enable_automation: true,
+      create_default_network: setupNetwork,
+      network_name: networkName || "containers-lan",
+      network_prefix: networkPrefix || "172.20.20.0/24",
+      network_description: networkDescription || null,
+      network_mtu: networkMtu,
+      network_vrf: networkVrf || null,
+      disable_network_dns: bootstrapDisableNetworkDns,
+    };
+
     setBootstrapping(true);
     setBootstrapError(null);
     setError(null);
     setSuccess(null);
     try {
-      const status = await containersService.bootstrapAutomation();
+      const status = await containersService.bootstrapAutomation(payload);
       setBootstrapStatus(status);
       await loadOverview(true);
-      setSuccess("Container automation is ready.");
+      setSuccess(
+        setupNetwork
+          ? "Container automation is ready. Default container network applied."
+          : "Container automation is ready."
+      );
     } catch (err) {
       setBootstrapError(err instanceof Error ? err.message : "Failed to enable container automation.");
     } finally {
@@ -1245,6 +1293,83 @@ export default function SystemContainersPage() {
                     </span>
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-md border p-3 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="bootstrap-create-network"
+                    checked={bootstrapCreateDefaultNetwork}
+                    onCheckedChange={(checked) => setBootstrapCreateDefaultNetwork(checked === true)}
+                    disabled={!canEditSystem || bootstrapping}
+                  />
+                  <Label htmlFor="bootstrap-create-network">
+                    Create default container network during setup
+                  </Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Current configured networks: {containerNetworks.length}
+                </p>
+                {bootstrapCreateDefaultNetwork && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label>Network Name</Label>
+                      <Input
+                        value={bootstrapNetworkName}
+                        onChange={(event) => setBootstrapNetworkName(event.target.value)}
+                        placeholder="containers-lan"
+                        disabled={!canEditSystem || bootstrapping}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Prefix (CIDR)</Label>
+                      <Input
+                        value={bootstrapNetworkPrefix}
+                        onChange={(event) => setBootstrapNetworkPrefix(event.target.value)}
+                        placeholder="172.20.20.0/24"
+                        disabled={!canEditSystem || bootstrapping}
+                      />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label>Description</Label>
+                      <Input
+                        value={bootstrapNetworkDescription}
+                        onChange={(event) => setBootstrapNetworkDescription(event.target.value)}
+                        placeholder="VyManager default container network"
+                        disabled={!canEditSystem || bootstrapping}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>MTU (optional)</Label>
+                      <Input
+                        value={bootstrapNetworkMtu}
+                        onChange={(event) => setBootstrapNetworkMtu(event.target.value)}
+                        placeholder="1500"
+                        disabled={!canEditSystem || bootstrapping}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>VRF (optional)</Label>
+                      <Input
+                        value={bootstrapNetworkVrf}
+                        onChange={(event) => setBootstrapNetworkVrf(event.target.value)}
+                        placeholder="main"
+                        disabled={!canEditSystem || bootstrapping}
+                      />
+                    </div>
+                    <div className="sm:col-span-2 flex items-center gap-2">
+                      <Checkbox
+                        id="bootstrap-disable-network-dns"
+                        checked={bootstrapDisableNetworkDns}
+                        onCheckedChange={(checked) => setBootstrapDisableNetworkDns(checked === true)}
+                        disabled={!canEditSystem || bootstrapping}
+                      />
+                      <Label htmlFor="bootstrap-disable-network-dns">
+                        Disable DNS for this container network (`no-name-server`)
+                      </Label>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-2">
