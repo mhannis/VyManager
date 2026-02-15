@@ -1,64 +1,73 @@
 {
-  "feature_id": "interfaces-if-13-if-14-wireless-wwan-2026-02-15",
-  "title": "Interfaces parity: Wireless + WWAN form-first editors",
+  "feature_id": "system-sys-04-11-13-baseline-2026-02-15",
+  "title": "System parity: Flow Accounting + Proxy + Sysctl baseline pages",
   "status": "in_progress",
   "acceptance_criteria": [
-    "Backend exposes scoped wrappers for `interfaces wireless` and `interfaces wwan` without replacing existing service layers.",
-    "Wireless page supports GUI CRUD for core WLAN/AP settings, WPA ciphers/passphrase/RADIUS, and key HT capability toggles.",
-    "WWAN page supports GUI CRUD for APN, addressing, DHCP option leaves, and IPv4/IPv6 per-interface tuning controls.",
-    "Interfaces navigation, side menu, page guides, and runtime smoke routes include the new wireless and wwan pages.",
+    "Backend exposes scoped wrappers for `system flow-accounting`, `system proxy`, and `system sysctl` without replacing existing service layers.",
+    "System pages exist for `/system/flow-accounting`, `/system/proxy`, and `/system/sysctl` with form-first CRUD workflows.",
+    "System navigation and coverage links surface all three pages, and runtime smoke probes include them.",
     "Validation gates pass: backend tests, frontend typecheck, targeted eslint, frontend build, and runtime smoke."
   ],
   "assumptions": [
-    "Wireless/WWAN hardware may be absent on many test nodes, so both pages must remain usable in pre-stage mode with clear capability warnings.",
-    "Wireless option-depth beyond core WPA/HT and WWAN DHCPv6-PD/operational modem controls remains follow-up parity work.",
-    "Playwright browser smoke remains blocked on this host due missing system shared libraries (libnspr4.so)."
+    "Some advanced leaves for these system trees are platform/version specific and will be completed in a follow-up option-depth pass.",
+    "Playwright browser smoke remains blocked on this host due missing `libnspr4.so`."
   ],
   "tasks": [
     {
-      "id": "IF-13",
+      "id": "SYS-04",
       "owner_role": "Backend/UI/Test",
       "status": "done",
       "files": [
-        "backend/routers/interfaces/wireless.py",
-        "frontend/src/lib/api/wireless.ts",
-        "frontend/src/app/network/interfaces/wireless/page.tsx"
+        "backend/routers/system_flow_accounting.py",
+        "frontend/src/lib/api/system-flow-accounting.ts",
+        "frontend/src/app/system/flow-accounting/page.tsx"
       ],
-      "notes": "Implemented wireless router/page with country-code support, core AP/station settings, WPA and RADIUS controls, and HT capability toggles."
+      "notes": "Implemented scoped wrapper and form-first Flow Accounting page with interface, NetFlow, and sFlow controls."
     },
     {
-      "id": "IF-14",
+      "id": "SYS-11",
       "owner_role": "Backend/UI/Test",
       "status": "done",
       "files": [
-        "backend/routers/interfaces/wwan.py",
-        "frontend/src/lib/api/wwan.ts",
-        "frontend/src/app/network/interfaces/wwan/page.tsx"
+        "backend/routers/system_proxy.py",
+        "frontend/src/lib/api/system-proxy.ts",
+        "frontend/src/app/system/proxy/page.tsx"
       ],
-      "notes": "Implemented WWAN router/page with APN, addressing, DHCP options, and IPv4/IPv6 interface tuning controls."
+      "notes": "Implemented scoped wrapper and form-first System Proxy page with URL/port/auth/no-proxy controls."
     },
     {
-      "id": "IF-NAV-HELP",
+      "id": "SYS-13",
+      "owner_role": "Backend/UI/Test",
+      "status": "done",
+      "files": [
+        "backend/routers/system_sysctl.py",
+        "frontend/src/lib/api/system-sysctl.ts",
+        "frontend/src/app/system/sysctl/page.tsx"
+      ],
+      "notes": "Implemented scoped wrapper and form-first Sysctl parameter CRUD page."
+    },
+    {
+      "id": "SYS-NAV-SMOKE",
       "owner_role": "UI/Test",
       "status": "done",
       "files": [
         "frontend/src/components/layout/Sidebar.tsx",
-        "frontend/src/app/network/interfaces/page.tsx",
+        "frontend/src/app/system/options/page.tsx",
         "frontend/src/lib/help/pageGuides.ts",
         "frontend/scripts/check-runtime.sh",
         "frontend/scripts/smoke-ui.mjs"
       ],
-      "notes": "Added navigation links, how-to guides, and smoke route coverage for wireless/wwan pages."
+      "notes": "Added IA links, how-to guides, and smoke route coverage for the new System pages."
     },
     {
-      "id": "IF-15",
+      "id": "SYS-NEXT",
       "owner_role": "Planner",
       "status": "todo",
       "files": [
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
       ],
-      "notes": "Next queue: deepen remaining interface-family option parity (ethernet/pppoe/loopback/wireguard plus advanced wireless/wwan depth)."
+      "notes": "Next queue: SYS-01 Conntrack, SYS-02 Serial Console, SYS-03 Default Route/Gateway."
     }
   ],
   "commands": {

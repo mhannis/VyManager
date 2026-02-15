@@ -114,6 +114,9 @@ from routers import dashboard as dashboard_router
 from routers import user_management as user_management_router
 from routers import containers as containers_router
 from routers import ipsec as ipsec_router
+from routers.system_proxy import system_proxy as system_proxy_router
+from routers.system_sysctl import system_sysctl as system_sysctl_router
+from routers.system_flow_accounting import system_flow_accounting as system_flow_accounting_router
 
 # Load backend/.env when uvicorn is started without exported shell vars.
 load_dotenv(Path(__file__).resolve().parent / ".env")
@@ -415,6 +418,9 @@ app.include_router(high_availability_router.router)
 app.include_router(traffic_policy_router.router)
 app.include_router(qos_router.router)
 app.include_router(pki_router.router)
+app.include_router(system_proxy_router.router)
+app.include_router(system_sysctl_router.router)
+app.include_router(system_flow_accounting_router.router)
 app.include_router(system.router)
 app.include_router(power_router.router)
 app.include_router(config_router.router)

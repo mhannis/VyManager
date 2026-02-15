@@ -224,6 +224,15 @@ export default function SystemOptionsPage() {
           </CardHeader>
           <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             <Button asChild variant="outline" className="justify-start">
+              <Link href="/system/flow-accounting">Flow Accounting</Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-start">
+              <Link href="/system/proxy">System Proxy</Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-start">
+              <Link href="/system/sysctl">System Sysctl</Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-start">
               <a href="https://docs.vyos.io/en/latest/configuration/system/" target="_blank" rel="noreferrer">
                 <BookOpen className="mr-2 h-4 w-4" />
                 VyOS System Docs

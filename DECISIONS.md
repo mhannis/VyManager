@@ -225,3 +225,7 @@
 - 2026-02-15: Implemented `interfaces wireless` as a custom thin router (instead of generic tree wrapper) so the same page can safely apply `system wireless country-code` alongside interface changes; this avoids backend layer rewrites while satisfying AP-mode prerequisites from the VyOS guide.
 - 2026-02-15: Added non-blocking capability warnings on Wireless/WWAN pages when no matching hardware (`wlan*`/`wwan*`) is detected; pre-stage config remains allowed to support template-driven deployments.
 - 2026-02-15: Marked IF-13 and IF-14 backlog items as `partial` after baseline form-first implementation; advanced 802.11 capability depth and WWAN DHCPv6-PD/op-mode workflows are intentionally queued under IF-15.
+- 2026-02-15: Implemented `system proxy`, `system sysctl`, and `system flow-accounting` using thin `build_config_tree_router(...)` wrappers to preserve existing VyOS service contracts and avoid backend-layer rewrites.
+- 2026-02-15: Added dedicated form-first System pages (`/system/proxy`, `/system/sysctl`, `/system/flow-accounting`) instead of embedding these settings under generic tabs, to improve IA clarity and parity tracking.
+- 2026-02-15: Runtime smoke route defaults now include the three new System pages so route-level client crashes are caught before handoff.
+- 2026-02-15: ESLint strict mode (`--max-warnings=0`) treats ignored-file warnings as failures; shell scripts should be excluded from targeted frontend ESLint file lists.

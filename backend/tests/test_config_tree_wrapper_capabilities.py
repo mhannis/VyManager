@@ -21,6 +21,9 @@ import routers.interfaces.wireless as wireless_router
 import routers.interfaces.wwan as wwan_router
 import routers.interfaces.loopback as loopback_router
 import routers.interfaces.pppoe as pppoe_router
+import routers.system_proxy as system_proxy_router
+import routers.system_sysctl as system_sysctl_router
+import routers.system_flow_accounting as system_flow_accounting_router
 import routers.load_balancing.load_balancing as load_balancing_router
 import routers.pki.pki as pki_router
 import routers.traffic_policy.traffic_policy as traffic_policy_router
@@ -198,7 +201,40 @@ class DummyService:
             "system": {
                 "wireless": {
                     "country-code": "us",
-                }
+                },
+                "proxy": {
+                    "url": "http://proxy.lab.local",
+                    "port": "3128",
+                    "username": "proxy-user",
+                },
+                "sysctl": {
+                    "parameter": {
+                        "net.ipv4.ip_forward": {"value": "1"},
+                    }
+                },
+                "flow-accounting": {
+                    "interface": {
+                        "eth0": {},
+                        "eth1": {},
+                    },
+                    "disable-imt": {},
+                    "enable-egress": {},
+                    "netflow": {
+                        "version": "9",
+                        "engine-id": "7",
+                        "server": {
+                            "192.0.2.50": {
+                                "port": "2055",
+                            }
+                        },
+                    },
+                    "sflow": {
+                        "server": {
+                            "192.0.2.60": {},
+                        },
+                        "sampling-rate": "2048",
+                    },
+                },
             },
         }
 
@@ -234,6 +270,9 @@ def app():
     app.include_router(high_availability_router.router)
     app.include_router(traffic_policy_router.router)
     app.include_router(pki_router.router)
+    app.include_router(system_proxy_router.system_proxy)
+    app.include_router(system_sysctl_router.system_sysctl)
+    app.include_router(system_flow_accounting_router.system_flow_accounting)
     return app
 
 
@@ -284,6 +323,9 @@ def mock_service(monkeypatch):
         "/vyos/high-availability/capabilities",
         "/vyos/traffic-policy/capabilities",
         "/vyos/pki/capabilities",
+        "/vyos/system-proxy/capabilities",
+        "/vyos/system-sysctl/capabilities",
+        "/vyos/system-flow-accounting/capabilities",
     ],
 )
 def test_config_tree_wrapper_capabilities_payload(app, allow_permissions, mock_service, path):
@@ -321,6 +363,9 @@ def test_config_tree_wrapper_capabilities_payload(app, allow_permissions, mock_s
         ("/vyos/high-availability/config", "high_availability", "vrrp"),
         ("/vyos/traffic-policy/config", "traffic_policy", "shaper"),
         ("/vyos/pki/config", "pki", "ca"),
+        ("/vyos/system-proxy/config", "proxy", "url"),
+        ("/vyos/system-sysctl/config", "sysctl", "parameter"),
+        ("/vyos/system-flow-accounting/config", "flow_accounting", "interface"),
     ],
 )
 def test_config_tree_wrapper_config_payload(
@@ -456,6 +501,21 @@ def test_wireless_config_includes_country_code(app, allow_permissions, mock_serv
             "/vyos/pki/batch",
             "set pki ca LAB-CA certificate -----BEGIN",
             "set traffic-policy shaper WAN-OUT bandwidth 100mbit",
+        ),
+        (
+            "/vyos/system-proxy/batch",
+            "set system proxy url http://proxy.lab.local:3128",
+            "set system sysctl parameter net.ipv4.ip_forward value 1",
+        ),
+        (
+            "/vyos/system-sysctl/batch",
+            "set system sysctl parameter net.ipv4.ip_forward value 1",
+            "set system flow-accounting netflow version 9",
+        ),
+        (
+            "/vyos/system-flow-accounting/batch",
+            "set system flow-accounting netflow version 9",
+            "set system proxy url http://proxy.lab.local:3128",
         ),
     ],
 )

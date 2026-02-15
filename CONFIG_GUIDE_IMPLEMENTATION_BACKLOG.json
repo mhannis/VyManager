@@ -424,8 +424,8 @@
     {
       "id": "SYS-04",
       "domain": "system",
-      "status": "missing",
-      "title": "Flow Accounting page"
+      "status": "partial",
+      "title": "Flow Accounting page (baseline page+wrapper implemented; option-depth validation pending)"
     },
     {
       "id": "SYS-05",
@@ -466,8 +466,8 @@
     {
       "id": "SYS-11",
       "domain": "system",
-      "status": "missing",
-      "title": "System Proxy page"
+      "status": "partial",
+      "title": "System Proxy page (baseline page+wrapper implemented; option-depth validation pending)"
     },
     {
       "id": "SYS-12",
@@ -478,8 +478,8 @@
     {
       "id": "SYS-13",
       "domain": "system",
-      "status": "missing",
-      "title": "Sysctl page"
+      "status": "partial",
+      "title": "Sysctl page (baseline page+wrapper implemented; option-depth validation pending)"
     },
     {
       "id": "SYS-14",

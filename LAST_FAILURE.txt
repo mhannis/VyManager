@@ -1,23 +1,12 @@
-timestamp: 2026-02-15T22:27:38Z
-failing_command: cd frontend && npm run -s smoke:ui
-error_summary: Playwright browser smoke could not launch Chromium because required host shared library `libnspr4.so` is missing. Runtime smoke/build/typecheck/lint/tests passed, but browser e2e remains blocked by host dependency.
+timestamp: 2026-02-15T23:00:40Z
+failing_command: cd frontend && npx eslint ... scripts/check-runtime.sh ... --max-warnings=0
+error_summary: ESLint run failed because `scripts/check-runtime.sh` is outside configured ESLint file matching and produced an ignored-file warning, which was treated as fatal by `--max-warnings=0`.
 last_output:
-UI smoke test failed to execute: browserType.launch: Target page, context or browser has been closed
-Browser logs:
-<launching> ... chrome-headless-shell ...
-<launched> pid=1240371
-[pid=1240371][err] .../chrome-headless-shell: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
-Call log:
-  - <launching> ... chrome-headless-shell ...
-  - <launched> pid=1240371
-  - [pid=1240371][err] ... libnspr4.so: cannot open shared object file: No such file or directory
-  - [pid=1240371] <gracefully close start>
-  - [pid=1240371] <kill>
-  - [pid=1240371] <will force kill>
-  - [pid=1240371] exception while trying to kill process: Error: kill ESRCH
-  - [pid=1240371] <process did exit: exitCode=127, signal=null>
-  - [pid=1240371] starting temporary directories cleanup
-  - [pid=1240371] finished temporary directories cleanup
-  - [pid=1240371] <gracefully close end>
-suspected_cause: Playwright system dependencies are not installed on this host image.
-next_step: Install host deps (`sudo npx playwright install-deps`) or provide `libnspr4` and rerun `npm run -s smoke:ui`.
+/home/redhot/VyOS/VyManager/frontend/scripts/check-runtime.sh
+  0:0  warning  File ignored because no matching configuration was supplied
+
+✖ 1 problem (0 errors, 1 warning)
+
+ESLint found too many warnings (maximum: 0).
+suspected_cause: The lint target list included a shell script not covered by frontend ESLint config.
+next_step: Re-run ESLint against TS/JS files only (or use `--no-warn-ignored`) and proceed with build/smoke gates.

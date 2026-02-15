@@ -25,6 +25,9 @@ export const pageGuides: Record<
   | "firewallGlobalOptions"
   | "firewallBridge"
   | "firewallFlowtables"
+  | "systemFlowAccounting"
+  | "systemProxy"
+  | "systemSysctl"
   | "containers"
   | "ipsec",
   PageGuide
@@ -758,6 +761,97 @@ export const pageGuides: Record<
         items: [
           "If performance does not improve, validate that the chosen interfaces and traffic classes are eligible.",
           "Use conservative rollout when enabling hardware offload on new platforms.",
+        ],
+      },
+    ],
+  },
+  systemFlowAccounting: {
+    title: "Flow Accounting How-To",
+    summary:
+      "Export flow telemetry to NetFlow and sFlow collectors for traffic visibility, capacity planning, and troubleshooting.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/system/flow-accounting.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Select one or more interfaces to export first.",
+          "Set NetFlow version/source/engine fields and add collector addresses.",
+          "Configure sFlow agent/sampling and collector list if your tooling uses sFlow.",
+          "Tune buffer and timeout values only after baseline export is confirmed.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save changes and refresh the page to confirm settings persist.",
+          "Verify collector dashboards are receiving flows from expected interfaces and source address.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "No telemetry is usually interface-selection or collector reachability related.",
+          "If export is inconsistent, verify sampling/timeout settings and collector port expectations.",
+        ],
+      },
+    ],
+  },
+  systemProxy: {
+    title: "System Proxy How-To",
+    summary:
+      "Configure outbound proxy settings for system-originated workflows that honor global proxy configuration.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/system/proxy.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Set proxy URL and port first.",
+          "Add proxy authentication only when required by upstream proxy policy.",
+          "Populate no-proxy targets for local domains and internal services.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save and refresh to confirm all values persist.",
+          "Test an outbound service that uses system proxy settings to confirm expected behavior.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Authentication or URL mistakes are the most common cause of failed outbound proxy usage.",
+          "If internal destinations fail, add them to no-proxy targets.",
+        ],
+      },
+    ],
+  },
+  systemSysctl: {
+    title: "System Sysctl How-To",
+    summary:
+      "Manage persistent kernel tuning under `system sysctl parameter` without using direct CLI edits.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/system/sysctl.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Add only required keys and keep a clear record of why each value is set.",
+          "Apply one change at a time for high-impact networking kernel parameters.",
+          "Pair kernel tuning updates with validation of affected data paths and services.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save, refresh, and verify key-value pairs remain present.",
+          "Confirm dependent behavior (routing, forwarding, conntrack scale) matches your intended result.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Invalid or conflicting parameter values can destabilize traffic handling; revert recent changes when in doubt.",
+          "Use conservative increments for scale/timing values and retest after each adjustment.",
         ],
       },
     ],

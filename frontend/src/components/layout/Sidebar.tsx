@@ -516,6 +516,21 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
+        title: "Flow Accounting",
+        href: "/system/flow-accounting",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "Proxy",
+        href: "/system/proxy",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "Sysctl",
+        href: "/system/sysctl",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
         title: "Logs",
         href: "/system/logs",
         requiredPermission: FeatureGroup.SYSTEM,

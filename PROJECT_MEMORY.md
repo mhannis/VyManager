@@ -56,43 +56,47 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 ## Current Objective
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
-- Continue interfaces-domain backlog after delivering IF-13 and IF-14, then move to IF-15 option-depth parity.
+- Continue system-domain missing-page reduction after delivering loopback/pppoe and begin option-depth parity pass.
 
 ## Current Feature Spec
-Feature: **Interfaces IF-13 + IF-14 parity (Wireless + WWAN editors)**
+Feature: **System SYS-04 + SYS-11 + SYS-13 baseline parity**
 
 Acceptance criteria:
-- Backend exposes scoped read/batch endpoints for:
-  - `interfaces wireless` (+ `system wireless country-code` operations)
-  - `interfaces wwan`
+- Backend exposes scoped read/batch wrappers for:
+  - `system flow-accounting`
+  - `system proxy`
+  - `system sysctl`
 - UI includes dedicated form-first pages:
-  - `/network/interfaces/wireless`
-  - `/network/interfaces/wwan`
-- All pages support create/read/update/delete workflows with validation and diff-based command generation.
-- Interfaces navigation and runtime smoke route coverage include all new pages.
+  - `/system/flow-accounting`
+  - `/system/proxy`
+  - `/system/sysctl`
+- All pages support GUI create/read/update/delete flows with validation and diff-based command generation.
+- System navigation, options shortcuts, page guides, and runtime smoke route coverage include all new pages.
 
 Assumptions:
-- Wireless/WWAN hardware may be absent on test nodes; UI must still allow pre-staged config with clear warnings.
+- Some advanced leaf options for these system trees are platform/version-specific and remain a follow-up option-depth pass.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: `IF-13` and `IF-14` baseline implementations are complete in backend/frontend and validated; next queued slice is `IF-15` interface option-depth parity.
+- Status: loopback/pppoe slice is committed and pushed; system flow-accounting/proxy/sysctl baseline slice is implemented and validated locally.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
 - `backend/app.py`
-- `backend/routers/interfaces/__init__.py`
-- `backend/routers/interfaces/wireless.py`
-- `backend/routers/interfaces/wwan.py`
+- `backend/routers/system_flow_accounting.py`
+- `backend/routers/system_proxy.py`
+- `backend/routers/system_sysctl.py`
 - `backend/tests/test_config_tree_wrapper_capabilities.py`
-- `frontend/src/lib/api/wireless.ts`
-- `frontend/src/lib/api/wwan.ts`
-- `frontend/src/app/network/interfaces/wireless/page.tsx`
-- `frontend/src/app/network/interfaces/wwan/page.tsx`
+- `frontend/src/lib/api/system-flow-accounting.ts`
+- `frontend/src/lib/api/system-proxy.ts`
+- `frontend/src/lib/api/system-sysctl.ts`
+- `frontend/src/app/system/flow-accounting/page.tsx`
+- `frontend/src/app/system/proxy/page.tsx`
+- `frontend/src/app/system/sysctl/page.tsx`
+- `frontend/src/app/system/options/page.tsx`
 - `frontend/src/lib/help/pageGuides.ts`
 - `frontend/src/components/layout/Sidebar.tsx`
-- `frontend/src/app/network/interfaces/page.tsx`
 - `frontend/scripts/check-runtime.sh`
 - `frontend/scripts/smoke-ui.mjs`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
@@ -103,13 +107,12 @@ Assumptions:
 - `LAST_FAILURE.txt`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py` passed (`58 passed`).
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_containers_automation_v1.py` passed (`125 passed`).
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_containers_automation_v1.py` passed (`140 passed`).
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/lib/api/wireless.ts src/lib/api/wwan.ts src/app/network/interfaces/wireless/page.tsx src/app/network/interfaces/wwan/page.tsx src/app/network/interfaces/page.tsx src/components/layout/Sidebar.tsx src/lib/help/pageGuides.ts --max-warnings=0` passed.
+- `cd frontend && npx eslint ... --max-warnings=0` passed for all changed TS/JS files in this slice.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
-- `cd frontend && npm run -s smoke:ui` failed due missing host library `libnspr4.so` (recorded in `LAST_FAILURE.txt`).
+- `cd frontend && npm run -s smoke:ui` remains blocked by missing host library `libnspr4.so` (recorded in `LAST_FAILURE.txt`).
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
@@ -118,9 +121,17 @@ Assumptions:
 - Reviewer sub-agent dispatch can fail when thread cap is saturated; manual review fallback is required in that case.
 
 ## TODO Backlog (next queue)
-- Execute next missing interfaces slices from `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`.
-- `IF-15`: deepen ethernet/pppoe/loopback/wireguard option parity and advanced wireless/wwan leaves.
-- Continue remaining interface-family gaps (`IF-15` deepening) in guide order.
+- Continue remaining System missing pages in guide order:
+  - `SYS-01` Conntrack
+  - `SYS-02` Serial Console
+  - `SYS-03` Default Route/Gateway
+  - `SYS-05` FRR
+  - `SYS-06` IP
+  - `SYS-07` IPv6
+  - `SYS-08` LCD
+  - `SYS-12` sFlow
+  - `SYS-15` Task Scheduler
+- Start option-depth parity sweep for `SYS-04`, `SYS-11`, and `SYS-13` after baseline validation.
 - Build option-level parity scoring to replace detection-only completion claims (`X-01`).
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
@@ -288,3 +299,11 @@ Assumptions:
 - Added capability-gating UX for both pages: if no `wlan*`/`wwan*` interfaces are detected, the UI shows a non-blocking warning while still allowing pre-stage configuration.
 - Backlog artifacts now mark `IF-13` and `IF-14` as `partial` (baseline complete, advanced depth pending under `IF-15`).
 - Latest validation snapshot: backend tests `125 passed`, frontend typecheck passed, targeted eslint passed, frontend build passed, runtime smoke passed; browser smoke remains blocked on missing `libnspr4.so`.
+- Added dedicated interface routers/pages for `loopback` and `pppoe`, with sidebar/interfaces-page links and smoke route coverage (`/network/interfaces/loopback`, `/network/interfaces/pppoe`).
+- Added thin system wrappers and form-first pages for:
+  - `/vyos/system-flow-accounting/*` + `/system/flow-accounting`
+  - `/vyos/system-proxy/*` + `/system/proxy`
+  - `/vyos/system-sysctl/*` + `/system/sysctl`
+- Extended `System` IA and `System -> Options & Coverage` quick links to surface Flow Accounting, Proxy, and Sysctl workflows.
+- Updated backlog artifacts so `SYS-04`, `SYS-11`, and `SYS-13` are tracked as `partial` (baseline implemented, option-depth validation pending).
+- Latest validation snapshot: backend tests `140 passed`, frontend typecheck passed, targeted eslint passed, frontend build passed, runtime smoke passed; browser smoke remains blocked on missing `libnspr4.so`.
