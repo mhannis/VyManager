@@ -101,6 +101,12 @@ type QosInterfaceBinding = {
   egress: string;
 };
 
+type QosTrafficMatchGroupEntry = {
+  name: string;
+  match: string[];
+  matchGroup: string[];
+};
+
 const TRAFFIC_POLICY_TYPES: TrafficPolicyType[] = [
   "drop-tail",
   "network-emulator",
@@ -183,6 +189,12 @@ const EMPTY_QOS_INTERFACE_DRAFT: QosInterfaceBinding = {
   egress: "",
 };
 
+const EMPTY_QOS_TRAFFIC_MATCH_GROUP_DRAFT: QosTrafficMatchGroupEntry = {
+  name: "",
+  match: [],
+  matchGroup: [],
+};
+
 function normalizeText(value: string): string {
   return value.trim();
 }
@@ -215,6 +227,10 @@ function qosInterfaceKey(entry: QosInterfaceBinding): string {
   return normalizeText(entry.interface);
 }
 
+function qosTrafficMatchGroupKey(entry: QosTrafficMatchGroupEntry): string {
+  return normalizeText(entry.name);
+}
+
 function uniqueList(values: string[]): string[] {
   const seen = new Set<string>();
   const output: string[] = [];
@@ -233,6 +249,16 @@ function parseCsvList(value: string): string[] {
 
 function serializeCsvList(values: string[]): string {
   return uniqueList(values).join(", ");
+}
+
+function normalizeQosTrafficMatchGroup(
+  entry: QosTrafficMatchGroupEntry
+): QosTrafficMatchGroupEntry {
+  return {
+    name: normalizeText(entry.name),
+    match: uniqueList(entry.match),
+    matchGroup: uniqueList(entry.matchGroup),
+  };
 }
 
 function trafficPolicyEqual(left: TrafficPolicyEntry, right: TrafficPolicyEntry): boolean {
@@ -305,6 +331,17 @@ function qosInterfaceEqual(left: QosInterfaceBinding, right: QosInterfaceBinding
   );
 }
 
+function qosTrafficMatchGroupEqual(
+  left: QosTrafficMatchGroupEntry,
+  right: QosTrafficMatchGroupEntry
+): boolean {
+  return (
+    left.name === right.name &&
+    serializeCsvList(left.match) === serializeCsvList(right.match) &&
+    serializeCsvList(left.matchGroup) === serializeCsvList(right.matchGroup)
+  );
+}
+
 function sortByTypeAndName<T extends { type: string; name: string }>(entries: T[]): T[] {
   return [...entries].sort((left, right) => {
     const typeCompare = left.type.localeCompare(right.type);
@@ -333,6 +370,14 @@ export default function TrafficPolicyPage() {
   const [qosInterfaces, setQosInterfaces] = useState<QosInterfaceBinding[]>([]);
   const [currentQosInterfaces, setCurrentQosInterfaces] = useState<QosInterfaceBinding[]>([]);
   const [qosInterfaceDraft, setQosInterfaceDraft] = useState<QosInterfaceBinding>(EMPTY_QOS_INTERFACE_DRAFT);
+  const [qosTrafficMatchGroups, setQosTrafficMatchGroups] = useState<QosTrafficMatchGroupEntry[]>([]);
+  const [currentQosTrafficMatchGroups, setCurrentQosTrafficMatchGroups] = useState<
+    QosTrafficMatchGroupEntry[]
+  >([]);
+  const [qosTrafficMatchGroupDraft, setQosTrafficMatchGroupDraft] =
+    useState<QosTrafficMatchGroupEntry>(EMPTY_QOS_TRAFFIC_MATCH_GROUP_DRAFT);
+  const [qosTrafficMatchInput, setQosTrafficMatchInput] = useState("");
+  const [qosTrafficMatchGroupInput, setQosTrafficMatchGroupInput] = useState("");
   const [interfaceOptions, setInterfaceOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [selectedQosPolicyKey, setSelectedQosPolicyKey] = useState("");
   const [qosClassDraft, setQosClassDraft] = useState<QosPolicyClassEntry>(EMPTY_QOS_CLASS_DRAFT);
@@ -477,6 +522,22 @@ export default function TrafficPolicyPage() {
         .sort((left, right) =>
           left.interface.localeCompare(right.interface, undefined, { numeric: true })
         );
+      const trafficMatchGroupRoot = asObject(
+        asObject(qosConfig)["traffic-match-group"] ?? asObject(qosConfig).traffic_match_group
+      );
+      const parsedQosTrafficMatchGroups: QosTrafficMatchGroupEntry[] = Object.entries(
+        trafficMatchGroupRoot
+      )
+        .map(([groupName, value]) => {
+          const root = asObject(value);
+          return normalizeQosTrafficMatchGroup({
+            name: normalizeText(groupName),
+            match: Object.keys(asObject(root.match)),
+            matchGroup: Object.keys(asObject(root["match-group"] ?? root.match_group)),
+          });
+        })
+        .filter((entry) => entry.name)
+        .sort((left, right) => left.name.localeCompare(right.name, undefined, { numeric: true }));
 
       const interfaceNames = new Set<string>();
       const descriptionByName = ethernetConfig.interfaces.reduce<Record<string, string | null>>(
@@ -508,6 +569,11 @@ export default function TrafficPolicyPage() {
       setQosPolicyDraft(EMPTY_QOS_POLICY_DRAFT);
       setQosInterfaces(parsedQosInterfaces);
       setCurrentQosInterfaces(parsedQosInterfaces);
+      setQosTrafficMatchGroups(parsedQosTrafficMatchGroups);
+      setCurrentQosTrafficMatchGroups(parsedQosTrafficMatchGroups);
+      setQosTrafficMatchGroupDraft(EMPTY_QOS_TRAFFIC_MATCH_GROUP_DRAFT);
+      setQosTrafficMatchInput("");
+      setQosTrafficMatchGroupInput("");
       setInterfaceOptions(normalizedInterfaces);
       setQosInterfaceDraft({
         ...EMPTY_QOS_INTERFACE_DRAFT,
@@ -665,6 +731,54 @@ export default function TrafficPolicyPage() {
   const removeQosInterfaceBinding = (entry: QosInterfaceBinding) => {
     const key = qosInterfaceKey(entry);
     setQosInterfaces((previous) => previous.filter((item) => qosInterfaceKey(item) !== key));
+  };
+
+  const addOrUpdateQosTrafficMatchGroup = () => {
+    setError(null);
+
+    const entry = normalizeQosTrafficMatchGroup({
+      name: qosTrafficMatchGroupDraft.name,
+      match: parseCsvList(qosTrafficMatchInput),
+      matchGroup: parseCsvList(qosTrafficMatchGroupInput),
+    });
+
+    if (!entry.name) {
+      setError("Traffic-match-group name is required.");
+      return;
+    }
+
+    if (entry.match.length === 0 && entry.matchGroup.length === 0) {
+      setError("Traffic-match-group requires at least one match or nested match-group reference.");
+      return;
+    }
+
+    setQosTrafficMatchGroups((previous) => {
+      const next = [...previous.filter((item) => qosTrafficMatchGroupKey(item) !== qosTrafficMatchGroupKey(entry)), entry];
+      return next.sort((left, right) => left.name.localeCompare(right.name, undefined, { numeric: true }));
+    });
+
+    setQosTrafficMatchGroupDraft(EMPTY_QOS_TRAFFIC_MATCH_GROUP_DRAFT);
+    setQosTrafficMatchInput("");
+    setQosTrafficMatchGroupInput("");
+  };
+
+  const editQosTrafficMatchGroup = (entry: QosTrafficMatchGroupEntry) => {
+    setQosTrafficMatchGroupDraft(entry);
+    setQosTrafficMatchInput(serializeCsvList(entry.match));
+    setQosTrafficMatchGroupInput(serializeCsvList(entry.matchGroup));
+  };
+
+  const removeQosTrafficMatchGroup = (entry: QosTrafficMatchGroupEntry) => {
+    const key = qosTrafficMatchGroupKey(entry);
+    setQosTrafficMatchGroups((previous) =>
+      previous.filter((item) => qosTrafficMatchGroupKey(item) !== key)
+    );
+
+    if (qosTrafficMatchGroupKey(qosTrafficMatchGroupDraft) === key) {
+      setQosTrafficMatchGroupDraft(EMPTY_QOS_TRAFFIC_MATCH_GROUP_DRAFT);
+      setQosTrafficMatchInput("");
+      setQosTrafficMatchGroupInput("");
+    }
   };
 
   const resetQosClassDraft = () => {
@@ -930,6 +1044,45 @@ export default function TrafficPolicyPage() {
               qosOperations.push(`set ${classBasePath} match group ${matchGroupValue}`);
             }
           }
+        }
+      }
+
+      const currentQosTrafficMatchGroupMap = new Map(
+        currentQosTrafficMatchGroups.map((entry) => [
+          qosTrafficMatchGroupKey(entry),
+          normalizeQosTrafficMatchGroup(entry),
+        ])
+      );
+      const desiredQosTrafficMatchGroupMap = new Map(
+        qosTrafficMatchGroups
+          .map(normalizeQosTrafficMatchGroup)
+          .filter((entry) => entry.name)
+          .map((entry) => [qosTrafficMatchGroupKey(entry), entry])
+      );
+
+      for (const [key, current] of currentQosTrafficMatchGroupMap.entries()) {
+        if (!desiredQosTrafficMatchGroupMap.has(key)) {
+          qosOperations.push(`delete qos traffic-match-group ${current.name}`);
+        }
+      }
+
+      for (const [key, desired] of desiredQosTrafficMatchGroupMap.entries()) {
+        const current = currentQosTrafficMatchGroupMap.get(key);
+        if (current && qosTrafficMatchGroupEqual(current, desired)) {
+          continue;
+        }
+
+        if (current) {
+          qosOperations.push(`delete qos traffic-match-group ${current.name}`);
+        }
+
+        for (const matchName of desired.match) {
+          qosOperations.push(`set qos traffic-match-group ${desired.name} match ${matchName}`);
+        }
+        for (const nestedGroupName of desired.matchGroup) {
+          qosOperations.push(
+            `set qos traffic-match-group ${desired.name} match-group ${nestedGroupName}`
+          );
         }
       }
 
@@ -1747,6 +1900,118 @@ export default function TrafficPolicyPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => removeQosClass(entry.classId)}
+                            disabled={!canEdit}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>QoS Traffic Match Groups</CardTitle>
+            <CardDescription>
+              Configure `qos traffic-match-group &lt;name&gt;` references for reusable class matches.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-4">
+              <div className="space-y-2">
+                <Label>Group Name</Label>
+                <Input
+                  value={qosTrafficMatchGroupDraft.name}
+                  onChange={(event) =>
+                    setQosTrafficMatchGroupDraft((previous) => ({
+                      ...previous,
+                      name: event.target.value,
+                    }))
+                  }
+                  placeholder="VOICE-GROUP"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Match (CSV)</Label>
+                <Input
+                  value={qosTrafficMatchInput}
+                  onChange={(event) => setQosTrafficMatchInput(event.target.value)}
+                  placeholder="VOICE, INTERACTIVE"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Nested Match-Group (CSV)</Label>
+                <Input
+                  value={qosTrafficMatchGroupInput}
+                  onChange={(event) => setQosTrafficMatchGroupInput(event.target.value)}
+                  placeholder="BASE-GROUP"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="flex items-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addOrUpdateQosTrafficMatchGroup}
+                  disabled={!canEdit}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add / Update Group
+                </Button>
+              </div>
+            </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Match References</TableHead>
+                  <TableHead>Nested Groups</TableHead>
+                  <TableHead className="w-[180px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {qosTrafficMatchGroups.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-muted-foreground">
+                      No traffic-match groups configured.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  qosTrafficMatchGroups.map((entry) => (
+                    <TableRow key={qosTrafficMatchGroupKey(entry)}>
+                      <TableCell className="font-medium">{entry.name}</TableCell>
+                      <TableCell>
+                        {entry.match.length > 0 ? entry.match.join(", ") : <span className="text-muted-foreground">-</span>}
+                      </TableCell>
+                      <TableCell>
+                        {entry.matchGroup.length > 0 ? (
+                          entry.matchGroup.join(", ")
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => editQosTrafficMatchGroup(entry)}
+                            disabled={!canEdit}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeQosTrafficMatchGroup(entry)}
                             disabled={!canEdit}
                           >
                             <Trash2 className="h-4 w-4" />

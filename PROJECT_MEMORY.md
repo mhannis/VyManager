@@ -54,47 +54,38 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Replace remaining lightweight routing protocol editors with robust form-driven pages aligned to the VyOS guide command trees.
+- Deepen `traffic-policy/qos` parity by covering guide-level `qos traffic-match-group` configuration in the existing form-first page.
 - Keep GUI form-driven (no free-form CLI entry) while aligning each page to the corresponding VyOS command tree semantics.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) each slice.
 
 ## Current Feature Spec
-Feature: **Routing protocol UX hardening batch (`failover`, `pim`, `pim6`, `static arp`)**
+Feature: **Traffic Policy deepening (`qos traffic-match-group`)**
 
 Acceptance criteria:
-- Frontend `/routing/static-failover/failover` is a form-driven failover route editor (no command text box) supporting route + next-hop + check/interface/metric fields.
-- Frontend `/routing/multicast/pim` is a form-driven PIM editor covering global settings, interface tuning, RP mappings, and IGMP static joins.
-- Frontend `/routing/multicast/pim6` is a form-driven PIM6 editor covering interface MLD settings and static MLD joins.
-- Frontend `/routing/infrastructure/arp` is a form-driven static ARP editor with interface-aware selection and MAC validation.
+- Frontend `/network/traffic-policy` exposes a form-driven QoS traffic-match-group editor (`name`, `match[]`, `match-group[]`) without free-form command entry.
+- Save path emits scoped diff-based `set/delete qos traffic-match-group ...` operations and preserves existing traffic-policy/qos/class/interface behaviors.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- Existing protocol batch APIs (`/vyos/failover`, `/vyos/pim`, `/vyos/pim6`, `/vyos/arp`) are sufficient; no backend contract changes are required for this slice.
-- Interface selectors continue to merge ethernet config + physical + all-interface discovery to remain resilient on partial endpoint data.
+- Existing `/vyos/qos` wrapper API remains sufficient for traffic-match-group operations; no backend contract changes are required.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: routing protocol hardening batch implemented and validated; commit pending.
+- Status: traffic-policy traffic-match-group deepening implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/components/routing/FailoverContent.tsx`
-- `frontend/src/components/routing/PimContent.tsx`
-- `frontend/src/components/routing/Pim6Content.tsx`
-- `frontend/src/components/routing/ArpProtocolContent.tsx`
+- `frontend/src/app/network/traffic-policy/page.tsx`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_app.py` -> pass
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
 - `cd frontend && npm run -s build` -> pass
 - Restarted runtime processes:
-  - `tmux kill-session -t vm-api || true`
   - `tmux kill-session -t vm-ui || true`
-  - `tmux new-session -d -s vm-api 'cd /home/redhot/VyOS/VyManager/backend && set -a && source .env && set +a && PYTHONPATH=. ./.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --proxy-headers'`
   - `tmux new-session -d -s vm-ui 'cd /home/redhot/VyOS/VyManager/frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000'`
-  - `ss -ltnp | rg ':(8000|3000)'` -> listening
+  - `ss -ltnp | rg ':3000'` -> listening
 - `cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime` -> pass
 - `cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui` -> pass
 
@@ -113,6 +104,7 @@ Assumptions:
 - Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- `/network/traffic-policy` now includes a dedicated `QoS Traffic Match Groups` section that supports CRUD for `qos traffic-match-group <name> match ...` and `match-group ...`, with diff-based set/delete generation in save flow.
 - Replaced `/routing/static-failover/failover` command-text workflow with a structured failover route editor that supports route/next-hop plus check target/timeout/type/policy, interface, and metric fields with diff-based set/delete saves.
 - Replaced `/routing/multicast/pim` simple list editor with a full form-first implementation covering guide-aligned global controls, interface parameters, RP mappings, and IGMP static joins.
 - Replaced `/routing/multicast/pim6` simple list editor with a full form-first implementation covering interface MLD controls and static MLD joins.

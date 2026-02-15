@@ -1,17 +1,16 @@
 {
-  "feature_id": "routing-protocol-hardening-batch-2026-02-15",
-  "title": "Routing protocol hardening batch (Failover, PIM, PIM6, Static ARP)",
+  "feature_id": "traffic-policy-qos-traffic-match-group-2026-02-15",
+  "title": "Traffic Policy parity deepening (QoS traffic-match-group)",
   "status": "done",
   "acceptance_criteria": [
-    "`/routing/static-failover/failover` provides form-driven failover route CRUD without free-form command entry.",
-    "`/routing/multicast/pim` provides form-driven CRUD for global settings, interface settings, RP mappings, and IGMP joins.",
-    "`/routing/multicast/pim6` provides form-driven CRUD for interface MLD settings and static MLD joins.",
-    "`/routing/infrastructure/arp` provides form-driven static ARP CRUD with interface selection and MAC validation.",
+    "`/network/traffic-policy` provides form-driven CRUD for `qos traffic-match-group` with name, match list, and nested match-group list.",
+    "Save path emits scoped diff-based `set/delete qos traffic-match-group ...` commands.",
+    "Existing traffic-policy, qos policy/class, and qos interface assignment behavior remains intact.",
     "Validation passes: frontend tsc/lint/build, runtime smoke, and browser smoke."
   ],
   "assumptions": [
-    "Existing protocol wrapper endpoints remain sufficient for these UI slices with no backend API contract changes.",
-    "Interface selectors use merged discovery from ethernet config + show physical + show all interfaces for resilience.",
+    "Existing `/vyos/qos` config wrapper remains sufficient for traffic-match-group operations.",
+    "No backend API contract changes are needed for this slice.",
     "Unrelated dirty files in this worktree remain untouched."
   ],
   "tasks": [
@@ -20,57 +19,41 @@
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/routing/FailoverContent.tsx"
+        "frontend/src/app/network/traffic-policy/page.tsx"
       ],
-      "notes": "Replaced command-box workflow with structured failover route editor and diff-based save generation."
+      "notes": "Added state parsing, editor UI, and diff-based save logic for qos traffic-match-group."
     },
     {
       "id": "T2",
-      "owner_role": "UI",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/src/components/routing/PimContent.tsx",
-        "frontend/src/components/routing/Pim6Content.tsx"
+        "backend/routers/qos/qos.py"
       ],
-      "notes": "Implemented guide-aligned PIM/PIM6 form editors with interface-aware selectors and nested join handling."
+      "notes": "No backend changes required; existing qos wrapper already scopes command execution correctly."
     },
     {
       "id": "T3",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/components/routing/ArpProtocolContent.tsx"
-      ],
-      "notes": "Implemented dedicated static ARP form editor with MAC-format validation and diff-based save behavior."
-    },
-    {
-      "id": "T4",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "frontend/src/components/routing/FailoverContent.tsx",
-        "frontend/src/components/routing/PimContent.tsx",
-        "frontend/src/components/routing/Pim6Content.tsx",
-        "frontend/src/components/routing/ArpProtocolContent.tsx"
+        "frontend/src/app/network/traffic-policy/page.tsx"
       ],
       "notes": "Validated with frontend tsc/lint/build plus runtime and browser smoke checks."
     },
     {
-      "id": "T5",
+      "id": "T4",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/components/routing/FailoverContent.tsx",
-        "frontend/src/components/routing/PimContent.tsx",
-        "frontend/src/components/routing/Pim6Content.tsx",
-        "frontend/src/components/routing/ArpProtocolContent.tsx"
+        "frontend/src/app/network/traffic-policy/page.tsx"
       ],
       "notes": "Manual in-session review completed; no blocking issues found."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_app.py && cd ../frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
+    "test": "cd frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [

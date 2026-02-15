@@ -140,3 +140,5 @@
 - 2026-02-15: Replaced PIM and PIM6 lightweight list editors with full form-first pages modeled on the VyOS protocol guide command trees, including nested join management and diff-based batch apply.
 - 2026-02-15: Replaced ARP lightweight list editor with dedicated static ARP CRUD page including MAC format validation and description-first interface selectors.
 - 2026-02-15: Kept all routing hardening changes frontend-only (no backend refactor) to satisfy thin-wrapper and API-contract preservation constraints.
+- 2026-02-15: Extended `/network/traffic-policy` with form-driven `qos traffic-match-group` CRUD to cover a missing guide subtree without introducing backend changes.
+- 2026-02-15: Implemented traffic-match-group save logic as diff-based set/delete operations and used full-group replacement on changed entries to keep behavior deterministic.
