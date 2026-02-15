@@ -148,6 +148,10 @@ const EMPTY_NETWORK_DRAFT: ContainerNetworkDraft = {
   dnsDisabled: false,
 };
 
+function hasAdvancedRuntimeOverrides(draft: ContainerDraft): boolean {
+  return Boolean(draft.entrypoint.trim() || draft.command.trim() || draft.arguments.trim());
+}
+
 function parseIPv4(ip: string): number | null {
   const parts = ip.trim().split(".");
   if (parts.length !== 4) return null;
@@ -669,6 +673,11 @@ export default function SystemContainersPage() {
   const [instanceHostDraft, setInstanceHostDraft] = useState("");
   const [savingInstanceHost, setSavingInstanceHost] = useState(false);
   const [networksExpanded, setNetworksExpanded] = useState(false);
+  const [lanHelperExpanded, setLanHelperExpanded] = useState(false);
+  const [runtimeOverridesExpanded, setRuntimeOverridesExpanded] = useState(false);
+  const [environmentExpanded, setEnvironmentExpanded] = useState(false);
+  const [portMappingsExpanded, setPortMappingsExpanded] = useState(true);
+  const [volumeMappingsExpanded, setVolumeMappingsExpanded] = useState(false);
 
   const [overview, setOverview] = useState<ContainersOverviewResponse | null>(null);
   const [draft, setDraft] = useState<ContainerDraft>({ ...EMPTY_DRAFT });
@@ -895,6 +904,11 @@ export default function SystemContainersPage() {
   const resetDraft = () => {
     setSelectedContainerName(null);
     setDraft({ ...EMPTY_DRAFT });
+    setLanHelperExpanded(false);
+    setRuntimeOverridesExpanded(false);
+    setEnvironmentExpanded(false);
+    setPortMappingsExpanded(true);
+    setVolumeMappingsExpanded(false);
     setSuccess(null);
     setError(null);
   };
@@ -921,8 +935,13 @@ export default function SystemContainersPage() {
   };
 
   const editContainer = (container: ContainerSummary) => {
+    const nextDraft = toDraft(container);
     setSelectedContainerName(container.name);
-    setDraft(toDraft(container));
+    setDraft(nextDraft);
+    setRuntimeOverridesExpanded(hasAdvancedRuntimeOverrides(nextDraft));
+    setEnvironmentExpanded(nextDraft.environment.length > 0);
+    setPortMappingsExpanded(nextDraft.ports.length > 0);
+    setVolumeMappingsExpanded(nextDraft.volumes.length > 0);
     setSuccess(null);
     setError(null);
   };
@@ -1163,6 +1182,10 @@ export default function SystemContainersPage() {
     const nextDraft = selectedTemplate.buildDraft({ timezone: localTimezone });
     setSelectedContainerName(null);
     setDraft(nextDraft);
+    setRuntimeOverridesExpanded(hasAdvancedRuntimeOverrides(nextDraft));
+    setEnvironmentExpanded(nextDraft.environment.length > 0);
+    setPortMappingsExpanded(nextDraft.ports.length > 0);
+    setVolumeMappingsExpanded(nextDraft.volumes.length > 0);
     setError(null);
     const helperNote =
       selectedLanSegment && serviceLanIp.trim()
@@ -1953,9 +1976,12 @@ export default function SystemContainersPage() {
                   </div>
                   <Button variant="outline" onClick={applyTemplate} disabled={saving || installing}>
                     <WandSparkles className="h-4 w-4 mr-2" />
-                    Populate
+                    Load Template
                   </Button>
                 </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Loads template values into the form only. Review and click Install when ready.
+                </p>
 
                 {selectedTemplate && (
                   <div className="space-y-1 text-xs text-muted-foreground">
@@ -1974,113 +2000,136 @@ export default function SystemContainersPage() {
                 )}
               </div>
 
-              <div className="rounded-md border p-4 space-y-4">
-                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div className="rounded-md border p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <Label>LAN Planning Helper</Label>
+                    <Label className="text-sm font-semibold">LAN Planning Helper</Label>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Pick a LAN subnet to validate service IP planning and quickly copy a network address.
+                      Optional helper for planning static service IPs on LAN segments.
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={loadLanSegments}
-                    disabled={saving || loadingLanSegments}
-                  >
-                    <RefreshCw
-                      className={`h-4 w-4 mr-2 ${loadingLanSegments ? "animate-spin" : ""}`}
-                    />
-                    Rescan LAN
-                  </Button>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Detected LAN Segment</Label>
-                    <Select
-                      value={selectedLanSegmentId || "none"}
-                      onValueChange={(value) => setSelectedLanSegmentId(value === "none" ? "" : value)}
-                      disabled={saving || loadingLanSegments}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline">{lanSegments.length} segments</Badge>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setLanHelperExpanded((previous) => !previous)}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a segment" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {lanSegments.map((segment) => (
-                          <SelectItem key={segment.id} value={segment.id}>
-                            {segment.interfaceDescription
-                              ? `${segment.interfaceDescription} (${segment.interfaceName})`
-                              : segment.interfaceName}{" "}
-                            - {segment.subnetCidr}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Service IP Suggestion</Label>
-                    <Input
-                      value={serviceLanIp}
-                      onChange={(event) => setServiceLanIp(event.target.value)}
-                      placeholder="192.168.1.10"
-                      disabled={saving || !selectedLanSegment}
-                    />
+                      {lanHelperExpanded ? "Collapse" : "Open Helper"}
+                    </Button>
                   </div>
                 </div>
+                <Collapsible open={lanHelperExpanded} onOpenChange={setLanHelperExpanded}>
+                  <CollapsibleContent className="space-y-4">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        Pick a LAN subnet to validate service IP planning and copy a network address.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={loadLanSegments}
+                        disabled={saving || loadingLanSegments}
+                      >
+                        <RefreshCw
+                          className={`h-4 w-4 mr-2 ${loadingLanSegments ? "animate-spin" : ""}`}
+                        />
+                        Rescan LAN
+                      </Button>
+                    </div>
 
-                {selectedLanSegment ? (
-                  <div className="space-y-1 text-xs">
-                    <p className="text-muted-foreground">
-                      Interface address:{" "}
-                      <span className="font-mono">{selectedLanSegment.interfaceIp}</span> on{" "}
-                      <span className="font-mono">{selectedLanSegment.subnetCidr}</span>
-                    </p>
-                    <p className="text-muted-foreground">
-                      Usable host range:{" "}
-                      <span className="font-mono">{getUsableHostRange(selectedLanSegment.parsed)}</span>
-                    </p>
-                    {selectedLanSegment.interfaceDescription && (
-                      <p className="text-muted-foreground">{selectedLanSegment.interfaceDescription}</p>
-                    )}
-                    {serviceLanIp.trim() && (
-                      <p className={lanIpValidationIssue ? "text-destructive" : "text-green-700"}>
-                        {lanIpValidationIssue ?? "Service IP is valid for this LAN segment."}
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Detected LAN Segment</Label>
+                        <Select
+                          value={selectedLanSegmentId || "none"}
+                          onValueChange={(value) => setSelectedLanSegmentId(value === "none" ? "" : value)}
+                          disabled={saving || loadingLanSegments}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a segment" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {lanSegments.map((segment) => (
+                              <SelectItem key={segment.id} value={segment.id}>
+                                {formatInterfaceDisplayName(
+                                  segment.interfaceName,
+                                  segment.interfaceDescription,
+                                )}{" "}
+                                - {segment.subnetCidr}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Service IP Suggestion</Label>
+                        <Input
+                          value={serviceLanIp}
+                          onChange={(event) => setServiceLanIp(event.target.value)}
+                          placeholder="192.168.1.10"
+                          disabled={saving || !selectedLanSegment}
+                        />
+                      </div>
+                    </div>
+
+                    {selectedLanSegment ? (
+                      <div className="space-y-1 text-xs">
+                        <p className="text-muted-foreground">
+                          Interface address:{" "}
+                          <span className="font-mono">{selectedLanSegment.interfaceIp}</span> on{" "}
+                          <span className="font-mono">{selectedLanSegment.subnetCidr}</span>
+                        </p>
+                        <p className="text-muted-foreground">
+                          Usable host range:{" "}
+                          <span className="font-mono">{getUsableHostRange(selectedLanSegment.parsed)}</span>
+                        </p>
+                        {selectedLanSegment.interfaceDescription && (
+                          <p className="text-muted-foreground">{selectedLanSegment.interfaceDescription}</p>
+                        )}
+                        {serviceLanIp.trim() && (
+                          <p className={lanIpValidationIssue ? "text-destructive" : "text-green-700"}>
+                            {lanIpValidationIssue ?? "Service IP is valid for this LAN segment."}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        No private static LAN subnet selected. You can still configure containers manually.
                       </p>
                     )}
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    No private static LAN subnet selected. You can still configure containers manually.
-                  </p>
-                )}
 
-                {lanSegmentsError && (
-                  <p className="text-xs text-destructive">{lanSegmentsError}</p>
-                )}
+                    {lanSegmentsError && (
+                      <p className="text-xs text-destructive">{lanSegmentsError}</p>
+                    )}
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={applyLanHelperIp}
-                    disabled={
-                      saving ||
-                      !draft.network.trim() ||
-                      !serviceLanIp.trim() ||
-                      Boolean(lanIpValidationIssue)
-                    }
-                  >
-                    Use Service IP as Network Address
-                  </Button>
-                  {!draft.network.trim() && (
-                    <span className="text-xs text-muted-foreground">
-                      Set Network Name first to use Network Address.
-                    </span>
-                  )}
-                </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={applyLanHelperIp}
+                        disabled={
+                          saving ||
+                          !draft.network.trim() ||
+                          !serviceLanIp.trim() ||
+                          Boolean(lanIpValidationIssue)
+                        }
+                      >
+                        Use Service IP as Network Address
+                      </Button>
+                      {!draft.network.trim() && (
+                        <span className="text-xs text-muted-foreground">
+                          Set Network Name first to use Network Address.
+                        </span>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -2143,31 +2192,57 @@ export default function SystemContainersPage() {
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <Label>Entrypoint (optional)</Label>
-                  <Input
-                    value={draft.entrypoint}
-                    onChange={(event) => setDraft((previous) => ({ ...previous, entrypoint: event.target.value }))}
-                    disabled={saving}
-                  />
+              <div className="rounded-md border p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <Label className="text-sm font-semibold">Runtime Overrides</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Optional advanced overrides for entrypoint, command, and arguments.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setRuntimeOverridesExpanded((previous) => !previous)}
+                  >
+                    {runtimeOverridesExpanded ? "Collapse" : "Edit"}
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label>Command (optional)</Label>
-                  <Input
-                    value={draft.command}
-                    onChange={(event) => setDraft((previous) => ({ ...previous, command: event.target.value }))}
-                    disabled={saving}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Arguments (optional)</Label>
-                  <Input
-                    value={draft.arguments}
-                    onChange={(event) => setDraft((previous) => ({ ...previous, arguments: event.target.value }))}
-                    disabled={saving}
-                  />
-                </div>
+                <Collapsible open={runtimeOverridesExpanded} onOpenChange={setRuntimeOverridesExpanded}>
+                  <CollapsibleContent className="grid gap-4 md:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label>Entrypoint (optional)</Label>
+                      <Input
+                        value={draft.entrypoint}
+                        onChange={(event) =>
+                          setDraft((previous) => ({ ...previous, entrypoint: event.target.value }))
+                        }
+                        disabled={saving}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Command (optional)</Label>
+                      <Input
+                        value={draft.command}
+                        onChange={(event) =>
+                          setDraft((previous) => ({ ...previous, command: event.target.value }))
+                        }
+                        disabled={saving}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Arguments (optional)</Label>
+                      <Input
+                        value={draft.arguments}
+                        onChange={(event) =>
+                          setDraft((previous) => ({ ...previous, arguments: event.target.value }))
+                        }
+                        disabled={saving}
+                      />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -2233,219 +2308,285 @@ export default function SystemContainersPage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label>Environment Variables</Label>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setDraft((previous) => ({
-                        ...previous,
-                        environment: [...previous.environment, { key: "", value: "" }],
-                      }))
-                    }
-                    disabled={saving}
-                  >
-                    <Plus className="h-3.5 w-3.5 mr-1" />
-                    Add
-                  </Button>
-                </div>
-                {draft.environment.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No environment variables configured.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {draft.environment.map((env, index) => (
-                      <div key={`env-${index}`} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-                        <Input
-                          placeholder="KEY"
-                          value={env.key}
-                          onChange={(event) => updateEnv(index, "key", event.target.value)}
-                          disabled={saving}
-                        />
-                        <Input
-                          placeholder="value"
-                          value={env.value}
-                          onChange={(event) => updateEnv(index, "value", event.target.value)}
-                          disabled={saving}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            setDraft((previous) => ({
-                              ...previous,
-                              environment: previous.environment.filter((_, i) => i !== index),
-                            }))
-                          }
-                          disabled={saving}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+              <div className="rounded-md border p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <Label className="text-sm font-semibold">Environment Variables</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">Optional advanced settings.</p>
                   </div>
-                )}
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{draft.environment.length}</Badge>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEnvironmentExpanded((previous) => !previous)}
+                    >
+                      {environmentExpanded ? "Collapse" : "Edit"}
+                    </Button>
+                  </div>
+                </div>
+                <Collapsible open={environmentExpanded} onOpenChange={setEnvironmentExpanded}>
+                  <CollapsibleContent className="space-y-3">
+                    <div className="flex items-center justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setDraft((previous) => ({
+                            ...previous,
+                            environment: [...previous.environment, { key: "", value: "" }],
+                          }))
+                        }
+                        disabled={saving}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        Add Variable
+                      </Button>
+                    </div>
+                    {draft.environment.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No environment variables configured.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {draft.environment.map((env, index) => (
+                          <div key={`env-${index}`} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+                            <Input
+                              placeholder="KEY"
+                              value={env.key}
+                              onChange={(event) => updateEnv(index, "key", event.target.value)}
+                              disabled={saving}
+                            />
+                            <Input
+                              placeholder="value"
+                              value={env.value}
+                              onChange={(event) => updateEnv(index, "value", event.target.value)}
+                              disabled={saving}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setDraft((previous) => ({
+                                  ...previous,
+                                  environment: previous.environment.filter((_, i) => i !== index),
+                                }))
+                              }
+                              disabled={saving}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label>Port Mappings</Label>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setDraft((previous) => ({
-                        ...previous,
-                        ports: [
-                          ...previous.ports,
-                          { name: "", source: 8080, destination: 80, protocol: "tcp" },
-                        ],
-                      }))
-                    }
-                    disabled={saving}
-                  >
-                    <Plus className="h-3.5 w-3.5 mr-1" />
-                    Add
-                  </Button>
-                </div>
-                {draft.ports.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No published ports configured.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {draft.ports.map((port, index) => (
-                      <div
-                        key={`port-${index}`}
-                        className="grid gap-2 md:grid-cols-[1fr_120px_120px_120px_auto]"
-                      >
-                        <Input
-                          placeholder="name"
-                          value={port.name}
-                          onChange={(event) => updatePort(index, "name", event.target.value)}
-                          disabled={saving}
-                        />
-                        <Input
-                          type="number"
-                          value={String(port.source)}
-                          onChange={(event) => updatePort(index, "source", Number(event.target.value))}
-                          disabled={saving}
-                        />
-                        <Input
-                          type="number"
-                          value={String(port.destination)}
-                          onChange={(event) => updatePort(index, "destination", Number(event.target.value))}
-                          disabled={saving}
-                        />
-                        <Select
-                          value={port.protocol}
-                          onValueChange={(value: "tcp" | "udp") => updatePort(index, "protocol", value)}
-                          disabled={saving}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="tcp">tcp</SelectItem>
-                            <SelectItem value="udp">udp</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            setDraft((previous) => ({
-                              ...previous,
-                              ports: previous.ports.filter((_, i) => i !== index),
-                            }))
-                          }
-                          disabled={saving}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+              <div className="rounded-md border p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <Label className="text-sm font-semibold">Port Mappings</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">Publish container services to the host.</p>
                   </div>
-                )}
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{draft.ports.length}</Badge>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setPortMappingsExpanded((previous) => !previous)}
+                    >
+                      {portMappingsExpanded ? "Collapse" : "Edit"}
+                    </Button>
+                  </div>
+                </div>
+                <Collapsible open={portMappingsExpanded} onOpenChange={setPortMappingsExpanded}>
+                  <CollapsibleContent className="space-y-3">
+                    <div className="flex items-center justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setDraft((previous) => ({
+                            ...previous,
+                            ports: [
+                              ...previous.ports,
+                              { name: "", source: 8080, destination: 80, protocol: "tcp" },
+                            ],
+                          }))
+                        }
+                        disabled={saving}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        Add Mapping
+                      </Button>
+                    </div>
+                    {draft.ports.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No published ports configured.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {draft.ports.map((port, index) => (
+                          <div
+                            key={`port-${index}`}
+                            className="grid gap-2 md:grid-cols-[1fr_120px_120px_120px_auto]"
+                          >
+                            <Input
+                              placeholder="name"
+                              value={port.name}
+                              onChange={(event) => updatePort(index, "name", event.target.value)}
+                              disabled={saving}
+                            />
+                            <Input
+                              type="number"
+                              value={String(port.source)}
+                              onChange={(event) => updatePort(index, "source", Number(event.target.value))}
+                              disabled={saving}
+                            />
+                            <Input
+                              type="number"
+                              value={String(port.destination)}
+                              onChange={(event) => updatePort(index, "destination", Number(event.target.value))}
+                              disabled={saving}
+                            />
+                            <Select
+                              value={port.protocol}
+                              onValueChange={(value: "tcp" | "udp") => updatePort(index, "protocol", value)}
+                              disabled={saving}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="tcp">tcp</SelectItem>
+                                <SelectItem value="udp">udp</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setDraft((previous) => ({
+                                  ...previous,
+                                  ports: previous.ports.filter((_, i) => i !== index),
+                                }))
+                              }
+                              disabled={saving}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label>Volume Mappings</Label>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setDraft((previous) => ({
-                        ...previous,
-                        volumes: [
-                          ...previous.volumes,
-                          { name: "", source: "", destination: "", mode: "rw" },
-                        ],
-                      }))
-                    }
-                    disabled={saving}
-                  >
-                    <Plus className="h-3.5 w-3.5 mr-1" />
-                    Add
-                  </Button>
-                </div>
-                {draft.volumes.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No volume mappings configured.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {draft.volumes.map((volume, index) => (
-                      <div
-                        key={`volume-${index}`}
-                        className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_120px_auto]"
-                      >
-                        <Input
-                          placeholder="name"
-                          value={volume.name}
-                          onChange={(event) => updateVolume(index, "name", event.target.value)}
-                          disabled={saving}
-                        />
-                        <Input
-                          placeholder="/config/..."
-                          value={volume.source}
-                          onChange={(event) => updateVolume(index, "source", event.target.value)}
-                          disabled={saving}
-                        />
-                        <Input
-                          placeholder="/container/path"
-                          value={volume.destination}
-                          onChange={(event) => updateVolume(index, "destination", event.target.value)}
-                          disabled={saving}
-                        />
-                        <Select
-                          value={volume.mode}
-                          onValueChange={(value: "rw" | "ro") => updateVolume(index, "mode", value)}
-                          disabled={saving}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="rw">rw</SelectItem>
-                            <SelectItem value="ro">ro</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            setDraft((previous) => ({
-                              ...previous,
-                              volumes: previous.volumes.filter((_, i) => i !== index),
-                            }))
-                          }
-                          disabled={saving}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+              <div className="rounded-md border p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <Label className="text-sm font-semibold">Volume Mappings</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">Optional persistent host paths.</p>
                   </div>
-                )}
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{draft.volumes.length}</Badge>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setVolumeMappingsExpanded((previous) => !previous)}
+                    >
+                      {volumeMappingsExpanded ? "Collapse" : "Edit"}
+                    </Button>
+                  </div>
+                </div>
+                <Collapsible open={volumeMappingsExpanded} onOpenChange={setVolumeMappingsExpanded}>
+                  <CollapsibleContent className="space-y-3">
+                    <div className="flex items-center justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setDraft((previous) => ({
+                            ...previous,
+                            volumes: [
+                              ...previous.volumes,
+                              { name: "", source: "", destination: "", mode: "rw" },
+                            ],
+                          }))
+                        }
+                        disabled={saving}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        Add Mapping
+                      </Button>
+                    </div>
+                    {draft.volumes.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No volume mappings configured.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {draft.volumes.map((volume, index) => (
+                          <div
+                            key={`volume-${index}`}
+                            className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_120px_auto]"
+                          >
+                            <Input
+                              placeholder="name"
+                              value={volume.name}
+                              onChange={(event) => updateVolume(index, "name", event.target.value)}
+                              disabled={saving}
+                            />
+                            <Input
+                              placeholder="/config/..."
+                              value={volume.source}
+                              onChange={(event) => updateVolume(index, "source", event.target.value)}
+                              disabled={saving}
+                            />
+                            <Input
+                              placeholder="/container/path"
+                              value={volume.destination}
+                              onChange={(event) => updateVolume(index, "destination", event.target.value)}
+                              disabled={saving}
+                            />
+                            <Select
+                              value={volume.mode}
+                              onValueChange={(value: "rw" | "ro") => updateVolume(index, "mode", value)}
+                              disabled={saving}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="rw">rw</SelectItem>
+                                <SelectItem value="ro">ro</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setDraft((previous) => ({
+                                  ...previous,
+                                  volumes: previous.volumes.filter((_, i) => i !== index),
+                                }))
+                              }
+                              disabled={saving}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
 
               {!canEditSystem && (

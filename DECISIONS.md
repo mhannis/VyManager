@@ -175,3 +175,4 @@
 - 2026-02-15: Updated dashboard drag/drop placement to clamp active card span by current layout column count, preventing out-of-range placement math after column-count changes.
 - 2026-02-15: Firewall Create/Edit rule modals now hydrate interface descriptions from ethernet config and display interface selectors as `Description (ethX)` while continuing to store canonical interface-name values in rule payloads.
 - 2026-02-15: NAT Create/Edit modals (source/destination/static) now use description-first interface labels (including VLAN subinterfaces) based on config snapshot metadata while preserving raw interface-name writes.
+- 2026-02-15: `System -> Containers` create/edit UX now uses progressive disclosure (collapsible LAN helper, runtime overrides, environment, ports, and volumes) so common tasks stay simple while advanced controls remain available.

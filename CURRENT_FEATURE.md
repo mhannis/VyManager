@@ -1,12 +1,12 @@
-feature_id: nat-interface-labels-r4-2026-02-15
+feature_id: containers-ux-simplification-r1-2026-02-15
 status: in_review
-title: NAT modal interface-label robustness
+title: Container management progressive disclosure UX
 branch: feature/containers-automation-v1
 commits:
   - pending
 notes:
-  - Updated NAT Create/Edit modals (source, destination, static) to hydrate interface descriptions from config snapshot.
-  - NAT interface selectors now render description-first labels using shared formatter (`Description (ethX)`), including VLAN subinterfaces.
-  - Preserved existing NAT payload behavior by keeping canonical interface names as submitted values.
-  - Fallback to plain interface names remains in place when descriptions are absent.
+  - Simplified `System -> Containers` create/edit flow with collapsible sections for optional/advanced settings.
+  - Added progressive disclosure controls for LAN helper, runtime overrides, environment variables, port mappings, and volume mappings.
+  - Updated template action wording to `Load Template` and clarified it does not install containers.
+  - Preserved all existing container fields and API payload behavior.
   - Validated with frontend tsc/lint/build + runtime/browser smoke.

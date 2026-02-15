@@ -54,36 +54,32 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Harden NAT rule UX consistency by ensuring interface selectors are description-first across create/edit flows.
-- Continue applying global interface-labeling convention (`Description (ethX)`) to high-traffic forms.
-- Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) after every slice.
+- Continue UI simplification without removing functionality, starting with high-density forms.
+- Apply progressive disclosure patterns so advanced fields are hidden until needed.
+- Keep strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) after every UX slice.
 
 ## Current Feature Spec
-Feature: **NAT modal interface-label robustness**
+Feature: **Container management form simplification (progressive disclosure)**
 
 Acceptance criteria:
-- NAT create/edit modals show description-first interface labels.
-- Interface dropdown values remain canonical interface names for API compatibility.
-- Fallback labeling remains safe for interfaces with no description.
+- `System -> Containers` create/edit flow keeps all existing fields and save/install behavior.
+- High-noise optional sections are collapsed by default and expandable on demand.
+- Template action messaging makes it explicit that template loading does not install.
+- LAN helper remains available but optional, hidden by default, and uses description-first interface labels.
 - End-to-end validation passes: frontend `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- Interface descriptions sourced from ethernet config are sufficient to label the broader show-interface set by name.
-- This slice remains frontend-only and contract-safe for existing API clients.
+- Operators benefit from reduced always-visible form density more than always-expanded advanced controls.
+- Preserving API payload shape is mandatory; this is a frontend-only UX slice.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: NAT interface-label polish implemented and validated; commit pending.
+- Status: container form simplification implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/components/network/CreateSourceNATModal.tsx`
-- `frontend/src/components/network/EditSourceNATModal.tsx`
-- `frontend/src/components/network/CreateDestinationNATModal.tsx`
-- `frontend/src/components/network/EditDestinationNATModal.tsx`
-- `frontend/src/components/network/CreateStaticNATModal.tsx`
-- `frontend/src/components/network/EditStaticNATModal.tsx`
+- `frontend/src/app/system/containers/page.tsx`
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
@@ -111,6 +107,9 @@ Assumptions:
 - Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- `System -> Containers` create/edit form now uses progressive disclosure: LAN helper, runtime overrides, environment variables, port mappings, and volume mappings can be collapsed/expanded independently, with safe defaults and no payload contract changes.
+- Template action text now says `Load Template` and clarifies that loading does not install, reducing install-flow confusion.
+- LAN helper segment selector now uses `formatInterfaceDisplayName(...)` for consistent description-first labels.
 - NAT Create/Edit modals (source, destination, static) now derive interface labels from config descriptions and render selectors as `Description (ethX)` while still submitting raw interface names.
 - VLAN `vif` entries in NAT modals now also pick up per-subinterface descriptions from config where present and fall back to interface IDs otherwise.
 - Firewall Create/Edit rule modals now enrich interface selectors using ethernet descriptions and render labels as `Description (ethX)` while preserving canonical interface names for actual rule values.

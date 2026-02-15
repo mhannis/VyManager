@@ -1,19 +1,18 @@
 {
-  "feature_id": "nat-interface-labels-r4-2026-02-15",
-  "title": "NAT modal interface-label robustness",
+  "feature_id": "containers-ux-simplification-r1-2026-02-15",
+  "title": "Container management progressive disclosure UX",
   "status": "in_review",
   "acceptance_criteria": [
-    "Source NAT create/edit modals show interface selectors as description-first labels.",
-    "Destination NAT create/edit modals show interface selectors as description-first labels.",
-    "Static NAT create/edit modals show interface selectors as description-first labels.",
-    "VLAN subinterfaces are labeled with description-first fallback behavior when descriptions exist.",
-    "NAT API payload values remain canonical interface names.",
+    "System -> Containers keeps all existing create/edit functionality.",
+    "Optional/advanced sections are collapsed by default and expandable on demand.",
+    "Template action clearly indicates it only loads values and does not install.",
+    "LAN helper is optional, collapsible, and keeps description-first interface labels.",
     "Frontend validation gates pass (tsc, lint, build, runtime smoke, UI smoke)."
   ],
   "assumptions": [
-    "NAT modal interface options are sourced from running config snapshot and may include non-ethernet interfaces without descriptions.",
-    "Label enrichment should remain display-only and not change backend command semantics.",
-    "Existing unrelated working tree changes remain untouched."
+    "Reducing default visible form density improves ease of use without removing capability.",
+    "This is a frontend-only change and must keep backend/API contracts unchanged.",
+    "Existing unrelated worktree changes remain untouched."
   ],
   "tasks": [
     {
@@ -21,14 +20,9 @@
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/network/CreateSourceNATModal.tsx",
-        "frontend/src/components/network/EditSourceNATModal.tsx",
-        "frontend/src/components/network/CreateDestinationNATModal.tsx",
-        "frontend/src/components/network/EditDestinationNATModal.tsx",
-        "frontend/src/components/network/CreateStaticNATModal.tsx",
-        "frontend/src/components/network/EditStaticNATModal.tsx"
+        "frontend/src/app/system/containers/page.tsx"
       ],
-      "notes": "Added description hydration + formatted display labels for all NAT interface selectors."
+      "notes": "Implemented collapsible advanced sections and clearer template/helper UX."
     },
     {
       "id": "T2",
@@ -42,14 +36,9 @@
       "owner_role": "Reviewer",
       "status": "doing",
       "files": [
-        "frontend/src/components/network/CreateSourceNATModal.tsx",
-        "frontend/src/components/network/EditSourceNATModal.tsx",
-        "frontend/src/components/network/CreateDestinationNATModal.tsx",
-        "frontend/src/components/network/EditDestinationNATModal.tsx",
-        "frontend/src/components/network/CreateStaticNATModal.tsx",
-        "frontend/src/components/network/EditStaticNATModal.tsx"
+        "frontend/src/app/system/containers/page.tsx"
       ],
-      "notes": "Manual verification pending on live NAT create/edit forms."
+      "notes": "Manual review pending against UX goals in live UI."
     }
   ],
   "commands": {
@@ -60,7 +49,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "NAT interface-label consistency hardening",
+      "purpose": "Container management UX simplification",
       "status": "active"
     }
   ]
