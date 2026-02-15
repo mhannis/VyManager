@@ -1,17 +1,17 @@
 {
-  "feature_id": "gateway-temp-telemetry-r3-2026-02-15",
-  "title": "Gateway ping and sensor telemetry compatibility hardening",
+  "feature_id": "gateway-temp-telemetry-r4-2026-02-15",
+  "title": "Gateway ping and sensor telemetry SSH fallback hardening",
   "status": "in_review",
   "acceptance_criteria": [
-    "Gateway summary retries probe via generate when show ping is rejected as invalid command.",
-    "Gateway summary still parses RTT/RTTsd/Loss across varied ping output formats.",
-    "System dashboard summary reads CPU temperature from sensors even when show sensors is unsupported.",
-    "Regression tests exist for show->generate fallback on ping and sensors.",
+    "Gateway summary retries via generate when show ping is invalid.",
+    "Gateway summary falls back to SSH ping when API ping commands are unavailable.",
+    "System dashboard summary falls back to SSH sensors when API sensor commands are unavailable.",
+    "Gateway and dashboard temperature regression tests cover API-to-SSH fallback behavior.",
     "Runtime smoke checks pass after backend restart."
   ],
   "assumptions": [
-    "Some VyOS builds reject op-mode ping under show but allow it via generate.",
-    "Some VyOS builds expose sensors output via generate path only.",
+    "Some VyOS builds reject op-mode ping and sensors through HTTPS API commands.",
+    "SSH automation key access can be unavailable on some systems; endpoint should still fail gracefully with warning.",
     "Unrelated dirty files in the working tree are pre-existing and out of scope for this hotfix."
   ],
   "tasks": [
@@ -23,7 +23,7 @@
         "backend/routers/show.py",
         "backend/routers/system.py"
       ],
-      "notes": "Added show->generate fallback paths for gateway ping and dashboard sensors acquisition."
+      "notes": "Added SSH fallback for gateway ping probes and dashboard sensor collection while preserving API contract."
     },
     {
       "id": "T2",
@@ -33,7 +33,7 @@
         "backend/tests/test_gateway_summary.py",
         "backend/tests/test_system_dashboard_temperature.py"
       ],
-      "notes": "Added regressions for invalid show ping fallback and invalid show sensors fallback."
+      "notes": "Added regressions for API invalid-command fallback to SSH paths."
     },
     {
       "id": "T3",
@@ -45,7 +45,7 @@
         "backend/tests/test_gateway_summary.py",
         "backend/tests/test_system_dashboard_temperature.py"
       ],
-      "notes": "Manual review completed; changes are additive and preserve API contracts."
+      "notes": "Manual review completed; changes remain additive and thin-wrapper compliant."
     }
   ],
   "commands": {
@@ -56,7 +56,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Gateway + temperature telemetry compatibility fixes",
+      "purpose": "Gateway + temperature API compatibility fixes with SSH fallback",
       "status": "active"
     }
   ]

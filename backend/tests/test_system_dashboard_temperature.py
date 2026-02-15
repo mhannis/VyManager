@@ -86,3 +86,58 @@ def test_dashboard_summary_temperature_falls_back_to_generate_when_show_invalid(
     assert response.status_code == 200
     payload = response.json()
     assert payload["cpu_temperature_celsius"] == 57.0
+
+
+def test_dashboard_summary_temperature_falls_back_to_ssh_when_api_sensors_unavailable(monkeypatch):
+    class DummyResponse:
+        def __init__(self, status: int = 200, output: str = "", error: str = ""):
+            self.status = status
+            self.result = {"data": output}
+            self.error = error
+
+    class DummyDevice:
+        def show(self, path=None):
+            if path == ["version"]:
+                return DummyResponse(output="Version: VyOS 2026.02.11\n")
+            if path == ["system", "uptime"]:
+                return DummyResponse(output="Uptime: 1 day\n")
+            if path == ["system", "cpu"]:
+                return DummyResponse(output="CPU model: Demo CPU\n")
+            if path == ["system", "memory"]:
+                return DummyResponse(output="Total: 1G\nUsed: 512M\nFree: 512M\n")
+            return DummyResponse(status=400, error=f"unsupported show path: {path}")
+
+        def generate(self, path=None):
+            return DummyResponse(status=400, error=f"unsupported generate path: {path}")
+
+    class DummyConfig:
+        hostname = "192.168.10.242"
+
+    class DummyService:
+        device = DummyDevice()
+        config = DummyConfig()
+
+        def get_full_config(self, refresh=False):
+            return {"system": {"host-name": "vyos-lab1"}}
+
+    class DummySshResult:
+        output = (
+            "coretemp-isa-0000\n"
+            "Package id 0:  +61.0°C  (high = +80.0°C, crit = +100.0°C)\n"
+        )
+
+    async def allow_read(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: DummyService())
+    monkeypatch.setattr(system_router, "require_read_permission", allow_read)
+    monkeypatch.setattr(system_router, "ssh_run", lambda host, command, timeout_seconds=15: DummySshResult())
+
+    app = FastAPI()
+    app.include_router(system_router.router)
+    client = TestClient(app)
+
+    response = client.get("/vyos/system/dashboard-summary")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["cpu_temperature_celsius"] == 61.0

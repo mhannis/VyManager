@@ -54,8 +54,8 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Fix Gateway Status probe failures on platforms that reject `show ping`.
-- Make CPU temperature collection resilient when sensor data is only available via `generate sensors`.
+- Fix Gateway Status probe failures on platforms that reject both `show ping` and `generate ping`.
+- Make CPU temperature collection resilient when sensor data is only available via CLI `sensors`.
 - Preserve existing API contracts and keep implementation thin within `backend/routers/show.py` and `backend/routers/system.py`.
 - Keep runtime safety gate after backend changes (`pytest -> restart vm-api -> smoke:runtime -> smoke:ui`).
 
@@ -66,14 +66,15 @@ Acceptance criteria:
 - Gateway endpoint parses additional ping summary formats and packet-loss variants.
 - Gateway endpoint derives probe target from DHCP lease routers when route next-hop is unavailable.
 - Gateway endpoint falls back to `generate ping` when `show ping` returns `400 Invalid command`.
-- Dashboard summary falls back to `generate` sensor commands when `show ... sensors` is unsupported.
+- Gateway endpoint falls back to SSH ping when API op-mode ping is unavailable.
+- Dashboard summary falls back to SSH `sensors` when API sensor commands are unavailable.
 - Gateway backend tests pass for parser and fallback scenarios.
 - Runtime remains healthy after restart (`smoke:runtime`, `smoke:ui` pass).
 
 Assumptions:
 - Active default route can be `default dev <iface>` with no explicit next-hop on DHCP WAN.
 - Some VyOS builds expose different ping output formats (`mdev/stddev` may be absent) and reject op-mode probes under `show`.
-- Some builds expose sensor output through `generate` but not `show`.
+- Some builds reject ping/sensors via API and require CLI execution over SSH.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
@@ -88,7 +89,7 @@ Assumptions:
 - `backend/tests/test_system_dashboard_temperature.py`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py tests/test_system_dashboard_temperature.py` -> pass (`20 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_gateway_summary.py tests/test_system_dashboard_temperature.py` -> pass (`22 passed`)
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py` -> pass
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_safe_apply.py` -> pass (`5 passed`)
 - Restarted API process:

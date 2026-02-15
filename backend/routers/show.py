@@ -12,6 +12,7 @@ import asyncio
 from datetime import datetime, timezone
 import logging
 import re
+import shlex
 import statistics
 import threading
 from starlette.concurrency import run_in_threadpool
@@ -20,6 +21,7 @@ from session_vyos_service import get_session_vyos_service
 from fastapi_permissions import require_read_permission, require_write_permission
 from rbac_permissions import FeatureGroup
 from vyos_service import VyOSDeviceConfig, VyOSService
+from utils.ssh_exec import ssh_run, SshCommandError
 
 router = APIRouter(prefix="/vyos/show", tags=["show"])
 logger = logging.getLogger(__name__)
@@ -209,6 +211,56 @@ def _is_valid_ipv4(ip: str) -> bool:
         return all(0 <= part <= 255 for part in parts)
     except Exception:
         return False
+
+
+def _is_safe_interface_name(value: Optional[str]) -> bool:
+    if not value:
+        return False
+    return re.match(r"^[A-Za-z0-9._:-]{1,64}$", value.strip()) is not None
+
+
+def _probe_gateway_via_ssh(
+    *,
+    host: Optional[str],
+    probe_target: str,
+    interface_name: Optional[str],
+) -> Tuple[Optional[float], Optional[float], Optional[float], Optional[str]]:
+    """
+    Best-effort gateway probe via SSH CLI fallback when HTTPS API op-mode ping is unavailable.
+    """
+    resolved_host = (host or "").strip()
+    if not resolved_host:
+        return None, None, None, "SSH host is unavailable"
+    if not _is_valid_ipv4(probe_target):
+        return None, None, None, "Probe target is not a valid IPv4 address"
+
+    command_candidates: List[str] = []
+    if _is_safe_interface_name(interface_name):
+        command_candidates.append(
+            "ping -n -c 3 -w 4 -I "
+            + shlex.quote(interface_name.strip())
+            + " "
+            + shlex.quote(probe_target)
+        )
+    command_candidates.append("ping -n -c 3 -w 4 " + shlex.quote(probe_target))
+
+    last_error: Optional[str] = None
+    for command in command_candidates:
+        try:
+            result = ssh_run(resolved_host, command, timeout_seconds=20)
+        except SshCommandError as e:
+            last_error = e.result.output or str(e)
+            continue
+        except Exception as e:
+            last_error = f"{type(e).__name__}: {str(e)}"
+            continue
+
+        output = result.output or ""
+        rtt_ms, rttsd_ms, loss_percent = parse_ping_probe_metrics(output)
+        if rtt_ms is not None or rttsd_ms is not None or loss_percent is not None:
+            return rtt_ms, rttsd_ms, loss_percent, None
+
+    return None, None, None, last_error or "SSH ping produced no parseable metrics"
 
 
 def parse_active_ipv4_default_route(output: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
@@ -1637,6 +1689,23 @@ async def get_gateway_summary(request: Request, refresh: bool = False) -> Gatewa
                 ) = parse_ping_probe_metrics(ping_output)
                 probe_succeeded = True
                 break
+
+            if not probe_succeeded:
+                raw_ssh_host = getattr(getattr(service, "config", None), "hostname", None)
+                ssh_host = str(raw_ssh_host).strip() if raw_ssh_host else None
+                ssh_rtt, ssh_rttsd, ssh_loss, ssh_error = await run_in_threadpool(
+                    _probe_gateway_via_ssh,
+                    host=ssh_host,
+                    probe_target=probe_target,
+                    interface_name=selected_interface,
+                )
+                if ssh_rtt is not None or ssh_rttsd is not None or ssh_loss is not None:
+                    rtt_ms = ssh_rtt
+                    rttsd_ms = ssh_rttsd
+                    loss_percent = ssh_loss
+                    probe_succeeded = True
+                elif ssh_error:
+                    last_error = ssh_error
 
             if not probe_succeeded:
                 warnings.append(

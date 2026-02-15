@@ -18,6 +18,7 @@ import re
 from session_vyos_service import get_session_vyos_service
 from fastapi_permissions import require_read_permission, require_write_permission
 from rbac_permissions import FeatureGroup
+from utils.ssh_exec import ssh_run, SshCommandError
 
 # Router for system endpoints
 router = APIRouter(prefix="/vyos/system", tags=["system"])
@@ -235,6 +236,32 @@ def _parse_cpu_temperature_output(output: str) -> Dict[str, Optional[float]]:
         return {"cpu_temperature_celsius": None}
 
     return {"cpu_temperature_celsius": max(candidates)}
+
+
+def _collect_temperature_via_ssh(host: Optional[str]) -> str:
+    """
+    Best-effort sensor collection via SSH for builds where API show/generate
+    does not expose sensors output.
+    """
+    resolved_host = str(host).strip() if host else ""
+    if not resolved_host:
+        return ""
+
+    for command in ("sensors", "/usr/bin/sensors"):
+        try:
+            result = ssh_run(
+                resolved_host,
+                command,
+                timeout_seconds=15,
+            )
+            if result.output.strip():
+                return result.output
+        except SshCommandError:
+            continue
+        except Exception:
+            continue
+
+    return ""
 
 
 def _parse_memory_output(output: str) -> Dict[str, Optional[float | int | str]]:
@@ -1939,6 +1966,10 @@ async def get_dashboard_summary(request: Request, refresh: bool = False) -> Syst
             if candidate.strip():
                 temperature_output = candidate
                 break
+
+        if not temperature_output:
+            ssh_host = getattr(getattr(service, "config", None), "hostname", None)
+            temperature_output = await run_in_threadpool(_collect_temperature_via_ssh, ssh_host)
 
         if temperature_output:
             summary = summary.model_copy(update=_parse_cpu_temperature_output(temperature_output))

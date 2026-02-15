@@ -349,6 +349,58 @@ def test_gateway_summary_probe_falls_back_to_generate_when_show_ping_invalid(mon
     assert data["warnings"] == []
 
 
+def test_gateway_summary_probe_falls_back_to_ssh_when_api_ping_unavailable(monkeypatch):
+    class DummyDevice:
+        def show(self, path=None):
+            if path == ["ip", "route", "0.0.0.0/0"]:
+                return DummyResponse(output="S>* 0.0.0.0/0 [1/0] via 192.168.10.1, eth0\n")
+            if path == ["interfaces", "ethernet", "eth0", "physical"]:
+                return DummyResponse(output="link detected: yes\n")
+            if path and path[0] == "ping":
+                return DummyResponse(status=400, error="HTTP Error 400: Invalid command: show [ping]")
+            raise AssertionError(f"Unexpected show path: {path}")
+
+        def generate(self, path=None):
+            if path and path[0] == "ping":
+                return DummyResponse(status=400, error="HTTP Error 400: Invalid command: generate [ping]")
+            return DummyResponse(status=400, error=f"unsupported generate path: {path}")
+
+    class DummyConfig:
+        hostname = "192.168.10.242"
+
+    class DummyService:
+        device = DummyDevice()
+        config = DummyConfig()
+
+        def get_full_config(self, refresh=False):
+            return {}
+
+    class DummySshResult:
+        output = (
+            "3 packets transmitted, 3 received, 0% packet loss, time 2002ms\n"
+            "rtt min/avg/max/mdev = 1.000/1.500/2.000/0.250 ms\n"
+        )
+
+    async def allow_read(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(show_router, "get_session_vyos_service", lambda _req: DummyService())
+    monkeypatch.setattr(show_router, "require_read_permission", allow_read)
+    monkeypatch.setattr(show_router, "ssh_run", lambda host, command, timeout_seconds=20: DummySshResult())
+
+    app = FastAPI()
+    app.include_router(show_router.router)
+    client = TestClient(app)
+
+    resp = client.get("/vyos/show/gateway-summary")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["rtt_ms"] == pytest.approx(1.5)
+    assert data["rttsd_ms"] == pytest.approx(0.25)
+    assert data["loss_percent"] == pytest.approx(0.0)
+    assert data["warnings"] == []
+
+
 def test_gateway_summary_probe_target_derived_from_dhcp_lease(monkeypatch):
     class DummyDevice:
         def show(self, path=None):
