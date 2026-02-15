@@ -145,3 +145,4 @@
 - 2026-02-15: Extended QoS policy editor with `default` subtree fields (`bandwidth`, `burst`, `ceiling`, `priority`, `queue-type`) to close a guide-documented gap for shaper/limiter-style policies.
 - 2026-02-15: Added CAKE `flow-isolation` control to the QoS policy editor and mapped it to `qos policy cake <name> flow-isolation <mode>` operations.
 - 2026-02-15: During CAKE parser extension, TypeScript validation failed due missing helper; fixed by adding `parseDirectOrKey(...)` in traffic-policy parser helpers and rerunning full validation gates.
+- 2026-02-15: Removed unused routing generic editor components (`ProtocolCommandContent`, `ProtocolSimpleListEditor`) after dedicated form-first pages fully replaced their usage.

@@ -54,31 +54,30 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Deepen `traffic-policy/qos` parity by covering guide-level `qos traffic-match-group` and `qos policy ... default ...` subtrees in the existing form-first page.
+- Continue robustness sweep by removing obsolete routing command/list editor components that are no longer referenced after form-first page replacements.
 - Keep GUI form-driven (no free-form CLI entry) while aligning each page to the corresponding VyOS command tree semantics.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) each slice.
 
 ## Current Feature Spec
-Feature: **Traffic Policy deepening (`qos traffic-match-group` + `qos policy default` + CAKE flow-isolation)**
+Feature: **Routing editor cleanup (remove dead command/list editor components)**
 
 Acceptance criteria:
-- Frontend `/network/traffic-policy` exposes a form-driven QoS traffic-match-group editor (`name`, `match[]`, `match-group[]`) without free-form command entry.
-- Frontend `/network/traffic-policy` exposes QoS policy default subtree fields (`default bandwidth/burst/ceiling/priority/queue-type`) in the QoS policy editor.
-- Frontend `/network/traffic-policy` exposes CAKE `flow-isolation` selection in the QoS policy editor.
-- Save path emits scoped diff-based commands for `qos traffic-match-group`, `qos policy <type> <name> default ...`, and `qos policy cake <name> flow-isolation ...` while preserving existing traffic-policy/qos/class/interface behaviors.
+- Unused `frontend/src/components/routing/ProtocolCommandContent.tsx` and `frontend/src/components/routing/ProtocolSimpleListEditor.tsx` are removed.
+- Frontend build/typecheck remains green with no unresolved references after deletion.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- Existing `/vyos/qos` wrapper API remains sufficient for traffic-match-group/default operations; no backend contract changes are required.
+- The removed components are fully superseded by dedicated form-first pages and are not imported by active routes.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: traffic-policy traffic-match-group/default deepening implemented and validated; commit pending.
+- Status: routing editor cleanup implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/app/network/traffic-policy/page.tsx`
+- `frontend/src/components/routing/ProtocolCommandContent.tsx` (deleted)
+- `frontend/src/components/routing/ProtocolSimpleListEditor.tsx` (deleted)
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
@@ -106,6 +105,7 @@ Assumptions:
 - Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Removed obsolete routing helper components `ProtocolCommandContent` and `ProtocolSimpleListEditor`; all routing pages now use dedicated form-first content components.
 - `/network/traffic-policy` QoS policy editor now includes CAKE `flow-isolation` selection and corresponding save/parse support (`set/delete qos policy cake <name> flow-isolation <value>`).
 - `/network/traffic-policy` QoS policy editor now includes default subtree fields (`default bandwidth`, `default burst`, `default ceiling`, `default priority`, `default queue-type`) with parse/save coverage.
 - `/network/traffic-policy` now includes a dedicated `QoS Traffic Match Groups` section that supports CRUD for `qos traffic-match-group <name> match ...` and `match-group ...`, with diff-based set/delete generation in save flow.

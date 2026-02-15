@@ -1,17 +1,16 @@
 {
-  "feature_id": "traffic-policy-qos-advanced-subtrees-2026-02-15",
-  "title": "Traffic Policy parity deepening (traffic-match-group, defaults, CAKE flow-isolation)",
+  "feature_id": "routing-editor-cleanup-2026-02-15",
+  "title": "Routing editor cleanup (remove obsolete command/list components)",
   "status": "done",
   "acceptance_criteria": [
-    "`/network/traffic-policy` provides form-driven CRUD for `qos traffic-match-group` entries.",
-    "`/network/traffic-policy` QoS policy editor supports `default bandwidth/burst/ceiling/priority/queue-type` fields.",
-    "`/network/traffic-policy` QoS policy editor supports CAKE `flow-isolation` selection.",
-    "Save path emits scoped diff-based commands for all three subtrees while preserving existing policy/class/interface logic.",
-    "Validation passes: frontend tsc/build, runtime smoke, and browser smoke."
+    "Unused `frontend/src/components/routing/ProtocolCommandContent.tsx` is removed.",
+    "Unused `frontend/src/components/routing/ProtocolSimpleListEditor.tsx` is removed.",
+    "Frontend typecheck and build succeed with no unresolved imports.",
+    "Runtime smoke and browser smoke pass after cleanup."
   ],
   "assumptions": [
-    "Existing `/vyos/qos` wrapper endpoint supports all required command roots for this slice.",
-    "No backend API contract changes are needed.",
+    "All active routing pages now rely on dedicated form-first components and do not need the removed generic editors.",
+    "No backend/API changes are required for this cleanup.",
     "Unrelated dirty files in this worktree remain untouched."
   ],
   "tasks": [
@@ -20,34 +19,28 @@
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/network/traffic-policy/page.tsx"
+        "frontend/src/components/routing/ProtocolCommandContent.tsx",
+        "frontend/src/components/routing/ProtocolSimpleListEditor.tsx"
       ],
-      "notes": "Added traffic-match-group editor, default subtree fields, and CAKE flow-isolation support with parse/state/save integration."
+      "notes": "Removed dead components after confirming zero imports."
     },
     {
       "id": "T2",
-      "owner_role": "Backend",
-      "status": "done",
-      "files": [
-        "backend/routers/qos/qos.py"
-      ],
-      "notes": "No backend changes required; existing qos wrapper remained sufficient."
-    },
-    {
-      "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "frontend/src/app/network/traffic-policy/page.tsx"
+        "frontend/src/components/routing/ProtocolCommandContent.tsx",
+        "frontend/src/components/routing/ProtocolSimpleListEditor.tsx"
       ],
       "notes": "Validated with frontend tsc/build plus runtime and browser smoke checks."
     },
     {
-      "id": "T4",
+      "id": "T3",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/app/network/traffic-policy/page.tsx"
+        "frontend/src/components/routing/ProtocolCommandContent.tsx",
+        "frontend/src/components/routing/ProtocolSimpleListEditor.tsx"
       ],
       "notes": "Manual in-session review completed; no blocking issues found."
     }
