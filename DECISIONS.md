@@ -130,3 +130,6 @@
 - 2026-02-15: Deepened `/network/high-availability` with form-driven `virtual-server` and nested `real-server` CRUD on the existing page instead of adding a new route; this keeps IA stable while extending IPVS parity coverage.
 - 2026-02-15: Reused existing `/vyos/high-availability` config-tree wrapper for `virtual-server` operations (no backend API change) to preserve contracts and reduce regression risk.
 - 2026-02-15: Implemented virtual-server save behavior as diff-based set/delete command generation (including nested real-server leaves) to avoid destructive subtree resets and keep Safe Apply changes scoped.
+- 2026-02-15: Added class-level QoS editor under `/network/traffic-policy` for class-capable policy types (`limiter`, `priority-queue`, `round-robin`, `shaper`) so GUI can manage `qos policy ... class ...` without CLI text entry.
+- 2026-02-15: Enforced class-capable policy gating in the QoS class editor to avoid generating invalid class commands for unsupported policy types.
+- 2026-02-15: Heavy-task startup/smoke race caused a transient runtime smoke failure; downgraded HEAVY parallel execution to `HEAVY_MAX=1` for this session and resumed sequential heavy runs.

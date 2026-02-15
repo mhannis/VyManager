@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +54,26 @@ type QosPolicyType =
   | "round-robin"
   | "shaper";
 
+type QosPolicyClassEntry = {
+  classId: string;
+  description: string;
+  bandwidth: string;
+  burst: string;
+  ceiling: string;
+  priority: string;
+  queueLimit: string;
+  queueType: string;
+  target: string;
+  interval: string;
+  flows: string;
+  codelQuantum: string;
+  quantum: string;
+  mtu: string;
+  setDscp: string;
+  match: string[];
+  matchGroup: string[];
+};
+
 type QosPolicyEntry = {
   type: QosPolicyType;
   name: string;
@@ -69,6 +89,7 @@ type QosPolicyEntry = {
   flows: string;
   codelQuantum: string;
   rtt: string;
+  classes: QosPolicyClassEntry[];
 };
 
 const TRAFFIC_POLICY_TYPES: TrafficPolicyType[] = [
@@ -88,6 +109,13 @@ const QOS_POLICY_TYPES: QosPolicyType[] = [
   "priority-queue",
   "random-detect",
   "rate-control",
+  "round-robin",
+  "shaper",
+];
+
+const QOS_CLASS_CAPABLE_TYPES: QosPolicyType[] = [
+  "limiter",
+  "priority-queue",
   "round-robin",
   "shaper",
 ];
@@ -117,6 +145,27 @@ const EMPTY_QOS_POLICY_DRAFT: QosPolicyEntry = {
   flows: "",
   codelQuantum: "",
   rtt: "",
+  classes: [],
+};
+
+const EMPTY_QOS_CLASS_DRAFT: QosPolicyClassEntry = {
+  classId: "",
+  description: "",
+  bandwidth: "",
+  burst: "",
+  ceiling: "",
+  priority: "",
+  queueLimit: "",
+  queueType: "",
+  target: "",
+  interval: "",
+  flows: "",
+  codelQuantum: "",
+  quantum: "",
+  mtu: "",
+  setDscp: "",
+  match: [],
+  matchGroup: [],
 };
 
 function normalizeText(value: string): string {
@@ -143,6 +192,30 @@ function qosPolicyKey(entry: QosPolicyEntry): string {
   return `${entry.type}\u001f${entry.name}`;
 }
 
+function qosClassKey(entry: QosPolicyClassEntry): string {
+  return normalizeText(entry.classId);
+}
+
+function uniqueList(values: string[]): string[] {
+  const seen = new Set<string>();
+  const output: string[] = [];
+  for (const value of values) {
+    const trimmed = normalizeText(value);
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    output.push(trimmed);
+  }
+  return output;
+}
+
+function parseCsvList(value: string): string[] {
+  return uniqueList(value.split(",").map((item) => item.trim()));
+}
+
+function serializeCsvList(values: string[]): string {
+  return uniqueList(values).join(", ");
+}
+
 function trafficPolicyEqual(left: TrafficPolicyEntry, right: TrafficPolicyEntry): boolean {
   return (
     left.type === right.type &&
@@ -156,6 +229,13 @@ function trafficPolicyEqual(left: TrafficPolicyEntry, right: TrafficPolicyEntry)
 }
 
 function qosPolicyEqual(left: QosPolicyEntry, right: QosPolicyEntry): boolean {
+  const leftClasses = [...left.classes].sort((a, b) =>
+    a.classId.localeCompare(b.classId, undefined, { numeric: true })
+  );
+  const rightClasses = [...right.classes].sort((a, b) =>
+    a.classId.localeCompare(b.classId, undefined, { numeric: true })
+  );
+
   return (
     left.type === right.type &&
     left.name === right.name &&
@@ -170,7 +250,31 @@ function qosPolicyEqual(left: QosPolicyEntry, right: QosPolicyEntry): boolean {
     left.interval === right.interval &&
     left.flows === right.flows &&
     left.codelQuantum === right.codelQuantum &&
-    left.rtt === right.rtt
+    left.rtt === right.rtt &&
+    leftClasses.length === rightClasses.length &&
+    leftClasses.every((entry, index) => qosClassEqual(entry, rightClasses[index]))
+  );
+}
+
+function qosClassEqual(left: QosPolicyClassEntry, right: QosPolicyClassEntry): boolean {
+  return (
+    left.classId === right.classId &&
+    left.description === right.description &&
+    left.bandwidth === right.bandwidth &&
+    left.burst === right.burst &&
+    left.ceiling === right.ceiling &&
+    left.priority === right.priority &&
+    left.queueLimit === right.queueLimit &&
+    left.queueType === right.queueType &&
+    left.target === right.target &&
+    left.interval === right.interval &&
+    left.flows === right.flows &&
+    left.codelQuantum === right.codelQuantum &&
+    left.quantum === right.quantum &&
+    left.mtu === right.mtu &&
+    left.setDscp === right.setDscp &&
+    serializeCsvList(left.match) === serializeCsvList(right.match) &&
+    serializeCsvList(left.matchGroup) === serializeCsvList(right.matchGroup)
   );
 }
 
@@ -199,6 +303,25 @@ export default function TrafficPolicyPage() {
   const [qosPolicies, setQosPolicies] = useState<QosPolicyEntry[]>([]);
   const [currentQosPolicies, setCurrentQosPolicies] = useState<QosPolicyEntry[]>([]);
   const [qosPolicyDraft, setQosPolicyDraft] = useState<QosPolicyEntry>(EMPTY_QOS_POLICY_DRAFT);
+  const [selectedQosPolicyKey, setSelectedQosPolicyKey] = useState("");
+  const [qosClassDraft, setQosClassDraft] = useState<QosPolicyClassEntry>(EMPTY_QOS_CLASS_DRAFT);
+  const [qosClassMatchInput, setQosClassMatchInput] = useState("");
+  const [qosClassMatchGroupInput, setQosClassMatchGroupInput] = useState("");
+  const [editingQosClassId, setEditingQosClassId] = useState<string | null>(null);
+
+  const selectedQosPolicy = useMemo(
+    () => qosPolicies.find((entry) => qosPolicyKey(entry) === selectedQosPolicyKey) || null,
+    [qosPolicies, selectedQosPolicyKey]
+  );
+
+  const classCapablePolicies = useMemo(
+    () => qosPolicies.filter((entry) => QOS_CLASS_CAPABLE_TYPES.includes(entry.type)),
+    [qosPolicies]
+  );
+
+  const selectedQosPolicySupportsClasses = Boolean(
+    selectedQosPolicy && QOS_CLASS_CAPABLE_TYPES.includes(selectedQosPolicy.type)
+  );
 
   const loadData = useCallback(async (refresh = false) => {
     try {
@@ -233,6 +356,33 @@ export default function TrafficPolicyPage() {
         const typeRoot = asObject(policyRoot[policyType]);
         for (const [name, value] of Object.entries(typeRoot)) {
           const root = asObject(value);
+          const classRoot = asObject(root.class);
+          const parsedClasses: QosPolicyClassEntry[] = Object.entries(classRoot)
+            .map(([classId, classValue]) => {
+              const classNode = asObject(classValue);
+              return {
+                classId: normalizeText(classId),
+                description: normalizeText(asText(classNode.description)),
+                bandwidth: normalizeText(asText(classNode.bandwidth)),
+                burst: normalizeText(asText(classNode.burst)),
+                ceiling: normalizeText(asText(classNode.ceiling)),
+                priority: normalizeText(asText(classNode.priority)),
+                queueLimit: normalizeText(asText(classNode["queue-limit"])),
+                queueType: normalizeText(asText(classNode["queue-type"])),
+                target: normalizeText(asText(classNode.target)),
+                interval: normalizeText(asText(classNode.interval)),
+                flows: normalizeText(asText(classNode.flows)),
+                codelQuantum: normalizeText(asText(classNode["codel-quantum"])),
+                quantum: normalizeText(asText(classNode.quantum)),
+                mtu: normalizeText(asText(classNode.mtu)),
+                setDscp: normalizeText(asText(asObject(classNode.set).dscp)),
+                match: uniqueList(Object.keys(asObject(classNode.match))),
+                matchGroup: uniqueList(Object.keys(asObject(asObject(classNode.match).group))),
+              };
+            })
+            .filter((entry) => entry.classId)
+            .sort((left, right) => left.classId.localeCompare(right.classId, undefined, { numeric: true }));
+
           parsedQos.push({
             type: policyType,
             name: normalizeText(name),
@@ -248,6 +398,7 @@ export default function TrafficPolicyPage() {
             flows: normalizeText(asText(root.flows)),
             codelQuantum: normalizeText(asText(root["codel-quantum"])),
             rtt: normalizeText(asText(root.rtt)),
+            classes: parsedClasses,
           });
         }
       }
@@ -262,6 +413,12 @@ export default function TrafficPolicyPage() {
       setQosPolicies(sortedQos);
       setCurrentQosPolicies(sortedQos);
       setQosPolicyDraft(EMPTY_QOS_POLICY_DRAFT);
+      const initialClassPolicy = sortedQos.find((entry) => QOS_CLASS_CAPABLE_TYPES.includes(entry.type));
+      setSelectedQosPolicyKey(initialClassPolicy ? qosPolicyKey(initialClassPolicy) : "");
+      setQosClassDraft(EMPTY_QOS_CLASS_DRAFT);
+      setQosClassMatchInput("");
+      setQosClassMatchGroupInput("");
+      setEditingQosClassId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load traffic-policy configuration");
     } finally {
@@ -323,6 +480,7 @@ export default function TrafficPolicyPage() {
       flows: normalizeText(qosPolicyDraft.flows),
       codelQuantum: normalizeText(qosPolicyDraft.codelQuantum),
       rtt: normalizeText(qosPolicyDraft.rtt),
+      classes: [],
     };
 
     if (!entry.name) {
@@ -336,12 +494,121 @@ export default function TrafficPolicyPage() {
     }
 
     setQosPolicies((previous) => sortByTypeAndName([...previous, entry]));
+    if (QOS_CLASS_CAPABLE_TYPES.includes(entry.type)) {
+      setSelectedQosPolicyKey(qosPolicyKey(entry));
+    }
     setQosPolicyDraft({ ...EMPTY_QOS_POLICY_DRAFT, type: entry.type });
   };
 
   const removeQosPolicy = (entry: QosPolicyEntry) => {
     const key = qosPolicyKey(entry);
-    setQosPolicies((previous) => previous.filter((item) => qosPolicyKey(item) !== key));
+    setQosPolicies((previous) => {
+      const remaining = previous.filter((item) => qosPolicyKey(item) !== key);
+      if (selectedQosPolicyKey === key) {
+        const nextClassPolicy = remaining.find((item) => QOS_CLASS_CAPABLE_TYPES.includes(item.type));
+        setSelectedQosPolicyKey(nextClassPolicy ? qosPolicyKey(nextClassPolicy) : "");
+        setQosClassDraft(EMPTY_QOS_CLASS_DRAFT);
+        setQosClassMatchInput("");
+        setQosClassMatchGroupInput("");
+        setEditingQosClassId(null);
+      }
+      return remaining;
+    });
+  };
+
+  const resetQosClassDraft = () => {
+    setQosClassDraft(EMPTY_QOS_CLASS_DRAFT);
+    setQosClassMatchInput("");
+    setQosClassMatchGroupInput("");
+    setEditingQosClassId(null);
+  };
+
+  const saveQosClass = () => {
+    setError(null);
+    if (!selectedQosPolicy) {
+      setError("Select a QoS policy before adding classes.");
+      return;
+    }
+    if (!QOS_CLASS_CAPABLE_TYPES.includes(selectedQosPolicy.type)) {
+      setError(`QoS policy type '${selectedQosPolicy.type}' does not support class entries.`);
+      return;
+    }
+
+    const entry: QosPolicyClassEntry = {
+      classId: normalizeText(qosClassDraft.classId),
+      description: normalizeText(qosClassDraft.description),
+      bandwidth: normalizeText(qosClassDraft.bandwidth),
+      burst: normalizeText(qosClassDraft.burst),
+      ceiling: normalizeText(qosClassDraft.ceiling),
+      priority: normalizeText(qosClassDraft.priority),
+      queueLimit: normalizeText(qosClassDraft.queueLimit),
+      queueType: normalizeText(qosClassDraft.queueType),
+      target: normalizeText(qosClassDraft.target),
+      interval: normalizeText(qosClassDraft.interval),
+      flows: normalizeText(qosClassDraft.flows),
+      codelQuantum: normalizeText(qosClassDraft.codelQuantum),
+      quantum: normalizeText(qosClassDraft.quantum),
+      mtu: normalizeText(qosClassDraft.mtu),
+      setDscp: normalizeText(qosClassDraft.setDscp),
+      match: parseCsvList(qosClassMatchInput),
+      matchGroup: parseCsvList(qosClassMatchGroupInput),
+    };
+
+    if (!entry.classId) {
+      setError("QoS class ID is required.");
+      return;
+    }
+
+    const classKey = qosClassKey(entry);
+    const existingWithoutEdited = editingQosClassId
+      ? selectedQosPolicy.classes.filter((item) => qosClassKey(item) !== editingQosClassId)
+      : selectedQosPolicy.classes;
+
+    if (existingWithoutEdited.some((item) => qosClassKey(item) === classKey)) {
+      setError("QoS class ID already exists for this policy.");
+      return;
+    }
+
+    setQosPolicies((previous) =>
+      previous.map((policy) => {
+        if (qosPolicyKey(policy) !== selectedQosPolicyKey) return policy;
+        return {
+          ...policy,
+          classes: [...existingWithoutEdited, entry].sort((left, right) =>
+            left.classId.localeCompare(right.classId, undefined, { numeric: true })
+          ),
+        };
+      })
+    );
+    resetQosClassDraft();
+  };
+
+  const editQosClass = (classId: string) => {
+    if (!selectedQosPolicy) return;
+    const entry = selectedQosPolicy.classes.find((item) => item.classId === classId);
+    if (!entry) return;
+    setQosClassDraft({ ...entry, match: [...entry.match], matchGroup: [...entry.matchGroup] });
+    setQosClassMatchInput(serializeCsvList(entry.match));
+    setQosClassMatchGroupInput(serializeCsvList(entry.matchGroup));
+    setEditingQosClassId(entry.classId);
+  };
+
+  const removeQosClass = (classId: string) => {
+    if (!selectedQosPolicy) return;
+    const targetKey = selectedQosPolicyKey;
+    setQosPolicies((previous) =>
+      previous.map((policy) => {
+        if (qosPolicyKey(policy) !== targetKey) return policy;
+        return {
+          ...policy,
+          classes: policy.classes.filter((entry) => entry.classId !== classId),
+        };
+      })
+    );
+
+    if (editingQosClassId === classId) {
+      resetQosClassDraft();
+    }
   };
 
   const handleSave = async () => {
@@ -433,6 +700,84 @@ export default function TrafficPolicyPage() {
             qosOperations.push(`set ${basePath} ${field.cliKey} ${value}`);
           } else if (currentValue) {
             qosOperations.push(`delete ${basePath} ${field.cliKey}`);
+          }
+        }
+
+        if (!QOS_CLASS_CAPABLE_TYPES.includes(desired.type)) {
+          continue;
+        }
+
+        const currentClassMap = new Map((current?.classes || []).map((entry) => [qosClassKey(entry), entry]));
+        const desiredClassMap = new Map(desired.classes.map((entry) => [qosClassKey(entry), entry]));
+
+        for (const [classId] of currentClassMap.entries()) {
+          if (!desiredClassMap.has(classId)) {
+            qosOperations.push(`delete ${basePath} class ${classId}`);
+          }
+        }
+
+        const classFields: Array<{ key: keyof QosPolicyClassEntry; cliKey: string; quoted?: boolean }> = [
+          { key: "description", cliKey: "description", quoted: true },
+          { key: "bandwidth", cliKey: "bandwidth" },
+          { key: "burst", cliKey: "burst" },
+          { key: "ceiling", cliKey: "ceiling" },
+          { key: "priority", cliKey: "priority" },
+          { key: "queueLimit", cliKey: "queue-limit" },
+          { key: "queueType", cliKey: "queue-type" },
+          { key: "target", cliKey: "target" },
+          { key: "interval", cliKey: "interval" },
+          { key: "flows", cliKey: "flows" },
+          { key: "codelQuantum", cliKey: "codel-quantum" },
+          { key: "quantum", cliKey: "quantum" },
+          { key: "mtu", cliKey: "mtu" },
+          { key: "setDscp", cliKey: "set dscp" },
+        ];
+
+        for (const [classId, desiredClass] of desiredClassMap.entries()) {
+          const currentClass = currentClassMap.get(classId);
+          if (currentClass && qosClassEqual(currentClass, desiredClass)) {
+            continue;
+          }
+
+          const classBasePath = `${basePath} class ${classId}`;
+          qosOperations.push(`set ${classBasePath}`);
+
+          for (const classField of classFields) {
+            const desiredValue = normalizeText(String(desiredClass[classField.key] ?? ""));
+            const currentValue = normalizeText(String(currentClass?.[classField.key] ?? ""));
+
+            if (desiredValue) {
+              const value = classField.quoted ? JSON.stringify(desiredValue) : desiredValue;
+              qosOperations.push(`set ${classBasePath} ${classField.cliKey} ${value}`);
+            } else if (currentValue) {
+              qosOperations.push(`delete ${classBasePath} ${classField.cliKey}`);
+            }
+          }
+
+          const currentMatch = uniqueList(currentClass?.match || []);
+          const desiredMatch = uniqueList(desiredClass.match);
+          for (const matchValue of currentMatch) {
+            if (!desiredMatch.includes(matchValue)) {
+              qosOperations.push(`delete ${classBasePath} match ${matchValue}`);
+            }
+          }
+          for (const matchValue of desiredMatch) {
+            if (!currentMatch.includes(matchValue)) {
+              qosOperations.push(`set ${classBasePath} match ${matchValue}`);
+            }
+          }
+
+          const currentMatchGroup = uniqueList(currentClass?.matchGroup || []);
+          const desiredMatchGroup = uniqueList(desiredClass.matchGroup);
+          for (const matchGroupValue of currentMatchGroup) {
+            if (!desiredMatchGroup.includes(matchGroupValue)) {
+              qosOperations.push(`delete ${classBasePath} match group ${matchGroupValue}`);
+            }
+          }
+          for (const matchGroupValue of desiredMatchGroup) {
+            if (!currentMatchGroup.includes(matchGroupValue)) {
+              qosOperations.push(`set ${classBasePath} match group ${matchGroupValue}`);
+            }
           }
         }
       }
@@ -867,14 +1212,15 @@ export default function TrafficPolicyPage() {
                   <TableHead>Delay</TableHead>
                   <TableHead>Queue Limit</TableHead>
                   <TableHead>RTT</TableHead>
+                  <TableHead>Classes</TableHead>
                   <TableHead>Description</TableHead>
-                  <TableHead className="w-[120px] text-right">Actions</TableHead>
+                  <TableHead className="w-[180px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {qosPolicies.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-muted-foreground">
+                    <TableCell colSpan={9} className="text-muted-foreground">
                       No QoS policies configured.
                     </TableCell>
                   </TableRow>
@@ -889,16 +1235,341 @@ export default function TrafficPolicyPage() {
                       <TableCell>{entry.delay || "-"}</TableCell>
                       <TableCell>{entry.queueLimit || "-"}</TableCell>
                       <TableCell>{entry.rtt || "-"}</TableCell>
+                      <TableCell>{entry.classes.length}</TableCell>
                       <TableCell>{entry.description || "-"}</TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeQosPolicy(entry)}
-                          disabled={!canEdit}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedQosPolicyKey(qosPolicyKey(entry));
+                              resetQosClassDraft();
+                            }}
+                            disabled={!canEdit || !QOS_CLASS_CAPABLE_TYPES.includes(entry.type)}
+                          >
+                            Classes
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeQosPolicy(entry)}
+                            disabled={!canEdit}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>QoS Class Editor</CardTitle>
+            <CardDescription>
+              Configure `qos policy &lt;type&gt; &lt;name&gt; class &lt;id&gt;` entries, including queue, match, and DSCP settings.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-5">
+              <div className="space-y-2">
+                <Label>QoS Policy</Label>
+                <Select
+                  value={selectedQosPolicyKey || "__unset__"}
+                  onValueChange={(value) => {
+                    setSelectedQosPolicyKey(value === "__unset__" ? "" : value);
+                    resetQosClassDraft();
+                  }}
+                  disabled={!canEdit || classCapablePolicies.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select policy" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__unset__">Select policy</SelectItem>
+                    {classCapablePolicies.map((entry) => (
+                      <SelectItem key={qosPolicyKey(entry)} value={qosPolicyKey(entry)}>
+                        {entry.type} / {entry.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Class ID</Label>
+                <Input
+                  value={qosClassDraft.classId}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, classId: event.target.value }))
+                  }
+                  placeholder="10"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Input
+                  value={qosClassDraft.description}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, description: event.target.value }))
+                  }
+                  placeholder="VoIP class"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Bandwidth</Label>
+                <Input
+                  value={qosClassDraft.bandwidth}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, bandwidth: event.target.value }))
+                  }
+                  placeholder="200mbit"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Burst</Label>
+                <Input
+                  value={qosClassDraft.burst}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, burst: event.target.value }))
+                  }
+                  placeholder="15k"
+                  disabled={!canEdit}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-6">
+              <div className="space-y-2">
+                <Label>Ceiling</Label>
+                <Input
+                  value={qosClassDraft.ceiling}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, ceiling: event.target.value }))
+                  }
+                  placeholder="500mbit"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Input
+                  value={qosClassDraft.priority}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, priority: event.target.value }))
+                  }
+                  placeholder="7"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Queue Limit</Label>
+                <Input
+                  value={qosClassDraft.queueLimit}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, queueLimit: event.target.value }))
+                  }
+                  placeholder="1000"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Queue Type</Label>
+                <Input
+                  value={qosClassDraft.queueType}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, queueType: event.target.value }))
+                  }
+                  placeholder="fq-codel"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Target</Label>
+                <Input
+                  value={qosClassDraft.target}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, target: event.target.value }))
+                  }
+                  placeholder="5ms"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Interval</Label>
+                <Input
+                  value={qosClassDraft.interval}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, interval: event.target.value }))
+                  }
+                  placeholder="100ms"
+                  disabled={!canEdit}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-6">
+              <div className="space-y-2">
+                <Label>Flows</Label>
+                <Input
+                  value={qosClassDraft.flows}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, flows: event.target.value }))
+                  }
+                  placeholder="1024"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Codel Quantum</Label>
+                <Input
+                  value={qosClassDraft.codelQuantum}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, codelQuantum: event.target.value }))
+                  }
+                  placeholder="300"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Quantum</Label>
+                <Input
+                  value={qosClassDraft.quantum}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, quantum: event.target.value }))
+                  }
+                  placeholder="1514"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>MTU</Label>
+                <Input
+                  value={qosClassDraft.mtu}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, mtu: event.target.value }))
+                  }
+                  placeholder="1500"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Set DSCP</Label>
+                <Input
+                  value={qosClassDraft.setDscp}
+                  onChange={(event) =>
+                    setQosClassDraft((previous) => ({ ...previous, setDscp: event.target.value }))
+                  }
+                  placeholder="46"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Match (CSV)</Label>
+                <Input
+                  value={qosClassMatchInput}
+                  onChange={(event) => setQosClassMatchInput(event.target.value)}
+                  placeholder="voice, interactive"
+                  disabled={!canEdit}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Match Group (CSV)</Label>
+                <Input
+                  value={qosClassMatchGroupInput}
+                  onChange={(event) => setQosClassMatchGroupInput(event.target.value)}
+                  placeholder="VOICE-GROUP"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="flex items-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={saveQosClass}
+                  disabled={!canEdit || !selectedQosPolicySupportsClasses}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {editingQosClassId ? "Update Class" : "Add Class"}
+                </Button>
+                {editingQosClassId && (
+                  <Button type="button" variant="ghost" onClick={resetQosClassDraft} disabled={!canEdit}>
+                    Cancel Edit
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Class</TableHead>
+                  <TableHead>Bandwidth</TableHead>
+                  <TableHead>Priority</TableHead>
+                  <TableHead>Queue</TableHead>
+                  <TableHead>Matches</TableHead>
+                  <TableHead className="w-[180px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {!selectedQosPolicy ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-muted-foreground">
+                      Select a QoS policy to configure class entries.
+                    </TableCell>
+                  </TableRow>
+                ) : !selectedQosPolicySupportsClasses ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-muted-foreground">
+                      Policy type {selectedQosPolicy.type} does not expose class entries.
+                    </TableCell>
+                  </TableRow>
+                ) : selectedQosPolicy.classes.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-muted-foreground">
+                      No classes configured for {selectedQosPolicy.type} / {selectedQosPolicy.name}.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  selectedQosPolicy.classes.map((entry) => (
+                    <TableRow key={entry.classId}>
+                      <TableCell className="font-medium">{entry.classId}</TableCell>
+                      <TableCell>{entry.bandwidth || "-"}</TableCell>
+                      <TableCell>{entry.priority || "-"}</TableCell>
+                      <TableCell>{entry.queueType || "-"}</TableCell>
+                      <TableCell>
+                        {entry.match.length > 0 ? `${entry.match.length} match` : "0 match"}
+                        {entry.matchGroup.length > 0 ? ` / ${entry.matchGroup.length} group` : ""}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => editQosClass(entry.classId)}
+                            disabled={!canEdit}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeQosClass(entry.classId)}
+                            disabled={!canEdit}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

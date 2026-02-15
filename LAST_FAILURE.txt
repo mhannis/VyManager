@@ -1,8 +1,10 @@
-2026-02-15T00:31:26Z
-failing command: spawn_agent (code reviewer) for high-availability page diff
-error summary: Reviewer-agent dispatch failed due agent thread cap in this Codex session (`max 6`). No reviewer sub-agent could be started.
+2026-02-15T01:19:15Z
+failing command: cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime
+error summary: Runtime smoke probe failed on `/` because the frontend service was not yet accepting connections on port 3000. This happened while startup and smoke commands were launched in parallel.
 
 last output excerpt:
-collab spawn failed: agent thread limit reached (max 6)
+[runtime-check] Probing http://localhost:3000
+curl: (7) Failed to connect to localhost port 3000 after 0 ms: Couldn't connect to server
+[runtime-check] ERROR: Probe failed for /
 
-suspected cause + next step: transient agent-cap limit. Perform manual reviewer pass for this cycle and retry sub-agent review in a later cycle when thread slots free up.
+suspected cause + next step: startup race caused by parallel execution. Rerun runtime smoke sequentially after confirming listeners are up.

@@ -54,31 +54,32 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Deepen option-level parity in the remaining non-routing domains, now focused on high-availability `virtual-server` and then `traffic-policy` class-level QoS.
+- Deepen option-level parity in the remaining non-routing domains, now focused on `traffic-policy` class-level QoS editors.
 - Keep GUI form-driven (no free-form CLI entry) while aligning each page to the corresponding VyOS command tree semantics.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) each slice.
 
 ## Current Feature Spec
-Feature: **High Availability virtual-server parity deepening (IPVS virtual-server + real-server CRUD)**
+Feature: **Traffic Policy class-level QoS parity deepening (`qos policy ... class ...` editors)**
 
 Acceptance criteria:
-- Frontend `/network/high-availability` supports full form-driven CRUD for `high-availability virtual-server <name>` and nested `real-server <address>` entries.
-- Save path emits scoped diff-based set/delete operations for virtual-server leaves (`algorithm`, `delay-loop`, `forward-method`, `fwmark`, `port`, `persistence-timeout`, `protocol`) and real-server leaves (`port`, `connection-timeout`, `health-check script`).
-- Existing VRRP/sync-group workflows remain intact and continue to save through the same page.
+- Frontend `/network/traffic-policy` supports class CRUD under class-capable policy types (`limiter`, `priority-queue`, `round-robin`, `shaper`).
+- Save path emits scoped diff-based set/delete operations for `qos policy <type> <name> class <id>` leaves (queue, shaping, DSCP, and match fields).
+- Class editor gates unsupported policy types to prevent invalid command generation.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- `high-availability` backend tree wrapper already provides needed API surface; no backend contract changes are required for this slice.
-- Virtual server name supports IP or alias token forms used by current docs/examples.
+- Existing `/vyos/qos` wrapper API is sufficient for class-level operations; no backend contract changes are required for this slice.
+- Initial class editor targets high-value common class leaves; additional QoS subtrees remain additive follow-up.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: HA virtual-server deepening implemented and validated; commit pending.
+- Status: traffic-policy class-level QoS deepening implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/app/network/high-availability/page.tsx`
+- `frontend/src/app/network/traffic-policy/page.tsx`
+- `LAST_FAILURE.txt`
 
 ### Validation This Cycle
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_app.py` -> pass
@@ -101,7 +102,7 @@ Assumptions:
 - Reviewer sub-agent dispatch can fail when thread cap is saturated; manual review fallback is required in that case.
 
 ## TODO Backlog (next queue)
-- Deepen option-level coverage for `traffic-policy` (class-level and queue leafs).
+- Deepen remaining option-level coverage for `traffic-policy` (precedence/default and other policy-type-specific subtrees).
 - Add PKI op-mode helper workflows (generate/import guidance) as optional UX accelerators.
 - Add live fixture-seeding and CLI alignment checks (`show configuration commands`) for the new domains.
 - After all config-guide features are implemented, run a full robustness relook sweep across all previously implemented domains and harden weak spots before final completion report.
@@ -109,6 +110,9 @@ Assumptions:
 
 ## Agent Handoff Notes
 - `/network/high-availability` now includes dedicated form-driven IPVS coverage for `virtual-server` and nested `real-server` CRUD; save uses diff-based set/delete generation under `high-availability virtual-server ...` and preserves existing VRRP/sync-group behavior.
+- `/network/traffic-policy` now includes class-level QoS editing for class-capable policy types, with diff-based command generation under `qos policy <type> <name> class <id> ...`.
+- Class editor policy picker is gated to class-capable types (`limiter`, `priority-queue`, `round-robin`, `shaper`) to avoid invalid class commands on unsupported QoS policy types.
+- Runtime smoke can fail with transient connection errors if startup and smoke probes run in parallel; run runtime smoke sequentially after listener checks on `:3000`.
 - Added shared backend `build_config_tree_router(...)` wrapper for non-service, non-VPN top-level config trees while preserving existing session/VyOS service contracts.
 - Added scoped backend routers for `vrf`, `load-balancing`, `high-availability`, `traffic-policy`, and `pki`; each router exposes `capabilities`, `config`, and `batch` endpoints with strict subtree command validation.
 - Implemented form-first GUI pages for `/network/vrf`, `/network/load-balancing`, `/network/high-availability`, `/network/traffic-policy`, and `/system/pki` (no free-form CLI text boxes).

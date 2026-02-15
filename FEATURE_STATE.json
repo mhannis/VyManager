@@ -1,16 +1,16 @@
 {
-  "feature_id": "high-availability-virtual-server-depth-2026-02-15",
-  "title": "High Availability virtual-server parity deepening (IPVS virtual-server + real-server CRUD)",
+  "feature_id": "traffic-policy-qos-classes-depth-2026-02-15",
+  "title": "Traffic Policy parity deepening (QoS class-level editors)",
   "status": "done",
   "acceptance_criteria": [
-    "`/network/high-availability` supports form-driven CRUD for `high-availability virtual-server` entries.",
-    "Nested real-server CRUD supports `port`, `connection-timeout`, and `health-check script` leaves.",
-    "Save path emits diff-based set/delete operations for both VRRP and virtual-server subtrees without API contract changes.",
+    "`/network/traffic-policy` supports class CRUD for class-capable QoS policy types (`limiter`, `priority-queue`, `round-robin`, `shaper`).",
+    "Save path emits diff-based set/delete operations for `qos policy <type> <name> class <id>` leaves and match/match-group nodes.",
+    "Class editor prevents class operations on unsupported policy types to avoid invalid CLI generation.",
     "Validation passes: backend test_app, frontend tsc/lint/build, runtime smoke, and browser smoke."
   ],
   "assumptions": [
-    "Existing backend high-availability tree wrapper is sufficient for virtual-server operations.",
-    "Virtual-server names use token forms aligned with current VyOS documentation examples.",
+    "Existing `/vyos/qos` wrapper endpoints remain sufficient for class-level operations.",
+    "Initial class editor covers common high-value class fields; additional policy-type-specific leaves remain follow-up.",
     "Unrelated dirty files in this worktree remain untouched."
   ],
   "tasks": [
@@ -19,34 +19,35 @@
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/network/high-availability/page.tsx"
+        "frontend/src/app/network/traffic-policy/page.tsx"
       ],
-      "notes": "Added virtual-server + real-server CRUD sections and integrated state parsing from config tree."
+      "notes": "Added QoS class state parsing, class editor UI, class-capable type gating, and class-level diff save generation."
     },
     {
       "id": "T2",
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/high_availability/high_availability.py"
+        "backend/routers/qos/qos.py"
       ],
-      "notes": "No backend changes required; existing scoped config-tree wrapper already supports this subtree."
+      "notes": "No backend changes required for this slice; existing qos wrapper already supports command subtree."
     },
     {
       "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "frontend/src/app/network/high-availability/page.tsx"
+        "frontend/src/app/network/traffic-policy/page.tsx",
+        "LAST_FAILURE.txt"
       ],
-      "notes": "Validated via backend pytest, frontend tsc/lint/build, runtime smoke, and UI smoke."
+      "notes": "Validated via backend pytest, frontend tsc/lint/build, runtime smoke, and UI smoke. Recorded and recovered from one startup race during runtime smoke."
     },
     {
       "id": "T4",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/app/network/high-availability/page.tsx"
+        "frontend/src/app/network/traffic-policy/page.tsx"
       ],
       "notes": "Manual review completed in-session; no blocking issues found."
     }
