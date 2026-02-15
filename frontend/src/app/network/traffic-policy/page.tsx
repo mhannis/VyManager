@@ -92,6 +92,11 @@ type QosPolicyEntry = {
   flows: string;
   codelQuantum: string;
   rtt: string;
+  defaultBandwidth: string;
+  defaultBurst: string;
+  defaultCeiling: string;
+  defaultPriority: string;
+  defaultQueueType: string;
   classes: QosPolicyClassEntry[];
 };
 
@@ -160,6 +165,11 @@ const EMPTY_QOS_POLICY_DRAFT: QosPolicyEntry = {
   flows: "",
   codelQuantum: "",
   rtt: "",
+  defaultBandwidth: "",
+  defaultBurst: "",
+  defaultCeiling: "",
+  defaultPriority: "",
+  defaultQueueType: "",
   classes: [],
 };
 
@@ -296,6 +306,11 @@ function qosPolicyEqual(left: QosPolicyEntry, right: QosPolicyEntry): boolean {
     left.flows === right.flows &&
     left.codelQuantum === right.codelQuantum &&
     left.rtt === right.rtt &&
+    left.defaultBandwidth === right.defaultBandwidth &&
+    left.defaultBurst === right.defaultBurst &&
+    left.defaultCeiling === right.defaultCeiling &&
+    left.defaultPriority === right.defaultPriority &&
+    left.defaultQueueType === right.defaultQueueType &&
     leftClasses.length === rightClasses.length &&
     leftClasses.every((entry, index) => qosClassEqual(entry, rightClasses[index]))
   );
@@ -460,6 +475,7 @@ export default function TrafficPolicyPage() {
         const typeRoot = asObject(policyRoot[policyType]);
         for (const [name, value] of Object.entries(typeRoot)) {
           const root = asObject(value);
+          const defaultRoot = asObject(root.default);
           const classRoot = asObject(root.class);
           const parsedClasses: QosPolicyClassEntry[] = Object.entries(classRoot)
             .map(([classId, classValue]) => {
@@ -502,6 +518,11 @@ export default function TrafficPolicyPage() {
             flows: normalizeText(asText(root.flows)),
             codelQuantum: normalizeText(asText(root["codel-quantum"])),
             rtt: normalizeText(asText(root.rtt)),
+            defaultBandwidth: normalizeText(asText(defaultRoot.bandwidth)),
+            defaultBurst: normalizeText(asText(defaultRoot.burst)),
+            defaultCeiling: normalizeText(asText(defaultRoot.ceiling)),
+            defaultPriority: normalizeText(asText(defaultRoot.priority)),
+            defaultQueueType: normalizeText(asText(defaultRoot["queue-type"])),
             classes: parsedClasses,
           });
         }
@@ -646,6 +667,11 @@ export default function TrafficPolicyPage() {
       flows: normalizeText(qosPolicyDraft.flows),
       codelQuantum: normalizeText(qosPolicyDraft.codelQuantum),
       rtt: normalizeText(qosPolicyDraft.rtt),
+      defaultBandwidth: normalizeText(qosPolicyDraft.defaultBandwidth),
+      defaultBurst: normalizeText(qosPolicyDraft.defaultBurst),
+      defaultCeiling: normalizeText(qosPolicyDraft.defaultCeiling),
+      defaultPriority: normalizeText(qosPolicyDraft.defaultPriority),
+      defaultQueueType: normalizeText(qosPolicyDraft.defaultQueueType),
       classes: [],
     };
 
@@ -945,6 +971,11 @@ export default function TrafficPolicyPage() {
         { key: "flows", cliKey: "flows" },
         { key: "codelQuantum", cliKey: "codel-quantum" },
         { key: "rtt", cliKey: "rtt" },
+        { key: "defaultBandwidth", cliKey: "default bandwidth" },
+        { key: "defaultBurst", cliKey: "default burst" },
+        { key: "defaultCeiling", cliKey: "default ceiling" },
+        { key: "defaultPriority", cliKey: "default priority" },
+        { key: "defaultQueueType", cliKey: "default queue-type" },
       ];
 
       for (const [key, desired] of desiredQosMap.entries()) {
@@ -1528,6 +1559,79 @@ export default function TrafficPolicyPage() {
                     setQosPolicyDraft((previous) => ({ ...previous, rtt: event.target.value }))
                   }
                   placeholder="100ms"
+                  disabled={!canEdit}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-5">
+              <div className="space-y-2">
+                <Label>Default Bandwidth</Label>
+                <Input
+                  value={qosPolicyDraft.defaultBandwidth}
+                  onChange={(event) =>
+                    setQosPolicyDraft((previous) => ({
+                      ...previous,
+                      defaultBandwidth: event.target.value,
+                    }))
+                  }
+                  placeholder="100%"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Default Burst</Label>
+                <Input
+                  value={qosPolicyDraft.defaultBurst}
+                  onChange={(event) =>
+                    setQosPolicyDraft((previous) => ({
+                      ...previous,
+                      defaultBurst: event.target.value,
+                    }))
+                  }
+                  placeholder="15k"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Default Ceiling</Label>
+                <Input
+                  value={qosPolicyDraft.defaultCeiling}
+                  onChange={(event) =>
+                    setQosPolicyDraft((previous) => ({
+                      ...previous,
+                      defaultCeiling: event.target.value,
+                    }))
+                  }
+                  placeholder="100%"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Default Priority</Label>
+                <Input
+                  value={qosPolicyDraft.defaultPriority}
+                  onChange={(event) =>
+                    setQosPolicyDraft((previous) => ({
+                      ...previous,
+                      defaultPriority: event.target.value,
+                    }))
+                  }
+                  placeholder="7"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Default Queue Type</Label>
+                <Input
+                  value={qosPolicyDraft.defaultQueueType}
+                  onChange={(event) =>
+                    setQosPolicyDraft((previous) => ({
+                      ...previous,
+                      defaultQueueType: event.target.value,
+                    }))
+                  }
+                  placeholder="fq-codel"
                   disabled={!canEdit}
                 />
               </div>

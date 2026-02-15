@@ -142,3 +142,4 @@
 - 2026-02-15: Kept all routing hardening changes frontend-only (no backend refactor) to satisfy thin-wrapper and API-contract preservation constraints.
 - 2026-02-15: Extended `/network/traffic-policy` with form-driven `qos traffic-match-group` CRUD to cover a missing guide subtree without introducing backend changes.
 - 2026-02-15: Implemented traffic-match-group save logic as diff-based set/delete operations and used full-group replacement on changed entries to keep behavior deterministic.
+- 2026-02-15: Extended QoS policy editor with `default` subtree fields (`bandwidth`, `burst`, `ceiling`, `priority`, `queue-type`) to close a guide-documented gap for shaper/limiter-style policies.

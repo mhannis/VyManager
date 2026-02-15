@@ -1,11 +1,11 @@
-feature_id: traffic-policy-qos-traffic-match-group-2026-02-15
+feature_id: traffic-policy-qos-default-subtree-2026-02-15
 status: done
-title: Traffic Policy parity deepening (QoS traffic-match-group)
+title: Traffic Policy parity deepening (QoS default subtree + traffic-match-group)
 branch: feature/containers-automation-v1
 commits:
   - pending
 notes:
-  - Added full form-driven QoS traffic-match-group editor on `/network/traffic-policy`.
-  - Added parse/load/save diff support for `qos traffic-match-group` set/delete operations.
-  - Preserved all existing API contracts and existing traffic-policy/qos behavior.
-  - Validated with frontend tsc/lint/build and runtime + browser smoke.
+  - Added QoS traffic-match-group form editor to `/network/traffic-policy`.
+  - Added QoS default subtree fields (`default bandwidth/burst/ceiling/priority/queue-type`) to QoS policy editor.
+  - Extended diff-based save logic for both new subtrees without backend API changes.
+  - Validated with frontend tsc/build and runtime + browser smoke.
