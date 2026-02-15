@@ -1,6 +1,6 @@
 # PROJECT_MEMORY.md
 
-Last updated: 2026-02-14
+Last updated: 2026-02-15
 Repo: https://github.com/mhannis/VyManager/tree/dev
 
 ## Repo Facts
@@ -54,79 +54,75 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Harden routing protocol UX by replacing remaining lightweight editors with full form-driven pages.
-- Completed this cycle: upgraded ISIS, OpenFabric, MPLS, RIP, OSPF, IGMP Proxy, ARP, and RPKI routing pages and selector flows.
-- Completed this cycle: pushed routing batch commit `996398a`.
-- Next: continue parity by expanding remaining non-routing domains with the same form-first pattern.
+- Close remaining Phase1 parity domains with form-driven pages and thin backend wrappers.
+- Completed this cycle: implemented `vrf`, `load-balancing`, `high-availability`, `traffic-policy`, `pki`, and a configuration index page.
+- Completed this cycle: coverage matrix now reports full Phase1 implementation (`129 implemented / 0 partial / 0 not_started`).
+- Next: deepen option-level parity inside these new domains and validate command semantics against live VyOS config guides.
 
 ## Current Feature Spec
-Feature: **Routing form-driven batch (ISIS/OpenFabric/MPLS + selector cleanup)**
+Feature: **Non-routing parity closure batch (VRF + Load Balancing + HA + Traffic Policy + PKI + Config Index)**
 
 Acceptance criteria:
-- Routing protocols no longer rely on generic placeholders for core workflows.
-- ISIS/OpenFabric/MPLS are presented as field-driven forms with structured save/load cycles.
-- Selector pages (`unicast`, `infrastructure`, `multicast`) avoid dead entries and show explicit selection prompts when no protocol is selected.
-- Backend service wrapper modules imported by `app.py` are tracked in git and available in clean checkouts.
-- End-to-end validation (`pytest`, `tsc`, `build`, restart, runtime smoke, browser smoke) passes.
-- Coverage artifacts regenerate without errors after the routing batch.
+- Backend exposes scoped batch/config endpoints for each missing docs domain without replacing existing service architecture.
+- Frontend pages are form-driven and avoid free-form CLI command text entry.
+- Navigation includes reachable pages for new domains.
+- End-to-end validation passes: backend tests, `tsc`, frontend build, runtime smoke, UI smoke.
+- Coverage artifacts regenerate and show no remaining Phase1 gaps.
 
 Assumptions:
-- Routing pages prioritize the highest-impact command trees first; advanced edge knobs remain additive follow-ups.
+- New pages prioritize common/high-value configuration branches first; additional advanced knobs remain additive follow-ups.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: routing form-driven batch implemented, validated, committed, and pushed (`996398a`).
-- Working tree is dirty with unrelated pre-existing changes outside this hotfix.
+- Status: non-routing parity closure batch implemented and validated; pending commit/push in this cycle.
+- Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `backend/routers/_service_wrapper.py`
-- `backend/routers/dns/__init__.py`
-- `backend/routers/dns/dns.py`
-- `backend/routers/lldp/__init__.py`
-- `backend/routers/lldp/lldp.py`
-- `backend/routers/mdns/__init__.py`
-- `backend/routers/mdns/mdns.py`
-- `backend/routers/ntp/__init__.py`
-- `backend/routers/ntp/ntp.py`
-- `backend/routers/ssh/__init__.py`
-- `backend/routers/ssh/ssh.py`
-- `frontend/src/app/routing/infrastructure/page.tsx`
-- `frontend/src/app/routing/multicast/page.tsx`
-- `frontend/src/app/routing/protocols/page.tsx`
-- `frontend/src/app/routing/static-failover/layout.tsx`
-- `frontend/src/app/routing/unicast-protocols/page.tsx`
-- `frontend/src/app/routing/unicast-protocols/static/page.tsx`
-- `frontend/src/components/routing/ArpProtocolContent.tsx`
-- `frontend/src/components/routing/IgmpProxyContent.tsx`
-- `frontend/src/components/routing/IsisContent.tsx`
-- `frontend/src/components/routing/MplsContent.tsx`
-- `frontend/src/components/routing/OpenfabricContent.tsx`
-- `frontend/src/components/routing/OspfContent.tsx`
-- `frontend/src/components/routing/Pim6Content.tsx`
-- `frontend/src/components/routing/PimContent.tsx`
-- `frontend/src/components/routing/ProtocolSimpleListEditor.tsx`
-- `frontend/src/components/routing/RipContent.tsx`
-- `frontend/src/components/routing/RpkiContent.tsx`
-- `scripts/seed_igmp_proxy_fixture.py`
-- `scripts/seed_mpls_fixture.py`
-- `scripts/seed_openfabric_fixture.py`
-- `scripts/seed_ospf_fixture.py`
-- `scripts/seed_rip_fixture.py`
+- `backend/routers/_config_tree_wrapper.py`
+- `backend/routers/vrf/__init__.py`
+- `backend/routers/vrf/vrf.py`
+- `backend/routers/load_balancing/__init__.py`
+- `backend/routers/load_balancing/load_balancing.py`
+- `backend/routers/high_availability/__init__.py`
+- `backend/routers/high_availability/high_availability.py`
+- `backend/routers/traffic_policy/__init__.py`
+- `backend/routers/traffic_policy/traffic_policy.py`
+- `backend/routers/pki/__init__.py`
+- `backend/routers/pki/pki.py`
+- `backend/app.py`
+- `backend/tests/test_config_tree_wrapper_capabilities.py`
+- `frontend/src/lib/api/config-tree.ts`
+- `frontend/src/lib/api/vrf.ts`
+- `frontend/src/lib/api/load-balancing.ts`
+- `frontend/src/lib/api/high-availability.ts`
+- `frontend/src/lib/api/traffic-policy.ts`
+- `frontend/src/lib/api/pki.ts`
+- `frontend/src/app/network/vrf/page.tsx`
+- `frontend/src/app/network/load-balancing/page.tsx`
+- `frontend/src/app/network/high-availability/page.tsx`
+- `frontend/src/app/network/traffic-policy/page.tsx`
+- `frontend/src/app/system/pki/page.tsx`
+- `frontend/src/app/configuration/page.tsx`
+- `frontend/src/components/layout/Sidebar.tsx`
+- `frontend/scripts/check-runtime.sh`
+- `frontend/scripts/smoke-ui.mjs`
+- `scripts/generate_config_coverage_matrix.py`
+- `scripts/generate_phase1_backlog.py`
 - `CONFIG_COVERAGE_MATRIX.json`
 - `CONFIG_COVERAGE_MATRIX.md`
 - `CONFIG_COVERAGE_PHASE1.json`
 - `CONFIG_COVERAGE_PHASE1.md`
+- `PARITY_BACKLOG.json`
+- `PARITY_BACKLOG.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_app.py` -> pass (`39 passed`)
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_service_wrapper_capabilities.py tests/test_app.py` -> pass (`55 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py tests/test_protocol_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_vpn_wrapper_capabilities.py tests/test_app.py` -> pass (`128 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s build` -> pass
-- Restarted runtime API/UI sessions and verified listeners:
-  - `tmux kill-session -t vm-api`
-  - `tmux new-session -d -s vm-api 'cd /home/redhot/VyOS/VyManager/backend && PYTHONPATH=. ./.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --proxy-headers'`
-  - `tmux kill-session -t vm-ui`
+- `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
+- Restarted runtime sessions and verified listeners:
+  - `tmux new-session -d -s vm-api 'cd /home/redhot/VyOS/VyManager/backend && set -a && source .env && set +a && PYTHONPATH=. ./.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --proxy-headers'`
   - `tmux new-session -d -s vm-ui 'cd /home/redhot/VyOS/VyManager/frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000'`
   - `ss -ltnp | rg ':(8000|3000)'` -> listening
 - `cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime` -> pass
@@ -135,16 +131,22 @@ Assumptions:
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
-- Browser smoke currently depends on host-specific Playwright shared libs path; this should be standardized in dev bootstrap.
-- SNMPv3 configuration and HTTPS GraphQL/certificate controls are not exposed yet.
-- PPPoE/IPoE tabs currently prioritize common operator paths; advanced branches should be added as follow-up.
-- Some advanced per-protocol tuning options are still candidate follow-ups after this routing UX hardening pass.
+- Browser smoke depends on host-specific Playwright shared libs path.
+- Some command semantics in newly added HA/Traffic Policy/PKI sections need live VyOS operational validation on more hardware/versions.
 
 ## TODO Backlog (next queue)
-- Continue remaining parity slices with form-first UX for non-routing domains.
-- Keep runtime gate sequence mandatory for each slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
+- Deepen option-level coverage for `high-availability`, `traffic-policy`, and `pki` beyond initial form sets.
+- Add live fixture-seeding and CLI alignment checks (`show configuration commands`) for the new domains.
+- Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Added shared backend `build_config_tree_router(...)` wrapper for non-service, non-VPN top-level config trees while preserving existing session/VyOS service contracts.
+- Added scoped backend routers for `vrf`, `load-balancing`, `high-availability`, `traffic-policy`, and `pki`; each router exposes `capabilities`, `config`, and `batch` endpoints with strict subtree command validation.
+- Implemented form-first GUI pages for `/network/vrf`, `/network/load-balancing`, `/network/high-availability`, `/network/traffic-policy`, and `/system/pki` (no free-form CLI text boxes).
+- Added `/configuration` index page to represent docs-root coverage and provide a single navigation entry point across all major config domains.
+- Updated smoke gates to include new routes; runtime/browser smoke now checks these domains by default.
+- Coverage scripts were extended with alias handling (`highavailability`, `trafficpolicy`) and docs-root token handling so matrix generation can accurately classify these domains.
+- Phase1 artifacts now show full implementation (`implemented: 129`, `partial: 0`, `not_started: 0`).
 - PIM/PIM6 batch validators now allow exact subtree delete (`delete protocols pim`, `delete protocols pim6`) while preserving prefix boundary checks.
 - Added protocols overview API + `/routing/protocols` page for docs index parity and quick navigation.
 - Added dedicated `/routing/unicast-protocols/bgp` and `/routing/infrastructure/bfd` pages to eliminate token-detection false partials.

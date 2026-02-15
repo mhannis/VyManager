@@ -1,93 +1,97 @@
 {
-  "feature_id": "routing-form-batch-2026-02-14",
-  "title": "Routing form-driven batch: ISIS/OpenFabric/MPLS and protocol UX cleanup",
+  "feature_id": "parity-closure-non-routing-2026-02-15",
+  "title": "Phase1 parity closure batch: VRF, Load Balancing, High Availability, Traffic Policy, PKI, Configuration Index",
   "status": "done",
   "acceptance_criteria": [
-    "Routing pages for ISIS, OpenFabric, and MPLS are form-driven with explicit field-level CRUD workflows.",
-    "Routing UX no longer falls back to generic in-progress placeholders for unselected states.",
-    "Protocol selector pages remove redundant/invalid entries and keep navigation coherent.",
-    "Backend app has required service-wrapper modules present for imported routers (dns/lldp/mdns/ntp/ssh).",
-    "Typecheck, backend protocol/service tests, build, runtime smoke, and browser smoke pass."
+    "Backend exposes scoped read/batch endpoints for vrf, load-balancing, high-availability, traffic-policy, and pki using thin wrappers around existing VyOS service integration.",
+    "Frontend provides form-driven pages for each of the above domains with no free-form CLI text entry.",
+    "Sidebar navigation links to new pages and route loading remains stable.",
+    "Backend tests, TypeScript check, frontend build, runtime smoke, and UI smoke all pass.",
+    "Coverage artifacts regenerate with full Phase1 implementation and no remaining partial/not_started domains."
   ],
   "assumptions": [
-    "This batch focuses on protocol UX depth and stability rather than introducing new protocol families.",
-    "Unrelated pre-existing dirty files outside this staged slice remain untouched.",
-    "Fixture seeding scripts are for dev validation and not required in production runtime paths."
+    "Initial forms prioritize high-frequency workflows and can be expanded with deeper knobs in follow-up slices.",
+    "Unrelated pre-existing dirty files in the worktree are preserved untouched.",
+    "Command semantics for advanced options will continue to be validated against live VyOS targets in later cycles."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/components/routing/IsisContent.tsx",
-        "frontend/src/components/routing/OpenfabricContent.tsx",
-        "frontend/src/components/routing/MplsContent.tsx",
-        "frontend/src/components/routing/RipContent.tsx",
-        "frontend/src/components/routing/OspfContent.tsx",
-        "frontend/src/components/routing/IgmpProxyContent.tsx"
-      ],
-      "notes": "Implemented robust form-first routing protocol editors and selector UX refinements."
-    },
-    {
-      "id": "T2",
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/_service_wrapper.py",
-        "backend/routers/dns/dns.py",
-        "backend/routers/lldp/lldp.py",
-        "backend/routers/mdns/mdns.py",
-        "backend/routers/ntp/ntp.py",
-        "backend/routers/ssh/ssh.py"
+        "backend/routers/_config_tree_wrapper.py",
+        "backend/routers/vrf/vrf.py",
+        "backend/routers/load_balancing/load_balancing.py",
+        "backend/routers/high_availability/high_availability.py",
+        "backend/routers/traffic_policy/traffic_policy.py",
+        "backend/routers/pki/pki.py",
+        "backend/app.py"
       ],
-      "notes": "Added missing wrapper modules required by existing backend imports and service endpoints."
+      "notes": "Added scoped wrappers and router registration for all remaining non-routing parity domains."
+    },
+    {
+      "id": "T2",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/network/vrf/page.tsx",
+        "frontend/src/app/network/load-balancing/page.tsx",
+        "frontend/src/app/network/high-availability/page.tsx",
+        "frontend/src/app/network/traffic-policy/page.tsx",
+        "frontend/src/app/system/pki/page.tsx",
+        "frontend/src/app/configuration/page.tsx",
+        "frontend/src/components/layout/Sidebar.tsx"
+      ],
+      "notes": "Replaced placeholders with form-first pages and added configuration index navigation."
     },
     {
       "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "scripts/seed_ospf_fixture.py",
-        "scripts/seed_rip_fixture.py",
-        "scripts/seed_openfabric_fixture.py",
-        "scripts/seed_mpls_fixture.py",
-        "scripts/seed_igmp_proxy_fixture.py"
+        "backend/tests/test_config_tree_wrapper_capabilities.py",
+        "frontend/scripts/check-runtime.sh",
+        "frontend/scripts/smoke-ui.mjs"
       ],
-      "notes": "Added protocol seed scripts for deterministic live validation during QA cycles."
+      "notes": "Added backend wrapper tests and expanded smoke route coverage for new pages."
     },
     {
       "id": "T4",
       "owner_role": "Planner",
       "status": "done",
       "files": [
-        "CONFIG_COVERAGE_MATRIX.json",
-        "CONFIG_COVERAGE_PHASE1.json"
+        "scripts/generate_config_coverage_matrix.py",
+        "scripts/generate_phase1_backlog.py",
+        "CONFIG_COVERAGE_PHASE1.json",
+        "PARITY_BACKLOG.json"
       ],
-      "notes": "Regenerated docs coverage artifacts after routing/service wrapper updates."
+      "notes": "Updated coverage aliasing/token handling and regenerated parity artifacts to full Phase1 implementation."
     },
     {
       "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/app/routing/unicast-protocols/page.tsx",
-        "frontend/src/app/routing/infrastructure/page.tsx",
-        "frontend/src/app/routing/multicast/page.tsx",
-        "frontend/src/components/routing/ProtocolSimpleListEditor.tsx"
+        "frontend/src/lib/api/vrf.ts",
+        "frontend/src/lib/api/load-balancing.ts",
+        "frontend/src/lib/api/config-tree.ts",
+        "frontend/src/lib/api/high-availability.ts",
+        "frontend/src/lib/api/traffic-policy.ts",
+        "frontend/src/lib/api/pki.ts"
       ],
-      "notes": "Manual review complete for route selection behavior and no-placeholder UX policy."
+      "notes": "Manual review completed for API contract consistency and command-scope safety."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_app.py && cd ../frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py tests/test_protocol_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_vpn_wrapper_capabilities.py tests/test_app.py && cd ../frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Parity implementation (routing protocol UX hardening)",
+      "purpose": "Parity implementation and validation",
       "status": "active"
     }
   ]

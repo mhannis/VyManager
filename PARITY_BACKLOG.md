@@ -7,12 +7,6 @@ Prioritization policy:
 
 | Priority | Domain | Risk | Breadth | Reuse | Implemented | Partial | Not Started | Total |
 |---:|---|---:|---:|---:|---:|---:|---:|---:|
-| 1 | `ha` | 65 | 1 | 55 | 0 | 0 | 1 | 1 |
-| 2 | `vrf` | 60 | 1 | 62 | 0 | 1 | 0 | 1 |
-| 3 | `load_balancing` | 55 | 3 | 68 | 0 | 3 | 0 | 3 |
-| 4 | `traffic_policy` | 50 | 1 | 78 | 0 | 0 | 1 | 1 |
-| 5 | `pki` | 35 | 1 | 30 | 0 | 0 | 1 | 1 |
-| 6 | `meta` | 10 | 1 | 10 | 0 | 0 | 1 | 1 |
 
 Completed domains (no uncovered pages detected):
 
@@ -26,4 +20,10 @@ Completed domains (no uncovered pages detected):
 | `system` | 22 | 0 | 0 | 22 |
 | `services` | 23 | 0 | 0 | 23 |
 | `vpn` | 12 | 0 | 0 | 12 |
+| `ha` | 1 | 0 | 0 | 1 |
+| `vrf` | 1 | 0 | 0 | 1 |
+| `load_balancing` | 3 | 0 | 0 | 3 |
+| `traffic_policy` | 1 | 0 | 0 | 1 |
 | `container` | 1 | 0 | 0 | 1 |
+| `pki` | 1 | 0 | 0 | 1 |
+| `meta` | 1 | 0 | 0 | 1 |

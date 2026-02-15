@@ -1,5 +1,5 @@
 {
-  "source_matrix_generated_at": "2026-02-14T23:33:39Z",
+  "source_matrix_generated_at": "2026-02-14T23:59:20Z",
   "source": "https://docs.vyos.io/en/latest/configuration/",
   "items": [
     {
@@ -441,11 +441,16 @@
       "url": "https://docs.vyos.io/en/latest/configuration/highavailability/index.html",
       "cli_scope": "highavailability",
       "domain": "ha",
-      "raw_status": "MISSING",
-      "status": "not_started",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
-        "backend": [],
-        "frontend": []
+        "backend": [
+          "backend/routers/high_availability/__init__.py",
+          "backend/routers/high_availability/high_availability.py"
+        ],
+        "frontend": [
+          "frontend/src/app/network/high-availability/page.tsx"
+        ]
       }
     },
     {
@@ -454,11 +459,13 @@
       "url": "https://docs.vyos.io/en/latest/configuration/index.html",
       "cli_scope": "configuration",
       "domain": "meta",
-      "raw_status": "MISSING",
-      "status": "not_started",
+      "raw_status": "FRONTEND_ONLY",
+      "status": "implemented",
       "evidence_files": {
         "backend": [],
-        "frontend": []
+        "frontend": [
+          "frontend/src/app/configuration/page.tsx"
+        ]
       }
     },
     {
@@ -908,10 +915,13 @@
       "url": "https://docs.vyos.io/en/latest/configuration/loadbalancing/haproxy.html",
       "cli_scope": "loadbalancing haproxy",
       "domain": "load_balancing",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
-        "backend": [],
+        "backend": [
+          "backend/routers/load_balancing/__init__.py",
+          "backend/routers/load_balancing/load_balancing.py"
+        ],
         "frontend": [
           "frontend/src/app/network/load-balancing/page.tsx"
         ]
@@ -923,10 +933,13 @@
       "url": "https://docs.vyos.io/en/latest/configuration/loadbalancing/index.html",
       "cli_scope": "loadbalancing",
       "domain": "load_balancing",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
-        "backend": [],
+        "backend": [
+          "backend/routers/load_balancing/__init__.py",
+          "backend/routers/load_balancing/load_balancing.py"
+        ],
         "frontend": [
           "frontend/src/app/network/load-balancing/page.tsx"
         ]
@@ -938,10 +951,13 @@
       "url": "https://docs.vyos.io/en/latest/configuration/loadbalancing/wan.html",
       "cli_scope": "loadbalancing wan",
       "domain": "load_balancing",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
-        "backend": [],
+        "backend": [
+          "backend/routers/load_balancing/__init__.py",
+          "backend/routers/load_balancing/load_balancing.py"
+        ],
         "frontend": [
           "frontend/src/app/network/load-balancing/page.tsx"
         ]
@@ -1043,11 +1059,16 @@
       "url": "https://docs.vyos.io/en/latest/configuration/pki/index.html",
       "cli_scope": "pki",
       "domain": "pki",
-      "raw_status": "MISSING",
-      "status": "not_started",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
-        "backend": [],
-        "frontend": []
+        "backend": [
+          "backend/routers/pki/__init__.py",
+          "backend/routers/pki/pki.py"
+        ],
+        "frontend": [
+          "frontend/src/app/system/pki/page.tsx"
+        ]
       }
     },
     {
@@ -4663,6 +4684,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -4708,6 +4730,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -4753,6 +4776,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -4798,6 +4822,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -4843,6 +4868,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -4888,6 +4914,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -4933,6 +4960,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -4978,6 +5006,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5023,6 +5052,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5068,6 +5098,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5113,6 +5144,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5158,6 +5190,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5203,6 +5236,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5248,6 +5282,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5293,6 +5328,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5338,6 +5374,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5383,6 +5420,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5428,6 +5466,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5473,6 +5512,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5518,6 +5558,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5563,6 +5604,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5608,6 +5650,7 @@
           "frontend/src/app/system/containers/page.tsx",
           "frontend/src/app/system/logs/page.tsx",
           "frontend/src/app/system/options/page.tsx",
+          "frontend/src/app/system/pki/page.tsx",
           "frontend/src/app/system/services/page.tsx",
           "frontend/src/app/system/users/page.tsx",
           "frontend/src/components/system/BroadcastRelayServiceTab.tsx",
@@ -5639,11 +5682,16 @@
       "url": "https://docs.vyos.io/en/latest/configuration/trafficpolicy/index.html",
       "cli_scope": "trafficpolicy",
       "domain": "traffic_policy",
-      "raw_status": "MISSING",
-      "status": "not_started",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
-        "backend": [],
-        "frontend": []
+        "backend": [
+          "backend/routers/traffic_policy/__init__.py",
+          "backend/routers/traffic_policy/traffic_policy.py"
+        ],
+        "frontend": [
+          "frontend/src/app/network/traffic-policy/page.tsx"
+        ]
       }
     },
     {
@@ -6168,13 +6216,12 @@
       "url": "https://docs.vyos.io/en/latest/configuration/vrf/index.html",
       "cli_scope": "vrf",
       "domain": "vrf",
-      "raw_status": "FRONTEND_ONLY",
-      "status": "partial",
+      "raw_status": "DETECTED",
+      "status": "implemented",
       "evidence_files": {
         "backend": [
-          "backend/routers/interfaces/__init__.py",
-          "backend/routers/interfaces/dummy.py",
-          "backend/routers/interfaces/ethernet.py"
+          "backend/routers/vrf/__init__.py",
+          "backend/routers/vrf/vrf.py"
         ],
         "frontend": [
           "frontend/src/app/network/vrf/page.tsx"

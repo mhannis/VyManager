@@ -1,15 +1,15 @@
 # CONFIG_COVERAGE_MATRIX
 
-Generated: `2026-02-14T23:33:39Z`
+Generated: `2026-02-14T23:59:20Z`
 Source: `https://docs.vyos.io/en/latest/configuration/`
 
 ## Status Summary
 
 - Total documentation pages discovered: **129**
-- `DETECTED` (backend + frontend signal): **118**
+- `DETECTED` (backend + frontend signal): **125**
 - `BACKEND_ONLY`: **0**
-- `FRONTEND_ONLY`: **7**
-- `MISSING`: **4**
+- `FRONTEND_ONLY`: **4**
+- `MISSING`: **0**
 
 ## Notes
 
@@ -30,8 +30,8 @@ Source: `https://docs.vyos.io/en/latest/configuration/`
 | 7 | [IPv4 Firewall Configuration](https://docs.vyos.io/en/latest/configuration/firewall/ipv4.html) | `firewall ipv4` | Y | Y | `DETECTED` |
 | 8 | [IPv6 Firewall Configuration](https://docs.vyos.io/en/latest/configuration/firewall/ipv6.html) | `firewall ipv6` | Y | Y | `DETECTED` |
 | 9 | [Zone Based Firewall](https://docs.vyos.io/en/latest/configuration/firewall/zone.html) | `firewall zone` | Y | Y | `DETECTED` |
-| 10 | [High availability](https://docs.vyos.io/en/latest/configuration/highavailability/index.html) | `highavailability` | N | N | `MISSING` |
-| 11 | [Configuration Guide](https://docs.vyos.io/en/latest/configuration/index.html) | `configuration` | N | N | `MISSING` |
+| 10 | [High availability](https://docs.vyos.io/en/latest/configuration/highavailability/index.html) | `highavailability` | Y | Y | `DETECTED` |
+| 11 | [Configuration Guide](https://docs.vyos.io/en/latest/configuration/index.html) | `configuration` | N | Y | `FRONTEND_ONLY` |
 | 12 | [Bond / link aggregation](https://docs.vyos.io/en/latest/configuration/interfaces/bonding.html) | `interfaces bonding` | Y | Y | `DETECTED` |
 | 13 | [Bridge](https://docs.vyos.io/en/latest/configuration/interfaces/bridge.html) | `interfaces bridge` | Y | Y | `DETECTED` |
 | 14 | [Dummy](https://docs.vyos.io/en/latest/configuration/interfaces/dummy.html) | `interfaces dummy` | Y | Y | `DETECTED` |
@@ -53,15 +53,15 @@ Source: `https://docs.vyos.io/en/latest/configuration/`
 | 30 | [WireGuard](https://docs.vyos.io/en/latest/configuration/interfaces/wireguard.html) | `interfaces wireguard` | Y | Y | `DETECTED` |
 | 31 | [WLAN/WIFI - Wireless LAN](https://docs.vyos.io/en/latest/configuration/interfaces/wireless.html) | `interfaces wireless` | Y | Y | `DETECTED` |
 | 32 | [WWAN - Wireless Wide-Area-Network](https://docs.vyos.io/en/latest/configuration/interfaces/wwan.html) | `interfaces wwan` | Y | Y | `DETECTED` |
-| 33 | [Haproxy](https://docs.vyos.io/en/latest/configuration/loadbalancing/haproxy.html) | `loadbalancing haproxy` | N | Y | `FRONTEND_ONLY` |
-| 34 | [Load-balancing](https://docs.vyos.io/en/latest/configuration/loadbalancing/index.html) | `loadbalancing` | N | Y | `FRONTEND_ONLY` |
-| 35 | [WAN load balancing](https://docs.vyos.io/en/latest/configuration/loadbalancing/wan.html) | `loadbalancing wan` | N | Y | `FRONTEND_ONLY` |
+| 33 | [Haproxy](https://docs.vyos.io/en/latest/configuration/loadbalancing/haproxy.html) | `loadbalancing haproxy` | Y | Y | `DETECTED` |
+| 34 | [Load-balancing](https://docs.vyos.io/en/latest/configuration/loadbalancing/index.html) | `loadbalancing` | Y | Y | `DETECTED` |
+| 35 | [WAN load balancing](https://docs.vyos.io/en/latest/configuration/loadbalancing/wan.html) | `loadbalancing wan` | Y | Y | `DETECTED` |
 | 36 | [CGNAT](https://docs.vyos.io/en/latest/configuration/nat/cgnat.html) | `nat cgnat` | Y | Y | `DETECTED` |
 | 37 | [NAT](https://docs.vyos.io/en/latest/configuration/nat/index.html) | `nat` | Y | Y | `DETECTED` |
 | 38 | [NAT44](https://docs.vyos.io/en/latest/configuration/nat/nat44.html) | `nat nat44` | Y | Y | `DETECTED` |
 | 39 | [NAT64](https://docs.vyos.io/en/latest/configuration/nat/nat64.html) | `nat nat64` | Y | Y | `DETECTED` |
 | 40 | [NAT66(NPTv6)](https://docs.vyos.io/en/latest/configuration/nat/nat66.html) | `nat nat66` | Y | Y | `DETECTED` |
-| 41 | [PKI](https://docs.vyos.io/en/latest/configuration/pki/index.html) | `pki` | N | N | `MISSING` |
+| 41 | [PKI](https://docs.vyos.io/en/latest/configuration/pki/index.html) | `pki` | Y | Y | `DETECTED` |
 | 42 | [Access List Policy](https://docs.vyos.io/en/latest/configuration/policy/access-list.html) | `policy access list` | Y | Y | `DETECTED` |
 | 43 | [BGP - AS Path Policy](https://docs.vyos.io/en/latest/configuration/policy/as-path-list.html) | `policy as path list` | Y | Y | `DETECTED` |
 | 44 | [BGP - Community List](https://docs.vyos.io/en/latest/configuration/policy/community-list.html) | `policy community list` | Y | Y | `DETECTED` |
@@ -136,7 +136,7 @@ Source: `https://docs.vyos.io/en/latest/configuration/`
 | 113 | [Time Zone](https://docs.vyos.io/en/latest/configuration/system/time-zone.html) | `system time zone` | Y | Y | `DETECTED` |
 | 114 | [Updates](https://docs.vyos.io/en/latest/configuration/system/updates.html) | `system updates` | Y | Y | `DETECTED` |
 | 115 | [Watchdog](https://docs.vyos.io/en/latest/configuration/system/watchdog.html) | `system watchdog` | Y | Y | `DETECTED` |
-| 116 | [Traffic Policy](https://docs.vyos.io/en/latest/configuration/trafficpolicy/index.html) | `trafficpolicy` | N | N | `MISSING` |
+| 116 | [Traffic Policy](https://docs.vyos.io/en/latest/configuration/trafficpolicy/index.html) | `trafficpolicy` | Y | Y | `DETECTED` |
 | 117 | [DMVPN](https://docs.vyos.io/en/latest/configuration/vpn/dmvpn.html) | `vpn dmvpn` | Y | Y | `DETECTED` |
 | 118 | [VPN](https://docs.vyos.io/en/latest/configuration/vpn/index.html) | `vpn` | Y | Y | `DETECTED` |
 | 119 | [IPsec](https://docs.vyos.io/en/latest/configuration/vpn/ipsec/index.html) | `vpn ipsec` | Y | Y | `DETECTED` |
@@ -149,4 +149,4 @@ Source: `https://docs.vyos.io/en/latest/configuration/`
 | 126 | [PPTP-Server](https://docs.vyos.io/en/latest/configuration/vpn/pptp.html) | `vpn pptp` | Y | Y | `DETECTED` |
 | 127 | [RSA-Keys](https://docs.vyos.io/en/latest/configuration/vpn/rsa-keys.html) | `vpn rsa keys` | Y | Y | `DETECTED` |
 | 128 | [SSTP Server](https://docs.vyos.io/en/latest/configuration/vpn/sstp.html) | `vpn sstp` | Y | Y | `DETECTED` |
-| 129 | [VRF](https://docs.vyos.io/en/latest/configuration/vrf/index.html) | `vrf` | N | Y | `FRONTEND_ONLY` |
+| 129 | [VRF](https://docs.vyos.io/en/latest/configuration/vrf/index.html) | `vrf` | Y | Y | `DETECTED` |

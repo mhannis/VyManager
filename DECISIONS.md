@@ -113,3 +113,8 @@
 - 2026-02-14: Promoted routing protocols (ISIS/OpenFabric/MPLS plus related routing panes) from lightweight editors to form-first pages in one batch to meet the “no CLI-style web UI” direction.
 - 2026-02-14: Added and tracked missing backend service wrapper modules (`_service_wrapper`, `dns`, `lldp`, `mdns`, `ntp`, `ssh`) because `backend/app.py` already imports these routers; leaving them untracked would break clean checkouts.
 - 2026-02-14: Routing selector pages now explicitly remove unsupported/dead protocol options and render neutral selection prompts instead of generic `InProgress` placeholders.
+- 2026-02-15: Added shared `build_config_tree_router(...)` thin wrapper for top-level config trees (`vrf`, `load-balancing`, `high-availability`, `traffic-policy`, `pki`) instead of introducing a new backend layer, preserving existing API/service contracts.
+- 2026-02-15: Removed deferred annotations from `backend/routers/_config_tree_wrapper.py` because closure-defined Pydantic request models were being interpreted as query params and returning HTTP 422 on valid batch POST payloads.
+- 2026-02-15: Implemented form-driven pages for all previously uncovered non-routing parity domains and explicitly avoided free-form CLI text editors to match UX direction.
+- 2026-02-15: Extended docs-coverage aliasing (`highavailability<->high_availability`, `trafficpolicy<->traffic_policy`) and root tokenization (`configuration`) so parity matrix reflects the new domain implementations accurately.
+- 2026-02-15: Added `/configuration` docs index page and classified docs root as UI-covered to close `meta` domain in Phase1 artifacts.

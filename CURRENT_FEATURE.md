@@ -1,12 +1,12 @@
-feature_id: routing-form-batch-2026-02-14
+feature_id: parity-closure-non-routing-2026-02-15
 status: done
-title: Routing form-driven batch - ISIS/OpenFabric/MPLS/IGMP/RIP/OSPF refinements
+title: Phase1 parity closure batch - VRF, Load Balancing, High Availability, Traffic Policy, PKI, Configuration Index
 branch: feature/containers-automation-v1
 commits:
-  - 996398a
+  - pending
 notes:
-  - Promoted major routing protocol pages from placeholder/simple editors to full form-driven CRUD UX.
-  - Added robust forms for ISIS, OpenFabric, MPLS, IGMP Proxy, RIP, OSPF, and improved ARP/RPKI interaction panes.
-  - Cleaned selector pages to avoid dead options and replaced fallback placeholder panes with explicit selection prompts.
-  - Added reusable `ProtocolSimpleListEditor` and fixture seeding scripts for rapid QA population/teardown.
-  - Added missing service wrapper modules (`dns/lldp/mdns/ntp/ssh`) required by backend imports and service pages.
+  - Added thin backend config-tree wrappers and routers for all remaining uncovered non-routing domains.
+  - Replaced placeholder pages with form-driven GUI editors for VRF, Load Balancing, High Availability, Traffic Policy, and PKI.
+  - Added `/configuration` docs index page and updated sidebar navigation.
+  - Expanded runtime/browser smoke route coverage to include all new pages.
+  - Regenerated parity artifacts; Phase1 coverage now shows `129 implemented / 0 partial / 0 not_started`.

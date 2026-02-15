@@ -97,6 +97,16 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.LOAD_BALANCING
       },
       {
+        title: "High Availability",
+        href: "/network/high-availability",
+        requiredPermission: FeatureGroup.NETWORK
+      },
+      {
+        title: "Traffic Policy",
+        href: "/network/traffic-policy",
+        requiredPermission: FeatureGroup.NETWORK
+      },
+      {
         title: "NAT",
         href: "/network/nat",
         requiredPermission: FeatureGroup.NAT
@@ -380,6 +390,16 @@ const navigation: NavItem[] = [
       {
         title: "Users",
         href: "/system/users",
+        requiredPermission: FeatureGroup.SYSTEM
+      },
+      {
+        title: "PKI",
+        href: "/system/pki",
+        requiredPermission: FeatureGroup.SYSTEM
+      },
+      {
+        title: "Configuration Guide",
+        href: "/configuration",
         requiredPermission: FeatureGroup.SYSTEM
       },
     ],

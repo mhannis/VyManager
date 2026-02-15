@@ -4,68 +4,7 @@
     "breadth (more uncovered pages first)",
     "reuse potential"
   ],
-  "domains": [
-    {
-      "domain": "ha",
-      "risk": 65,
-      "breadth": 1,
-      "reuse": 55,
-      "total_pages": 1,
-      "implemented": 0,
-      "partial": 0,
-      "not_started": 1
-    },
-    {
-      "domain": "vrf",
-      "risk": 60,
-      "breadth": 1,
-      "reuse": 62,
-      "total_pages": 1,
-      "implemented": 0,
-      "partial": 1,
-      "not_started": 0
-    },
-    {
-      "domain": "load_balancing",
-      "risk": 55,
-      "breadth": 3,
-      "reuse": 68,
-      "total_pages": 3,
-      "implemented": 0,
-      "partial": 3,
-      "not_started": 0
-    },
-    {
-      "domain": "traffic_policy",
-      "risk": 50,
-      "breadth": 1,
-      "reuse": 78,
-      "total_pages": 1,
-      "implemented": 0,
-      "partial": 0,
-      "not_started": 1
-    },
-    {
-      "domain": "pki",
-      "risk": 35,
-      "breadth": 1,
-      "reuse": 30,
-      "total_pages": 1,
-      "implemented": 0,
-      "partial": 0,
-      "not_started": 1
-    },
-    {
-      "domain": "meta",
-      "risk": 10,
-      "breadth": 1,
-      "reuse": 10,
-      "total_pages": 1,
-      "implemented": 0,
-      "partial": 0,
-      "not_started": 1
-    }
-  ],
+  "domains": [],
   "completed_domains": [
     {
       "domain": "interfaces",
@@ -148,10 +87,70 @@
       "not_started": 0
     },
     {
+      "domain": "ha",
+      "risk": 65,
+      "breadth": 0,
+      "reuse": 55,
+      "total_pages": 1,
+      "implemented": 1,
+      "partial": 0,
+      "not_started": 0
+    },
+    {
+      "domain": "vrf",
+      "risk": 60,
+      "breadth": 0,
+      "reuse": 62,
+      "total_pages": 1,
+      "implemented": 1,
+      "partial": 0,
+      "not_started": 0
+    },
+    {
+      "domain": "load_balancing",
+      "risk": 55,
+      "breadth": 0,
+      "reuse": 68,
+      "total_pages": 3,
+      "implemented": 3,
+      "partial": 0,
+      "not_started": 0
+    },
+    {
+      "domain": "traffic_policy",
+      "risk": 50,
+      "breadth": 0,
+      "reuse": 78,
+      "total_pages": 1,
+      "implemented": 1,
+      "partial": 0,
+      "not_started": 0
+    },
+    {
       "domain": "container",
       "risk": 45,
       "breadth": 0,
       "reuse": 64,
+      "total_pages": 1,
+      "implemented": 1,
+      "partial": 0,
+      "not_started": 0
+    },
+    {
+      "domain": "pki",
+      "risk": 35,
+      "breadth": 0,
+      "reuse": 30,
+      "total_pages": 1,
+      "implemented": 1,
+      "partial": 0,
+      "not_started": 0
+    },
+    {
+      "domain": "meta",
+      "risk": 10,
+      "breadth": 0,
+      "reuse": 10,
       "total_pages": 1,
       "implemented": 1,
       "partial": 0,

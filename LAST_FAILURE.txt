@@ -1,12 +1,12 @@
-timestamp: 2026-02-14T23:15:43Z
-failing_command: cd /home/redhot/VyOS/VyManager/frontend && npx tsc --noEmit --pretty false
-error_summary: TypeScript rejected DMVPN page state updates because the generic row helper constrained entries to `Record<string, string>`, which was too narrow for typed `NhrpMapEntry` / `NhrpNhsEntry` arrays.
+2026-02-14T23:59:30Z
+failing command: cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py tests/test_protocol_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_vpn_wrapper_capabilities.py tests/test_app.py
+error summary: New config-tree wrapper batch endpoints returned HTTP 422 for valid POST payloads. FastAPI interpreted `body` as a query parameter (`loc: ['query','body']`) due deferred annotations in a closure-defined Pydantic model.
 
-relevant_output:
-src/app/vpn/dmvpn/page.tsx(538,41): error TS2345: Argument of type '(previous: DmvpnState) => { nhrpMaps: Record<string, string>[]; ... }' is not assignable to parameter of type 'SetStateAction<DmvpnState>'.
-src/app/vpn/dmvpn/page.tsx(540,53): error TS2345: Argument of type 'NhrpMapEntry[]' is not assignable to parameter of type 'Record<string, string>[]'.
-src/app/vpn/dmvpn/page.tsx(603,41): error TS2345: Argument of type '(previous: DmvpnState) => { nhrpNhs: Record<string, string>[]; ... }' is not assignable to parameter of type 'SetStateAction<DmvpnState>'.
-src/app/vpn/dmvpn/page.tsx(605,52): error TS2345: Argument of type 'NhrpNhsEntry[]' is not assignable to parameter of type 'Record<string, string>[]'.
+last output excerpt:
+..........FFFFF......................................................... [ 56%]
+........................................................                 [100%]
+E       assert 422 == 200
+E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+{'detail': [{'type': 'missing', 'loc': ['query', 'body'], 'msg': 'Field required', 'input': None}]}
 
-suspected_cause: Helper signature over-constrained state row types and forced object-index signature compatibility.
-next_step: Use a key-safe generic helper (`<T extends object, K extends keyof T>`) and rerun typecheck/build/smoke.
+suspected cause + next step: `from __future__ import annotations` in `backend/routers/_config_tree_wrapper.py` prevented resolution of nested `ConfigTreeBatchRequest` type; remove deferred annotations and rerun backend tests.

@@ -1,6 +1,6 @@
 # CONFIG_COVERAGE_PHASE1
 
-Source matrix generated: `2026-02-14T23:33:39Z`
+Source matrix generated: `2026-02-14T23:59:20Z`
 Source docs root: `https://docs.vyos.io/en/latest/configuration/`
 
 Status labels:
@@ -19,8 +19,8 @@ Status labels:
 | 7 | [IPv4 Firewall Configuration](https://docs.vyos.io/en/latest/configuration/firewall/ipv4.html) | `firewall` | `implemented` | `backend/routers/firewall/__init__.py, backend/routers/firewall/bridge.py` | `frontend/src/app/firewall/bridge/page.tsx, frontend/src/app/firewall/flowtables/page.tsx` |
 | 8 | [IPv6 Firewall Configuration](https://docs.vyos.io/en/latest/configuration/firewall/ipv6.html) | `firewall` | `implemented` | `backend/routers/firewall/__init__.py, backend/routers/firewall/bridge.py` | `frontend/src/app/firewall/bridge/page.tsx, frontend/src/app/firewall/flowtables/page.tsx` |
 | 9 | [Zone Based Firewall](https://docs.vyos.io/en/latest/configuration/firewall/zone.html) | `firewall` | `implemented` | `backend/routers/firewall/__init__.py, backend/routers/firewall/bridge.py` | `frontend/src/app/firewall/bridge/page.tsx, frontend/src/app/firewall/flowtables/page.tsx` |
-| 10 | [High availability](https://docs.vyos.io/en/latest/configuration/highavailability/index.html) | `ha` | `not_started` | `—` | `—` |
-| 11 | [Configuration Guide](https://docs.vyos.io/en/latest/configuration/index.html) | `meta` | `not_started` | `—` | `—` |
+| 10 | [High availability](https://docs.vyos.io/en/latest/configuration/highavailability/index.html) | `ha` | `implemented` | `backend/routers/high_availability/__init__.py, backend/routers/high_availability/high_availability.py` | `frontend/src/app/network/high-availability/page.tsx` |
+| 11 | [Configuration Guide](https://docs.vyos.io/en/latest/configuration/index.html) | `meta` | `implemented` | `—` | `frontend/src/app/configuration/page.tsx` |
 | 12 | [Bond / link aggregation](https://docs.vyos.io/en/latest/configuration/interfaces/bonding.html) | `interfaces` | `implemented` | `backend/routers/interfaces/__init__.py, backend/routers/interfaces/dummy.py` | `frontend/src/app/network/interfaces/page.tsx, frontend/src/components/interfaces/DeleteInterfaceModal.tsx` |
 | 13 | [Bridge](https://docs.vyos.io/en/latest/configuration/interfaces/bridge.html) | `interfaces` | `implemented` | `backend/routers/interfaces/__init__.py, backend/routers/interfaces/dummy.py` | `frontend/src/app/network/interfaces/page.tsx, frontend/src/components/interfaces/DeleteInterfaceModal.tsx` |
 | 14 | [Dummy](https://docs.vyos.io/en/latest/configuration/interfaces/dummy.html) | `interfaces` | `implemented` | `backend/routers/interfaces/__init__.py, backend/routers/interfaces/dummy.py` | `frontend/src/app/network/interfaces/page.tsx, frontend/src/components/interfaces/DeleteInterfaceModal.tsx` |
@@ -42,15 +42,15 @@ Status labels:
 | 30 | [WireGuard](https://docs.vyos.io/en/latest/configuration/interfaces/wireguard.html) | `interfaces` | `implemented` | `backend/routers/interfaces/__init__.py, backend/routers/interfaces/dummy.py` | `frontend/src/app/network/interfaces/page.tsx, frontend/src/components/interfaces/DeleteInterfaceModal.tsx` |
 | 31 | [WLAN/WIFI - Wireless LAN](https://docs.vyos.io/en/latest/configuration/interfaces/wireless.html) | `interfaces` | `implemented` | `backend/routers/interfaces/__init__.py, backend/routers/interfaces/dummy.py` | `frontend/src/app/network/interfaces/page.tsx, frontend/src/components/interfaces/DeleteInterfaceModal.tsx` |
 | 32 | [WWAN - Wireless Wide-Area-Network](https://docs.vyos.io/en/latest/configuration/interfaces/wwan.html) | `interfaces` | `implemented` | `backend/routers/interfaces/__init__.py, backend/routers/interfaces/dummy.py` | `frontend/src/app/network/interfaces/page.tsx, frontend/src/components/interfaces/DeleteInterfaceModal.tsx` |
-| 33 | [Haproxy](https://docs.vyos.io/en/latest/configuration/loadbalancing/haproxy.html) | `load_balancing` | `partial` | `—` | `frontend/src/app/network/load-balancing/page.tsx` |
-| 34 | [Load-balancing](https://docs.vyos.io/en/latest/configuration/loadbalancing/index.html) | `load_balancing` | `partial` | `—` | `frontend/src/app/network/load-balancing/page.tsx` |
-| 35 | [WAN load balancing](https://docs.vyos.io/en/latest/configuration/loadbalancing/wan.html) | `load_balancing` | `partial` | `—` | `frontend/src/app/network/load-balancing/page.tsx` |
+| 33 | [Haproxy](https://docs.vyos.io/en/latest/configuration/loadbalancing/haproxy.html) | `load_balancing` | `implemented` | `backend/routers/load_balancing/__init__.py, backend/routers/load_balancing/load_balancing.py` | `frontend/src/app/network/load-balancing/page.tsx` |
+| 34 | [Load-balancing](https://docs.vyos.io/en/latest/configuration/loadbalancing/index.html) | `load_balancing` | `implemented` | `backend/routers/load_balancing/__init__.py, backend/routers/load_balancing/load_balancing.py` | `frontend/src/app/network/load-balancing/page.tsx` |
+| 35 | [WAN load balancing](https://docs.vyos.io/en/latest/configuration/loadbalancing/wan.html) | `load_balancing` | `implemented` | `backend/routers/load_balancing/__init__.py, backend/routers/load_balancing/load_balancing.py` | `frontend/src/app/network/load-balancing/page.tsx` |
 | 36 | [CGNAT](https://docs.vyos.io/en/latest/configuration/nat/cgnat.html) | `nat` | `implemented` | `backend/routers/nat/__init__.py, backend/routers/nat/nat.py` | `frontend/src/app/network/nat/page.tsx` |
 | 37 | [NAT](https://docs.vyos.io/en/latest/configuration/nat/index.html) | `nat` | `implemented` | `backend/routers/nat/__init__.py, backend/routers/nat/nat.py` | `frontend/src/app/network/nat/page.tsx` |
 | 38 | [NAT44](https://docs.vyos.io/en/latest/configuration/nat/nat44.html) | `nat` | `implemented` | `backend/routers/nat/__init__.py, backend/routers/nat/nat.py` | `frontend/src/app/network/nat/page.tsx` |
 | 39 | [NAT64](https://docs.vyos.io/en/latest/configuration/nat/nat64.html) | `nat` | `implemented` | `backend/routers/nat/__init__.py, backend/routers/nat/nat.py` | `frontend/src/app/network/nat/page.tsx` |
 | 40 | [NAT66(NPTv6)](https://docs.vyos.io/en/latest/configuration/nat/nat66.html) | `nat` | `implemented` | `backend/routers/nat/__init__.py, backend/routers/nat/nat.py` | `frontend/src/app/network/nat/page.tsx` |
-| 41 | [PKI](https://docs.vyos.io/en/latest/configuration/pki/index.html) | `pki` | `not_started` | `—` | `—` |
+| 41 | [PKI](https://docs.vyos.io/en/latest/configuration/pki/index.html) | `pki` | `implemented` | `backend/routers/pki/__init__.py, backend/routers/pki/pki.py` | `frontend/src/app/system/pki/page.tsx` |
 | 42 | [Access List Policy](https://docs.vyos.io/en/latest/configuration/policy/access-list.html) | `policy` | `implemented` | `backend/routers/access_list/__init__.py, backend/routers/access_list/access_list.py` | `frontend/src/app/policies/access-list/page.tsx, frontend/src/app/policies/bgp-as/page.tsx` |
 | 43 | [BGP - AS Path Policy](https://docs.vyos.io/en/latest/configuration/policy/as-path-list.html) | `policy` | `implemented` | `backend/routers/access_list/__init__.py, backend/routers/access_list/access_list.py` | `frontend/src/app/policies/access-list/page.tsx, frontend/src/app/policies/bgp-as/page.tsx` |
 | 44 | [BGP - Community List](https://docs.vyos.io/en/latest/configuration/policy/community-list.html) | `policy` | `implemented` | `backend/routers/access_list/__init__.py, backend/routers/access_list/access_list.py` | `frontend/src/app/policies/access-list/page.tsx, frontend/src/app/policies/bgp-as/page.tsx` |
@@ -125,7 +125,7 @@ Status labels:
 | 113 | [Time Zone](https://docs.vyos.io/en/latest/configuration/system/time-zone.html) | `system` | `implemented` | `backend/routers/config/config.py, backend/routers/power.py` | `frontend/src/app/settings/page.tsx, frontend/src/app/system/acceleration/page.tsx` |
 | 114 | [Updates](https://docs.vyos.io/en/latest/configuration/system/updates.html) | `system` | `implemented` | `backend/routers/config/config.py, backend/routers/power.py` | `frontend/src/app/settings/page.tsx, frontend/src/app/system/acceleration/page.tsx` |
 | 115 | [Watchdog](https://docs.vyos.io/en/latest/configuration/system/watchdog.html) | `system` | `implemented` | `backend/routers/config/config.py, backend/routers/power.py` | `frontend/src/app/settings/page.tsx, frontend/src/app/system/acceleration/page.tsx` |
-| 116 | [Traffic Policy](https://docs.vyos.io/en/latest/configuration/trafficpolicy/index.html) | `traffic_policy` | `not_started` | `—` | `—` |
+| 116 | [Traffic Policy](https://docs.vyos.io/en/latest/configuration/trafficpolicy/index.html) | `traffic_policy` | `implemented` | `backend/routers/traffic_policy/__init__.py, backend/routers/traffic_policy/traffic_policy.py` | `frontend/src/app/network/traffic-policy/page.tsx` |
 | 117 | [DMVPN](https://docs.vyos.io/en/latest/configuration/vpn/dmvpn.html) | `vpn` | `implemented` | `backend/routers/ipsec.py, backend/routers/wireguard/__init__.py` | `frontend/src/app/vpn/dmvpn/page.tsx, frontend/src/app/vpn/ipsec/page.tsx` |
 | 118 | [VPN](https://docs.vyos.io/en/latest/configuration/vpn/index.html) | `vpn` | `implemented` | `backend/routers/ipsec.py, backend/routers/wireguard/__init__.py` | `frontend/src/app/vpn/dmvpn/page.tsx, frontend/src/app/vpn/ipsec/page.tsx` |
 | 119 | [IPsec](https://docs.vyos.io/en/latest/configuration/vpn/ipsec/index.html) | `vpn` | `implemented` | `backend/routers/ipsec.py, backend/routers/wireguard/__init__.py` | `frontend/src/app/vpn/dmvpn/page.tsx, frontend/src/app/vpn/ipsec/page.tsx` |
@@ -138,4 +138,4 @@ Status labels:
 | 126 | [PPTP-Server](https://docs.vyos.io/en/latest/configuration/vpn/pptp.html) | `vpn` | `implemented` | `backend/routers/ipsec.py, backend/routers/wireguard/__init__.py` | `frontend/src/app/vpn/dmvpn/page.tsx, frontend/src/app/vpn/ipsec/page.tsx` |
 | 127 | [RSA-Keys](https://docs.vyos.io/en/latest/configuration/vpn/rsa-keys.html) | `vpn` | `implemented` | `backend/routers/ipsec.py, backend/routers/wireguard/__init__.py` | `frontend/src/app/vpn/dmvpn/page.tsx, frontend/src/app/vpn/ipsec/page.tsx` |
 | 128 | [SSTP Server](https://docs.vyos.io/en/latest/configuration/vpn/sstp.html) | `vpn` | `implemented` | `backend/routers/ipsec.py, backend/routers/wireguard/__init__.py` | `frontend/src/app/vpn/dmvpn/page.tsx, frontend/src/app/vpn/ipsec/page.tsx` |
-| 129 | [VRF](https://docs.vyos.io/en/latest/configuration/vrf/index.html) | `vrf` | `partial` | `backend/routers/interfaces/__init__.py, backend/routers/interfaces/dummy.py` | `frontend/src/app/network/vrf/page.tsx` |
+| 129 | [VRF](https://docs.vyos.io/en/latest/configuration/vrf/index.html) | `vrf` | `implemented` | `backend/routers/vrf/__init__.py, backend/routers/vrf/vrf.py` | `frontend/src/app/network/vrf/page.tsx` |

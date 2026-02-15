@@ -159,6 +159,8 @@ def doc_path_to_tokens(url: str) -> List[str]:
     suffix = parsed.path.split("/en/latest/configuration/", 1)[-1]
     suffix = suffix.replace(".html", "")
     parts = [p for p in suffix.split("/") if p and p != "index"]
+    if not parts:
+        return ["configuration"]
     tokens: List[str] = []
     for part in parts:
         tokens.extend(re.split(r"[-_]", part.lower()))
@@ -191,8 +193,12 @@ def detect_domain_coverage(
         "services": {"service"},
         "zone": {"zones"},
         "zones": {"zone"},
+        "highavailability": {"high_availability"},
+        "high_availability": {"highavailability"},
         "loadbalancing": {"load_balancing"},
         "load_balancing": {"loadbalancing"},
+        "trafficpolicy": {"traffic_policy"},
+        "traffic_policy": {"trafficpolicy"},
         "wireguard": {"wire_guard"},
         "dhcp": {"dhcp_server", "dhcp_relay"},
         "eventhandler": {"event_handler"},

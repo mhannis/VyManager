@@ -192,22 +192,24 @@ DOMAIN_EVIDENCE_PATTERNS = {
             "frontend/src/components/vpn/**/*.tsx",
         ],
     },
-    "ha": {"backend": [], "frontend": []},
     "vrf": {
-        "backend": ["backend/routers/interfaces/**/*.py"],
+        "backend": ["backend/routers/vrf/**/*.py"],
         "frontend": [
             "frontend/src/app/network/vrf/page.tsx",
             "frontend/src/components/vrf/**/*.tsx",
         ],
     },
     "load_balancing": {
-        "backend": [],
+        "backend": ["backend/routers/load_balancing/**/*.py"],
         "frontend": [
             "frontend/src/app/network/load-balancing/page.tsx",
             "frontend/src/components/network/load-balancing/**/*.tsx",
         ],
     },
-    "traffic_policy": {"backend": [], "frontend": []},
+    "traffic_policy": {
+        "backend": ["backend/routers/traffic_policy/**/*.py"],
+        "frontend": ["frontend/src/app/network/traffic-policy/page.tsx"],
+    },
     "container": {
         "backend": ["backend/routers/containers.py"],
         "frontend": [
@@ -215,12 +217,23 @@ DOMAIN_EVIDENCE_PATTERNS = {
             "frontend/src/components/containers/**/*.tsx",
         ],
     },
-    "pki": {"backend": [], "frontend": []},
-    "meta": {"backend": [], "frontend": []},
+    "ha": {
+        "backend": ["backend/routers/high_availability/**/*.py"],
+        "frontend": ["frontend/src/app/network/high-availability/page.tsx"],
+    },
+    "pki": {
+        "backend": ["backend/routers/pki/**/*.py"],
+        "frontend": ["frontend/src/app/system/pki/page.tsx"],
+    },
+    "meta": {
+        "backend": [],
+        "frontend": ["frontend/src/app/configuration/page.tsx"],
+    },
 }
 
 
 DOC_ONLY_UI_COVERAGE = {
+    "https://docs.vyos.io/en/latest/configuration/index.html",
     "https://docs.vyos.io/en/latest/configuration/policy/index.html",
     "https://docs.vyos.io/en/latest/configuration/policy/examples.html",
     "https://docs.vyos.io/en/latest/configuration/service/index.html",

@@ -79,6 +79,11 @@ from routers.vpn_openconnect import openconnect as vpn_openconnect_router
 from routers.vpn_pptp import pptp as vpn_pptp_router
 from routers.vpn_sstp import sstp as vpn_sstp_router
 from routers.dmvpn import dmvpn as vpn_dmvpn_router
+from routers.vrf import vrf as vrf_router
+from routers.load_balancing import load_balancing as load_balancing_router
+from routers.high_availability import high_availability as high_availability_router
+from routers.traffic_policy import traffic_policy as traffic_policy_router
+from routers.pki import pki as pki_router
 from routers import system
 from routers import power as power_router
 from routers.config import config as config_router
@@ -364,6 +369,11 @@ app.include_router(vpn_openconnect_router.router)
 app.include_router(vpn_pptp_router.router)
 app.include_router(vpn_sstp_router.router)
 app.include_router(vpn_dmvpn_router.router)
+app.include_router(vrf_router.router)
+app.include_router(load_balancing_router.router)
+app.include_router(high_availability_router.router)
+app.include_router(traffic_policy_router.router)
+app.include_router(pki_router.router)
 app.include_router(system.router)
 app.include_router(power_router.router)
 app.include_router(config_router.router)
