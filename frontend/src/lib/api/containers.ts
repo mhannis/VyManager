@@ -105,6 +105,9 @@ export interface ContainerBootstrapStatusResponse {
   ssh_key_installed: boolean;
   ssh_key_identifier: string;
   ssh_key_type: string | null;
+  automation_ready?: boolean;
+  network_count?: number;
+  networks?: ContainerNetworkSummary[];
 }
 
 export interface ContainerInstallResponse {
@@ -113,6 +116,29 @@ export interface ContainerInstallResponse {
   image_pulled: boolean;
   created_volume_paths: string[];
   pull_output: string | null;
+}
+
+export interface ContainerNetworkSummary {
+  name: string;
+  description: string | null;
+  prefixes: string[];
+  mtu: number | null;
+  vrf: string | null;
+  dns_disabled: boolean;
+}
+
+export interface ContainerNetworkUpsertRequest {
+  description?: string | null;
+  prefixes: string[];
+  mtu?: number | null;
+  vrf?: string | null;
+  dns_disabled: boolean;
+}
+
+export interface ContainerNetworkOperationResponse {
+  success: boolean;
+  network: string;
+  message: string;
 }
 
 class ContainersService {
@@ -124,6 +150,20 @@ class ContainersService {
 
   async getBootstrapStatus(): Promise<ContainerBootstrapStatusResponse> {
     return apiClient.get<ContainerBootstrapStatusResponse>("/vyos/containers/bootstrap-status");
+  }
+
+  async getNetworks(refresh: boolean = false): Promise<ContainerNetworkSummary[]> {
+    return apiClient.get<ContainerNetworkSummary[]>("/vyos/containers/networks", {
+      refresh: refresh ? "true" : "false",
+    });
+  }
+
+  async upsertNetwork(name: string, body: ContainerNetworkUpsertRequest): Promise<ContainerNetworkSummary> {
+    return apiClient.put<ContainerNetworkSummary>(`/vyos/containers/networks/${encodeURIComponent(name)}`, body);
+  }
+
+  async deleteNetwork(name: string): Promise<ContainerNetworkOperationResponse> {
+    return apiClient.delete<ContainerNetworkOperationResponse>(`/vyos/containers/networks/${encodeURIComponent(name)}`);
   }
 
   async bootstrapAutomation(): Promise<ContainerBootstrapStatusResponse> {

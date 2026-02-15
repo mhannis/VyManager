@@ -92,6 +92,11 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.INTERFACES
       },
       {
+        title: "Dummy Interfaces",
+        href: "/network/interfaces/dummy",
+        requiredPermission: FeatureGroup.INTERFACES
+      },
+      {
         title: "Load Balancing",
         href: "/network/load-balancing",
         requiredPermission: FeatureGroup.LOAD_BALANCING

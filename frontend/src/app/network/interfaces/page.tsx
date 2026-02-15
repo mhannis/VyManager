@@ -288,6 +288,9 @@ export default function InterfacesPage() {
               <Button asChild variant="outline">
                 <Link href="/network/setup-wizard">Setup Wizard</Link>
               </Button>
+              <Button asChild variant="outline">
+                <Link href="/network/interfaces/dummy">Dummy Interfaces</Link>
+              </Button>
               <div className="flex flex-col gap-2">
                 <Button onClick={() => setIsCreateInterfaceModalOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />

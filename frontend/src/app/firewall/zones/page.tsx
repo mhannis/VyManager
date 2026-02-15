@@ -101,11 +101,13 @@ export default function FirewallZonesPage() {
   const [createZoneName, setCreateZoneName] = useState("");
   const [createDescription, setCreateDescription] = useState("");
   const [createDefaultAction, setCreateDefaultAction] = useState<DefaultAction>("drop");
+  const [createLocalZone, setCreateLocalZone] = useState(false);
   const [createInterfaces, setCreateInterfaces] = useState("");
   const [createPolicies, setCreatePolicies] = useState("LAN_FROM:LAN-IN");
 
   const [editDescription, setEditDescription] = useState("");
   const [editDefaultAction, setEditDefaultAction] = useState<DefaultAction>("drop");
+  const [editLocalZone, setEditLocalZone] = useState(false);
   const [editInterfaces, setEditInterfaces] = useState("");
   const [editPolicies, setEditPolicies] = useState("LAN_FROM:LAN-IN");
   const [guidedWanInterface, setGuidedWanInterface] = useState("");
@@ -201,6 +203,7 @@ export default function FirewallZonesPage() {
 
     setEditDescription(selectedZone.description || "");
     setEditDefaultAction((selectedZone["default-action"] as DefaultAction) || "drop");
+    setEditLocalZone(Boolean(selectedZone["local-zone"]));
     setEditInterfaces((selectedZone.interfaces || []).join(", "));
     setEditPolicies(policyLines);
   }, [selectedZoneName, selectedZone]);
@@ -260,6 +263,7 @@ export default function FirewallZonesPage() {
       await zonesService.upsertZone(zoneName, {
         description: createDescription.trim() || null,
         default_action: createDefaultAction,
+        local_zone: createLocalZone,
         interfaces: parseCsvList(createInterfaces),
         from_policies: parsePolicyTextarea(createPolicies),
       });
@@ -267,6 +271,7 @@ export default function FirewallZonesPage() {
       setCreateZoneName("");
       setCreateDescription("");
       setCreateDefaultAction("drop");
+      setCreateLocalZone(false);
       setCreateInterfaces("");
       setCreatePolicies("LAN_FROM:LAN-IN");
       await loadData();
@@ -287,6 +292,7 @@ export default function FirewallZonesPage() {
       await zonesService.upsertZone(selectedZoneName, {
         description: editDescription.trim() || null,
         default_action: editDefaultAction,
+        local_zone: editLocalZone,
         interfaces: parseCsvList(editInterfaces),
         from_policies: parsePolicyTextarea(editPolicies),
       });
@@ -362,12 +368,14 @@ export default function FirewallZonesPage() {
       await zonesService.upsertZone("WAN", {
         description: "Guided preset WAN zone",
         default_action: "drop",
+        local_zone: false,
         interfaces: [guidedWanInterface],
         from_policies: wanPolicies,
       });
       await zonesService.upsertZone("LAN", {
         description: "Guided preset LAN zone",
         default_action: "drop",
+        local_zone: false,
         interfaces: guidedLanInterfaces,
         from_policies: lanPolicies,
       });
@@ -634,6 +642,15 @@ export default function FirewallZonesPage() {
                   disabled={!canEdit || saving}
                 />
               </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="create-local-zone"
+                  checked={createLocalZone}
+                  onCheckedChange={(checked) => setCreateLocalZone(checked === true)}
+                  disabled={!canEdit || saving}
+                />
+                <Label htmlFor="create-local-zone">Enable local-zone (router services in this zone)</Label>
+              </div>
               <div>
                 <Label>From Policies (one per line: FROM_ZONE:FIREWALL_NAME)</Label>
                 <Textarea
@@ -710,6 +727,15 @@ export default function FirewallZonesPage() {
                       disabled={!canEdit || saving}
                     />
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="edit-local-zone"
+                      checked={editLocalZone}
+                      onCheckedChange={(checked) => setEditLocalZone(checked === true)}
+                      disabled={!canEdit || saving}
+                    />
+                    <Label htmlFor="edit-local-zone">Enable local-zone (router services in this zone)</Label>
+                  </div>
                   <div>
                     <Label>From Policies (one per line: FROM_ZONE:FIREWALL_NAME)</Label>
                     <Textarea
@@ -759,7 +785,10 @@ export default function FirewallZonesPage() {
                           <Shield className="h-4 w-4 text-primary" />
                           <span className="font-semibold">{zoneName}</span>
                         </div>
-                        <Badge variant="outline">{zone["default-action"] || "drop"}</Badge>
+                        <div className="flex items-center gap-1">
+                          {zone["local-zone"] && <Badge variant="secondary">local-zone</Badge>}
+                          <Badge variant="outline">{zone["default-action"] || "drop"}</Badge>
+                        </div>
                       </div>
                       {zone.description && (
                         <p className="mt-1 text-xs text-muted-foreground">{zone.description}</p>

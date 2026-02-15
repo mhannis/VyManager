@@ -171,6 +171,20 @@ class ContainerInitialSetupRequest(BaseModel):
     disable_network_dns: bool = False
 
 
+class ContainerNetworkUpsertRequest(BaseModel):
+    description: Optional[str] = None
+    prefixes: List[str] = Field(default_factory=list)
+    mtu: Optional[int] = None
+    vrf: Optional[str] = None
+    dns_disabled: bool = False
+
+
+class ContainerNetworkOperationResponse(BaseModel):
+    success: bool
+    network: str
+    message: str
+
+
 # ========================================================================
 # Helpers
 # ========================================================================
@@ -814,6 +828,186 @@ async def get_container_bootstrap_status(request: Request) -> ContainerBootstrap
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to load container bootstrap status: {exc}")
+
+
+@router.get("/networks", response_model=List[ContainerNetworkSummary])
+async def get_container_networks(request: Request, refresh: bool = False) -> List[ContainerNetworkSummary]:
+    """List configured container networks."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        return _extract_container_networks(full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to load container networks: {exc}")
+
+
+@router.put("/networks/{network_name}", response_model=ContainerNetworkSummary)
+async def upsert_container_network(
+    request: Request,
+    network_name: str,
+    body: ContainerNetworkUpsertRequest,
+) -> ContainerNetworkSummary:
+    """Create or update a container network."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        name = _normalize_container_network_name_or_400(network_name)
+        description = _string_or_none(body.description)
+        vrf = _string_or_none(body.vrf)
+        mtu = _normalize_container_network_mtu_or_400(body.mtu)
+        desired_prefixes = sorted(
+            {
+                _normalize_container_network_prefix_or_400(prefix)
+                for prefix in body.prefixes
+                if str(prefix).strip()
+            }
+        )
+        if not desired_prefixes:
+            raise HTTPException(status_code=400, detail="At least one container network prefix is required")
+
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        existing_networks = {entry.name: entry for entry in _extract_container_networks(full_config)}
+        existing = existing_networks.get(name)
+
+        operations: List[Dict[str, Any]] = []
+
+        existing_prefixes = set(existing.prefixes if existing else [])
+        desired_prefix_set = set(desired_prefixes)
+        for prefix in sorted(existing_prefixes - desired_prefix_set):
+            operations.append(
+                {
+                    "op": "delete",
+                    "path": ["container", "network", name, "prefix", prefix],
+                }
+            )
+        for prefix in sorted(desired_prefix_set - existing_prefixes):
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["container", "network", name, "prefix", prefix],
+                }
+            )
+
+        if description:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["container", "network", name, "description", description],
+                }
+            )
+        elif existing and existing.description:
+            operations.append(
+                {
+                    "op": "delete",
+                    "path": ["container", "network", name, "description"],
+                }
+            )
+
+        if mtu is not None:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["container", "network", name, "mtu", str(mtu)],
+                }
+            )
+        elif existing and existing.mtu is not None:
+            operations.append(
+                {
+                    "op": "delete",
+                    "path": ["container", "network", name, "mtu"],
+                }
+            )
+
+        if vrf:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["container", "network", name, "vrf", vrf],
+                }
+            )
+        elif existing and existing.vrf:
+            operations.append(
+                {
+                    "op": "delete",
+                    "path": ["container", "network", name, "vrf"],
+                }
+            )
+
+        if body.dns_disabled:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["container", "network", name, "no-name-server"],
+                }
+            )
+        elif existing and existing.dns_disabled:
+            operations.append(
+                {
+                    "op": "delete",
+                    "path": ["container", "network", name, "no-name-server"],
+                }
+            )
+
+        if operations:
+            response = await run_in_threadpool(service.apply_operations, operations)
+            if response.status != 200:
+                status_code = 400 if response.status == 400 else 500
+                raise HTTPException(
+                    status_code=status_code,
+                    detail=f"Failed to update container network '{name}': {response.error or 'Unknown VyOS error'}",
+                )
+
+        refreshed = await run_in_threadpool(service.get_full_config, refresh=True)
+        refreshed_networks = {entry.name: entry for entry in _extract_container_networks(refreshed)}
+        updated = refreshed_networks.get(name)
+        if not updated:
+            raise HTTPException(status_code=500, detail=f"Container network '{name}' was not found after update")
+        return updated
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to update container network: {exc}")
+
+
+@router.delete("/networks/{network_name}", response_model=ContainerNetworkOperationResponse)
+async def delete_container_network(request: Request, network_name: str) -> ContainerNetworkOperationResponse:
+    """Delete a container network."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        name = _normalize_container_network_name_or_400(network_name)
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        existing_networks = {entry.name: entry for entry in _extract_container_networks(full_config)}
+        if name not in existing_networks:
+            raise HTTPException(status_code=404, detail=f"Container network '{name}' not found")
+
+        response = await run_in_threadpool(
+            service.apply_operations,
+            [{"op": "delete", "path": ["container", "network", name]}],
+        )
+        if response.status != 200:
+            status_code = 400 if response.status == 400 else 500
+            raise HTTPException(
+                status_code=status_code,
+                detail=f"Failed to delete container network '{name}': {response.error or 'Unknown VyOS error'}",
+            )
+
+        await run_in_threadpool(service.get_full_config, refresh=True)
+        return ContainerNetworkOperationResponse(
+            success=True,
+            network=name,
+            message=f"Container network '{name}' deleted",
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to delete container network: {exc}")
 
 
 @router.post("/bootstrap", response_model=ContainerBootstrapStatusResponse)

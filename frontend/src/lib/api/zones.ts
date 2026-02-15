@@ -12,6 +12,7 @@ export interface FirewallZone {
   name: string; // Zone name (e.g., 'LAN', 'WAN', 'DMZ')
   description?: string | null;
   "default-action"?: string | null; // Default action for zone
+  "local-zone"?: boolean; // Allow traffic destined to router local services
   interfaces: string[]; // Interfaces in this zone
   from: Record<string, ZoneFromPolicy>; // Policies for traffic FROM other zones
 }
@@ -37,6 +38,7 @@ export interface ZonePolicyUpdate {
 export interface ZoneUpsertRequest {
   description?: string | null;
   default_action?: string | null;
+  local_zone?: boolean;
   interfaces: string[];
   from_policies: ZonePolicyUpdate[];
 }

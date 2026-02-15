@@ -34,6 +34,7 @@ const ROUTES = (
     "/network/load-balancing",
     "/network/high-availability",
     "/network/traffic-policy",
+    "/network/interfaces/dummy",
     "/firewall/zones",
     "/system/services",
     "/system/services?tab=broadcast-relay&view=single",

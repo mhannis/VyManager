@@ -157,3 +157,7 @@
 - 2026-02-15: Network Interfaces action controls now always show `Create Interface` plus `Create VLAN / QinQ` (VLAN button positioned below interface button), removing filter-dependent button swapping.
 - 2026-02-15: `System -> Logs` now supports service-aware filtering (preset service buckets plus discovered process selectors) and applies that filter to visible entries/counts.
 - 2026-02-15: When a service filter is active, log download exports the currently filtered rows client-side to provide targeted troubleshooting bundles without backend API changes.
+- 2026-02-15: Firewall Zones now models `local-zone` as a first-class field in API parse/upsert and UI forms to align with the VyOS zone firewall guide.
+- 2026-02-15: Added explicit container network CRUD endpoints (`/vyos/containers/networks*`) and integrated management UI in `System -> Containers` rather than keeping network handling bootstrap-only.
+- 2026-02-15: Added dedicated `Network -> Dummy Interfaces` page using the existing `/vyos/dummy/batch` contract for robust non-ethernet interface management.
+- 2026-02-15: Expanded runtime/browser smoke route sets to include `/network/interfaces/dummy` so new interfaces domain pages are automatically regression-tested pre-handoff.

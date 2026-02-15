@@ -1,51 +1,75 @@
 {
-  "feature_id": "system-logs-service-filtering-2026-02-15",
-  "title": "Service-aware system logs filtering and export",
+  "feature_id": "firewall-interfaces-containers-robustness-2026-02-15",
+  "title": "Firewall/Interfaces/Containers robustness hardening",
   "status": "done",
   "acceptance_criteria": [
-    "System Logs page supports service filtering by curated service buckets and discovered process names.",
-    "Service filtering updates visible log table entries and returned-count metric.",
-    "Download action exports filtered log entries when a service filter is active.",
-    "Existing line count, source, and search behavior remain unchanged.",
+    "Firewall Zones supports local-zone configuration in parser, API payload, and UI forms.",
+    "Container networks are manageable through GUI-backed CRUD endpoints.",
+    "Dummy interfaces are manageable in a dedicated Network page using existing backend batch APIs.",
+    "Navigation exposes the dummy interface page and smoke routes include it.",
+    "Backend test coverage added for local-zone parser behavior.",
     "Frontend typecheck/lint/build and runtime/browser smoke pass."
   ],
   "assumptions": [
-    "Service matching based on process/message/raw token matching is sufficient for this slice.",
-    "Filtered download can be generated client-side without backend API changes.",
+    "Container network edits can be modeled as prefix-diff plus leaf set/delete operations.",
+    "Dummy interface management can remain on the existing batch endpoint without backend contract changes.",
     "Unrelated dirty files in this worktree remain untouched."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "UI",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/src/app/system/logs/page.tsx"
+        "backend/routers/firewall/zones.py",
+        "backend/routers/containers.py",
+        "backend/tests/test_firewall_zones_local_zone.py"
       ],
-      "notes": "Added service filter selector, dynamic process filter options, filtered table view, and filtered download behavior."
+      "notes": "Implemented zone local-zone handling and container network CRUD endpoints; added parser tests for local-zone behavior."
     },
     {
       "id": "T2",
-      "owner_role": "Test",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/system/logs/page.tsx"
+        "frontend/src/lib/api/zones.ts",
+        "frontend/src/lib/api/containers.ts",
+        "frontend/src/lib/api/dummy.ts",
+        "frontend/src/app/firewall/zones/page.tsx",
+        "frontend/src/app/system/containers/page.tsx",
+        "frontend/src/app/network/interfaces/page.tsx",
+        "frontend/src/app/network/interfaces/dummy/page.tsx",
+        "frontend/src/components/layout/Sidebar.tsx"
       ],
-      "notes": "Validated with tsc, lint, build, runtime smoke, and browser smoke."
+      "notes": "Added zone local-zone controls, container network management card, and full dummy interfaces page with navigation."
     },
     {
       "id": "T3",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "frontend/scripts/check-runtime.sh",
+        "frontend/scripts/smoke-ui.mjs",
+        "backend/tests/test_firewall_zones_local_zone.py"
+      ],
+      "notes": "Expanded smoke route coverage for new interfaces page and validated backend/frontend gates."
+    },
+    {
+      "id": "T4",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/app/system/logs/page.tsx"
+        "backend/routers/firewall/zones.py",
+        "backend/routers/containers.py",
+        "frontend/src/app/network/interfaces/dummy/page.tsx",
+        "frontend/src/app/system/containers/page.tsx"
       ],
-      "notes": "Manual review approved: additive frontend-only UX enhancement with no API contract changes."
+      "notes": "Manual review approved: additive, guide-aligned robustness improvements with preserved existing API contracts."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_zones_local_zone.py && cd ../frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [

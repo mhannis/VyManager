@@ -42,6 +42,7 @@ class FirewallZone(BaseModel):
     name: str
     description: Optional[str] = None
     default_action: Optional[str] = Field(default=None, alias="default-action")
+    local_zone: bool = Field(default=False, alias="local-zone")
     interfaces: List[str] = Field(default_factory=list)
     from_policies: Dict[str, ZoneFromPolicy] = Field(default_factory=dict, alias="from")
 
@@ -68,6 +69,7 @@ class ZonePolicyUpdate(BaseModel):
 class ZoneUpsertRequest(BaseModel):
     description: Optional[str] = None
     default_action: Optional[str] = None
+    local_zone: bool = False
     interfaces: List[str] = Field(default_factory=list)
     from_policies: List[ZonePolicyUpdate] = Field(default_factory=list)
 
@@ -172,6 +174,7 @@ def _parse_zone(name: str, raw_zone_data: Any) -> FirewallZone:
         name=name,
         description=_as_string(zone_data.get("description")),
         **{"default-action": _as_string(zone_data.get("default-action"))},
+        **{"local-zone": "local-zone" in zone_data},
         interfaces=_extract_tag_values(zone_data.get("interface")),
         **{"from": parsed_from},
     )
@@ -310,6 +313,21 @@ async def upsert_zone(request: Request, zone_name: str, body: ZoneUpsertRequest)
                 {
                     "op": "delete",
                     "path": ["firewall", "zone", zone, "default-action"],
+                }
+            )
+
+        if body.local_zone:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["firewall", "zone", zone, "local-zone"],
+                }
+            )
+        elif existing_zone and existing_zone.local_zone:
+            operations.append(
+                {
+                    "op": "delete",
+                    "path": ["firewall", "zone", zone, "local-zone"],
                 }
             )
 

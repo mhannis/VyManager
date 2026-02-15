@@ -25,6 +25,7 @@ critical_routes=(
   "/network/load-balancing"
   "/network/high-availability"
   "/network/traffic-policy"
+  "/network/interfaces/dummy"
   "/system/services?tab=broadcast-relay&view=single"
   "/system/services?tab=console-server&view=single"
   "/system/services?tab=conntrack-sync&view=single"

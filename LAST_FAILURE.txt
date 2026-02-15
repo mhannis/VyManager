@@ -1,8 +1,9 @@
-2026-02-15T01:56:47Z
-failing command: cd frontend && npx tsc --noEmit --pretty false
-error summary: TypeScript build failed in `src/app/network/traffic-policy/page.tsx` because `parseDirectOrKey` was referenced but not defined after adding CAKE flow-isolation parsing.
+2026-02-15T03:18:13Z
+failing command: cd /home/redhot/VyOS/VyManager/frontend && npx tsc --noEmit --pretty false && npm run -s lint && npm run -s build
+error summary: Frontend typecheck failed after container-network UI changes because `ContainerBootstrapStatusResponse` in `frontend/src/lib/api/containers.ts` did not include `networks` and `network_count` fields now consumed by `System -> Containers`.
 
 last output excerpt:
-src/app/network/traffic-policy/page.tsx(525,15): error TS2304: Cannot find name 'parseDirectOrKey'.
+src/app/system/containers/page.tsx(731,65): error TS2339: Property 'networks' does not exist on type 'ContainerBootstrapStatusResponse'.
+src/app/system/containers/page.tsx(732,23): error TS2339: Property 'networks' does not exist on type 'ContainerBootstrapStatusResponse'.
 
-suspected cause + next step: helper function omission during refactor; add `parseDirectOrKey` utility near other parser helpers and rerun typecheck/build/smoke.
+suspected cause + next step: API type drift between backend bootstrap response and frontend types; add `automation_ready`, `network_count`, and `networks` fields to `ContainerBootstrapStatusResponse` in `frontend/src/lib/api/containers.ts` and rerun full frontend validation.

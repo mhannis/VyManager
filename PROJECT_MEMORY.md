@@ -54,35 +54,48 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Continue post-parity robustness pass by improving `System -> Logs` with service-level filtering and clearer operational workflow.
-- Keep GUI form-driven (no free-form CLI entry) while making troubleshooting tasks (service-specific log triage + export) faster.
+- Re-look `Firewall`, `Interfaces`, and `Containers` against the VyOS configuration guide and harden weak spots with form-driven UX.
+- Remove remaining domain-level capability gaps by exposing missing but already-supported backend features and adding missing backend write paths where required.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) after every slice.
 
 ## Current Feature Spec
-Feature: **Service-aware system logs filtering and export**
+Feature: **Firewall/Interfaces/Containers robustness pass**
 
 Acceptance criteria:
-- Add service filter control on `System -> Logs` with both curated service buckets and discovered process names.
-- Apply service filter to displayed entries and visible returned-count metrics.
-- Support filtered log download when a service filter is active.
-- Preserve existing line-count/source/search flows and backend contracts.
+- Add firewall zone `local-zone` support end-to-end (read, edit, create, save).
+- Add container network CRUD in GUI backed by explicit backend endpoints.
+- Add dummy interface management UI under Network and wire it into navigation.
+- Expand runtime smoke routes to include newly added interface page.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- Service matching can be implemented as token matching over process/message/raw text without backend API changes.
-- Downloading filtered entries client-side is acceptable when a service filter is active.
-- This slice is frontend-only and does not change backend/API contracts.
+- Container network writes can be safely represented with prefix-diff + leaf set/delete operations under `container network <name> ...`.
+- Dummy interface management can use existing `/vyos/dummy/batch` backend contract without introducing a new backend abstraction.
+- This slice includes additive backend endpoints only; no existing API contracts are broken.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: service-aware logs slice implemented and validated; commit pending.
+- Status: firewall/interfaces/containers robustness slice implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/app/system/logs/page.tsx`
+- `backend/routers/firewall/zones.py`
+- `backend/routers/containers.py`
+- `backend/tests/test_firewall_zones_local_zone.py`
+- `frontend/src/lib/api/zones.ts`
+- `frontend/src/lib/api/containers.ts`
+- `frontend/src/lib/api/dummy.ts` (new)
+- `frontend/src/app/firewall/zones/page.tsx`
+- `frontend/src/app/system/containers/page.tsx`
+- `frontend/src/app/network/interfaces/page.tsx`
+- `frontend/src/app/network/interfaces/dummy/page.tsx` (new)
+- `frontend/src/components/layout/Sidebar.tsx`
+- `frontend/scripts/check-runtime.sh`
+- `frontend/scripts/smoke-ui.mjs`
 
 ### Validation This Cycle
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_zones_local_zone.py` -> pass
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
 - `cd frontend && npm run -s build` -> pass
@@ -186,3 +199,7 @@ Assumptions:
 - Network Interfaces page action row now keeps both `Create Interface` and `Create VLAN / QinQ` visible at all times, with VLAN action positioned below interface action to avoid filter-dependent button switching.
 - `System -> Logs` now supports service-aware filtering (preset service buckets plus discovered process names) and applies that filter to the visible entries/returned count.
 - When a service filter is active, log download now exports the currently filtered rows directly from the UI so operators can capture targeted troubleshooting bundles.
+- Firewall Zones now supports `local-zone` read/write end-to-end (`backend/routers/firewall/zones.py`, `frontend/src/lib/api/zones.ts`, and `frontend/src/app/firewall/zones/page.tsx`).
+- Container Management now includes container network CRUD (backend endpoints `/vyos/containers/networks*` and GUI editing/listing in `frontend/src/app/system/containers/page.tsx`).
+- Added dedicated Dummy Interfaces management page at `/network/interfaces/dummy` with create/edit/delete via `/vyos/dummy/batch`; navigation now links this page under `Network`.
+- Runtime smoke route sets now include `/network/interfaces/dummy` in both `check-runtime.sh` and `smoke-ui.mjs` so regressions on the new page are caught pre-handoff.
