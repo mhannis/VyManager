@@ -1,91 +1,70 @@
 {
-  "feature_id": "parity-closure-non-routing-2026-02-15",
-  "title": "Phase1 parity closure batch: VRF, Load Balancing, High Availability, Traffic Policy, PKI, Configuration Index",
+  "feature_id": "high-availability-vrrp-depth-2026-02-15",
+  "title": "High Availability VRRP parity deepening (global + per-group options)",
   "status": "done",
   "acceptance_criteria": [
-    "Backend exposes scoped read/batch endpoints for vrf, load-balancing, high-availability, traffic-policy, and pki using thin wrappers around existing VyOS service integration.",
-    "Frontend provides form-driven pages for each of the above domains with no free-form CLI text entry.",
-    "Sidebar navigation links to new pages and route loading remains stable.",
-    "Backend tests, TypeScript check, frontend build, runtime smoke, and UI smoke all pass.",
-    "Coverage artifacts regenerate with full Phase1 implementation and no remaining partial/not_started domains."
+    "HA page supports VRRP global parameters: startup_delay, version, and global GARP controls.",
+    "HA page supports group-level disable, rfc3768-compatibility, excluded-address, and per-group GARP controls.",
+    "Save path emits scoped high-availability vrrp set/delete operations with diff-based behavior.",
+    "Frontend validation passes: tsc, lint (0 errors), build, runtime smoke, and browser smoke."
   ],
   "assumptions": [
-    "Initial forms prioritize high-frequency workflows and can be expanded with deeper knobs in follow-up slices.",
-    "Unrelated pre-existing dirty files in the worktree are preserved untouched.",
-    "Command semantics for advanced options will continue to be validated against live VyOS targets in later cycles."
+    "Virtual-server (IPVS) sub-tree under high-availability remains a follow-up slice.",
+    "Unrelated dirty files in this worktree are preserved and not modified by this slice.",
+    "Reviewer agent may be unavailable due thread cap; manual review is acceptable fallback when logged."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "Backend",
+      "owner_role": "Analyst",
       "status": "done",
       "files": [
-        "backend/routers/_config_tree_wrapper.py",
-        "backend/routers/vrf/vrf.py",
-        "backend/routers/load_balancing/load_balancing.py",
-        "backend/routers/high_availability/high_availability.py",
-        "backend/routers/traffic_policy/traffic_policy.py",
-        "backend/routers/pki/pki.py",
-        "backend/app.py"
+        "frontend/src/app/network/high-availability/page.tsx"
       ],
-      "notes": "Added scoped wrappers and router registration for all remaining non-routing parity domains."
+      "notes": "Mapped missing VRRP options from guide semantics into concrete UI/config fields."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/network/vrf/page.tsx",
-        "frontend/src/app/network/load-balancing/page.tsx",
-        "frontend/src/app/network/high-availability/page.tsx",
-        "frontend/src/app/network/traffic-policy/page.tsx",
-        "frontend/src/app/system/pki/page.tsx",
-        "frontend/src/app/configuration/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx"
+        "frontend/src/app/network/high-availability/page.tsx"
       ],
-      "notes": "Replaced placeholders with form-first pages and added configuration index navigation."
+      "notes": "Implemented global parameters card and extended per-group editor fields."
     },
     {
       "id": "T3",
-      "owner_role": "Test",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/tests/test_config_tree_wrapper_capabilities.py",
-        "frontend/scripts/check-runtime.sh",
-        "frontend/scripts/smoke-ui.mjs"
+        "frontend/src/app/network/high-availability/page.tsx"
       ],
-      "notes": "Added backend wrapper tests and expanded smoke route coverage for new pages."
+      "notes": "No backend changes needed; existing config-tree wrapper/API contracts preserved."
     },
     {
       "id": "T4",
-      "owner_role": "Planner",
+      "owner_role": "Test",
       "status": "done",
       "files": [
-        "scripts/generate_config_coverage_matrix.py",
-        "scripts/generate_phase1_backlog.py",
-        "CONFIG_COVERAGE_PHASE1.json",
-        "PARITY_BACKLOG.json"
+        "frontend/src/app/network/high-availability/page.tsx",
+        "frontend/scripts/check-runtime.sh",
+        "frontend/scripts/smoke-ui.mjs"
       ],
-      "notes": "Updated coverage aliasing/token handling and regenerated parity artifacts to full Phase1 implementation."
+      "notes": "Validated compile/build/runtime/browser smoke; no new automated unit tests added for this UI-only diff engine step."
     },
     {
       "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/vrf.ts",
-        "frontend/src/lib/api/load-balancing.ts",
-        "frontend/src/lib/api/config-tree.ts",
-        "frontend/src/lib/api/high-availability.ts",
-        "frontend/src/lib/api/traffic-policy.ts",
-        "frontend/src/lib/api/pki.ts"
+        "frontend/src/app/network/high-availability/page.tsx"
       ],
-      "notes": "Manual review completed for API contract consistency and command-scope safety."
+      "notes": "Manual review completed due reviewer-agent thread-cap failure."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py tests/test_protocol_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_vpn_wrapper_capabilities.py tests/test_app.py && cd ../frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
+    "test": "cd frontend && npx tsc --noEmit --pretty false && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [

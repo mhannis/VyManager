@@ -118,3 +118,7 @@
 - 2026-02-15: Implemented form-driven pages for all previously uncovered non-routing parity domains and explicitly avoided free-form CLI text editors to match UX direction.
 - 2026-02-15: Extended docs-coverage aliasing (`highavailability<->high_availability`, `trafficpolicy<->traffic_policy`) and root tokenization (`configuration`) so parity matrix reflects the new domain implementations accurately.
 - 2026-02-15: Added `/configuration` docs index page and classified docs root as UI-covered to close `meta` domain in Phase1 artifacts.
+- 2026-02-15: High Availability VRRP editor was deepened on the existing page (no route/API contract changes) by adding global parameters (`startup_delay`, `version`, global GARP) plus missing group knobs (`disable`, `rfc3768-compatibility`, `excluded-address`, per-group GARP) to keep parity progress additive and low-risk.
+- 2026-02-15: HA startup delay command token must use `startup_delay` (underscore) per VyOS guide semantics; command generation was corrected from `startup-delay` to avoid invalid CLI operations.
+- 2026-02-15: docs.vyos.io blocked Python urllib requests with HTTP 403 in this environment; docs extraction for parity mapping should use `curl -fsSL`.
+- 2026-02-15: Reviewer agent dispatch may fail due session thread cap (`max 6`); use manual reviewer pass for the current slice and log the failure in `LAST_FAILURE.txt`.

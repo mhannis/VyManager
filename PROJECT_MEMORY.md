@@ -54,88 +54,51 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Close remaining Phase1 parity domains with form-driven pages and thin backend wrappers.
-- Completed this cycle: implemented `vrf`, `load-balancing`, `high-availability`, `traffic-policy`, `pki`, and a configuration index page.
-- Completed this cycle: coverage matrix now reports full Phase1 implementation (`129 implemented / 0 partial / 0 not_started`).
-- Next: deepen option-level parity inside these new domains and validate command semantics against live VyOS config guides.
+- Deepen option-level parity in the newly added non-routing domains, starting with `high-availability`.
+- Keep GUI form-driven (no free-form CLI entry) while expanding VRRP capabilities to match guide semantics.
+- Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) each slice.
 
 ## Current Feature Spec
-Feature: **Non-routing parity closure batch (VRF + Load Balancing + HA + Traffic Policy + PKI + Config Index)**
+Feature: **High Availability VRRP parity deepening (global + per-group options)**
 
 Acceptance criteria:
-- Backend exposes scoped batch/config endpoints for each missing docs domain without replacing existing service architecture.
-- Frontend pages are form-driven and avoid free-form CLI command text entry.
-- Navigation includes reachable pages for new domains.
-- End-to-end validation passes: backend tests, `tsc`, frontend build, runtime smoke, UI smoke.
-- Coverage artifacts regenerate and show no remaining Phase1 gaps.
+- Frontend HA page supports VRRP global parameters: `startup_delay`, `version`, and GARP global controls.
+- Frontend HA page supports missing group-level knobs: `disable`, `rfc3768-compatibility`, `excluded-address`, and group GARP controls.
+- Diff-based save emits scoped `high-availability vrrp ...` commands only, with proper set/delete semantics.
+- End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- New pages prioritize common/high-value configuration branches first; additional advanced knobs remain additive follow-ups.
+- High-availability `virtual-server` sub-tree remains a follow-up slice and is not in this increment.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: non-routing parity closure batch implemented, validated, and committed (`6f2aca9`); pending push.
+- Status: HA VRRP parity deepening implemented and validated locally; pending commit/push.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `backend/routers/_config_tree_wrapper.py`
-- `backend/routers/vrf/__init__.py`
-- `backend/routers/vrf/vrf.py`
-- `backend/routers/load_balancing/__init__.py`
-- `backend/routers/load_balancing/load_balancing.py`
-- `backend/routers/high_availability/__init__.py`
-- `backend/routers/high_availability/high_availability.py`
-- `backend/routers/traffic_policy/__init__.py`
-- `backend/routers/traffic_policy/traffic_policy.py`
-- `backend/routers/pki/__init__.py`
-- `backend/routers/pki/pki.py`
-- `backend/app.py`
-- `backend/tests/test_config_tree_wrapper_capabilities.py`
-- `frontend/src/lib/api/config-tree.ts`
-- `frontend/src/lib/api/vrf.ts`
-- `frontend/src/lib/api/load-balancing.ts`
-- `frontend/src/lib/api/high-availability.ts`
-- `frontend/src/lib/api/traffic-policy.ts`
-- `frontend/src/lib/api/pki.ts`
-- `frontend/src/app/network/vrf/page.tsx`
-- `frontend/src/app/network/load-balancing/page.tsx`
 - `frontend/src/app/network/high-availability/page.tsx`
-- `frontend/src/app/network/traffic-policy/page.tsx`
-- `frontend/src/app/system/pki/page.tsx`
-- `frontend/src/app/configuration/page.tsx`
-- `frontend/src/components/layout/Sidebar.tsx`
-- `frontend/scripts/check-runtime.sh`
-- `frontend/scripts/smoke-ui.mjs`
-- `scripts/generate_config_coverage_matrix.py`
-- `scripts/generate_phase1_backlog.py`
-- `CONFIG_COVERAGE_MATRIX.json`
-- `CONFIG_COVERAGE_MATRIX.md`
-- `CONFIG_COVERAGE_PHASE1.json`
-- `CONFIG_COVERAGE_PHASE1.md`
-- `PARITY_BACKLOG.json`
-- `PARITY_BACKLOG.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py tests/test_protocol_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_vpn_wrapper_capabilities.py tests/test_app.py` -> pass (`128 passed`)
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
-- `cd frontend && npm run -s build` -> pass
 - `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
-- Restarted runtime sessions and verified listeners:
-  - `tmux new-session -d -s vm-api 'cd /home/redhot/VyOS/VyManager/backend && set -a && source .env && set +a && PYTHONPATH=. ./.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --proxy-headers'`
+- `cd frontend && npm run -s build` -> pass
+- Restarted `vm-ui` process:
+  - `tmux kill-session -t vm-ui`
   - `tmux new-session -d -s vm-ui 'cd /home/redhot/VyOS/VyManager/frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000'`
-  - `ss -ltnp | rg ':(8000|3000)'` -> listening
+  - `ss -ltnp | rg ':3000'` -> listening
 - `cd frontend && SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:runtime` -> pass
 - `cd frontend && LD_LIBRARY_PATH=/home/redhot/VyOS/.local-playwright-libs/extracted/usr/lib/x86_64-linux-gnu SMOKE_BASE_URL='http://localhost:3000' npm run -s smoke:ui` -> pass
-- `python3 scripts/generate_config_coverage_matrix.py && python3 scripts/generate_phase1_backlog.py` -> pass
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
 - Browser smoke depends on host-specific Playwright shared libs path.
-- Some command semantics in newly added HA/Traffic Policy/PKI sections need live VyOS operational validation on more hardware/versions.
+- Some command semantics in HA/Traffic Policy/PKI still need live VyOS operational validation across more versions/hardware.
+- Reviewer sub-agent dispatch can fail when thread cap is saturated; manual review fallback is required in that case.
 
 ## TODO Backlog (next queue)
-- Deepen option-level coverage for `high-availability`, `traffic-policy`, and `pki` beyond initial form sets.
+- Add HA `virtual-server` form-driven CRUD (including real-server sub-tree) to finish high-availability coverage depth.
+- Deepen option-level coverage for `traffic-policy` and `pki`.
 - Add live fixture-seeding and CLI alignment checks (`show configuration commands`) for the new domains.
 - Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
@@ -187,3 +150,8 @@ Assumptions:
 - Added VPN overview API/page (`/vyos/vpn`, `/vpn`) to complete docs index parity and expose protocol cards.
 - VPN smoke coverage now includes `/vpn`, `/vpn/dmvpn`, `/vpn/openconnect`, `/vpn/pptp`, and `/vpn/sstp`.
 - VPN domain parity now reports complete (`12 implemented / 0 partial / 0 not_started`) in `CONFIG_COVERAGE_PHASE1.json`.
+- HA page now supports VRRP global parameters (`startup_delay`, `version`, and global GARP settings) with diff-based set/delete command generation.
+- HA group editor now supports additional guide-aligned fields: `disable`, `rfc3768-compatibility`, `excluded-address`, and per-group GARP controls.
+- Correct HA CLI token for startup delay is `startup_delay` (underscore), not `startup-delay`; command generation was updated accordingly.
+- `vm-ui` must be restarted after each `next build` to avoid stale chunk manifest mismatches before browser smoke.
+- Reviewer-agent spawn can fail due thread cap (`max 6`); manual reviewer pass is the fallback and must be logged in `LAST_FAILURE.txt`.

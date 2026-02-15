@@ -1,12 +1,8 @@
-2026-02-14T23:59:30Z
-failing command: cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py tests/test_protocol_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_vpn_wrapper_capabilities.py tests/test_app.py
-error summary: New config-tree wrapper batch endpoints returned HTTP 422 for valid POST payloads. FastAPI interpreted `body` as a query parameter (`loc: ['query','body']`) due deferred annotations in a closure-defined Pydantic model.
+2026-02-15T00:31:26Z
+failing command: spawn_agent (code reviewer) for high-availability page diff
+error summary: Reviewer-agent dispatch failed due agent thread cap in this Codex session (`max 6`). No reviewer sub-agent could be started.
 
 last output excerpt:
-..........FFFFF......................................................... [ 56%]
-........................................................                 [100%]
-E       assert 422 == 200
-E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
-{'detail': [{'type': 'missing', 'loc': ['query', 'body'], 'msg': 'Field required', 'input': None}]}
+collab spawn failed: agent thread limit reached (max 6)
 
-suspected cause + next step: `from __future__ import annotations` in `backend/routers/_config_tree_wrapper.py` prevented resolution of nested `ConfigTreeBatchRequest` type; remove deferred annotations and rerun backend tests.
+suspected cause + next step: transient agent-cap limit. Perform manual reviewer pass for this cycle and retry sub-agent review in a later cycle when thread slots free up.

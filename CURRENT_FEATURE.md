@@ -1,12 +1,11 @@
-feature_id: parity-closure-non-routing-2026-02-15
+feature_id: high-availability-vrrp-depth-2026-02-15
 status: done
-title: Phase1 parity closure batch - VRF, Load Balancing, High Availability, Traffic Policy, PKI, Configuration Index
+title: High Availability VRRP parity deepening (global + per-group options)
 branch: feature/containers-automation-v1
 commits:
-  - 6f2aca9
+  - pending-local-commit
 notes:
-  - Added thin backend config-tree wrappers and routers for all remaining uncovered non-routing domains.
-  - Replaced placeholder pages with form-driven GUI editors for VRF, Load Balancing, High Availability, Traffic Policy, and PKI.
-  - Added `/configuration` docs index page and updated sidebar navigation.
-  - Expanded runtime/browser smoke route coverage to include all new pages.
-  - Regenerated parity artifacts; Phase1 coverage now shows `129 implemented / 0 partial / 0 not_started`.
+  - Expanded /network/high-availability with VRRP global parameters (startup_delay, version, global GARP).
+  - Added missing group options: disable, rfc3768-compatibility, excluded-address, and per-group GARP controls.
+  - Kept diff-based save and scoped command generation under `high-availability vrrp ...`.
+  - Validated with tsc, lint (0 errors), build, runtime smoke, and browser smoke.
