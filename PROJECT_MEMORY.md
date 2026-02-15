@@ -54,55 +54,43 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Continue post-parity robustness pass by adding built-in page how-to guidance and removing selector-shell flicker/perf issues.
-- Keep GUI form-driven (no free-form CLI entry) while improving operator clarity without external documentation lookup.
-- Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) each slice.
+- Continue post-parity robustness pass by extending built-in how-to guidance across high-impact operational pages.
+- Keep GUI form-driven (no free-form CLI entry) and add embedded setup/validation/troubleshooting instructions.
+- Preserve requested IA/action behavior while hardening runtime stability (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Current Feature Spec
-Feature: **Routing how-to guides + selector stability hardening**
+Feature: **Cross-domain workflow guides for key operations pages**
 
 Acceptance criteria:
-- Add reusable page-level help dialog component and shared routing guide content.
-- Wire guide dialogs into OSPF, IS-IS, OpenFabric, RIP, MPLS, BFD, RPKI, IGMP Proxy, PIM, and PIM6 protocol pages.
-- Remove `setState`-in-effect selector patterns on `/routing/unicast-protocols`, `/routing/infrastructure`, and `/routing/multicast`.
-- Keep redirect-only route pages wrapped in `AppLayout` so sidebar/navigation shell remains visible during redirects.
-- Frontend build/typecheck remains green with no route/runtime regressions.
+- Add shared guide registry for non-routing workflows.
+- Wire `PageGuideDialog` into `Network Interfaces`, `DHCP Server`, `Firewall Zones`, `Container Management`, and `IPsec`.
+- Keep Containers bootstrap and active-management views covered by the same guide entry point.
+- Keep Network Interfaces action layout with always-visible `Create Interface` and `Create VLAN / QinQ` buttons (VLAN button below interface button).
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- Guide content can be practical and operator-focused while still linking to canonical VyOS docs for exhaustive reference.
-- Selector pages continue to render selected content inline (not route-changing) in this slice; only selection-state mechanics are hardened.
+- Guide content remains concise and links to canonical VyOS docs for exhaustive option reference.
+- This slice is frontend-only and does not change backend/API contracts.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: routing guide + selector-stability slice implemented and validated; commit pending.
+- Status: cross-domain guide slice implemented and validated; commit pending.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/components/common/PageGuideDialog.tsx` (new)
-- `frontend/src/lib/help/routingProtocolGuides.ts` (new)
-- `frontend/src/components/routing/OspfContent.tsx`
-- `frontend/src/components/routing/IsisContent.tsx`
-- `frontend/src/components/routing/OpenfabricContent.tsx`
-- `frontend/src/components/routing/RipContent.tsx`
-- `frontend/src/components/routing/MplsContent.tsx`
-- `frontend/src/components/bfd/BfdContent.tsx`
-- `frontend/src/components/routing/RpkiContent.tsx`
-- `frontend/src/components/routing/IgmpProxyContent.tsx`
-- `frontend/src/components/routing/PimContent.tsx`
-- `frontend/src/components/routing/Pim6Content.tsx`
-- `frontend/src/app/routing/unicast-protocols/page.tsx`
-- `frontend/src/app/routing/infrastructure/page.tsx`
-- `frontend/src/app/routing/multicast/page.tsx`
-- `frontend/src/app/network/routes/page.tsx`
-- `frontend/src/app/routing/unicast-protocols/static/page.tsx`
+- `frontend/src/lib/help/pageGuides.ts` (new)
+- `frontend/src/app/network/interfaces/page.tsx`
+- `frontend/src/app/network/dhcp/page.tsx`
+- `frontend/src/app/firewall/zones/page.tsx`
+- `frontend/src/app/system/containers/page.tsx`
+- `frontend/src/app/vpn/ipsec/page.tsx`
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
 - `cd frontend && npm run -s lint` -> pass (`0 errors`, warnings only)
 - `cd frontend && npm run -s build` -> pass
-- Restarted runtime processes:
+- Restarted runtime process:
   - `tmux kill-session -t vm-ui || true`
   - `tmux new-session -d -s vm-ui 'cd /home/redhot/VyOS/VyManager/frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000'`
   - `ss -ltnp | rg ':3000'` -> listening
@@ -197,3 +185,6 @@ Assumptions:
 - Expanded `routingProtocolGuides` to include BFD, RPKI, IGMP Proxy, PIM, and PIM6 and integrated guide dialogs into each corresponding page header.
 - BFD now exposes in-page guidance without changing peer/profile CRUD contracts; infrastructure and multicast protocols now follow the same help-entry UX as unicast protocol pages.
 - Redirect pages `/network/routes` and `/routing/unicast-protocols/static` now render inside `AppLayout` while auto-redirecting, preventing temporary left-nav disappearance during transitions.
+- Added shared non-routing guide registry `pageGuides` and wired page-level help dialogs into Interfaces, DHCP Server, Firewall Zones, Container Management, and IPsec.
+- Container Management now exposes the same guide entry in loading, bootstrap, and active-management states so first-run and steady-state operators get identical setup guidance.
+- Network Interfaces page action row now keeps both `Create Interface` and `Create VLAN / QinQ` visible at all times, with VLAN action positioned below interface action to avoid filter-dependent button switching.

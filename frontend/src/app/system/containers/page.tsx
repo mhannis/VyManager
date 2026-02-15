@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ethernetService } from "@/lib/api/ethernet";
+import { pageGuides } from "@/lib/help/pageGuides";
 import { FeatureGroup } from "@/lib/api/user-management";
 import {
   containersService,
@@ -1053,6 +1055,7 @@ export default function SystemContainersPage() {
             <Server className="h-8 w-8" />
             Container Management
           </h1>
+          <PageGuideDialog guide={pageGuides.containers} />
           <div className="text-sm text-muted-foreground flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading container automation status...
@@ -1074,6 +1077,9 @@ export default function SystemContainersPage() {
             <p className="text-muted-foreground mt-2">
               Container installs require one-time setup on the VyOS instance.
             </p>
+            <div className="mt-3">
+              <PageGuideDialog guide={pageGuides.containers} />
+            </div>
             {overview?.connection_host && (
               <p className="text-xs text-muted-foreground mt-1">
                 Instance host: <span className="font-mono">{overview.connection_host}</span>
@@ -1197,6 +1203,7 @@ export default function SystemContainersPage() {
             )}
           </div>
           <div className="flex flex-wrap gap-2">
+            <PageGuideDialog guide={pageGuides.containers} />
             <Button
               variant="outline"
               onClick={() => {

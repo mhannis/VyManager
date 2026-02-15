@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { zonesService, type FirewallZone, type ZonePolicyUpdate } from "@/lib/api/zones";
 import { showService } from "@/lib/api/show";
 import { ethernetService } from "@/lib/api/ethernet";
+import { pageGuides } from "@/lib/help/pageGuides";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 import {
@@ -403,6 +405,7 @@ export default function FirewallZonesPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <PageGuideDialog guide={pageGuides.firewallZones} />
             <Button asChild variant="outline">
               <Link href="/network/setup-wizard">
                 <BookOpen className="mr-2 h-4 w-4" />

@@ -2,6 +2,7 @@
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import {
   Table,
   TableBody,
@@ -56,6 +57,7 @@ import { ethernetService } from "@/lib/api/ethernet";
 import type { EthernetInterface } from "@/lib/api/types/ethernet";
 import { cn, formatInterfaceDisplayName } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { pageGuides } from "@/lib/help/pageGuides";
 import { CreateDHCPServerModal } from "@/components/services/CreateDHCPServerModal";
 import { EditDHCPServerModal } from "@/components/services/EditDHCPServerModal";
 import { DeleteDHCPModal } from "@/components/services/DeleteDHCPModal";
@@ -527,16 +529,19 @@ export default function DHCPPage() {
           <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-foreground">DHCP Servers</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  fetchConfig(true);
-                  fetchLeases();
-                }}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <PageGuideDialog guide={pageGuides.dhcpServer} />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    fetchConfig(true);
+                    fetchLeases();
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <Button
               className="w-full"

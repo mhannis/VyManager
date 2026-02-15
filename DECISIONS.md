@@ -152,3 +152,6 @@
 - 2026-02-15: Extended the same in-page help model to infrastructure/multicast protocol pages (BFD, RPKI, IGMP Proxy, PIM, PIM6) to keep operator guidance consistent across routing domains.
 - 2026-02-15: Kept guide integration frontend-only and additive; no backend router/service/API contract changes were introduced for this UX slice.
 - 2026-02-15: Wrapped redirect-only pages (`/network/routes`, `/routing/unicast-protocols/static`) with `AppLayout` so the sidebar shell stays present while redirects resolve.
+- 2026-02-15: Added shared `frontend/src/lib/help/pageGuides.ts` registry and integrated `PageGuideDialog` into Interfaces, DHCP Server, Firewall Zones, Container Management, and IPsec pages.
+- 2026-02-15: Container Management now exposes guide access consistently in loading, bootstrap, and active-management states to keep first-run setup and steady-state ops aligned.
+- 2026-02-15: Network Interfaces action controls now always show `Create Interface` plus `Create VLAN / QinQ` (VLAN button positioned below interface button), removing filter-dependent button swapping.

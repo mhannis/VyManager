@@ -1,12 +1,12 @@
-feature_id: routing-help-and-selector-stability-2026-02-15
+feature_id: cross-domain-page-guides-2026-02-15
 status: done
-title: Routing help guides and selector-state stability hardening
+title: Cross-domain workflow guides for key operations pages
 branch: feature/containers-automation-v1
 commits:
   - pending
 notes:
-  - Added reusable page-level how-to dialog and guide content for core routing protocols.
-  - Integrated guides into OSPF, IS-IS, OpenFabric, RIP, MPLS, BFD, RPKI, IGMP Proxy, PIM, and PIM6 pages.
-  - Reworked routing selector shell state to remove effect-driven setState patterns and reduce flicker.
-  - Wrapped redirect-only route pages in AppLayout to keep left navigation visible during route transitions.
+  - Added shared `pageGuides` registry for non-routing workflows (interfaces, DHCP, zones, containers, IPsec).
+  - Integrated `PageGuideDialog` into each target page with canonical VyOS docs links and setup/validation/troubleshooting sections.
+  - Kept Network Interfaces action layout with always-visible `Create Interface` and `Create VLAN / QinQ` buttons.
+  - Added guide access to container loading/bootstrap/active states for consistent operator onboarding.
   - Validated with frontend tsc/build and runtime + browser smoke.

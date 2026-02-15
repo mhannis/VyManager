@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ import {
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 import { ethernetService } from "@/lib/api/ethernet";
+import { pageGuides } from "@/lib/help/pageGuides";
 import {
   ipsecService,
   type IPsecConfig,
@@ -498,6 +500,7 @@ export default function IPsecPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <PageGuideDialog guide={pageGuides.ipsec} />
             <Button variant="outline" onClick={() => setWizardOpen(true)} disabled={!canEdit || refreshing}>
               <Wand2 className="mr-2 h-4 w-4" />
               Site-to-Site Wizard

@@ -1,17 +1,17 @@
 {
-  "feature_id": "routing-help-and-selector-stability-2026-02-15",
-  "title": "Routing help guides and selector-state stability hardening",
+  "feature_id": "cross-domain-page-guides-2026-02-15",
+  "title": "Cross-domain workflow guides for key operations pages",
   "status": "done",
   "acceptance_criteria": [
-    "A reusable help dialog component exists for page-level operator guidance.",
-    "Routing protocol how-to guides are available from OSPF, IS-IS, OpenFabric, RIP, MPLS, BFD, RPKI, IGMP Proxy, PIM, and PIM6 pages.",
-    "Routing selector shells avoid setState-in-effect patterns and derive selected panel deterministically.",
-    "Redirect-only routes keep AppLayout shell visible so left navigation does not disappear during transition.",
-    "Frontend typecheck/build and runtime/browser smoke pass after changes."
+    "A shared guide registry exists for non-routing operational workflows.",
+    "PageGuideDialog is wired into Interfaces, DHCP Server, Firewall Zones, Container Management, and IPsec pages.",
+    "Containers page exposes guide access in loading, bootstrap, and active management views.",
+    "Network Interfaces keeps always-visible Create Interface and Create VLAN/QinQ actions with VLAN below interface action.",
+    "Frontend typecheck/lint/build and runtime/browser smoke pass."
   ],
   "assumptions": [
-    "Guide content can focus on operational setup and verification while linking to upstream VyOS docs for complete option references.",
-    "Selector pages will remain inline panel switchers in this slice (no route refactor).",
+    "Guide text remains concise and links to upstream docs for exhaustive references.",
+    "This slice is frontend-only and preserves backend/API contracts.",
     "Unrelated dirty files in this worktree remain untouched."
   ],
   "tasks": [
@@ -20,83 +20,42 @@
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/common/PageGuideDialog.tsx",
-        "frontend/src/lib/help/routingProtocolGuides.ts",
-        "frontend/src/components/routing/OspfContent.tsx",
-        "frontend/src/components/routing/IsisContent.tsx",
-        "frontend/src/components/routing/OpenfabricContent.tsx",
-        "frontend/src/components/routing/RipContent.tsx",
-        "frontend/src/components/routing/MplsContent.tsx",
-        "frontend/src/components/bfd/BfdContent.tsx",
-        "frontend/src/components/routing/RpkiContent.tsx",
-        "frontend/src/components/routing/IgmpProxyContent.tsx",
-        "frontend/src/components/routing/PimContent.tsx",
-        "frontend/src/components/routing/Pim6Content.tsx",
-        "frontend/src/app/network/routes/page.tsx",
-        "frontend/src/app/routing/unicast-protocols/static/page.tsx"
+        "frontend/src/lib/help/pageGuides.ts",
+        "frontend/src/app/network/interfaces/page.tsx",
+        "frontend/src/app/network/dhcp/page.tsx",
+        "frontend/src/app/firewall/zones/page.tsx",
+        "frontend/src/app/system/containers/page.tsx",
+        "frontend/src/app/vpn/ipsec/page.tsx"
       ],
-      "notes": "Added reusable help dialog and integrated page-level guides across core unicast, infrastructure, and multicast protocol pages; aligned redirect-only route pages with AppLayout shell."
+      "notes": "Added cross-domain how-to guide content and integrated dialog entry points on core operations pages."
     },
     {
       "id": "T2",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/routing/unicast-protocols/page.tsx",
-        "frontend/src/app/routing/infrastructure/page.tsx",
-        "frontend/src/app/routing/multicast/page.tsx"
-      ],
-      "notes": "Removed effect-driven selection resets and switched to derived-selection state for stability and reduced flicker."
-    },
-    {
-      "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "frontend/src/components/common/PageGuideDialog.tsx",
-        "frontend/src/lib/help/routingProtocolGuides.ts",
-        "frontend/src/components/routing/OspfContent.tsx",
-        "frontend/src/components/routing/IsisContent.tsx",
-        "frontend/src/components/routing/OpenfabricContent.tsx",
-        "frontend/src/components/routing/RipContent.tsx",
-        "frontend/src/components/routing/MplsContent.tsx",
-        "frontend/src/components/bfd/BfdContent.tsx",
-        "frontend/src/components/routing/RpkiContent.tsx",
-        "frontend/src/components/routing/IgmpProxyContent.tsx",
-        "frontend/src/components/routing/PimContent.tsx",
-        "frontend/src/components/routing/Pim6Content.tsx",
-        "frontend/src/app/routing/unicast-protocols/page.tsx",
-        "frontend/src/app/routing/infrastructure/page.tsx",
-        "frontend/src/app/routing/multicast/page.tsx",
-        "frontend/src/app/network/routes/page.tsx",
-        "frontend/src/app/routing/unicast-protocols/static/page.tsx"
+        "frontend/src/lib/help/pageGuides.ts",
+        "frontend/src/app/network/interfaces/page.tsx",
+        "frontend/src/app/network/dhcp/page.tsx",
+        "frontend/src/app/firewall/zones/page.tsx",
+        "frontend/src/app/system/containers/page.tsx",
+        "frontend/src/app/vpn/ipsec/page.tsx"
       ],
       "notes": "Validated with tsc, lint, build, runtime smoke, and browser smoke."
     },
     {
-      "id": "T4",
+      "id": "T3",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/components/common/PageGuideDialog.tsx",
-        "frontend/src/lib/help/routingProtocolGuides.ts",
-        "frontend/src/components/routing/OspfContent.tsx",
-        "frontend/src/components/routing/IsisContent.tsx",
-        "frontend/src/components/routing/OpenfabricContent.tsx",
-        "frontend/src/components/routing/RipContent.tsx",
-        "frontend/src/components/routing/MplsContent.tsx",
-        "frontend/src/components/bfd/BfdContent.tsx",
-        "frontend/src/components/routing/RpkiContent.tsx",
-        "frontend/src/components/routing/IgmpProxyContent.tsx",
-        "frontend/src/components/routing/PimContent.tsx",
-        "frontend/src/components/routing/Pim6Content.tsx",
-        "frontend/src/app/routing/unicast-protocols/page.tsx",
-        "frontend/src/app/routing/infrastructure/page.tsx",
-        "frontend/src/app/routing/multicast/page.tsx",
-        "frontend/src/app/network/routes/page.tsx",
-        "frontend/src/app/routing/unicast-protocols/static/page.tsx"
+        "frontend/src/lib/help/pageGuides.ts",
+        "frontend/src/app/network/interfaces/page.tsx",
+        "frontend/src/app/network/dhcp/page.tsx",
+        "frontend/src/app/firewall/zones/page.tsx",
+        "frontend/src/app/system/containers/page.tsx",
+        "frontend/src/app/vpn/ipsec/page.tsx"
       ],
-      "notes": "Manual review: no contract changes, no free-form CLI UX regressions, and no route-level runtime crashes observed in smoke."
+      "notes": "Manual review approved: additive UI guidance only, no API contract changes, and no runtime regressions in smoke."
     }
   ],
   "commands": {

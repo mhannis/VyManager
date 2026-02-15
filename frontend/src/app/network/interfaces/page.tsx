@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Plus, RefreshCw, AlertCircle, Search, Cable, Pencil, Trash2, Network } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -12,6 +13,7 @@ import { ethernetService } from "@/lib/api/ethernet";
 import { showService } from "@/lib/api/show";
 import type { InterfacePhysical } from "@/lib/api/show";
 import type { EthernetInterface, EthernetCapabilities, VLANWithParent } from "@/lib/api/types/ethernet";
+import { pageGuides } from "@/lib/help/pageGuides";
 import { ComprehensiveEthernetModal } from "@/components/network/ComprehensiveEthernetModal";
 import { ComprehensiveVLANModal } from "@/components/network/ComprehensiveVLANModal";
 import { DeleteEthernetModal } from "@/components/network/DeleteEthernetModal";
@@ -182,6 +184,7 @@ export default function InterfacesPage() {
               Manage and monitor network interface configurations
             </p>
           </div>
+          <PageGuideDialog guide={pageGuides.networkInterfaces} />
         </div>
 
         {/* Stats Dashboard */}
@@ -281,22 +284,20 @@ export default function InterfacesPage() {
               </Button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-start gap-2">
               <Button asChild variant="outline">
                 <Link href="/network/setup-wizard">Setup Wizard</Link>
               </Button>
-              <Button
-                onClick={() => {
-                  if (typeFilter === "vlan") {
-                    setIsCreateVLANModalOpen(true);
-                  } else {
-                    setIsCreateInterfaceModalOpen(true);
-                  }
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Create {typeFilter === "vlan" ? "VLAN / QinQ" : "Interface"}
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button onClick={() => setIsCreateInterfaceModalOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Interface
+                </Button>
+                <Button variant="outline" onClick={() => setIsCreateVLANModalOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create VLAN / QinQ
+                </Button>
+              </div>
             </div>
           </div>
         )}
