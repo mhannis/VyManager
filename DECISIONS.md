@@ -122,3 +122,5 @@
 - 2026-02-15: HA startup delay command token must use `startup_delay` (underscore) per VyOS guide semantics; command generation was corrected from `startup-delay` to avoid invalid CLI operations.
 - 2026-02-15: docs.vyos.io blocked Python urllib requests with HTTP 403 in this environment; docs extraction for parity mapping should use `curl -fsSL`.
 - 2026-02-15: Reviewer agent dispatch may fail due session thread cap (`max 6`); use manual reviewer pass for the current slice and log the failure in `LAST_FAILURE.txt`.
+- 2026-02-15: PKI UI moved from a passphrase text field to guide-aligned `private password-protected` toggles for CA and certificate keys (`set pki ... private password-protected`).
+- 2026-02-15: PKI certificate form now models ACME metadata (`domain-name`, `email`, `listen-address`, `rsa-key-size`, `url`) with diff-based set/delete generation to avoid subtree resets.

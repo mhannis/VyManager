@@ -54,30 +54,30 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Deepen option-level parity in the newly added non-routing domains, starting with `high-availability`.
-- Keep GUI form-driven (no free-form CLI entry) while expanding VRRP capabilities to match guide semantics.
+- Deepen option-level parity in the remaining non-routing domains, now focused on `pki`.
+- Keep GUI form-driven (no free-form CLI entry) while aligning PKI options with VyOS guide semantics.
 - Continue strict runtime validation (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`) each slice.
 
 ## Current Feature Spec
-Feature: **High Availability VRRP parity deepening (global + per-group options)**
+Feature: **PKI parity deepening (CA metadata + certificate revoke/ACME options)**
 
 Acceptance criteria:
-- Frontend HA page supports VRRP global parameters: `startup_delay`, `version`, and GARP global controls.
-- Frontend HA page supports missing group-level knobs: `disable`, `rfc3768-compatibility`, `excluded-address`, and group GARP controls.
-- Diff-based save emits scoped `high-availability vrrp ...` commands only, with proper set/delete semantics.
+- Frontend PKI page supports CA metadata fields (`crl`, `description`, and `private password-protected`) in addition to certificate/private key references.
+- Frontend PKI page supports certificate fields for `description`, `private password-protected`, `revoke`, and ACME (`domain-name`, `email`, `listen-address`, `rsa-key-size`, `url`).
+- Diff-based save emits scoped `pki ...` commands only, with proper set/delete semantics.
 - End-to-end frontend validation passes: `tsc`, `lint` (0 errors), `build`, runtime smoke, UI smoke.
 
 Assumptions:
-- High-availability `virtual-server` sub-tree remains a follow-up slice and is not in this increment.
+- PKI values are entered as single-line values expected by VyOS CLI command arguments.
 - Existing unrelated dirty working-tree files remain untouched.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: HA VRRP parity deepening implemented, validated, and committed (`a4f318f`); pending push.
+- Status: PKI parity deepening implemented and validated locally; pending commit/push.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle (hotfix-owned)
-- `frontend/src/app/network/high-availability/page.tsx`
+- `frontend/src/app/system/pki/page.tsx`
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` -> pass
@@ -98,7 +98,8 @@ Assumptions:
 
 ## TODO Backlog (next queue)
 - Add HA `virtual-server` form-driven CRUD (including real-server sub-tree) to finish high-availability coverage depth.
-- Deepen option-level coverage for `traffic-policy` and `pki`.
+- Deepen option-level coverage for `traffic-policy`.
+- Add PKI op-mode helper workflows (generate/import guidance) as optional UX accelerators.
 - Add live fixture-seeding and CLI alignment checks (`show configuration commands`) for the new domains.
 - Continue runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
@@ -155,3 +156,5 @@ Assumptions:
 - Correct HA CLI token for startup delay is `startup_delay` (underscore), not `startup-delay`; command generation was updated accordingly.
 - `vm-ui` must be restarted after each `next build` to avoid stale chunk manifest mismatches before browser smoke.
 - Reviewer-agent spawn can fail due thread cap (`max 6`); manual reviewer pass is the fallback and must be logged in `LAST_FAILURE.txt`.
+- PKI CA editor now uses guide-aligned fields (`certificate`, `crl`, `description`, `private key`, `private password-protected`) and removed the prior non-standard passphrase text model.
+- PKI certificate editor now includes `description`, `private password-protected`, `revoke`, and full ACME metadata (`domain-name`, `email`, `listen-address`, `rsa-key-size`, `url`) with diff-based set/delete commands.

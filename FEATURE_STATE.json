@@ -1,17 +1,17 @@
 {
-  "feature_id": "high-availability-vrrp-depth-2026-02-15",
-  "title": "High Availability VRRP parity deepening (global + per-group options)",
+  "feature_id": "pki-form-depth-2026-02-15",
+  "title": "PKI parity deepening: CA metadata + certificate revoke/ACME options",
   "status": "done",
   "acceptance_criteria": [
-    "HA page supports VRRP global parameters: startup_delay, version, and global GARP controls.",
-    "HA page supports group-level disable, rfc3768-compatibility, excluded-address, and per-group GARP controls.",
-    "Save path emits scoped high-availability vrrp set/delete operations with diff-based behavior.",
+    "PKI UI supports CA fields: certificate, CRL, description, private key, and private password-protected flag.",
+    "PKI UI supports certificate fields: certificate, description, private key, private password-protected, revoke, and ACME metadata.",
+    "ACME metadata includes domain-name list, email, listen-address, rsa-key-size, and URL with diff-based set/delete operations.",
     "Frontend validation passes: tsc, lint (0 errors), build, runtime smoke, and browser smoke."
   ],
   "assumptions": [
-    "Virtual-server (IPVS) sub-tree under high-availability remains a follow-up slice.",
-    "Unrelated dirty files in this worktree are preserved and not modified by this slice.",
-    "Reviewer agent may be unavailable due thread cap; manual review is acceptable fallback when logged."
+    "PKI values are entered as single-line strings compatible with VyOS CLI command arguments.",
+    "No backend API changes are required because existing `/vyos/pki/*` config-tree wrapper already supports scoped batch commands.",
+    "Unrelated dirty files in this worktree remain untouched."
   ],
   "tasks": [
     {
@@ -19,47 +19,45 @@
       "owner_role": "Analyst",
       "status": "done",
       "files": [
-        "frontend/src/app/network/high-availability/page.tsx"
+        "frontend/src/app/system/pki/page.tsx"
       ],
-      "notes": "Mapped missing VRRP options from guide semantics into concrete UI/config fields."
+      "notes": "Mapped PKI cfgcmd coverage to form fields based on docs: CA metadata and certificate ACME/revoke options."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/network/high-availability/page.tsx"
+        "frontend/src/app/system/pki/page.tsx"
       ],
-      "notes": "Implemented global parameters card and extended per-group editor fields."
+      "notes": "Implemented form-first PKI editor with additional toggles and ACME controls."
     },
     {
       "id": "T3",
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/src/app/network/high-availability/page.tsx"
+        "frontend/src/app/system/pki/page.tsx"
       ],
-      "notes": "No backend changes needed; existing config-tree wrapper/API contracts preserved."
+      "notes": "No backend changes; preserved existing API contracts and wrapper behavior."
     },
     {
       "id": "T4",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "frontend/src/app/network/high-availability/page.tsx",
-        "frontend/scripts/check-runtime.sh",
-        "frontend/scripts/smoke-ui.mjs"
+        "frontend/src/app/system/pki/page.tsx"
       ],
-      "notes": "Validated compile/build/runtime/browser smoke; no new automated unit tests added for this UI-only diff engine step."
+      "notes": "Validated compile/build/runtime/browser smoke; no new unit tests added for UI-only command-diff logic."
     },
     {
       "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/app/network/high-availability/page.tsx"
+        "frontend/src/app/system/pki/page.tsx"
       ],
-      "notes": "Manual review completed due reviewer-agent thread-cap failure."
+      "notes": "Manual reviewer pass completed; no blocking issues found."
     }
   ],
   "commands": {

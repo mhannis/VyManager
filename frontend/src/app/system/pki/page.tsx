@@ -4,9 +4,17 @@ import { useCallback, useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -23,48 +31,61 @@ import { FeatureGroup } from "@/lib/api/user-management";
 type CaEntry = {
   name: string;
   certificatePath: string;
+  crlPath: string;
+  description: string;
   privateKeyPath: string;
-  passphrase: string;
+  privatePasswordProtected: boolean;
+};
+
+type AcmeConfig = {
+  domains: string[];
+  email: string;
+  listenAddress: string;
+  rsaKeySize: string;
+  url: string;
 };
 
 type CertificateEntry = {
   name: string;
   certificatePath: string;
+  description: string;
   privateKeyPath: string;
+  privatePasswordProtected: boolean;
+  revoke: boolean;
+  acme: AcmeConfig;
 };
 
 const EMPTY_CA_DRAFT: CaEntry = {
   name: "",
   certificatePath: "",
+  crlPath: "",
+  description: "",
   privateKeyPath: "",
-  passphrase: "",
+  privatePasswordProtected: false,
+};
+
+const EMPTY_ACME_DRAFT: AcmeConfig = {
+  domains: [],
+  email: "",
+  listenAddress: "",
+  rsaKeySize: "",
+  url: "",
 };
 
 const EMPTY_CERT_DRAFT: CertificateEntry = {
   name: "",
   certificatePath: "",
+  description: "",
   privateKeyPath: "",
+  privatePasswordProtected: false,
+  revoke: false,
+  acme: { ...EMPTY_ACME_DRAFT },
 };
+
+const RSA_KEY_SIZE_OPTIONS = ["", "2048", "3072", "4096"];
 
 function normalizeText(value: string): string {
   return value.trim();
-}
-
-function caEqual(left: CaEntry, right: CaEntry): boolean {
-  return (
-    left.name === right.name &&
-    left.certificatePath === right.certificatePath &&
-    left.privateKeyPath === right.privateKeyPath &&
-    left.passphrase === right.passphrase
-  );
-}
-
-function certEqual(left: CertificateEntry, right: CertificateEntry): boolean {
-  return (
-    left.name === right.name &&
-    left.certificatePath === right.certificatePath &&
-    left.privateKeyPath === right.privateKeyPath
-  );
 }
 
 function asObject(value: unknown): Record<string, unknown> {
@@ -74,22 +95,97 @@ function asObject(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-function readPrivateKeyPath(root: Record<string, unknown>): string {
-  const privateRoot = asObject(root.private);
-  const key = privateRoot.key;
-  if (typeof key === "string") {
-    return normalizeText(key);
+function asText(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "";
   }
-  return "";
+  return String(value).trim();
 }
 
-function readPassphrase(root: Record<string, unknown>): string {
-  const privateRoot = asObject(root.private);
-  const passphrase = privateRoot.password;
-  if (typeof passphrase === "string") {
-    return normalizeText(passphrase);
+function uniqueList(values: string[]): string[] {
+  const seen = new Set<string>();
+  const output: string[] = [];
+  for (const raw of values) {
+    const value = normalizeText(raw);
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    output.push(value);
   }
-  return "";
+  return output;
+}
+
+function parseCsvList(value: string): string[] {
+  return uniqueList(value.split(",").map((item) => item.trim()));
+}
+
+function serializeCsvList(values: string[]): string {
+  return uniqueList(values).join(", ");
+}
+
+function arrayEquals(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
+}
+
+function readPrivateKeyPath(root: Record<string, unknown>): string {
+  const privateRoot = asObject(root.private);
+  return normalizeText(asText(privateRoot.key));
+}
+
+function readPrivatePasswordProtected(root: Record<string, unknown>): boolean {
+  const privateRoot = asObject(root.private);
+  return (
+    Object.prototype.hasOwnProperty.call(privateRoot, "password-protected") ||
+    Object.prototype.hasOwnProperty.call(privateRoot, "password_protected")
+  );
+}
+
+function readNodeList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return uniqueList(value.map((item) => asText(item)));
+  }
+  if (typeof value === "string") {
+    return uniqueList([value]);
+  }
+  const root = asObject(value);
+  const keys = Object.keys(root);
+  if (keys.length > 0) {
+    return uniqueList(keys);
+  }
+  return [];
+}
+
+function acmeEqual(left: AcmeConfig, right: AcmeConfig): boolean {
+  return (
+    arrayEquals([...left.domains].sort(), [...right.domains].sort()) &&
+    left.email === right.email &&
+    left.listenAddress === right.listenAddress &&
+    left.rsaKeySize === right.rsaKeySize &&
+    left.url === right.url
+  );
+}
+
+function caEqual(left: CaEntry, right: CaEntry): boolean {
+  return (
+    left.name === right.name &&
+    left.certificatePath === right.certificatePath &&
+    left.crlPath === right.crlPath &&
+    left.description === right.description &&
+    left.privateKeyPath === right.privateKeyPath &&
+    left.privatePasswordProtected === right.privatePasswordProtected
+  );
+}
+
+function certEqual(left: CertificateEntry, right: CertificateEntry): boolean {
+  return (
+    left.name === right.name &&
+    left.certificatePath === right.certificatePath &&
+    left.description === right.description &&
+    left.privateKeyPath === right.privateKeyPath &&
+    left.privatePasswordProtected === right.privatePasswordProtected &&
+    left.revoke === right.revoke &&
+    acmeEqual(left.acme, right.acme)
+  );
 }
 
 export default function PkiPage() {
@@ -109,6 +205,7 @@ export default function PkiPage() {
 
   const [caDraft, setCaDraft] = useState<CaEntry>(EMPTY_CA_DRAFT);
   const [certDraft, setCertDraft] = useState<CertificateEntry>(EMPTY_CERT_DRAFT);
+  const [certAcmeDomainsInput, setCertAcmeDomainsInput] = useState("");
 
   const loadData = useCallback(async (refresh = false) => {
     try {
@@ -124,9 +221,11 @@ export default function PkiPage() {
           const root = asObject(value);
           return {
             name: normalizeText(name),
-            certificatePath: normalizeText(String(root.certificate ?? "")),
+            certificatePath: normalizeText(asText(root.certificate)),
+            crlPath: normalizeText(asText(root.crl)),
+            description: normalizeText(asText(root.description)),
             privateKeyPath: readPrivateKeyPath(root),
-            passphrase: readPassphrase(root),
+            privatePasswordProtected: readPrivatePasswordProtected(root),
           };
         })
         .filter((entry) => entry.name)
@@ -135,10 +234,21 @@ export default function PkiPage() {
       const parsedCertificates = Object.entries(certRoot)
         .map(([name, value]) => {
           const root = asObject(value);
+          const acmeRoot = asObject(root.acme);
           return {
             name: normalizeText(name),
-            certificatePath: normalizeText(String(root.certificate ?? "")),
+            certificatePath: normalizeText(asText(root.certificate)),
+            description: normalizeText(asText(root.description)),
             privateKeyPath: readPrivateKeyPath(root),
+            privatePasswordProtected: readPrivatePasswordProtected(root),
+            revoke: Object.prototype.hasOwnProperty.call(root, "revoke"),
+            acme: {
+              domains: readNodeList(acmeRoot["domain-name"]),
+              email: normalizeText(asText(acmeRoot.email)),
+              listenAddress: normalizeText(asText(acmeRoot["listen-address"])),
+              rsaKeySize: normalizeText(asText(acmeRoot["rsa-key-size"])),
+              url: normalizeText(asText(acmeRoot.url)),
+            },
           };
         })
         .filter((entry) => entry.name)
@@ -150,6 +260,7 @@ export default function PkiPage() {
       setCurrentCertificates(parsedCertificates);
       setCaDraft(EMPTY_CA_DRAFT);
       setCertDraft(EMPTY_CERT_DRAFT);
+      setCertAcmeDomainsInput("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load PKI configuration");
     } finally {
@@ -167,8 +278,10 @@ export default function PkiPage() {
     const entry: CaEntry = {
       name: normalizeText(caDraft.name),
       certificatePath: normalizeText(caDraft.certificatePath),
+      crlPath: normalizeText(caDraft.crlPath),
+      description: normalizeText(caDraft.description),
       privateKeyPath: normalizeText(caDraft.privateKeyPath),
-      passphrase: normalizeText(caDraft.passphrase),
+      privatePasswordProtected: Boolean(caDraft.privatePasswordProtected),
     };
 
     if (!entry.name) {
@@ -198,7 +311,17 @@ export default function PkiPage() {
     const entry: CertificateEntry = {
       name: normalizeText(certDraft.name),
       certificatePath: normalizeText(certDraft.certificatePath),
+      description: normalizeText(certDraft.description),
       privateKeyPath: normalizeText(certDraft.privateKeyPath),
+      privatePasswordProtected: Boolean(certDraft.privatePasswordProtected),
+      revoke: Boolean(certDraft.revoke),
+      acme: {
+        domains: parseCsvList(certAcmeDomainsInput),
+        email: normalizeText(certDraft.acme.email),
+        listenAddress: normalizeText(certDraft.acme.listenAddress),
+        rsaKeySize: normalizeText(certDraft.acme.rsaKeySize),
+        url: normalizeText(certDraft.acme.url),
+      },
     };
 
     if (!entry.name) {
@@ -216,6 +339,7 @@ export default function PkiPage() {
     );
 
     setCertDraft(EMPTY_CERT_DRAFT);
+    setCertAcmeDomainsInput("");
   };
 
   const removeCertificate = (name: string) => {
@@ -251,16 +375,28 @@ export default function PkiPage() {
           operations.push(`delete pki ca ${name} certificate`);
         }
 
+        if (desired.crlPath) {
+          operations.push(`set pki ca ${name} crl ${desired.crlPath}`);
+        } else if (current?.crlPath) {
+          operations.push(`delete pki ca ${name} crl`);
+        }
+
+        if (desired.description) {
+          operations.push(`set pki ca ${name} description ${JSON.stringify(desired.description)}`);
+        } else if (current?.description) {
+          operations.push(`delete pki ca ${name} description`);
+        }
+
         if (desired.privateKeyPath) {
           operations.push(`set pki ca ${name} private key ${desired.privateKeyPath}`);
         } else if (current?.privateKeyPath) {
           operations.push(`delete pki ca ${name} private key`);
         }
 
-        if (desired.passphrase) {
-          operations.push(`set pki ca ${name} private password ${JSON.stringify(desired.passphrase)}`);
-        } else if (current?.passphrase) {
-          operations.push(`delete pki ca ${name} private password`);
+        if (desired.privatePasswordProtected) {
+          operations.push(`set pki ca ${name} private password-protected`);
+        } else if (current?.privatePasswordProtected) {
+          operations.push(`delete pki ca ${name} private password-protected`);
         }
       }
 
@@ -285,10 +421,67 @@ export default function PkiPage() {
           operations.push(`delete pki certificate ${name} certificate`);
         }
 
+        if (desired.description) {
+          operations.push(`set pki certificate ${name} description ${JSON.stringify(desired.description)}`);
+        } else if (current?.description) {
+          operations.push(`delete pki certificate ${name} description`);
+        }
+
         if (desired.privateKeyPath) {
           operations.push(`set pki certificate ${name} private key ${desired.privateKeyPath}`);
         } else if (current?.privateKeyPath) {
           operations.push(`delete pki certificate ${name} private key`);
+        }
+
+        if (desired.privatePasswordProtected) {
+          operations.push(`set pki certificate ${name} private password-protected`);
+        } else if (current?.privatePasswordProtected) {
+          operations.push(`delete pki certificate ${name} private password-protected`);
+        }
+
+        if (desired.revoke) {
+          operations.push(`set pki certificate ${name} revoke`);
+        } else if (current?.revoke) {
+          operations.push(`delete pki certificate ${name} revoke`);
+        }
+
+        const currentDomains = uniqueList(current?.acme.domains || []);
+        const desiredDomains = uniqueList(desired.acme.domains);
+
+        for (const domain of currentDomains) {
+          if (!desiredDomains.includes(domain)) {
+            operations.push(`delete pki certificate ${name} acme domain-name ${domain}`);
+          }
+        }
+
+        for (const domain of desiredDomains) {
+          if (!currentDomains.includes(domain)) {
+            operations.push(`set pki certificate ${name} acme domain-name ${domain}`);
+          }
+        }
+
+        if (desired.acme.email) {
+          operations.push(`set pki certificate ${name} acme email ${desired.acme.email}`);
+        } else if (current?.acme.email) {
+          operations.push(`delete pki certificate ${name} acme email`);
+        }
+
+        if (desired.acme.listenAddress) {
+          operations.push(`set pki certificate ${name} acme listen-address ${desired.acme.listenAddress}`);
+        } else if (current?.acme.listenAddress) {
+          operations.push(`delete pki certificate ${name} acme listen-address`);
+        }
+
+        if (desired.acme.rsaKeySize) {
+          operations.push(`set pki certificate ${name} acme rsa-key-size ${desired.acme.rsaKeySize}`);
+        } else if (current?.acme.rsaKeySize) {
+          operations.push(`delete pki certificate ${name} acme rsa-key-size`);
+        }
+
+        if (desired.acme.url) {
+          operations.push(`set pki certificate ${name} acme url ${desired.acme.url}`);
+        } else if (current?.acme.url) {
+          operations.push(`delete pki certificate ${name} acme url`);
         }
       }
 
@@ -328,7 +521,7 @@ export default function PkiPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">PKI</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Manage CA and certificate object references for VPN and secure service workflows.
+              Manage PKI objects used by VPN and services, including ACME metadata and key protection flags.
             </p>
           </div>
           <div className="flex gap-2">
@@ -358,10 +551,10 @@ export default function PkiPage() {
         <Card>
           <CardHeader>
             <CardTitle>Certificate Authorities</CardTitle>
-            <CardDescription>Reference CA certificate and private key file paths.</CardDescription>
+            <CardDescription>Manage CA certificate references, CRLs, and private key protection metadata.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-4">
+            <div className="grid gap-3 md:grid-cols-5">
               <div className="space-y-2">
                 <Label>Name</Label>
                 <Input
@@ -372,7 +565,7 @@ export default function PkiPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Certificate Path</Label>
+                <Label>Certificate</Label>
                 <Input
                   value={caDraft.certificatePath}
                   onChange={(event) =>
@@ -383,7 +576,27 @@ export default function PkiPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Private Key Path</Label>
+                <Label>CRL</Label>
+                <Input
+                  value={caDraft.crlPath}
+                  onChange={(event) => setCaDraft((previous) => ({ ...previous, crlPath: event.target.value }))}
+                  placeholder="/config/auth/ca.crl"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Input
+                  value={caDraft.description}
+                  onChange={(event) =>
+                    setCaDraft((previous) => ({ ...previous, description: event.target.value }))
+                  }
+                  placeholder="Root CA"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Private Key</Label>
                 <Input
                   value={caDraft.privateKeyPath}
                   onChange={(event) =>
@@ -393,38 +606,43 @@ export default function PkiPage() {
                   disabled={!canEdit}
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Private Key Passphrase</Label>
-                <Input
-                  value={caDraft.passphrase}
-                  onChange={(event) =>
-                    setCaDraft((previous) => ({ ...previous, passphrase: event.target.value }))
-                  }
-                  placeholder="optional"
-                  disabled={!canEdit}
-                />
-              </div>
             </div>
 
-            <Button type="button" variant="outline" onClick={addCa} disabled={!canEdit}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add CA
-            </Button>
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="ca-private-password-protected"
+                  checked={caDraft.privatePasswordProtected}
+                  onCheckedChange={(checked) =>
+                    setCaDraft((previous) => ({ ...previous, privatePasswordProtected: Boolean(checked) }))
+                  }
+                  disabled={!canEdit}
+                />
+                <Label htmlFor="ca-private-password-protected">Private Key Password Protected</Label>
+              </div>
+
+              <Button type="button" variant="outline" onClick={addCa} disabled={!canEdit}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add CA
+              </Button>
+            </div>
 
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Certificate</TableHead>
+                  <TableHead>CRL</TableHead>
+                  <TableHead>Description</TableHead>
                   <TableHead>Private Key</TableHead>
-                  <TableHead>Passphrase</TableHead>
+                  <TableHead>Protected</TableHead>
                   <TableHead className="w-[120px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {cas.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-muted-foreground">
+                    <TableCell colSpan={7} className="text-muted-foreground">
                       No CA entries configured.
                     </TableCell>
                   </TableRow>
@@ -433,8 +651,10 @@ export default function PkiPage() {
                     <TableRow key={entry.name}>
                       <TableCell className="font-medium">{entry.name}</TableCell>
                       <TableCell className="font-mono text-xs">{entry.certificatePath || "-"}</TableCell>
+                      <TableCell className="font-mono text-xs">{entry.crlPath || "-"}</TableCell>
+                      <TableCell>{entry.description || "-"}</TableCell>
                       <TableCell className="font-mono text-xs">{entry.privateKeyPath || "-"}</TableCell>
-                      <TableCell>{entry.passphrase ? "Configured" : "-"}</TableCell>
+                      <TableCell>{entry.privatePasswordProtected ? "Yes" : "No"}</TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
@@ -456,10 +676,12 @@ export default function PkiPage() {
         <Card>
           <CardHeader>
             <CardTitle>Certificates</CardTitle>
-            <CardDescription>Reference certificate and private key paths for certificate objects.</CardDescription>
+            <CardDescription>
+              Manage certificate/private-key references, revocation flag, and ACME metadata.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-4">
               <div className="space-y-2">
                 <Label>Name</Label>
                 <Input
@@ -470,7 +692,7 @@ export default function PkiPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Certificate Path</Label>
+                <Label>Certificate</Label>
                 <Input
                   value={certDraft.certificatePath}
                   onChange={(event) =>
@@ -481,7 +703,18 @@ export default function PkiPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Private Key Path</Label>
+                <Label>Description</Label>
+                <Input
+                  value={certDraft.description}
+                  onChange={(event) =>
+                    setCertDraft((previous) => ({ ...previous, description: event.target.value }))
+                  }
+                  placeholder="Site-to-site peer cert"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Private Key</Label>
                 <Input
                   value={certDraft.privateKeyPath}
                   onChange={(event) =>
@@ -493,24 +726,131 @@ export default function PkiPage() {
               </div>
             </div>
 
-            <Button type="button" variant="outline" onClick={addCertificate} disabled={!canEdit}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Certificate
-            </Button>
+            <div className="grid gap-3 md:grid-cols-5">
+              <div className="space-y-2">
+                <Label>ACME Domains</Label>
+                <Input
+                  value={certAcmeDomainsInput}
+                  onChange={(event) => setCertAcmeDomainsInput(event.target.value)}
+                  placeholder="vpn.example.com, gw.example.com"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>ACME Email</Label>
+                <Input
+                  value={certDraft.acme.email}
+                  onChange={(event) =>
+                    setCertDraft((previous) => ({
+                      ...previous,
+                      acme: { ...previous.acme, email: event.target.value },
+                    }))
+                  }
+                  placeholder="admin@example.com"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>ACME Listen Address</Label>
+                <Input
+                  value={certDraft.acme.listenAddress}
+                  onChange={(event) =>
+                    setCertDraft((previous) => ({
+                      ...previous,
+                      acme: { ...previous.acme, listenAddress: event.target.value },
+                    }))
+                  }
+                  placeholder="192.0.2.10"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>ACME RSA Key Size</Label>
+                <Select
+                  value={certDraft.acme.rsaKeySize || "__unset__"}
+                  onValueChange={(value) =>
+                    setCertDraft((previous) => ({
+                      ...previous,
+                      acme: { ...previous.acme, rsaKeySize: value === "__unset__" ? "" : value },
+                    }))
+                  }
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Default" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RSA_KEY_SIZE_OPTIONS.map((size) => (
+                      <SelectItem key={size || "default"} value={size || "__unset__"}>
+                        {size || "Default"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>ACME URL</Label>
+                <Input
+                  value={certDraft.acme.url}
+                  onChange={(event) =>
+                    setCertDraft((previous) => ({
+                      ...previous,
+                      acme: { ...previous.acme, url: event.target.value },
+                    }))
+                  }
+                  placeholder="https://acme-v02.api.letsencrypt.org/directory"
+                  disabled={!canEdit}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="cert-private-password-protected"
+                  checked={certDraft.privatePasswordProtected}
+                  onCheckedChange={(checked) =>
+                    setCertDraft((previous) => ({ ...previous, privatePasswordProtected: Boolean(checked) }))
+                  }
+                  disabled={!canEdit}
+                />
+                <Label htmlFor="cert-private-password-protected">Private Key Password Protected</Label>
+              </div>
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="cert-revoke"
+                  checked={certDraft.revoke}
+                  onCheckedChange={(checked) =>
+                    setCertDraft((previous) => ({ ...previous, revoke: Boolean(checked) }))
+                  }
+                  disabled={!canEdit}
+                />
+                <Label htmlFor="cert-revoke">Revoke Certificate</Label>
+              </div>
+
+              <Button type="button" variant="outline" onClick={addCertificate} disabled={!canEdit}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Certificate
+              </Button>
+            </div>
 
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Certificate</TableHead>
+                  <TableHead>Description</TableHead>
                   <TableHead>Private Key</TableHead>
+                  <TableHead>Protected</TableHead>
+                  <TableHead>Revoked</TableHead>
+                  <TableHead>ACME Domains</TableHead>
                   <TableHead className="w-[120px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {certificates.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-muted-foreground">
+                    <TableCell colSpan={8} className="text-muted-foreground">
                       No certificate entries configured.
                     </TableCell>
                   </TableRow>
@@ -519,7 +859,11 @@ export default function PkiPage() {
                     <TableRow key={entry.name}>
                       <TableCell className="font-medium">{entry.name}</TableCell>
                       <TableCell className="font-mono text-xs">{entry.certificatePath || "-"}</TableCell>
+                      <TableCell>{entry.description || "-"}</TableCell>
                       <TableCell className="font-mono text-xs">{entry.privateKeyPath || "-"}</TableCell>
+                      <TableCell>{entry.privatePasswordProtected ? "Yes" : "No"}</TableCell>
+                      <TableCell>{entry.revoke ? "Yes" : "No"}</TableCell>
+                      <TableCell>{entry.acme.domains.length > 0 ? serializeCsvList(entry.acme.domains) : "-"}</TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
