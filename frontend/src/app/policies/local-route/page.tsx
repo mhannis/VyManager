@@ -32,12 +32,15 @@ import { LocalRouteReorderBanner } from "@/components/policies/LocalRouteReorder
 import { LocalRouteRuleRow } from "@/components/policies/LocalRouteRuleRow";
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import { ethernetService } from "@/lib/api/ethernet";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 
 export default function LocalRoutePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [config, setConfig] = useState<LocalRouteConfigResponse | null>(null);
   const [capabilities, setCapabilities] = useState<LocalRouteCapabilitiesResponse | null>(null);
+  const [interfaceLabelByName, setInterfaceLabelByName] = useState<Record<string, string>>({});
   const [selectedTab, setSelectedTab] = useState<"ipv4" | "ipv6">("ipv4");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -78,8 +81,17 @@ export default function LocalRoutePage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await localRouteService.getConfig(refresh);
+      const [data, ethernetConfig] = await Promise.all([
+        localRouteService.getConfig(refresh),
+        ethernetService.getConfig().catch(() => ({ interfaces: [] })),
+      ]);
       setConfig(data);
+      setInterfaceLabelByName(
+        (ethernetConfig.interfaces || []).reduce<Record<string, string>>((acc, iface) => {
+          acc[iface.name] = formatInterfaceDisplayName(iface.name, iface.description ?? null);
+          return acc;
+        }, {})
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load local route rules");
     } finally {
@@ -346,6 +358,7 @@ export default function LocalRoutePage() {
                             <LocalRouteRuleRow
                               key={rule.rule_number}
                               rule={rule}
+                              interfaceLabelByName={interfaceLabelByName}
                               onEdit={(rule) => setEditingRule(rule)}
                               onDelete={(rule) => setDeletingRule(rule)}
                             />
@@ -413,6 +426,7 @@ export default function LocalRoutePage() {
                             <LocalRouteRuleRow
                               key={rule.rule_number}
                               rule={rule}
+                              interfaceLabelByName={interfaceLabelByName}
                               onEdit={(rule) => setEditingRule(rule)}
                               onDelete={(rule) => setDeletingRule(rule)}
                             />
@@ -453,6 +467,7 @@ export default function LocalRoutePage() {
           onSuccess={handleRuleDeleted}
           rule={deletingRule}
           ruleType={selectedTab}
+          interfaceLabelByName={interfaceLabelByName}
         />
       )}
     </AppLayout>

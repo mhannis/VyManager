@@ -12,9 +12,15 @@ interface LocalRouteRuleRowProps {
   rule: LocalRouteRule;
   onEdit: (rule: LocalRouteRule) => void;
   onDelete: (rule: LocalRouteRule) => void;
+  interfaceLabelByName?: Record<string, string>;
 }
 
-export function LocalRouteRuleRow({ rule, onEdit, onDelete }: LocalRouteRuleRowProps) {
+export function LocalRouteRuleRow({
+  rule,
+  onEdit,
+  onDelete,
+  interfaceLabelByName = {},
+}: LocalRouteRuleRowProps) {
   const {
     attributes,
     listeners,
@@ -69,8 +75,8 @@ export function LocalRouteRuleRow({ rule, onEdit, onDelete }: LocalRouteRuleRowP
       {/* Inbound Interface */}
       <TableCell>
         {rule.inbound_interface ? (
-          <Badge variant="outline" className="font-mono">
-            {rule.inbound_interface}
+          <Badge variant="outline">
+            {interfaceLabelByName[rule.inbound_interface] || rule.inbound_interface}
           </Badge>
         ) : (
           <span className="text-muted-foreground text-sm">—</span>

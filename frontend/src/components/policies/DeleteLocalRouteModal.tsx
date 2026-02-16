@@ -13,6 +13,7 @@ interface DeleteLocalRouteModalProps {
   onSuccess: () => void;
   rule: LocalRouteRule;
   ruleType: "ipv4" | "ipv6";
+  interfaceLabelByName?: Record<string, string>;
 }
 
 export function DeleteLocalRouteModal({
@@ -21,6 +22,7 @@ export function DeleteLocalRouteModal({
   onSuccess,
   rule,
   ruleType,
+  interfaceLabelByName = {},
 }: DeleteLocalRouteModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,8 +86,8 @@ export function DeleteLocalRouteModal({
                   {rule.inbound_interface && (
                     <div className="flex gap-2">
                       <span className="text-muted-foreground min-w-32">Inbound Interface:</span>
-                      <Badge variant="outline" className="font-mono">
-                        {rule.inbound_interface}
+                      <Badge variant="outline">
+                        {interfaceLabelByName[rule.inbound_interface] || rule.inbound_interface}
                       </Badge>
                     </div>
                   )}
