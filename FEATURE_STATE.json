@@ -1,84 +1,68 @@
 {
-  "feature_id": "cross-cutting-robustness-expansion-v2-2026-02-16",
-  "title": "Expand X-02 and X-03 depth across partial domains",
+  "feature_id": "container-option-depth-c0204-2026-02-16",
+  "title": "Container parity depth: lifecycle workflows, network safety validation, inspect UX",
   "status": "in_review",
   "acceptance_criteria": [
-    "Fixture save/apply/reload coverage expands beyond protocols/system baseline into service, VPN, PKI, and QoS wrappers.",
-    "Fixture save/apply/reload coverage includes baseline Firewall/NAT custom-router loops.",
-    "Domain snapshot coverage expands to include matching endpoints for the new fixture domains.",
-    "Domain snapshot coverage includes baseline Firewall/NAT snapshots.",
-    "Expanded backend tests pass and robustness relook runner passes with the larger suite.",
-    "Tracking reflects save/apply/reload as one cross-cutting item with expanded breadth counts."
+    "Container network create/update rejects overlapping prefixes against existing networks.",
+    "Container upsert/install rejects static attachment addresses outside configured network prefixes.",
+    "Container upsert/install rejects IPv4 network or broadcast addresses for static assignments.",
+    "Container image lifecycle UI supports direct row-level actions from configured/runtime image lists.",
+    "Container inspect panel exposes parsed summary rows while retaining raw output.",
+    "Backend and frontend validation commands pass for the changed slice."
   ],
   "assumptions": [
-    "This cycle deepens regression coverage and does not by itself complete option-level parity for all domains.",
-    "Playwright browser smoke remains blocked by host dependency and is intentionally skipped in robustness runner."
+    "Unknown network names without explicit static addresses remain allowed for pre-stage workflows.",
+    "Playwright browser smoke remains out-of-gate due host dependency and is intentionally excluded this cycle."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "Backend|Test",
+      "owner_role": "Backend|Integration",
       "status": "done",
       "files": [
-        "backend/tests/fixtures/config_apply_loops.json",
-        "backend/tests/test_fixture_save_apply_reload_loops.py",
-        "backend/tests/test_firewall_nat_save_apply_reload_loops.py"
+        "backend/routers/containers.py"
       ],
-      "notes": "Expanded loop fixtures from 12 to 35 (31 fixture entries + 4 firewall/nat loops) and extended harness wiring for service/vpn/wrapper/firewall/nat domains."
+      "notes": "Added container network overlap validation and static attachment address/prefix safety checks for upsert/install and network upsert flows."
     },
     {
       "id": "T2",
-      "owner_role": "Backend|Test",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "backend/tests/snapshots/domain_config_snapshots.json",
-        "backend/tests/test_domain_config_snapshots.py",
-        "backend/tests/snapshots/firewall_nat_config_snapshots.json",
-        "backend/tests/test_firewall_nat_config_snapshots.py"
+        "frontend/src/app/system/containers/page.tsx"
       ],
-      "notes": "Expanded snapshot matrix from 15 to 38 endpoints (34 domain + 4 firewall/nat) with matching router coverage."
+      "notes": "Added image quick actions from catalog rows, inspect parsed-summary view, and client-side overlap pre-check before network save."
     },
     {
       "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "ROBUSTNESS_RELOOK_REPORT.md",
-        "scripts/run_robustness_relook.py"
+        "backend/tests/test_containers_automation_v1.py"
       ],
-      "notes": "Extended robustness runner backend suite to include new firewall/nat tests, then re-ran and confirmed all configured gates pass."
+      "notes": "Added tests for overlap rejection, invalid static address rejection, and valid static address acceptance."
     },
     {
       "id": "T4",
-      "owner_role": "Analyst",
-      "status": "done",
-      "files": [
-        "CURRENT_FEATURE.md"
-      ],
-      "notes": "Tracking now treats save/apply/reload as one cross-cutting item and reports breadth separately."
-    },
-    {
-      "id": "T5",
       "owner_role": "Reviewer",
       "status": "doing",
       "files": [
-        "backend/tests/test_fixture_save_apply_reload_loops.py",
-        "backend/tests/test_domain_config_snapshots.py",
-        "backend/tests/fixtures/config_apply_loops.json",
-        "backend/tests/snapshots/domain_config_snapshots.json"
+        "backend/routers/containers.py",
+        "frontend/src/app/system/containers/page.tsx",
+        "backend/tests/test_containers_automation_v1.py"
       ],
-      "notes": "Pending manual review and next extension into firewall/NAT custom routers."
+      "notes": "Manual review pass pending before next backlog tranche."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_containers_automation_v1.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Backlog robustness depth expansion",
+      "purpose": "Container parity depth + backlog continuation",
       "status": "active"
     }
   ]

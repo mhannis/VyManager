@@ -1,6 +1,7 @@
+import ipaddress
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 import pytest
@@ -577,3 +578,55 @@ def test_get_container_registries_returns_summary(monkeypatch, app):
 
     assert registry_map["quay.io"]["enabled"] is False
     assert registry_map["quay.io"]["insecure"] is False
+
+
+def test_validate_container_network_prefixes_rejects_overlap():
+    existing = {
+        "containers-lan": containers_router.ContainerNetworkSummary(
+            name="containers-lan",
+            description=None,
+            prefixes=["172.20.20.0/24"],
+            mtu=None,
+            vrf=None,
+            dns_disabled=False,
+        )
+    }
+
+    with pytest.raises(HTTPException) as exc:
+        containers_router._validate_container_network_prefixes_or_400(
+            "apps",
+            ["172.20.20.128/25"],
+            existing,
+        )
+
+    assert exc.value.status_code == 400
+    assert "overlaps" in str(exc.value.detail)
+
+
+def test_validate_container_network_attachments_rejects_out_of_subnet_address():
+    with pytest.raises(HTTPException) as exc:
+        containers_router._validate_container_network_attachments_or_400(
+            [containers_router.ContainerNetworkAttachment(name="containers-lan", address="10.0.0.10")],
+            {"containers-lan": [ipaddress.ip_network("172.20.20.0/24")]},
+        )
+
+    assert exc.value.status_code == 400
+    assert "outside" in str(exc.value.detail)
+
+
+def test_validate_container_network_attachments_rejects_network_address():
+    with pytest.raises(HTTPException) as exc:
+        containers_router._validate_container_network_attachments_or_400(
+            [containers_router.ContainerNetworkAttachment(name="containers-lan", address="172.20.20.0")],
+            {"containers-lan": [ipaddress.ip_network("172.20.20.0/24")]},
+        )
+
+    assert exc.value.status_code == 400
+    assert "network address" in str(exc.value.detail)
+
+
+def test_validate_container_network_attachments_accepts_valid_host_address():
+    containers_router._validate_container_network_attachments_or_400(
+        [containers_router.ContainerNetworkAttachment(name="containers-lan", address="172.20.20.10")],
+        {"containers-lan": [ipaddress.ip_network("172.20.20.0/24")]},
+    )

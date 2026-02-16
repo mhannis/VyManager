@@ -58,38 +58,34 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
 - Continue reducing strict backlog by implementing partial domains in robust form-first UX.
-- Expand cross-cutting regression gates (`X-02`, `X-03`) into more partial domains before next feature-depth passes.
+- Continue container option-depth parity (image lifecycle + network model validation + operational UX details).
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Cross-cutting robustness expansion (`X-02`, `X-03`)**
+Feature: **Container parity depth sweep (`C-02`, `C-03`, `C-04`)**
 
 Acceptance criteria:
-- Expand fixture-based save/apply/reload loops across service, VPN, PKI, QoS, additional system wrappers, and baseline firewall/NAT custom routers.
-- Expand domain snapshot tests to match the widened loop domain set, including firewall/NAT snapshots.
-- Keep save/apply/reload tracking as one cross-cutting item while increasing breadth counts.
-- Pass expanded backend loop/snapshot tests and robustness relook gates.
+- Reject overlapping `container network <name> prefix` definitions in backend network upsert.
+- Validate static container network attachment addresses against configured prefixes before upsert/install apply.
+- Reject invalid IPv4 network/broadcast static assignments in container attachments.
+- Improve image lifecycle UX with direct row-level actions from image catalogs.
+- Improve inspect UX with parsed summary fields while retaining raw output.
+- Pass backend container tests and frontend build/runtime checks.
 
 Assumptions:
-- This cycle deepens regression breadth, but final parity completion still requires domain option-depth implementation and live verification.
+- Unknown network names without explicit static addresses remain allowed for pre-stage/template flows.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: expanded `X-02`/`X-03` from baseline into broader partial-domain coverage, including firewall/NAT baseline loops and snapshots.
-- Backlog audit (2026-02-16, strict option-level tracker): `85` total tasks remain (`0 missing`, `76 partial`, `9 verify`) after updating cross-cutting statuses.
+- Status: container parity slice in review after backend validation hardening and UI workflow upgrades.
+- Backlog audit (2026-02-16, strict option-level tracker): container `C-02`, `C-03`, and `C-04` moved from `partial` to `verify` (pending live-instance verification).
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `backend/tests/fixtures/config_apply_loops.json`
-- `backend/tests/snapshots/domain_config_snapshots.json`
-- `backend/tests/snapshots/firewall_nat_config_snapshots.json`
-- `backend/tests/test_fixture_save_apply_reload_loops.py`
-- `backend/tests/test_domain_config_snapshots.py`
-- `backend/tests/test_firewall_nat_save_apply_reload_loops.py`
-- `backend/tests/test_firewall_nat_config_snapshots.py`
-- `scripts/run_robustness_relook.py`
-- `ROBUSTNESS_RELOOK_REPORT.md`
+- `backend/routers/containers.py`
+- `backend/tests/test_containers_automation_v1.py`
+- `frontend/src/app/system/containers/page.tsx`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CURRENT_FEATURE.md`
@@ -98,8 +94,10 @@ Assumptions:
 - `DECISIONS.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py` passed.
-- `python3 scripts/run_robustness_relook.py --skip-ui-smoke` passed (`ROBUSTNESS_RELOOK_REPORT.md` updated).
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_containers_automation_v1.py` passed.
+- `cd frontend && npx tsc --noEmit --pretty false` passed.
+- `cd frontend && npm run -s build` passed.
+- `cd frontend && npm run -s smoke:runtime` passed.
 - `cd frontend && npm run -s smoke:ui` still blocked on host dependency (`libnspr4.so` missing).
 
 ## Risks / Open Questions
@@ -114,15 +112,15 @@ Assumptions:
 - Next.js app-router pages that use `useSearchParams` can trigger prerender errors if not wrapped in Suspense; for top-level pages prefer window-query parsing in `useEffect` when practical.
 
 ## TODO Backlog (next queue)
-- Deepen cross-cutting quality gates from current breadth to parity-level depth:
-  - Expand `X-02` firewall/NAT loops beyond baseline create/delete into advanced option trees.
-  - Expand `X-03` snapshots into command-delta comparisons against expected CLI output.
-  - Extend `X-05` robustness runner with live parity-domain verification workflow.
-- Start option-depth parity sweep for high-impact partial domains (Firewall, Interfaces, Protocols, Services, VPN, System).
+- Continue option-depth parity sweep for high-impact partial domains (Firewall, Interfaces, Protocols, Services, VPN, System).
+- Continue container live verification pass on clean instance (`C-02/03/04` -> done).
 - Improve option-level parity scorer precision and add CI thresholds (`X-01` hardening).
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Container network safety validation now enforces prefix overlap checks (`upsert /networks`) and static-address/subnet checks (`upsert/install /{container_name}`) in backend before apply.
+- Containers UI now supports row-level image lifecycle actions directly from catalog lists and provides inspect summary parsing (JSON-first, key-value fallback) above raw output.
+- Container backlog statuses were advanced: `C-02`, `C-03`, `C-04` moved to `verify` pending live-instance verification.
 - Added dedicated firewall/NAT regression suites: `test_firewall_nat_save_apply_reload_loops.py` and `test_firewall_nat_config_snapshots.py`, with `firewall_nat_config_snapshots.json` as baseline snapshot artifact.
 - Robustness runner now executes firewall/NAT regression tests by default in the backend suite.
 - Expanded cross-cutting regression gates in this cycle: fixture loops increased from 12 to 35 and snapshots from 15 to 38 endpoints across protocols/system/services/vpn/pki/qos/DMVPN plus baseline firewall/NAT.

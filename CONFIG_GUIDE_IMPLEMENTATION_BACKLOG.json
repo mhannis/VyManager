@@ -28,20 +28,20 @@
     {
       "id": "C-02",
       "domain": "container",
-      "status": "partial",
-      "title": "Add registry/image lifecycle workflows"
+      "status": "verify",
+      "title": "Image lifecycle workflows implemented (API + row-level GUI quick actions), pending live verification"
     },
     {
       "id": "C-03",
       "domain": "container",
-      "status": "partial",
-      "title": "Extend network model and validation"
+      "status": "verify",
+      "title": "Network model validation expanded (overlap + static address/subnet safety), pending live verification"
     },
     {
       "id": "C-04",
       "domain": "container",
-      "status": "partial",
-      "title": "Add operational actions and inspect workflows"
+      "status": "verify",
+      "title": "Operational actions/logs/inspect workflows expanded, pending live verification"
     },
     {
       "id": "C-05",

@@ -42,9 +42,9 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 
 ### Container (`container/index.html`)
 - `C-01` (`verify`): Expand container spec editor to full guide fields (resource limits, user/group, capabilities/devices, security/runtime knobs). Implemented in current slice; pending live-instance verification.
-- `C-02` (`partial`): Add registry/image lifecycle workflows (image add/pull/remove/list/tag) with clear preflight status.
-- `C-03` (`partial`): Extend network model (multi-network, DNS behavior, addressing constraints, conflict validation).
-- `C-04` (`partial`): Add operational actions (restart policy tuning, logs view controls, health/uptime visibility, inspect details).
+- `C-02` (`verify`): Image lifecycle workflows now include pull/update/delete APIs plus row-level quick actions in GUI; pending live verification on clean instance.
+- `C-03` (`verify`): Network model now enforces overlap checks and static address/prefix safety (UI pre-check + backend validation); pending live-instance verification.
+- `C-04` (`verify`): Operational workflows now include action controls, logs controls, and inspect summary parsing with raw fallback; pending live verification.
 - `C-05` (`verify`): Validate full first-run bootstrap flow end-to-end on clean instance.
 
 ### Firewall (`firewall/*`)

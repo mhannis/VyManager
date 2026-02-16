@@ -1,31 +1,25 @@
-feature_id: cross-cutting-robustness-expansion-v2-2026-02-16
-title: Expand fixture loops and config snapshots across partial backlog domains
+feature_id: container-option-depth-c0204-2026-02-16
+title: Container workflows parity sweep (image lifecycle, network validation, inspect UX)
 status: in_review
 branch: feature/containers-automation-v1
 completed_in_cycle:
-  - Expanded `X-02` fixture save/apply/reload coverage from 12 loops to 35 loops across:
-    - Protocols, VRF, load-balancing, HA, traffic-policy
-    - System wrappers (proxy, sysctl, flow-accounting, ipv6, lcd, sflow, task-scheduler)
-    - Service wrappers (dns, ntp, lldp, router-advert)
-    - VPN wrappers (l2tp, openconnect, pptp, sstp, rsa-keys) + DMVPN
-    - PKI and QoS wrappers
-    - Firewall/NAT loop suite (IPv4, IPv6, groups, NAT source)
-  - Expanded `X-03` config snapshot coverage from 15 endpoints to 38 endpoints across the same domain set plus Firewall/NAT snapshots.
-  - Updated dummy-service harness and router wiring in both tests to validate real endpoint contracts (no route fakes).
-  - Added dedicated firewall/NAT regression suites:
-    - `backend/tests/test_firewall_nat_save_apply_reload_loops.py`
-    - `backend/tests/test_firewall_nat_config_snapshots.py`
-    - `backend/tests/snapshots/firewall_nat_config_snapshots.json`
-  - Extended robustness runner backend suite to include the new firewall/NAT tests.
-  - Regenerated `ROBUSTNESS_RELOOK_REPORT.md` after expanded test scope.
-  - Applied user correction in tracking: save/apply/reload loop is treated as one cross-cutting backlog item, with breadth tracked as loop count.
+  - Added backend guardrails for container networking:
+    - reject overlapping container network prefixes across `container network <name> prefix`
+    - validate container attachment addresses are within configured network prefixes
+    - reject network/broadcast IPv4 host assignments for static container addresses
+  - Added container network overlap pre-check in UI before save so operators get immediate feedback.
+  - Expanded image lifecycle UX with row-level quick actions (`Use`, `Pull`, `Update`, `Delete`) from configured/runtime image lists.
+  - Expanded inspect UX with parsed summary fields (JSON + key/value fallback) above raw inspect output.
+  - Added backend tests for overlap and address validation helper paths.
 validation:
-  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py
-  - python3 scripts/run_robustness_relook.py --skip-ui-smoke
+  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_containers_automation_v1.py
+  - cd frontend && npx tsc --noEmit --pretty false
+  - cd frontend && npm run -s build
+  - cd frontend && npm run -s smoke:runtime
 known_limitations:
-  - Browser smoke (Playwright) remains blocked by missing host dependency libnspr4.so.
-  - X-02 and X-03 remain `partial` until remaining deep option trees gain equivalent fixture/snapshot depth and live-device verification.
+  - Container address validation is strict for explicit static addresses; non-addressed attachments are still allowed for pre-stage workflows.
+  - Browser smoke (Playwright) remains blocked on host dependency (`libnspr4.so`) and is not part of this cycle’s pass gate.
 next_queue:
-  - Expand Firewall/NAT regression loops beyond baseline rule/group creation into advanced option trees.
-  - Add command-delta snapshot assertions for expected `show configuration commands` style output.
-  - Continue option-depth implementation on high-risk partial domains (Firewall, VPN, Services).
+  - Continue container parity depth on registry/image workflows (bulk cleanup/import and clearer status/health signals).
+  - Continue firewall option-depth parity (F-01..F-06) with advanced match/action and validation passes.
+  - Continue interface depth sweep on advanced per-family leaves and verification.

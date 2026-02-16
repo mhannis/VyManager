@@ -162,6 +162,11 @@ interface ContainerRegistryDraft {
   mirrorPath: string;
 }
 
+interface InspectSummaryRow {
+  key: string;
+  value: string;
+}
+
 const EMPTY_DRAFT: ContainerDraft = {
   name: "",
   image: "",
@@ -287,6 +292,42 @@ function parseIPv4Cidr(cidr: string): ParsedIPv4Cidr | null {
   const broadcastInt = (networkInt | (~mask >>> 0)) >>> 0;
 
   return { ip, prefix, ipInt, networkInt, broadcastInt };
+}
+
+function ipv4NetworksOverlap(left: ParsedIPv4Cidr, right: ParsedIPv4Cidr): boolean {
+  return left.networkInt <= right.broadcastInt && right.networkInt <= left.broadcastInt;
+}
+
+function parseInspectSummaryRows(rawOutput: string): InspectSummaryRow[] {
+  const trimmed = rawOutput.trim();
+  if (!trimmed || trimmed === "(no inspect output)") return [];
+
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return Object.entries(parsed as Record<string, unknown>)
+        .slice(0, 24)
+        .map(([key, value]) => ({
+          key,
+          value: typeof value === "string" ? value : JSON.stringify(value),
+        }));
+    }
+  } catch {
+    // Fall through to lightweight key-value line parsing.
+  }
+
+  const rows: InspectSummaryRow[] = [];
+  for (const line of rawOutput.split(/\r?\n/)) {
+    const separatorIndex = line.indexOf(":");
+    if (separatorIndex <= 0) continue;
+    const key = line.slice(0, separatorIndex).trim();
+    const value = line.slice(separatorIndex + 1).trim();
+    if (!key || !value) continue;
+    rows.push({ key, value });
+    if (rows.length >= 24) break;
+  }
+
+  return rows;
 }
 
 function isPrivateIPv4(ipInt: number): boolean {
@@ -1018,6 +1059,11 @@ export default function SystemContainersPage() {
     );
   }, [overview, selectedContainerName]);
 
+  const inspectSummaryRows = useMemo(
+    () => parseInspectSummaryRows(inspectText),
+    [inspectText],
+  );
+
   const selectedLanSegment = useMemo(() => {
     if (!selectedLanSegmentId) return null;
     return lanSegments.find((segment) => segment.id === selectedLanSegmentId) ?? null;
@@ -1301,6 +1347,30 @@ export default function SystemContainersPage() {
     if (prefixes.length === 0) {
       setError("At least one container network prefix is required.");
       return;
+    }
+
+    const desiredIpv4Prefixes = prefixes
+      .map((prefix) => ({ prefix, parsed: parseIPv4Cidr(prefix) }))
+      .filter((entry): entry is { prefix: string; parsed: ParsedIPv4Cidr } => Boolean(entry.parsed));
+    const existingIpv4Prefixes = containerNetworks
+      .filter((network) => network.name !== networkName)
+      .flatMap((network) =>
+        ensureArray<string>(network.prefixes)
+          .map((prefix) => ({ network: network.name, prefix, parsed: parseIPv4Cidr(prefix) }))
+          .filter((entry): entry is { network: string; prefix: string; parsed: ParsedIPv4Cidr } =>
+            Boolean(entry.parsed),
+          ),
+      );
+
+    for (const desired of desiredIpv4Prefixes) {
+      for (const existing of existingIpv4Prefixes) {
+        if (ipv4NetworksOverlap(desired.parsed, existing.parsed)) {
+          setError(
+            `Network prefix ${desired.prefix} overlaps with existing network '${existing.network}' prefix ${existing.prefix}.`,
+          );
+          return;
+        }
+      }
     }
 
     const mtuValue = networkDraft.mtu.trim();
@@ -1726,7 +1796,10 @@ export default function SystemContainersPage() {
     }
   };
 
-  const runImageAction = async (action: "pull" | "update" | "delete") => {
+  const runImageAction = async (
+    action: "pull" | "update" | "delete",
+    targetOverride?: string,
+  ) => {
     if (!canEditSystem) {
       setError("You currently have read-only access for System features.");
       return;
@@ -1737,7 +1810,7 @@ export default function SystemContainersPage() {
     setSuccess(null);
     try {
       if (action === "delete") {
-        const target = imageDeleteTarget.trim();
+        const target = (targetOverride ?? imageDeleteTarget).trim();
         if (!target) {
           setError("Image delete target is required.");
           return;
@@ -1748,7 +1821,7 @@ export default function SystemContainersPage() {
         });
         setSuccess(`Image delete requested for ${response.target}.`);
       } else {
-        const image = imageLifecycleRef.trim();
+        const image = (targetOverride ?? imageLifecycleRef).trim();
         if (!image) {
           setError("Image reference is required.");
           return;
@@ -2277,8 +2350,43 @@ export default function SystemContainersPage() {
                         <p className="text-xs text-muted-foreground">No configured images.</p>
                       ) : (
                         imageCatalog!.configured_images.map((image) => (
-                          <div key={`configured-image-${image}`} className="text-xs font-mono break-all">
-                            {image}
+                          <div
+                            key={`configured-image-${image}`}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded border border-border/60 p-2"
+                          >
+                            <span className="text-xs font-mono break-all">{image}</span>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-[11px]"
+                                onClick={() => {
+                                  setImageLifecycleRef(image);
+                                  setImageDeleteTarget(image);
+                                }}
+                                disabled={processingImageAction !== null}
+                              >
+                                Use
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-[11px]"
+                                onClick={() => runImageAction("update", image)}
+                                disabled={!canEditSystem || processingImageAction !== null}
+                              >
+                                Update
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-6 px-2 text-[11px]"
+                                onClick={() => runImageAction("delete", image)}
+                                disabled={!canEditSystem || processingImageAction !== null}
+                              >
+                                Delete
+                              </Button>
+                            </div>
                           </div>
                         ))
                       )}
@@ -2293,10 +2401,43 @@ export default function SystemContainersPage() {
                         imageCatalog!.runtime_images.map((image: ContainerImageSummary) => (
                           <div
                             key={`runtime-image-${image.reference}-${image.source}`}
-                            className="flex items-center gap-2 text-xs"
+                            className="flex flex-wrap items-center justify-between gap-2 rounded border border-border/60 p-2 text-xs"
                           >
-                            <span className="font-mono break-all">{image.reference}</span>
-                            <Badge variant="outline">{image.source}</Badge>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono break-all">{image.reference}</span>
+                              <Badge variant="outline">{image.source}</Badge>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-[11px]"
+                                onClick={() => {
+                                  setImageLifecycleRef(image.reference);
+                                  setImageDeleteTarget(image.reference);
+                                }}
+                                disabled={processingImageAction !== null}
+                              >
+                                Use
+                              </Button>
+                              <Button
+                                size="sm"
+                                className="h-6 px-2 text-[11px]"
+                                onClick={() => runImageAction("pull", image.reference)}
+                                disabled={!canEditSystem || processingImageAction !== null}
+                              >
+                                Pull
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-[11px]"
+                                onClick={() => runImageAction("update", image.reference)}
+                                disabled={!canEditSystem || processingImageAction !== null}
+                              >
+                                Update
+                              </Button>
+                            </div>
                           </div>
                         ))
                       )}
@@ -2937,6 +3078,23 @@ export default function SystemContainersPage() {
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
+                  {inspectSummaryRows.length > 0 && (
+                    <div className="mb-2 rounded-md border p-3">
+                      <div className="mb-2 text-xs font-medium text-muted-foreground">
+                        Parsed Inspect Fields
+                      </div>
+                      <div className="grid gap-2 md:grid-cols-2">
+                        {inspectSummaryRows.map((row) => (
+                          <div key={`inspect-summary-${row.key}`} className="space-y-0.5">
+                            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {row.key}
+                            </div>
+                            <div className="text-xs break-all">{row.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <Textarea value={inspectText} readOnly className="min-h-56 font-mono text-xs" />
                 </div>
               )}

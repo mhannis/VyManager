@@ -1112,6 +1112,144 @@ def _extract_container_networks(full_config: Dict[str, Any]) -> List[ContainerNe
     return networks
 
 
+def _parse_container_network_or_400(prefix: str, *, context: str) -> ipaddress._BaseNetwork:
+    try:
+        return ipaddress.ip_network(prefix, strict=False)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid container network prefix in {context}: {prefix}")
+
+
+def _build_container_network_prefix_map(
+    networks: List[ContainerNetworkSummary],
+) -> Dict[str, List[ipaddress._BaseNetwork]]:
+    prefix_map: Dict[str, List[ipaddress._BaseNetwork]] = {}
+    for network in networks:
+        parsed_prefixes: List[ipaddress._BaseNetwork] = []
+        for prefix in network.prefixes:
+            try:
+                parsed_prefixes.append(ipaddress.ip_network(prefix, strict=False))
+            except ValueError:
+                continue
+        prefix_map[network.name] = parsed_prefixes
+    return prefix_map
+
+
+def _validate_container_network_prefixes_or_400(
+    network_name: str,
+    desired_prefixes: List[str],
+    existing_networks: Dict[str, ContainerNetworkSummary],
+) -> None:
+    parsed_desired: List[ipaddress._BaseNetwork] = [
+        _parse_container_network_or_400(prefix, context=f"network '{network_name}'")
+        for prefix in desired_prefixes
+    ]
+
+    for index, left in enumerate(parsed_desired):
+        for right in parsed_desired[index + 1 :]:
+            if left.version == right.version and left.overlaps(right):
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"Container network '{network_name}' has overlapping prefixes "
+                        f"('{left}' overlaps '{right}')."
+                    ),
+                )
+
+    for existing_name, existing in existing_networks.items():
+        if existing_name == network_name:
+            continue
+        for existing_prefix in existing.prefixes:
+            existing_network = _parse_container_network_or_400(
+                existing_prefix,
+                context=f"network '{existing_name}'",
+            )
+            for desired in parsed_desired:
+                if desired.version != existing_network.version:
+                    continue
+                if desired.overlaps(existing_network):
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            f"Container network '{network_name}' prefix '{desired}' overlaps "
+                            f"'{existing_name}' prefix '{existing_network}'."
+                        ),
+                    )
+
+
+def _validate_container_network_attachments_or_400(
+    attachments: List[ContainerNetworkAttachment],
+    prefix_map: Dict[str, List[ipaddress._BaseNetwork]],
+) -> None:
+    for attachment in attachments:
+        if not attachment.address:
+            continue
+
+        address_text = attachment.address.strip()
+        try:
+            address = ipaddress.ip_address(address_text)
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Container network '{attachment.name}' has an invalid address '{address_text}'."
+                ),
+            )
+
+        network_prefixes = prefix_map.get(attachment.name)
+        if network_prefixes is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Container network '{attachment.name}' is not configured. "
+                    "Create the network before assigning a static address."
+                ),
+            )
+        if not network_prefixes:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Container network '{attachment.name}' has no valid prefixes configured."
+                ),
+            )
+
+        matching_network = next(
+            (
+                network
+                for network in network_prefixes
+                if network.version == address.version and address in network
+            ),
+            None,
+        )
+        if matching_network is None:
+            valid_prefixes = ", ".join(str(network) for network in network_prefixes)
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Address '{address_text}' is outside container network '{attachment.name}' "
+                    f"prefixes ({valid_prefixes})."
+                ),
+            )
+
+        if isinstance(matching_network, ipaddress.IPv4Network):
+            if matching_network.prefixlen <= 30:
+                if address == matching_network.network_address:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            f"Address '{address_text}' cannot be the network address for "
+                            f"'{matching_network}'."
+                        ),
+                    )
+                if address == matching_network.broadcast_address:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            f"Address '{address_text}' cannot be the broadcast address for "
+                            f"'{matching_network}'."
+                        ),
+                    )
+
+
 def _normalize_container_network_name_or_400(name: str) -> str:
     clean = name.strip()
     if not clean:
@@ -1674,6 +1812,7 @@ async def upsert_container_network(
         service = get_session_vyos_service(request)
         full_config = await run_in_threadpool(service.get_full_config, refresh=True)
         existing_networks = {entry.name: entry for entry in _extract_container_networks(full_config)}
+        _validate_container_network_prefixes_or_400(name, desired_prefixes, existing_networks)
         existing = existing_networks.get(name)
 
         operations: List[Dict[str, Any]] = []
@@ -2228,6 +2367,10 @@ async def upsert_container(
 
         service = get_session_vyos_service(request)
         full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        _validate_container_network_attachments_or_400(
+            normalized_body.networks,
+            _build_container_network_prefix_map(_extract_container_networks(full_config)),
+        )
         existing = name in _extract_container_config(full_config)
 
         operations = _build_container_set_operations(
@@ -2362,6 +2505,10 @@ async def install_container(
 
         # Apply container config (same semantics as PUT upsert).
         full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        _validate_container_network_attachments_or_400(
+            normalized_body.networks,
+            _build_container_network_prefix_map(_extract_container_networks(full_config)),
+        )
         existing = name in _extract_container_config(full_config)
         operations = _build_container_set_operations(
             name=name,
