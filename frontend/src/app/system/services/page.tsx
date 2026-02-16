@@ -214,6 +214,49 @@ function normalizeStringList(values: string[]): string[] {
   return result;
 }
 
+function isValidIPv4(value: string): boolean {
+  const candidate = value.trim();
+  const match = candidate.match(/^(\d{1,3})(?:\.(\d{1,3})){3}$/);
+  if (!match) return false;
+  return candidate.split(".").every((octet) => {
+    const parsed = Number.parseInt(octet, 10);
+    return Number.isInteger(parsed) && parsed >= 0 && parsed <= 255;
+  });
+}
+
+function isValidIPv6(value: string): boolean {
+  const candidate = value.trim();
+  if (!candidate.includes(":")) return false;
+  if (!/^[0-9A-Fa-f:]+$/.test(candidate)) return false;
+  const segments = candidate.split(":");
+  if (segments.length < 2 || segments.length > 8) return false;
+  let emptySegments = 0;
+  for (const segment of segments) {
+    if (segment.length === 0) {
+      emptySegments += 1;
+      continue;
+    }
+    if (segment.length > 4) return false;
+  }
+  if (emptySegments > 2) return false;
+  return true;
+}
+
+function isValidIpAddress(value: string): boolean {
+  return isValidIPv4(value) || isValidIPv6(value);
+}
+
+function isValidDomainToken(value: string): boolean {
+  const candidate = value.trim();
+  if (!candidate || candidate.length > 253) return false;
+  const labels = candidate.split(".");
+  return labels.every((label) => {
+    if (!label || label.length > 63) return false;
+    if (label.startsWith("-") || label.endsWith("-")) return false;
+    return /^[A-Za-z0-9-]+$/.test(label);
+  });
+}
+
 function SystemServicesPageContent() {
   const pathname = usePathname();
   const router = useRouter();
@@ -626,6 +669,14 @@ function SystemServicesPageContent() {
       return;
     }
 
+    for (const managementAddress of payload.management_addresses) {
+      if (!isValidIpAddress(managementAddress)) {
+        setError(`Invalid LLDP management address '${managementAddress}'.`);
+        setSuccess(null);
+        return;
+      }
+    }
+
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -727,6 +778,30 @@ function SystemServicesPageContent() {
       setError("mDNS repeater requires at least two interfaces when enabled.");
       setSuccess(null);
       return;
+    }
+
+    for (const serviceName of payload.allow_services) {
+      if (/\s/.test(serviceName)) {
+        setError(`mDNS service filter '${serviceName}' cannot contain whitespace.`);
+        setSuccess(null);
+        return;
+      }
+    }
+
+    for (const browseDomain of payload.browse_domains) {
+      if (!isValidDomainToken(browseDomain)) {
+        setError(`Invalid mDNS browse domain '${browseDomain}'.`);
+        setSuccess(null);
+        return;
+      }
+    }
+
+    if (payload.cache_entries !== null) {
+      if (!Number.isInteger(payload.cache_entries) || payload.cache_entries < 0) {
+        setError("mDNS cache entries must be a non-negative integer.");
+        setSuccess(null);
+        return;
+      }
     }
 
     setSaving(true);
@@ -1183,7 +1258,9 @@ function SystemServicesPageContent() {
                                 const currentMode = current?.mode ?? null;
                                 return (
                                   <div key={iface} className="flex items-center gap-2">
-                                    <div className="min-w-[100px] font-mono text-sm">{iface}</div>
+                                    <div className="min-w-[140px] text-sm">
+                                      {interfaceDisplayLabels[iface] ?? iface}
+                                    </div>
                                     <Select
                                       value={currentMode ?? "default"}
                                       onValueChange={(value) =>
@@ -1438,8 +1515,13 @@ function SystemServicesPageContent() {
                         <p className="text-xs text-muted-foreground">
                           Select at least two interfaces when enabled.
                         </p>
-                        <div className="text-xs font-mono">
-                          Selected: {mdnsSelectedInterfaces.length === 0 ? "-" : mdnsSelectedInterfaces.join(", ")}
+                        <div className="text-xs">
+                          Selected:{" "}
+                          {mdnsSelectedInterfaces.length === 0
+                            ? "-"
+                            : mdnsSelectedInterfaces
+                                .map((iface) => interfaceDisplayLabels[iface] ?? iface)
+                                .join(", ")}
                         </div>
                       </div>
 
