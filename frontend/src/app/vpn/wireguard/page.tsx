@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+import { cn, formatInterfaceDisplayName } from "@/lib/utils";
 import {
   Shield,
   Plus,
@@ -322,6 +322,7 @@ export default function WireGuardPage() {
                 <div className="space-y-1">
                   {config.interfaces.map((iface) => {
                     const isSelected = selectedInterface === iface.name;
+                    const displayName = formatInterfaceDisplayName(iface.name, iface.description ?? null);
 
                     return (
                       <div
@@ -346,7 +347,7 @@ export default function WireGuardPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-medium truncate flex items-center gap-2">
-                            {iface.name}
+                            {displayName}
                             {iface.disabled && (
                               <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-gray-500/10 text-gray-500">
                                 Disabled
@@ -437,7 +438,7 @@ export default function WireGuardPage() {
                     <div>
                       <div className="flex items-center gap-3">
                         <h1 className="text-2xl font-bold text-foreground">
-                          {currentInterface.name}
+                          {formatInterfaceDisplayName(currentInterface.name, currentInterface.description ?? null)}
                         </h1>
                         {currentInterface.disabled && (
                           <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 gap-1">
