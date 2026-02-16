@@ -2,6 +2,7 @@
 
 ## Decision Log
 
+- 2026-02-16: Hardened `firewall ipv4/ipv6` batch endpoints with explicit chain-context validation, rule-number/value arity checks, signature-ordered argument binding, and `TypeError -> 400` conversion so invalid payloads fail deterministically and do not surface as generic server errors.
 - 2026-02-16: Hardened `firewall global-options` `/batch` endpoint with per-operation value validation (required/no-arg arity checks, enum validation, timeout integer/range validation) and canonical lowercase normalization, so malformed batch payloads return deterministic `400` errors instead of leaking method-signature/runtime errors.
 - 2026-02-16: Hardened `firewall zones` upsert validation to enforce cross-zone interface uniqueness and canonicalized/validated `from_zone` references (including `LOCAL`) before apply, to prevent ambiguous zone membership and typo-driven policy mappings.
 - 2026-02-16: Hardened `firewall flowtables` batch/delete endpoints with strict backend input validation (flowtable name, operation allowlist, required values, interface names, offload enums) before builder execution, preserving existing API contracts while reducing invalid apply attempts and misclassified server errors.

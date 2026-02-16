@@ -1,18 +1,18 @@
 {
-  "feature_id": "firewall-global-options-batch-validation-hardening-2026-02-16",
-  "title": "Firewall global-options batch validation hardening",
+  "feature_id": "firewall-ipv4-ipv6-batch-argument-hardening-2026-02-16",
+  "title": "Firewall IPv4/IPv6 batch argument validation hardening",
   "status": "done",
   "acceptance_criteria": [
-    "Global-options batch endpoint rejects missing values for set-operations with explicit 400 errors.",
-    "Global-options batch endpoint rejects values for no-arg delete/toggle operations with explicit 400 errors.",
-    "Global-options batch endpoint validates enum values for enable/disable, source-validation, state-policy action, and state-policy log-level operations.",
-    "Global-options batch endpoint validates timeout batch values as integers within allowed bounds and rejects invalid values with 400 errors.",
-    "Global-options batch endpoint normalizes accepted enum values to canonical lowercase before builder invocation.",
-    "Regression tests cover invalid and valid batch value flows."
+    "IPv4/IPv6 firewall batch endpoints validate chain names according to base/custom chain context and reject invalid chains with explicit 400 errors.",
+    "IPv4/IPv6 firewall batch endpoints reject missing rule numbers for operations that require `rule_number`.",
+    "IPv4/IPv6 firewall batch endpoints reject missing values for value-requiring operations and reject provided values for no-value operations.",
+    "Dynamic argument construction follows method signature order and fails fast for unsupported parameter shapes.",
+    "Method invocation argument errors are surfaced as explicit 400 responses instead of generic 500 errors.",
+    "Regression tests cover invalid and valid batch argument flows across both IPv4 and IPv6 endpoints."
   ],
   "assumptions": [
-    "Batch clients may still send mixed-case enum values, so canonical lowercase normalization preserves compatibility while improving consistency.",
-    "Timeout values in batch payloads are expected as numeric strings from frontend callers and are normalized to integers before builder invocation.",
+    "Existing frontend payloads continue to call known builder operation names and rely on these endpoints for fast rule updates.",
+    "IPv6 legacy aliases remain necessary for backward compatibility with older client payloads.",
     "Browser e2e smoke remains out-of-gate on this host until Playwright shared libraries are installed."
   ],
   "tasks": [
@@ -21,33 +21,35 @@
       "owner_role": "Backend|Integration",
       "status": "done",
       "files": [
-        "backend/routers/firewall_global_options/firewall_global_options.py"
+        "backend/routers/firewall/ipv4.py",
+        "backend/routers/firewall/ipv6.py"
       ],
-      "notes": "Added strict batch-operation value validation, timeout range checks, arity enforcement, and canonical lowercase normalization for enum operations."
+      "notes": "Added strict chain/rule/value argument validation, signature-ordered arg construction, and deterministic 400-level error semantics for runtime argument issues."
     },
     {
       "id": "T2",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_firewall_global_options_batch_validation.py"
+        "backend/tests/test_firewall_rule_batch_validation.py"
       ],
-      "notes": "Added regression tests for missing/set/delete value errors, enum/timeout validation, and successful normalized batch execution."
+      "notes": "Added regression tests for invalid chain/rule/value combinations and valid normalized execution flows across IPv4/IPv6."
     },
     {
       "id": "T3",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/routers/firewall_global_options/firewall_global_options.py",
-        "backend/tests/test_firewall_global_options_batch_validation.py"
+        "backend/routers/firewall/ipv4.py",
+        "backend/routers/firewall/ipv6.py",
+        "backend/tests/test_firewall_rule_batch_validation.py"
       ],
       "notes": "Manual review completed in-process. APPROVED."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_global_options_batch_validation.py tests/test_firewall_global_options_validation.py tests/test_firewall_zones_validation.py tests/test_firewall_zones_local_zone.py tests/test_firewall_flowtables_validation.py tests/test_firewall_batch_semantics.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_rule_batch_validation.py tests/test_firewall_batch_semantics.py tests/test_firewall_global_options_batch_validation.py tests/test_firewall_global_options_validation.py tests/test_firewall_zones_validation.py tests/test_firewall_zones_local_zone.py tests/test_firewall_flowtables_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [

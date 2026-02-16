@@ -62,32 +62,33 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Firewall global-options batch validation hardening (`F-04` depth pass)**
+Feature: **Firewall IPv4/IPv6 batch argument validation hardening (`F-01`/`F-02` depth pass)**
 
 Acceptance criteria:
-- Reject missing values for batch set operations with explicit `400` errors.
-- Reject values for no-arg batch operations with explicit `400` errors.
-- Validate enum values for batch operation families (enable/disable, source-validation, state-policy action, state-policy log-level).
-- Validate and normalize timeout values for `set_timeout_*` operations (integer + range checks).
-- Normalize accepted enum values to lowercase canonical values before builder invocation.
-- Add backend tests covering invalid/valid batch value flows.
+- Validate chain names against base/custom chain context with explicit `400` errors.
+- Reject missing `rule_number` for operations that require a rule index.
+- Reject missing values on value-required operations and reject provided values on no-value operations.
+- Build method arguments in signature order and reject unsupported parameter shapes with explicit `400`.
+- Convert dynamic invocation `TypeError` failures into explicit `400` responses.
+- Add backend tests covering invalid/valid argument-shape flows across IPv4 and IPv6 batch endpoints.
 - Pass backend+frontend validation gates.
 
 Assumptions:
-- Batch callers may send mixed-case enum values; normalization preserves compatibility and consistency.
-- Timeout batch values are expected as numeric strings from UI/API clients and should normalize to integers.
+- Existing GUI/API clients continue to call known builder method operation names.
+- IPv6 legacy operation aliases must remain supported for backward compatibility.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: firewall global-options batch validation hardening slice completed locally and queued for commit/push.
-- Backlog audit (2026-02-16, strict option-level tracker): `F-04` progressed with strict batch value validation, normalization, and dedicated tests.
+- Status: firewall IPv4/IPv6 batch argument validation hardening slice completed locally and queued for commit/push.
+- Backlog audit (2026-02-16, strict option-level tracker): `F-01`/`F-02` progressed with strict chain/rule/value validation and dedicated argument-shape tests.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `backend/routers/firewall_global_options/firewall_global_options.py`
-- `backend/tests/test_firewall_global_options_batch_validation.py`
-- `AGENT_REPORTS/2026-02-16-firewall-global-options-batch-validation-hardening.md`
+- `backend/routers/firewall/ipv4.py`
+- `backend/routers/firewall/ipv6.py`
+- `backend/tests/test_firewall_rule_batch_validation.py`
+- `AGENT_REPORTS/2026-02-16-firewall-ipv4-ipv6-batch-argument-hardening.md`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
@@ -96,7 +97,7 @@ Assumptions:
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_global_options_batch_validation.py tests/test_firewall_global_options_validation.py tests/test_firewall_zones_validation.py tests/test_firewall_zones_local_zone.py tests/test_firewall_flowtables_validation.py tests/test_firewall_batch_semantics.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py` passed.
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_rule_batch_validation.py tests/test_firewall_batch_semantics.py tests/test_firewall_global_options_batch_validation.py tests/test_firewall_global_options_validation.py tests/test_firewall_zones_validation.py tests/test_firewall_zones_local_zone.py tests/test_firewall_flowtables_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
 - Frontend build/runtime smoke were not rerun in this backend-only slice (last known from prior cycle: build + runtime smoke passed; lint had warnings only and 0 errors).
 - `cd frontend && npm run -s smoke:ui` still blocked on host dependency (`libnspr4.so` missing).
@@ -120,6 +121,8 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Firewall IPv4/IPv6 batch endpoints now validate chain context, rule-number requirements, and operation value arity before method invocation; invalid argument shapes now return explicit `400` errors.
+- Added backend regression coverage `backend/tests/test_firewall_rule_batch_validation.py` for chain/rule/value validation semantics and valid normalized batch execution.
 - Firewall global-options `/batch` now enforces strict value semantics (required/no-arg checks), enum validation for operation families, timeout integer/range validation, and canonical lowercase normalization before command generation.
 - Added backend regression coverage `backend/tests/test_firewall_global_options_batch_validation.py` for invalid batch payload rejection and valid normalized execution.
 - Firewall zones upsert now enforces cross-zone interface ownership uniqueness and rejects overlap with explicit `400` errors.

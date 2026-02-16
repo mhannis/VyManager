@@ -13,8 +13,31 @@ from session_vyos_service import get_session_vyos_service
 from vyos_builders import FirewallIPv4BatchBuilder
 from fastapi_permissions import require_read_permission, require_write_permission, FeatureGroup
 import inspect
+import re
 
 router = APIRouter(prefix="/vyos/firewall/ipv4", tags=["firewall_ipv4"])
+
+BASE_CHAIN_NAMES = {"forward", "input", "output"}
+RE_CUSTOM_CHAIN_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9._-]{0,62}$")
+VALUE_PARAM_NAMES = {
+    "value",
+    "description",
+    "address",
+    "port",
+    "protocol",
+    "action",
+    "interface",
+    "interface_name",
+    "dscp",
+    "mark",
+    "ttl",
+    "icmp_type",
+    "target",
+    "flag",
+    "group_name",
+    "mac_address",
+    "country_code",
+}
 
 
 # Stub functions for backwards compatibility with app.py
@@ -157,6 +180,29 @@ class VyOSResponse(BaseModel):
     success: bool
     data: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
+
+
+def _normalize_chain_or_400(chain: str, is_custom_chain: bool) -> str:
+    chain_value = chain.strip()
+    if not chain_value:
+        raise HTTPException(status_code=400, detail="Chain name is required")
+
+    if is_custom_chain:
+        if not RE_CUSTOM_CHAIN_NAME.match(chain_value):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid custom chain name '{chain_value}'. Use letters, numbers, dot, dash, underscore.",
+            )
+        return chain_value
+
+    chain_lower = chain_value.lower()
+    if chain_lower not in BASE_CHAIN_NAMES:
+        allowed = ", ".join(sorted(BASE_CHAIN_NAMES))
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid base chain '{chain_value}'. Allowed values: {allowed}",
+        )
+    return chain_lower
 
 
 # ========================================================================
@@ -477,6 +523,8 @@ async def firewall_ipv4_batch_configure(http_request: Request, request: Firewall
         service = get_session_vyos_service(http_request)
         version = service.get_version()
         builder = FirewallIPv4BatchBuilder(version=version)
+        chain = _normalize_chain_or_400(request.chain, request.is_custom_chain)
+        rule_number = request.rule_number
 
         # Process operations using inspect for dynamic method calls
         for operation in request.operations:
@@ -489,31 +537,52 @@ async def firewall_ipv4_batch_configure(http_request: Request, request: Firewall
 
             method = getattr(builder, method_name)
             sig = inspect.signature(method)
-            params = list(sig.parameters.keys())
+            params = [param for param in sig.parameters.keys() if param != "self"]
 
-            # Build arguments dynamically based on method signature order
+            expects_value = any(param in VALUE_PARAM_NAMES for param in params)
+            normalized_value: Optional[str] = None
+            if expects_value:
+                if operation.value is None or not operation.value.strip():
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Operation {method_name} requires a value",
+                    )
+                normalized_value = operation.value.strip()
+            elif operation.value is not None and operation.value.strip():
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Operation {method_name} does not accept a value",
+                )
+
+            if "rule_number" in params and rule_number is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Operation {method_name} requires rule_number",
+                )
+
             args = []
+            for param in params:
+                if param in {"chain", "chain_name"}:
+                    args.append(chain)
+                elif param == "rule_number":
+                    args.append(rule_number)
+                elif param in VALUE_PARAM_NAMES:
+                    args.append(normalized_value)
+                elif param == "is_custom":
+                    args.append(request.is_custom_chain)
+                else:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Unsupported parameter '{param}' for operation {method_name}",
+                    )
 
-            # Add chain parameter if method expects it
-            if "chain" in params or "chain_name" in params:
-                args.append(request.chain)
-
-            # Add rule_number parameter if method expects it and we have it
-            if "rule_number" in params and request.rule_number is not None:
-                args.append(request.rule_number)
-
-            # Add value parameter BEFORE is_custom if both are expected
-            # This matches the typical signature: (chain, rule_number, value, is_custom)
-            # Also check for group_name which is used in group operations
-            if operation.value and any(p in params for p in ["value", "description", "address", "port", "protocol", "action", "interface", "interface_name", "dscp", "mark", "ttl", "icmp_type", "target", "flag", "group_name", "mac_address", "country_code"]):
-                args.append(operation.value)
-
-            # Add is_custom parameter if method expects it
-            if "is_custom" in params:
-                args.append(request.is_custom_chain)
-
-            # Call the method
-            method(*args)
+            try:
+                method(*args)
+            except TypeError as exc:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid arguments for operation {method_name}: {str(exc)}",
+                )
 
         # Execute batch
         response = service.execute_batch(builder)

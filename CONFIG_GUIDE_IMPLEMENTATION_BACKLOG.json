@@ -53,13 +53,13 @@
       "id": "F-01",
       "domain": "firewall",
       "status": "partial",
-      "title": "IPv4 rule advanced match/action parity"
+      "title": "IPv4 rule advanced match/action parity (batch chain/rule/value validation hardening added)"
     },
     {
       "id": "F-02",
       "domain": "firewall",
       "status": "partial",
-      "title": "IPv6 rule advanced match/action parity (canonical icmpv6/hop-limit mapping fixed with legacy alias compatibility)"
+      "title": "IPv6 rule advanced match/action parity (canonical icmpv6/hop-limit + strict batch chain/rule/value validation with legacy alias compatibility)"
     },
     {
       "id": "F-03",
