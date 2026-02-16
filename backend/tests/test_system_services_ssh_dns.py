@@ -621,3 +621,36 @@ def test_update_dns_config_rejects_invalid_name_server(monkeypatch, app, allow_p
     resp = client.put("/vyos/system/dns-config", json=body)
     assert resp.status_code == 400
     assert "Invalid DNS name server" in resp.json().get("detail", "")
+
+
+def test_update_dns_config_accepts_hostname_name_server(monkeypatch, app, allow_permissions):
+    service = DummyService(full_config={"service": {}, "system": {}})
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    body = {
+        "enabled": True,
+        "name_servers": ["resolver.lab.local"],
+    }
+
+    resp = client.put("/vyos/system/dns-config", json=body)
+    assert resp.status_code == 200
+    assert service.device.configure_calls, "Expected configure operation call"
+    operations = service.device.configure_calls[-1]
+    op_paths = [tuple(op.get("path") or []) for op in operations]
+    assert ("service", "dns", "forwarding", "name-server", "resolver.lab.local") in op_paths
+
+
+def test_update_dns_config_rejects_invalid_local_domain_name(monkeypatch, app, allow_permissions):
+    service = DummyService(full_config={"service": {}, "system": {}})
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    body = {
+        "enabled": True,
+        "local_domain_name": "bad domain!",
+    }
+
+    resp = client.put("/vyos/system/dns-config", json=body)
+    assert resp.status_code == 400
+    assert "Invalid local domain name" in resp.json().get("detail", "")
