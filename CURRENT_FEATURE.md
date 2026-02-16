@@ -12,15 +12,11 @@ commits:
   - 2c39ce4 (interfaces workspace panel full-width tuning)
   - 3afb5ba (interfaces family dual actions inline + open page)
   - 134fd11 (revert to dedicated separate interface family pages only)
-  - pending (restore interface family entries in left sidebar)
+  - 69a4987 (restore interface family entries in left sidebar)
+  - pending (trim family-link duplication from Interface Manager + restore old sidebar label)
 notes:
   - Interfaces sidebar remains consolidated to:
     - `Interfaces`
-  - Interfaces page keeps family grouping/filtering:
-    - `All Families`
-    - `Core & L2`
-    - `Overlay & Secure`
-    - `Access & WAN`
   - Unified manager (`/network/interfaces`) now includes inline quick-add for:
     - Dummy interfaces
     - Loopback interfaces
@@ -38,11 +34,12 @@ notes:
     - `POST /vyos/tunnel-interface/configure`
   - Family actions now use dedicated page navigation only (`Open`) for each interface type; inline workspace panel has been removed.
   - Interface family entries are restored under the left sidebar `Interfaces` section for direct navigation.
-  - Interface family cards now show `Current` (disabled) when a card targets the exact view already open, so `Open` no longer appears broken on the current page.
+  - Interface Manager no longer renders full family-link duplication; it now keeps quick-create cards only.
+  - Sidebar child label for `/network/interfaces` is restored to `All Interfaces`.
   - Setup wizard remains available on the Interfaces page via `Open Setup Wizard`.
   - Validation for this increment:
     - `cd frontend && npx tsc --noEmit --pretty false`
-    - `cd frontend && npx eslint src/app/network/interfaces/page.tsx src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0`
+    - `cd frontend && npx eslint src/app/network/interfaces/page.tsx src/components/layout/Sidebar.tsx --max-warnings=0`
     - `cd frontend && npm run -s build`
     - `cd frontend && npm run -s smoke:runtime`
   - Browser smoke (`npm run -s smoke:ui`) remains blocked by host dependency `libnspr4.so`.

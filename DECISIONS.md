@@ -250,3 +250,5 @@
 - 2026-02-16: Added dual family navigation actions (`Inline` and `Open Page`) to keep same-page workflow while preserving fast access to dedicated family pages.
 - 2026-02-16: Reverted interface family navigation to dedicated pages only and removed inline workspace/embed behavior based on operator preference for clear, non-buried per-family views.
 - 2026-02-16: Restored interface family entries in the left sidebar under `Interfaces` so operators can jump directly to each dedicated interface page.
+- 2026-02-16: Trimmed `/network/interfaces` to remove duplicated full family-link navigation; page now focuses on ethernet/VLAN management plus quick-create cards for common families.
+- 2026-02-16: Renamed the `Interfaces` child link from `Interface Manager` back to `All Interfaces` to match prior naming and reduce IA confusion.

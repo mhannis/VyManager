@@ -17,10 +17,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PageGuideDialog } from "@/components/common/PageGuideDialog";
-import { Plus, RefreshCw, AlertCircle, Search, Cable, Pencil, Trash2, Network, ArrowUpRight } from "lucide-react";
+import { Plus, RefreshCw, AlertCircle, Search, Cable, Pencil, Trash2, Network } from "lucide-react";
 import { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
 import { ethernetService } from "@/lib/api/ethernet";
 import { showService } from "@/lib/api/show";
 import type { InterfacePhysical } from "@/lib/api/show";
@@ -39,7 +38,6 @@ import { vxlanService } from "@/lib/api/vxlan";
 
 type InterfaceType = "all" | "ethernet" | "vlan";
 type InterfaceFamilyGroup = "core-l2" | "overlay-secure" | "access-wan";
-type InterfaceFamilyFilter = "all" | InterfaceFamilyGroup;
 type QuickFamily = "dummy" | "loopback" | "pppoe" | "vti" | "vxlan" | "tunnel";
 
 interface InterfaceFamily {
@@ -50,13 +48,6 @@ interface InterfaceFamily {
   summary: string;
   commonFields: string[];
 }
-
-const INTERFACE_GROUPS: Array<{ id: InterfaceFamilyFilter; label: string }> = [
-  { id: "all", label: "All Families" },
-  { id: "core-l2", label: "Core & L2" },
-  { id: "overlay-secure", label: "Overlay & Secure" },
-  { id: "access-wan", label: "Access & WAN" },
-];
 
 const INTERFACE_FAMILIES: InterfaceFamily[] = [
   {
@@ -222,11 +213,6 @@ const normalizeLinkDetail = (value?: string | null): string | undefined => {
   return trimmed;
 };
 
-const isFamilyFilter = (value: string | null): value is InterfaceFamilyFilter => {
-  if (!value) return false;
-  return INTERFACE_GROUPS.some((group) => group.id === value);
-};
-
 function parseMultilineUnique(raw: string): string[] {
   return Array.from(
     new Set(
@@ -246,8 +232,6 @@ function quoteCliValue(value: string): string {
 }
 
 function InterfacesPageContent() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [interfaces, setInterfaces] = useState<EthernetInterface[]>([]);
   const [physicalByInterface, setPhysicalByInterface] = useState<Record<string, InterfacePhysical>>({});
   const [capabilities, setCapabilities] = useState<EthernetCapabilities | null>(null);
@@ -321,9 +305,6 @@ function InterfacesPageContent() {
     vrf: "",
     disabled: false,
   });
-  const groupParam = searchParams.get("group");
-  const familyFilter: InterfaceFamilyFilter = isFamilyFilter(groupParam) ? groupParam : "all";
-
   const loadData = async () => {
     try {
       setError(null);
@@ -443,12 +424,18 @@ function InterfacesPageContent() {
     [interfaces],
   );
 
-  const visibleFamilies = useMemo(
+  const quickFamilies = useMemo(
     () =>
-      INTERFACE_FAMILIES.filter((family) =>
-        familyFilter === "all" ? true : family.group === familyFilter,
+      INTERFACE_FAMILIES.filter(
+        (family) =>
+          family.key === "dummy" ||
+          family.key === "loopback" ||
+          family.key === "pppoe" ||
+          family.key === "tunnel" ||
+          family.key === "vti" ||
+          family.key === "vxlan",
       ),
-    [familyFilter],
+    [],
   );
 
   const openQuickEditor = (family: QuickFamily) => {
@@ -969,36 +956,14 @@ function InterfacesPageContent() {
             <Card className="border-border">
               <CardContent className="space-y-4 p-4">
                 <div className="flex flex-col gap-1">
-                  <h2 className="text-base font-semibold text-foreground">Interface Families</h2>
+                  <h2 className="text-base font-semibold text-foreground">Common Interface Actions</h2>
                   <p className="text-sm text-muted-foreground">
-                    Manage all interface types from one place, grouped by operational role.
+                    Quick-create common interface families from this page. Advanced family configuration is available from the left sidebar.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {INTERFACE_GROUPS.map((group) => {
-                    const href =
-                      group.id === "all" ? "/network/interfaces" : `/network/interfaces?group=${group.id}`;
-                    const isActive = familyFilter === group.id;
-                    return (
-                      <Button key={group.id} asChild variant={isActive ? "default" : "outline"} size="sm">
-                        <Link href={href}>{group.label}</Link>
-                      </Button>
-                    );
-                  })}
-                </div>
-
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {visibleFamilies.map((family) => {
-                    const supportsQuickConfigure =
-                      family.key === "dummy" ||
-                      family.key === "loopback" ||
-                      family.key === "pppoe" ||
-                      family.key === "tunnel" ||
-                      family.key === "vti" ||
-                      family.key === "vxlan";
-                    const currentUrl = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
-                    const isActiveFamilyLink = family.href === currentUrl;
+                  {quickFamilies.map((family) => {
                     return (
                     <div
                       key={family.key}
@@ -1009,31 +974,15 @@ function InterfacesPageContent() {
                           <h3 className="font-semibold text-foreground">{family.title}</h3>
                           <p className="text-xs text-muted-foreground">{family.summary}</p>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          {supportsQuickConfigure && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="h-8 text-xs"
-                              onClick={() => openQuickEditor(family.key as QuickFamily)}
-                            >
-                              Quick Add
-                            </Button>
-                          )}
-                          {isActiveFamilyLink ? (
-                            <Button variant="ghost" size="sm" className="shrink-0" disabled>
-                              Current
-                            </Button>
-                          ) : (
-                            <Button asChild variant="ghost" size="sm" className="shrink-0">
-                              <Link href={family.href}>
-                                Open
-                                <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                              </Link>
-                            </Button>
-                          )}
-                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs"
+                          onClick={() => openQuickEditor(family.key as QuickFamily)}
+                        >
+                          Quick Add
+                        </Button>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-1.5">
                         {family.commonFields.map((field) => (

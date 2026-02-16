@@ -94,7 +94,7 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.INTERFACES,
       },
       {
-        title: "Interface Manager",
+        title: "All Interfaces",
         href: "/network/interfaces",
         requiredPermission: FeatureGroup.INTERFACES,
       },

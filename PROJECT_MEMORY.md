@@ -65,10 +65,11 @@ Feature: **Interfaces IA Consolidation v2**
 
 Acceptance criteria:
 - Interfaces sidebar keeps a dedicated `Interfaces` section with family links.
-- `/network/interfaces` presents grouped interface-family cards that route to dedicated per-family pages.
+- `/network/interfaces` keeps core ethernet/VLAN management plus quick-create actions, without duplicating full family-link navigation.
 - Interfaces page includes a clear `Open Setup Wizard` button.
 - Existing detailed interface pages remain reachable for compatibility and advanced settings.
 - Unified manager provides inline quick-add for `Dummy`, `Loopback`, `PPPoE`, `VTI`, `VXLAN`, and `Tunnel` families.
+- Sidebar label for `/network/interfaces` is restored to the prior naming (`All Interfaces`).
 - PPPoE quick-add source-interface selection uses description-first labels (`Description (ethX)`) when available.
 - Build/typecheck/runtime smoke pass after the IA changes.
 
@@ -78,21 +79,21 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback/PPPoE/VTI/VXLAN/Tunnel is implemented, family actions use dedicated pages, and sidebar family links are restored under `Interfaces`.
+- Status: interface IA consolidation v2 cleanup applied; `/network/interfaces` now focuses on quick-create actions and no longer presents full family-link UI, and the sidebar child label is now `All Interfaces`.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
 - `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/src/app/network/interfaces/page.tsx`
-- `frontend/src/components/layout/AppLayout.tsx`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
 - `DECISIONS.md`
+- `LAST_FAILURE.txt`
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/app/network/interfaces/page.tsx src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0` passed.
+- `cd frontend && npx eslint src/app/network/interfaces/page.tsx src/components/layout/Sidebar.tsx --max-warnings=0` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
 - `cd frontend && npm run -s smoke:ui` remains blocked by missing host library `libnspr4.so` (recorded in `LAST_FAILURE.txt`).
@@ -310,3 +311,5 @@ Assumptions:
 - Added embedded AppLayout mode (`?embedded=1`) so editors rendered inside the workspace sheet do not include nested sidebar chrome, fixing clipped/cut-off content.
 - Workspace panel width is now full viewport (`w-screen max-w-none`) to remove remaining horizontal clipping after embedded-mode fix.
 - Interface family cards now use dedicated-page `Open` navigation only; inline panel/embed workspace approach was removed.
+- Interface Manager no longer shows full family-link navigation; it now surfaces only quick-create cards for common families to avoid redundant link lists.
+- Sidebar child label for `/network/interfaces` was renamed from `Interface Manager` back to `All Interfaces`.

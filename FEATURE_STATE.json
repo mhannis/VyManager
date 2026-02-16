@@ -4,10 +4,11 @@
   "status": "in_progress",
   "acceptance_criteria": [
     "Interfaces navigation keeps a dedicated `Interfaces` sidebar section with family entries.",
-    "`/network/interfaces` acts as the primary hub with family grouping and direct access to all detailed editors.",
+    "`/network/interfaces` acts as the primary ethernet/VLAN manager with quick-add actions and without duplicating full family-link navigation.",
     "Family actions route to dedicated per-interface pages.",
     "Interfaces page includes a clear Setup Wizard button.",
     "Existing detailed interface pages remain reachable for advanced settings and compatibility.",
+    "Sidebar label for `/network/interfaces` is restored to `All Interfaces`.",
     "Inline PPPoE quick-add supports source interface selection with description-first labels.",
     "Inline VTI and VXLAN quick-add flows are available from Interface Manager for common setup.",
     "Inline Tunnel quick-add flow is available with required source/remote validation.",
@@ -122,6 +123,16 @@
         "frontend/src/components/layout/Sidebar.tsx"
       ],
       "notes": "Restored interface family links in the left sidebar under `Interfaces` while preserving dedicated family pages."
+    },
+    {
+      "id": "IF-IA-15",
+      "owner_role": "UI|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/app/network/interfaces/page.tsx",
+        "frontend/src/components/layout/Sidebar.tsx"
+      ],
+      "notes": "Removed full family-link duplication from Interface Manager and renamed sidebar child entry back to `All Interfaces`."
     }
   ],
   "commands": {
