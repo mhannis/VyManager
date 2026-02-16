@@ -281,6 +281,18 @@ export const SIDEBAR_VISIBILITY_ITEMS: SidebarVisibilityItem[] = [
         canHide: true,
       },
       {
+        id: "system-update-check",
+        label: "Update Check",
+        href: "/system/update-check",
+        canHide: true,
+      },
+      {
+        id: "system-watchdog",
+        label: "Watchdog",
+        href: "/system/watchdog",
+        canHide: true,
+      },
+      {
         id: "system-acceleration",
         label: "Acceleration",
         href: "/system/acceleration",

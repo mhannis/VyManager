@@ -618,6 +618,8 @@ class DnsServiceConfigResponse(BaseModel):
     allow_from: List[str] = Field(default_factory=list)
     name_servers: List[str] = Field(default_factory=list)
     use_system_name_servers: bool = False
+    system_name_servers: List[str] = Field(default_factory=list)
+    system_domain_search: List[str] = Field(default_factory=list)
     cache_size: Optional[int] = None
     authoritative_domains: List[str] = Field(default_factory=list)
     domain_overrides: List[DnsForwardingDomainOverride] = Field(default_factory=list)
@@ -631,6 +633,8 @@ class DnsServiceConfigRequest(BaseModel):
     allow_from: List[str] = Field(default_factory=list)
     name_servers: List[str] = Field(default_factory=list)
     use_system_name_servers: bool = False
+    system_name_servers: List[str] = Field(default_factory=list)
+    system_domain_search: List[str] = Field(default_factory=list)
     cache_size: Optional[int] = None
     authoritative_domains: List[str] = Field(default_factory=list)
     domain_overrides: List[DnsForwardingDomainOverride] = Field(default_factory=list)
@@ -1028,6 +1032,8 @@ def _parse_dns_service_config(full_config: Dict[str, Any]) -> DnsServiceConfigRe
 
     system_root = _as_dict(full_config.get("system"))
     local_domain_name = _string_or_none(system_root.get("domain-name"))
+    system_name_servers = _extract_tag_values(system_root, ["name-server"])
+    system_domain_search = _extract_tag_values(system_root, ["domain-search"])
 
     host_mapping_root = _as_dict(_as_dict(system_root.get("static-host-mapping")).get("host-name"))
     host_overrides: List[DnsHostOverride] = []
@@ -1048,6 +1054,8 @@ def _parse_dns_service_config(full_config: Dict[str, Any]) -> DnsServiceConfigRe
         return DnsServiceConfigResponse(
             enabled=False,
             local_domain_name=local_domain_name,
+            system_name_servers=system_name_servers,
+            system_domain_search=system_domain_search,
             host_overrides=host_overrides,
         )
 
@@ -1071,6 +1079,8 @@ def _parse_dns_service_config(full_config: Dict[str, Any]) -> DnsServiceConfigRe
         allow_from=_extract_tag_values(forwarding_root, ["allow-from"]),
         name_servers=_extract_tag_values(forwarding_root, ["name-server"]),
         use_system_name_servers=("system" in forwarding_root),
+        system_name_servers=system_name_servers,
+        system_domain_search=system_domain_search,
         cache_size=_safe_int(forwarding_root.get("cache-size")),
         authoritative_domains=_extract_tag_values(forwarding_root, ["authoritative-domain"]),
         domain_overrides=domain_overrides,
@@ -2591,6 +2601,29 @@ async def update_dns_config(request: Request, body: DnsServiceConfigRequest) -> 
                     operations.append(
                         {"op": "set", "path": ["service", "dns", "forwarding", "authoritative-domain", domain]}
                     )
+
+        # System resolver defaults (`system name-server` and `system domain-search`).
+        if "system_name_servers" in fields_set:
+            desired_system_name_servers = set(
+                _normalize_dns_server_or_400(name_server, field_name="system DNS name server")
+                for name_server in _normalize_unique_strings(body.system_name_servers)
+            )
+            current_system_name_servers = set(_extract_tag_values(raw_system, ["name-server"]))
+            for ns in sorted(current_system_name_servers - desired_system_name_servers):
+                operations.append({"op": "delete", "path": ["system", "name-server", ns]})
+            for ns in sorted(desired_system_name_servers - current_system_name_servers):
+                operations.append({"op": "set", "path": ["system", "name-server", ns]})
+
+        if "system_domain_search" in fields_set:
+            desired_domain_search = set(
+                _normalize_hostname_or_400(domain, field_name="system domain-search")
+                for domain in _normalize_unique_strings(body.system_domain_search)
+            )
+            current_domain_search = set(_extract_tag_values(raw_system, ["domain-search"]))
+            for domain in sorted(current_domain_search - desired_domain_search):
+                operations.append({"op": "delete", "path": ["system", "domain-search", domain]})
+            for domain in sorted(desired_domain_search - current_domain_search):
+                operations.append({"op": "set", "path": ["system", "domain-search", domain]})
 
         # System domain-name.
         if "local_domain_name" in fields_set:

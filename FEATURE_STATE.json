@@ -1,36 +1,17 @@
 {
-  "feature_id": "service-ux-and-lldp-parsing-hardening-2026-02-16",
-  "title": "Service UX and LLDP parsing hardening",
+  "feature_id": "system-interfaces-largest-buckets-2026-02-16",
+  "title": "System + Interfaces largest bucket depth pass",
   "status": "in_progress",
   "acceptance_criteria": [
-    "LLDP dashboard/service status can populate neighbors when show output is structured instead of table-formatted.",
-    "LLDP dashboard/service status can also populate neighbors when show `data` is JSON text.",
-    "DHCP create/edit forms default DNS to gateway IP when DNS list is empty while preserving manual override.",
-    "DHCP create existing-network mode preloads sensible defaults from selected shared network.",
-    "Router Advertisements interface entry offers description-first interface suggestions.",
-    "DNS tab rejects partial/invalid domain+host override rows with explicit errors (no silent drops).",
-    "DNS backend rejects malformed listen-address/allow-from/name-server/domain values with deterministic HTTP 400 responses.",
-    "LLDP/mDNS tabs reject malformed management/domain/service-filter/cache values before API submit.",
-    "LLDP interface displays in services views use description-first labels when available.",
-    "Load Balancing WAN rules provide guided outbound interface selection and reject unknown interface names before add/apply.",
-    "Bridge firewall rule rows display interface labels as Description (ethX) when metadata is available.",
-    "System acceleration interface selectors/tables display description-first labels when metadata is available.",
-    "Policy Route applied-interface badges display description-first labels when metadata is available.",
-    "Load Balancing quick-select controls respect RBAC write permissions (disabled in read-only mode).",
-    "Local Route rule displays and delete confirmations show description-first interface labels when metadata is available.",
-    "Local Route create/edit inbound-interface selectors display description-first labels when metadata is available.",
-    "Runtime smoke probes include recently touched policy/firewall/system routes to reduce false green builds.",
-    "Runtime/browser smoke probes cover expanded high-risk routing/firewall/system/VPN pages touched in backlog slices.",
-    "Containers page removes the duplicate top-level New Container action and relies on the in-form controls for create/edit/reset.",
-    "System Syslog has dedicated backend wrapper and frontend page with structured global, console, file, and remote destination controls.",
-    "System Syslog route is available in sidebar and smoke probes, and wrapper capability/config/batch tests pass.",
-    "WireGuard interface list/header display description-first labels when metadata is available.",
-    "Backend and frontend validation gates pass for touched surfaces."
+    "DNS settings support system name-server and system domain-search ownership through GUI and backend validation.",
+    "System Update Check and System Watchdog have dedicated form-first pages backed by scoped backend wrappers.",
+    "Sidebar/navigation includes new System pages and smoke probes cover their routes.",
+    "Wireless interface editor supports additional VHT capabilities from VyOS guide and saves via structured controls.",
+    "Backend and frontend validation commands pass for touched files."
   ],
   "assumptions": [
-    "Some VyOS builds return LLDP show payloads in non-table structures.",
-    "Operators expect visible DNS defaults in DHCP forms instead of submit-time-only fallback.",
-    "Interface suggestion lists should remain advisory; free-text must stay available for advanced cases."
+    "System update-check parity in this slice targets documented `system update-check url` support.",
+    "Watchdog parity in this slice targets documented `ping`, `startup-delay`, and `test-interval` controls."
   ],
   "tasks": [
     {
@@ -38,194 +19,90 @@
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/system.py",
-        "backend/tests/test_system_lldp_parsing.py",
-        "backend/tests/test_system_services_ssh_dns.py"
+        "backend/routers/system_update_check.py",
+        "backend/routers/system_watchdog.py",
+        "backend/app.py"
       ],
-      "notes": "Added structured LLDP parser fallbacks (including JSON-text data payloads), endpoint-level LLDP tests, and DNS input validation in update endpoint."
+      "notes": "Added and registered thin config-tree wrappers for system update-check and watchdog."
     },
     {
       "id": "T2",
-      "owner_role": "UI",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/src/components/services/CreateDHCPServerModal.tsx",
-        "frontend/src/components/services/EditDHCPServerModal.tsx",
-        "frontend/src/components/system/DnsServiceTab.tsx",
-        "frontend/src/app/system/services/page.tsx"
+        "backend/routers/system.py",
+        "backend/tests/test_system_services_ssh_dns.py"
       ],
-      "notes": "Added gateway-based DNS defaults, existing-network default prefill behavior, strict DNS override row validation in DNS tab, and LLDP/mDNS pre-submit validation + description-first interface label display in services page."
+      "notes": "Extended DNS model + update flow for system name-server/domain-search ownership and validation, with regression tests."
     },
     {
       "id": "T3",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/system/RouterAdvertServiceTab.tsx"
+        "frontend/src/components/system/DnsServiceTab.tsx",
+        "frontend/src/lib/api/system.ts"
       ],
-      "notes": "Added description-first interface suggestions."
+      "notes": "Added system resolver defaults fields to DNS tab and payload wiring/validation."
     },
     {
       "id": "T4",
-      "owner_role": "Test",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "backend/tests/test_system_lldp_parsing.py",
-        "backend/tests/test_system_services_ssh_dns.py"
+        "frontend/src/app/system/update-check/page.tsx",
+        "frontend/src/app/system/watchdog/page.tsx",
+        "frontend/src/lib/api/system-update-check.ts",
+        "frontend/src/lib/api/system-watchdog.ts",
+        "frontend/src/components/layout/Sidebar.tsx",
+        "frontend/src/lib/sidebar-visibility.ts",
+        "frontend/src/lib/help/pageGuides.ts"
       ],
-      "notes": "Ran backend LLDP/system service suites and added endpoint-level LLDP status fallback + DNS validation compatibility tests alongside frontend runtime/build gates."
+      "notes": "Implemented two new system pages and integrated navigation/help coverage."
     },
     {
       "id": "T5",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/lib/api/wireless.ts",
+        "frontend/src/app/network/interfaces/wireless/page.tsx"
+      ],
+      "notes": "Expanded wireless form/API model to include VHT capability depth (scalar, tag, and beamform flag leaves)."
+    },
+    {
+      "id": "T6",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/test_config_tree_wrapper_capabilities.py",
+        "frontend/scripts/check-runtime.sh",
+        "frontend/scripts/smoke-ui.mjs"
+      ],
+      "notes": "Extended wrapper tests and smoke route probes; backend/frontend validation commands passed."
+    },
+    {
+      "id": "T7",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
         "backend/routers/system.py",
-        "frontend/src/components/services/CreateDHCPServerModal.tsx",
-        "frontend/src/components/services/EditDHCPServerModal.tsx",
-        "frontend/src/components/system/RouterAdvertServiceTab.tsx"
+        "frontend/src/app/system/update-check/page.tsx",
+        "frontend/src/app/system/watchdog/page.tsx",
+        "frontend/src/app/network/interfaces/wireless/page.tsx"
       ],
       "notes": "Manual in-process review complete. APPROVED."
-    },
-    {
-      "id": "T6",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/network/load-balancing/page.tsx",
-        "frontend/src/app/firewall/bridge/page.tsx",
-        "frontend/src/components/firewall/BridgeRuleRow.tsx"
-      ],
-      "notes": "Added load-balancing outbound quick-select and strict interface validation, plus description-first bridge interface labels in rule rows."
-    },
-    {
-      "id": "T7",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/system/acceleration/page.tsx"
-      ],
-      "notes": "Added description-first interface labels to VPP interface selector and assignment table in System Acceleration."
-    },
-    {
-      "id": "T8",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/policies/route/page.tsx"
-      ],
-      "notes": "Policy Route applied-interface badges now render description-first interface labels."
-    },
-    {
-      "id": "T9",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/network/load-balancing/page.tsx"
-      ],
-      "notes": "Outbound quick-select controls now disable cleanly in read-only mode to align with RBAC expectations."
-    },
-    {
-      "id": "T10",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/policies/local-route/page.tsx",
-        "frontend/src/components/policies/LocalRouteRuleRow.tsx",
-        "frontend/src/components/policies/DeleteLocalRouteModal.tsx"
-      ],
-      "notes": "Local Route now renders inbound interfaces as description-first labels in table rows and delete confirmation modal."
-    },
-    {
-      "id": "T11",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/components/policies/CreateLocalRouteModal.tsx",
-        "frontend/src/components/policies/EditLocalRouteModal.tsx"
-      ],
-      "notes": "Local Route create/edit modals now render interface selectors with description-first labels for ethernet interfaces."
-    },
-    {
-      "id": "T12",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "frontend/scripts/check-runtime.sh",
-        "frontend/scripts/smoke-ui.mjs"
-      ],
-      "notes": "Expanded smoke-route probes to include policy/firewall/system pages touched in recent slices and reran runtime smoke successfully."
-    },
-    {
-      "id": "T13",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/system/containers/page.tsx"
-      ],
-      "notes": "Removed duplicate top-level New Container action so create/edit operations are handled consistently via in-form Install/Save/Reset controls."
-    },
-    {
-      "id": "T14",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/vpn/wireguard/page.tsx"
-      ],
-      "notes": "WireGuard page now renders interface names with description-first display labels in the sidebar list and selected interface header."
-    },
-    {
-      "id": "T15",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "frontend/scripts/check-runtime.sh",
-        "frontend/scripts/smoke-ui.mjs"
-      ],
-      "notes": "Expanded runtime/browser smoke route coverage for additional routing/firewall/system/VPN pages and reran build/runtime gates."
-    },
-    {
-      "id": "T16",
-      "owner_role": "Backend",
-      "status": "done",
-      "files": [
-        "backend/routers/system_syslog.py",
-        "backend/app.py"
-      ],
-      "notes": "Added thin config-tree wrapper for `system syslog` and registered `/vyos/system-syslog/*` endpoints."
-    },
-    {
-      "id": "T17",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/lib/api/system-syslog.ts",
-        "frontend/src/app/system/syslog/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx",
-        "frontend/scripts/check-runtime.sh",
-        "frontend/scripts/smoke-ui.mjs"
-      ],
-      "notes": "Implemented structured System Syslog page (global/console/file/remote with TLS baseline), added sidebar navigation, and extended smoke route probes with `/system/syslog`."
-    },
-    {
-      "id": "T18",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/test_config_tree_wrapper_capabilities.py"
-      ],
-      "notes": "Extended wrapper regression suite for `/vyos/system-syslog/{capabilities,config,batch}` and validated scope filtering."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py tests/test_system_dashboard_temperature.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Backlog parity hardening and UX reliability",
+      "purpose": "System and interfaces largest-bucket parity execution",
       "status": "active"
     }
   ]

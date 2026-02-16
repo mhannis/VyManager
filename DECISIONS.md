@@ -2,6 +2,9 @@
 
 ## Decision Log
 
+- 2026-02-16: Implemented `system update-check` and `system watchdog` as thin `build_config_tree_router(...)` wrappers plus dedicated form-first pages, preserving existing backend API/service contracts and avoiding broad system-router rewrites.
+- 2026-02-16: Resolved `SYS-10` DNS ownership gap by extending existing `/vyos/system/dns-config` models to include `system_name_servers` + `system_domain_search` rather than creating a parallel endpoint, so UI ownership stays consolidated and backward-compatible.
+- 2026-02-16: Deepened wireless parity using guide-backed VHT leaves in the existing Wireless page/API parser (scalar + tag + beamform flags) to increase interface bucket depth without introducing new interface-family routes.
 - 2026-02-16: Prioritized a UX hardening pass on `Network -> Load Balancing` before deeper protocol backlog by adding outbound quick-select controls and strict interface-name validation; this reduces operator misconfiguration risk on a frequently used workflow while preserving existing backend API contracts.
 - 2026-02-16: Chose to surface description-first interface labels in `Firewall -> Bridge` rule rows via page-level label hydration (`show all interfaces` + ethernet descriptions) and a thin prop extension to `BridgeRuleRow`, avoiding backend refactors and keeping rendering logic localized.
 - 2026-02-16: Applied the same description-first labeling pattern to `System -> Acceleration` VPP interface selectors/rows (using runtime counters + ethernet description merge) to keep interface identity consistent across system/network/firewall domains.

@@ -128,6 +128,8 @@ from routers.system_lcd import system_lcd as system_lcd_router
 from routers.system_sflow import system_sflow as system_sflow_router
 from routers.system_syslog import system_syslog as system_syslog_router
 from routers.system_task_scheduler import system_task_scheduler as system_task_scheduler_router
+from routers.system_update_check import system_update_check as system_update_check_router
+from routers.system_watchdog import system_watchdog as system_watchdog_router
 
 # Load backend/.env when uvicorn is started without exported shell vars.
 load_dotenv(Path(__file__).resolve().parent / ".env")
@@ -443,6 +445,8 @@ app.include_router(system_lcd_router)
 app.include_router(system_sflow_router)
 app.include_router(system_syslog_router)
 app.include_router(system_task_scheduler_router)
+app.include_router(system_update_check_router)
+app.include_router(system_watchdog_router)
 app.include_router(system.router)
 app.include_router(power_router.router)
 app.include_router(config_router.router)

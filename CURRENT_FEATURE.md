@@ -1,45 +1,35 @@
-feature_id: service-ux-and-lldp-parsing-hardening-2026-02-16
-title: Service UX and LLDP parsing hardening (`SVC-03`/`SVC-05` support pass)
+feature_id: system-interfaces-largest-buckets-2026-02-16
+title: System + Interfaces largest bucket depth pass (`SYS-10`, `SYS-16`, `IF-13`)
 status: in_progress
 branch: feature/containers-automation-v1
 completed_in_cycle:
-  - Added backend LLDP structured-payload fallback parsing for runtime neighbor status when table output is empty.
-  - Added LLDP parser regression coverage for list-style and nested interface-key structured payloads.
-  - Added LLDP `/vyos/system/lldp-status` endpoint tests to verify structured neighbor/detail payload fallback behavior end-to-end.
-  - Extended LLDP structured parser to decode JSON-text payloads embedded in show `data` fields and added endpoint/unit regression coverage.
-  - DHCP create/edit modals now default DNS servers to the gateway IP in form state when DNS is empty.
-  - DHCP create modal now auto-prefills gateway/domain/lease/DNS defaults when adding a subnet into an existing shared network.
-  - Router Advertisements service tab now provides description-first interface suggestions while preserving free-form interface entry.
-  - DNS service tab now blocks partial/invalid domain and host override rows (with explicit row-level error messages) instead of silently dropping malformed entries.
-  - DNS backend update endpoint now validates `listen-address`, `allow-from`, `name-server`, `authoritative-domain`, and `local_domain_name` inputs before apply.
-  - Expanded DNS backend regression coverage to verify hostname upstream nameservers still work and invalid local domain names return HTTP 400.
-  - System Services LLDP/mDNS save paths now pre-validate LLDP management IPs, mDNS browse domains, mDNS service-filter tokens, and cache-entry integer constraints.
-  - LLDP configuration/runtime tables now consistently display interface labels using description-first naming when available.
-  - Network Load Balancing WAN rules now include quick-select outbound interface checkboxes with strict interface existence validation before add.
-  - Bridge Firewall rule rows now display inbound/outbound interfaces using description-first labels sourced from runtime/config inventory.
-  - System Acceleration VPP interface selections and table rows now use description-first interface labels for consistent interface identity across system/network/firewall pages.
-  - Policies Route page now shows applied-interface badges with description-first labels when metadata is available.
-  - Load Balancing outbound quick-select controls now honor read-only permission mode and disable interaction for users without write access.
-  - Local Route rule rows and delete confirmations now display inbound interfaces with description-first labels when metadata exists.
-  - Local Route create/edit modals now use description-first interface labels in inbound-interface selectors.
-  - Runtime/browser smoke route sets were expanded to probe additional high-risk pages (`firewall/policies`, `firewall/bridge`, `firewall/global-options`, `policies/route`, `policies/local-route`, `system/acceleration`) so regressions are caught earlier.
-  - Removed the duplicate top-bar `New Container` control in `System -> Containers`; operators now use the existing in-form controls (`Install`, `Save`, `Reset`) for a cleaner workflow.
-  - Expanded runtime/browser smoke route probes to cover more high-risk pages (`/routing/unicast-protocols/bgp`, `/routing/infrastructure/bfd`, `/routing/infrastructure/arp`, `/routing/static-failover/failover`, `/network/nat`, `/network/routes`, `/firewall/groups`, `/firewall/flowtables`, `/system/options`, `/system/logs`, `/system/users`, `/vpn/wireguard`).
-  - Added backend `system-syslog` config-tree wrapper (`/vyos/system-syslog/*`) and registered it in app routing.
-  - Added `System -> Syslog` GUI with structured global options plus console/file/remote destination rule editing (remote includes protocol/port/format/TLS baseline controls).
-  - Added `Syslog` entry to System sidebar and extended smoke route probes to include `/system/syslog`.
-  - Added config-tree wrapper regression coverage for `system-syslog` capabilities/config/batch scope validation.
-  - `VPN -> WireGuard` interface list/header now use description-first interface labels for consistency with the global naming pattern.
+  - Added backend config-tree wrappers for `system update-check` and `system watchdog` (`/vyos/system-update-check/*`, `/vyos/system-watchdog/*`) and registered both in app routing.
+  - Added full GUI pages for `System -> Update Check` and `System -> Watchdog` with structured form-based save flows (no command textbox UX).
+  - Added sidebar navigation and navigation-visibility support for the new System pages.
+  - Extended DNS service API model and backend implementation to expose and manage `system name-server` + `system domain-search` through DNS settings ownership cleanup.
+  - Added DNS tab UI fields for System Name Servers and System Domain Search with validation and explicit payload wiring.
+  - Deepened Wireless interface parity with VHT capability coverage:
+    - `vht antenna-count`
+    - `vht center-channel-freq-1/2`
+    - `vht channel-set-width`
+    - `vht link-adaptation`
+    - `vht max-mpdu-exp`
+    - `vht max-a-mpdu-exp`
+    - `vht short-gi`
+    - `vht beamform` flags (SU/MU beamformer/beamformee)
+  - Expanded runtime/browser smoke route lists to include the new System pages.
+  - Extended backend wrapper regression test suite for the two new wrappers.
+  - Extended backend DNS tests for system resolver defaults parsing/update/validation.
 validation:
-  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py
-  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py
-  - cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime
-  - cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime  # post load-balancing + bridge label sweep
-  - node --check frontend/scripts/smoke-ui.mjs
-  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py
+  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py
+  - cd frontend && npx tsc --noEmit --pretty false
+  - cd frontend && npm run -s build
+  - cd frontend && npm run -s smoke:runtime
+  - cd frontend && npm run -s lint  # warnings-only baseline remains; no errors
 known_limitations:
-  - Browser smoke (Playwright) remains blocked on host dependency (`libnspr4.so`) and is outside this slice’s pass gate.
+  - Frontend lint baseline still contains pre-existing repo-wide warnings outside this slice.
+  - Browser Playwright smoke was not re-run in this cycle; runtime smoke + build/typecheck passed.
 next_queue:
-  - Continue service parity depth (`SVC-03`, `SVC-04`, `SVC-05`) with guide-complete forms and validation.
-  - Continue interface label consistency sweep for remaining service/protocol forms.
-  - Continue firewall option-depth parity hardening (`F-01`..`F-06`).
+  - Continue `system` bucket depth: login/user parity deepening and remaining time/update/watchdog option coverage verification.
+  - Continue `interfaces` bucket depth for WWAN/Wireless advanced leaves and live-save guide verification.
+  - Continue backlog progression in requested guide order after this batch is reviewed.

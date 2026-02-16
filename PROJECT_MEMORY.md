@@ -57,56 +57,61 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 ## Current Objective
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
-- Continue reducing strict backlog by implementing partial domains in robust form-first UX.
-- Continue firewall option-depth parity with robust backend validation, correct IPv6 operation mapping, and predictable API error behavior.
+- Continue reducing the largest partial domains (`system`, `interfaces`) with guide-backed option-depth work.
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Service UX and LLDP parsing hardening (`SVC-03`/`SVC-05` support pass)**
+Feature: **Largest bucket pass: System + Interfaces (`SYS-10`, `SYS-16`, `IF-13`)**
 
 Acceptance criteria:
-- Parse LLDP neighbors from structured show payloads when text-table parsing is unavailable/empty.
-- Parse LLDP neighbors when show `data` payloads are JSON text (stringified structured output).
-- Keep DHCP DNS defaults visible in-form by auto-seeding gateway IP when DNS values are blank.
-- Prefill DHCP create form defaults when adding a subnet to an existing shared network.
-- Provide description-first interface suggestions in Router Advertisements service form.
-- Reject malformed/partial DNS override rows in UI before save and return deterministic backend `400` for invalid DNS input values.
+- DNS configuration supports ownership of `system name-server` and `system domain-search` with explicit UI fields + backend validation.
+- Dedicated form-first pages exist for `System -> Update Check` and `System -> Watchdog`, backed by scoped config-tree wrappers.
+- Navigation/smoke coverage includes the new System pages.
+- Wireless page includes deeper VHT capability controls from the guide without using free-form CLI text input.
 - Preserve existing API contracts and thin-wrapper architecture.
 - Pass backend+frontend validation gates.
 
 Assumptions:
-- Some VyOS builds return LLDP runtime data as structured payloads instead of parseable table text.
-- Operators expect DHCP default DNS behavior to be visible before submit, not only applied at submit time.
-- Interface suggestion lists should be advisory; free-text entry remains required for advanced/non-discovered interfaces.
-- Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
+- `system update-check` parity for this slice targets the documented `url` leaf.
+- `system watchdog` parity for this slice targets documented `ping`, `startup-delay`, and `test-interval` leaves.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: LLDP parsing + DHCP modal defaults + Router Advertisements interface suggestion slice implemented and pushed.
-- Backlog audit (2026-02-16): service robustness pass in progress for `SVC-03` and `SVC-05`.
+- Status: system/interfaces largest-bucket depth pass implemented locally and validated.
+- Backlog audit (2026-02-16): moved forward on `SYS-10`, `SYS-16`, and `IF-13`.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
+- `backend/app.py`
 - `backend/routers/system.py`
-- `backend/tests/test_system_lldp_parsing.py`
+- `backend/routers/system_update_check.py`
+- `backend/routers/system_watchdog.py`
+- `backend/tests/test_config_tree_wrapper_capabilities.py`
 - `backend/tests/test_system_services_ssh_dns.py`
-- `frontend/src/app/firewall/zones/page.tsx`
-- `frontend/src/components/services/CreateDHCPServerModal.tsx`
-- `frontend/src/components/services/EditDHCPServerModal.tsx`
+- `frontend/src/app/network/interfaces/wireless/page.tsx`
+- `frontend/src/app/system/update-check/page.tsx`
+- `frontend/src/app/system/watchdog/page.tsx`
+- `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/src/components/system/DnsServiceTab.tsx`
-- `frontend/src/components/system/RouterAdvertServiceTab.tsx`
+- `frontend/src/lib/api/system-update-check.ts`
+- `frontend/src/lib/api/system-watchdog.ts`
+- `frontend/src/lib/api/wireless.ts`
+- `frontend/src/lib/api/system.ts`
+- `frontend/src/lib/help/pageGuides.ts`
+- `frontend/src/lib/sidebar-visibility.ts`
+- `frontend/scripts/check-runtime.sh`
+- `frontend/scripts/smoke-ui.mjs`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
 - `DECISIONS.md`
-- `LAST_FAILURE.txt`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py` passed.
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py` passed.
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py` passed after LLDP JSON-text fallback + DNS validation additions.
-- `cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime` passed (multiple runs during cycle).
-- `cd frontend && npm run -s smoke:ui` still blocked on host dependency (`libnspr4.so` missing).
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py` passed (`130 passed`).
+- `cd frontend && npx tsc --noEmit --pretty false` passed.
+- `cd frontend && npm run -s build` passed.
+- `cd frontend && npm run -s smoke:runtime` passed.
+- `cd frontend && npm run -s lint` passed with warnings only (`0 errors`).
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
@@ -121,12 +126,17 @@ Assumptions:
 
 ## TODO Backlog (next queue)
 - Continue option-depth parity sweep for high-impact partial domains (Firewall, Interfaces, Protocols, Services, VPN, System).
-- Continue container live verification pass on clean instance (`C-02/03/04` -> done).
+- Continue `system` depth (`SYS-09`, remaining `SYS-16` leaves verification, and live workflow validation).
+- Continue `interfaces` depth (`IF-14`, `IF-15`) with guide-leaf completion and live save/apply verification.
 - Continue firewall parity depth beyond recent hardening (`F-01`, `F-02`, `F-04`, `F-05`, `F-06`).
-- Improve option-level parity scorer precision and add CI thresholds (`X-01` hardening).
-- Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
+- Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui` where deps permit).
 
 ## Agent Handoff Notes
+- Added thin system wrappers `system_update_check` and `system_watchdog` (`/vyos/system-update-check/*`, `/vyos/system-watchdog/*`) and registered them in `backend/app.py`.
+- Added form-first System pages `/system/update-check` and `/system/watchdog` plus matching API clients (`system-update-check.ts`, `system-watchdog.ts`) and help guides (`pageGuides.systemUpdateCheck`, `pageGuides.systemWatchdog`).
+- `System -> DNS` now owns both forwarding settings and resolver defaults: backend + UI support for `system name-server` and `system domain-search` with strict validation and deterministic errors.
+- Wireless parity deepening added VHT capability leaves (antenna count, channel/frequency, link adaptation, MPDU/A-MPDU, short GI, beamforming flags) in API parsing and UI command generation.
+- Smoke route coverage now includes `/system/update-check` and `/system/watchdog` in both runtime and browser smoke scripts.
 - LLDP runtime neighbor parsing now includes a structured-payload fallback path in `backend/routers/system.py` (`_parse_lldp_neighbors_structured_output`) when text parsing returns no neighbors.
 - Added LLDP structured parser regression tests in `backend/tests/test_system_lldp_parsing.py` for both list-style and nested interface-key payload shapes.
 - Added endpoint-level LLDP status tests in `backend/tests/test_system_services_ssh_dns.py` to verify structured `neighbors` and structured `detail` fallback parsing through `/vyos/system/lldp-status`.

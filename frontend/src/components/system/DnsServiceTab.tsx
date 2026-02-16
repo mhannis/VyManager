@@ -125,7 +125,11 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
     setError(null);
     try {
       const data = await systemService.getDnsConfig(refresh);
-      setConfig(data);
+      setConfig({
+        ...data,
+        system_name_servers: data.system_name_servers ?? [],
+        system_domain_search: data.system_domain_search ?? [],
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load DNS configuration.");
     } finally {
@@ -187,6 +191,8 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
     const normalizedListenAddresses = fromCsv(toCsv(config.listen_addresses));
     const normalizedAllowFrom = fromCsv(toCsv(config.allow_from));
     const normalizedNameServers = fromCsv(toCsv(config.name_servers));
+    const normalizedSystemNameServers = fromCsv(toCsv(config.system_name_servers ?? []));
+    const normalizedSystemDomainSearch = fromCsv(toCsv(config.system_domain_search ?? []));
     const normalizedAuthoritativeDomains = fromCsv(toCsv(config.authoritative_domains));
     const normalizedLocalDomain = config.local_domain_name?.trim() || null;
 
@@ -209,6 +215,22 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
     for (const server of normalizedNameServers) {
       if (!isValidDnsServerToken(server)) {
         setError(`Invalid DNS name server '${server}'.`);
+        setSuccess(null);
+        return;
+      }
+    }
+
+    for (const server of normalizedSystemNameServers) {
+      if (!isValidDnsServerToken(server)) {
+        setError(`Invalid system DNS name server '${server}'.`);
+        setSuccess(null);
+        return;
+      }
+    }
+
+    for (const domain of normalizedSystemDomainSearch) {
+      if (!isValidHostnameLike(domain)) {
+        setError(`Invalid system domain-search value '${domain}'.`);
         setSuccess(null);
         return;
       }
@@ -312,6 +334,8 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
       allow_from: normalizedAllowFrom,
       name_servers: normalizedNameServers,
       use_system_name_servers: config.use_system_name_servers,
+      system_name_servers: normalizedSystemNameServers,
+      system_domain_search: normalizedSystemDomainSearch,
       cache_size: config.cache_size,
       authoritative_domains: normalizedAuthoritativeDomains,
       domain_overrides: normalizedDomainOverrides
@@ -407,6 +431,45 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
                     placeholder="150"
                     disabled={!canEdit || saving || !config.enabled}
                   />
+                </div>
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>System Name Servers (comma separated)</Label>
+                  <Input
+                    value={toCsv(config.system_name_servers ?? [])}
+                    onChange={(event) =>
+                      setConfig((previous) =>
+                        previous
+                          ? { ...previous, system_name_servers: fromCsv(event.target.value) }
+                          : previous
+                      )
+                    }
+                    placeholder="1.1.1.1, 9.9.9.9"
+                    disabled={!canEdit || saving}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Writes `system name-server ...` and is shared with other resolver-aware services.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>System Domain Search (comma separated)</Label>
+                  <Input
+                    value={toCsv(config.system_domain_search ?? [])}
+                    onChange={(event) =>
+                      setConfig((previous) =>
+                        previous
+                          ? { ...previous, system_domain_search: fromCsv(event.target.value) }
+                          : previous
+                      )
+                    }
+                    placeholder="lab.local, corp.example.com"
+                    disabled={!canEdit || saving}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Writes `system domain-search ...` suffixes for host resolution lookups.
+                  </p>
                 </div>
               </div>
 

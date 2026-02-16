@@ -34,6 +34,8 @@ import routers.system_lcd as system_lcd_router
 import routers.system_sflow as system_sflow_router
 import routers.system_syslog as system_syslog_router
 import routers.system_task_scheduler as system_task_scheduler_router
+import routers.system_update_check as system_update_check_router
+import routers.system_watchdog as system_watchdog_router
 import routers.load_balancing.load_balancing as load_balancing_router
 import routers.pki.pki as pki_router
 import routers.traffic_policy.traffic_policy as traffic_policy_router
@@ -353,6 +355,17 @@ class DummyService:
                         }
                     }
                 },
+                "update-check": {
+                    "url": "https://dev.packages.vyos.net/",
+                },
+                "watchdog": {
+                    "ping": {
+                        "192.0.2.1": {},
+                        "resolver.example.net": {},
+                    },
+                    "startup-delay": "120",
+                    "test-interval": "15",
+                },
                 "proxy": {
                     "url": "http://proxy.lab.local",
                     "port": "3128",
@@ -434,6 +447,8 @@ def app():
     app.include_router(system_sflow_router.system_sflow)
     app.include_router(system_syslog_router.system_syslog)
     app.include_router(system_task_scheduler_router.system_task_scheduler)
+    app.include_router(system_update_check_router.system_update_check)
+    app.include_router(system_watchdog_router.system_watchdog)
     return app
 
 
@@ -497,6 +512,8 @@ def mock_service(monkeypatch):
         "/vyos/system-sflow/capabilities",
         "/vyos/system-syslog/capabilities",
         "/vyos/system-task-scheduler/capabilities",
+        "/vyos/system-update-check/capabilities",
+        "/vyos/system-watchdog/capabilities",
     ],
 )
 def test_config_tree_wrapper_capabilities_payload(app, allow_permissions, mock_service, path):
@@ -547,6 +564,8 @@ def test_config_tree_wrapper_capabilities_payload(app, allow_permissions, mock_s
         ("/vyos/system-sflow/config", "sflow", "server"),
         ("/vyos/system-syslog/config", "syslog", "preserve-fqdn"),
         ("/vyos/system-task-scheduler/config", "task_scheduler", "task"),
+        ("/vyos/system-update-check/config", "update_check", "url"),
+        ("/vyos/system-watchdog/config", "watchdog", "ping"),
     ],
 )
 def test_config_tree_wrapper_config_payload(
@@ -747,6 +766,16 @@ def test_wireless_config_includes_country_code(app, allow_permissions, mock_serv
             "/vyos/system-task-scheduler/batch",
             "set system task-scheduler task backup-config interval 300",
             "set system lcd model CFA635",
+        ),
+        (
+            "/vyos/system-update-check/batch",
+            "set system update-check url https://dev.packages.vyos.net/",
+            "set system watchdog startup-delay 120",
+        ),
+        (
+            "/vyos/system-watchdog/batch",
+            "set system watchdog startup-delay 120",
+            "set system update-check url https://dev.packages.vyos.net/",
         ),
     ],
 )

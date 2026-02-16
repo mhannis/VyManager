@@ -83,6 +83,18 @@ export interface WirelessInterfaceConfig {
   capHtShortGi: string[];
   capHtSmps: string;
   capHtStbcRx: string;
+  capVhtAntennaCount: string;
+  capVhtCenterChannelFreq1: string;
+  capVhtCenterChannelFreq2: string;
+  capVhtChannelSetWidth: string;
+  capVhtLinkAdaptation: string;
+  capVhtMaxMpduExp: string;
+  capVhtMaxAmpduExp: string;
+  capVhtShortGi: string[];
+  capVhtBeamformSingleUserBeamformer: boolean;
+  capVhtBeamformSingleUserBeamformee: boolean;
+  capVhtBeamformMultiUserBeamformer: boolean;
+  capVhtBeamformMultiUserBeamformee: boolean;
 }
 
 export interface WirelessConfig {
@@ -110,6 +122,8 @@ class WirelessService {
       const capabilities = asObject(node.capabilities);
       const ht = asObject(capabilities.ht);
       const capHtStbc = asObject(ht.stbc);
+      const vht = asObject(capabilities.vht);
+      const vhtBeamform = asObject(vht.beamform);
 
       const radiusServers: WirelessRadiusServer[] = Object.keys(radius)
         .sort((left, right) => left.localeCompare(right))
@@ -160,6 +174,30 @@ class WirelessService {
         capHtShortGi: readTagValues(ht["short-gi"]),
         capHtSmps: asString(ht.smps),
         capHtStbcRx: asString(capHtStbc.rx),
+        capVhtAntennaCount: asString(vht["antenna-count"]),
+        capVhtCenterChannelFreq1: asString(vht["center-channel-freq-1"]),
+        capVhtCenterChannelFreq2: asString(vht["center-channel-freq-2"]),
+        capVhtChannelSetWidth: asString(vht["channel-set-width"]),
+        capVhtLinkAdaptation: asString(vht["link-adaptation"]),
+        capVhtMaxMpduExp: asString(vht["max-mpdu-exp"]),
+        capVhtMaxAmpduExp: asString(vht["max-a-mpdu-exp"]),
+        capVhtShortGi: readTagValues(vht["short-gi"]),
+        capVhtBeamformSingleUserBeamformer: Object.prototype.hasOwnProperty.call(
+          vhtBeamform,
+          "single-user-beamformer",
+        ),
+        capVhtBeamformSingleUserBeamformee: Object.prototype.hasOwnProperty.call(
+          vhtBeamform,
+          "single-user-beamformee",
+        ),
+        capVhtBeamformMultiUserBeamformer: Object.prototype.hasOwnProperty.call(
+          vhtBeamform,
+          "multi-user-beamformer",
+        ),
+        capVhtBeamformMultiUserBeamformee: Object.prototype.hasOwnProperty.call(
+          vhtBeamform,
+          "multi-user-beamformee",
+        ),
       });
     }
 

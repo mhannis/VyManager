@@ -35,6 +35,8 @@ export const pageGuides: Record<
   | "systemLcd"
   | "systemSflow"
   | "systemTaskScheduler"
+  | "systemUpdateCheck"
+  | "systemWatchdog"
   | "systemProxy"
   | "systemSysctl"
   | "containers"
@@ -1070,6 +1072,65 @@ export const pageGuides: Record<
         items: [
           "Failed tasks often come from wrong script path, permissions, or malformed schedule values.",
           "Use explicit absolute paths for scripts and binaries.",
+        ],
+      },
+    ],
+  },
+  systemUpdateCheck: {
+    title: "System Update Check How-To",
+    summary:
+      "Configure the optional update-check URL used by VyOS when checking package metadata.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/system/updates.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Leave URL empty to keep default package source behavior.",
+          "Set a custom URL only when using an internal mirror or alternate package channel.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save and refresh to confirm the URL persists correctly.",
+          "Run a package update-check workflow from your normal operations process to verify reachability.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "If update checks fail after setting a URL, verify HTTP/HTTPS access from the router to that endpoint.",
+          "Mirror URL typos are the most common cause of failed update metadata retrieval.",
+        ],
+      },
+    ],
+  },
+  systemWatchdog: {
+    title: "System Watchdog How-To",
+    summary:
+      "Configure watchdog ping targets and timers so the system can detect persistent upstream outages.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/system/watchdog.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Add one or more stable ping targets first (gateway or reliable upstream endpoints).",
+          "Set startup-delay to avoid false alarms during boot and link negotiation.",
+          "Tune test-interval based on how quickly you need outage detection.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save and refresh to confirm target and timer values persist.",
+          "Monitor system behavior during controlled link outages to verify watchdog responsiveness.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Frequent watchdog events usually indicate unstable targets or over-aggressive timer values.",
+          "Choose destinations reachable from the configured routing table/VRF for consistent checks.",
         ],
       },
     ],

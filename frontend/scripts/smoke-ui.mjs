@@ -101,6 +101,8 @@ const ROUTES = (
     "/system/acceleration",
     "/system/identification",
     "/system/options",
+    "/system/update-check",
+    "/system/watchdog",
     "/system/syslog",
     "/system/logs",
     "/system/users",

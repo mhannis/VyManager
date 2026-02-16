@@ -65,6 +65,18 @@ interface WirelessFormState {
   capHtShortGi: string[];
   capHtSmps: string;
   capHtStbcRx: string;
+  capVhtAntennaCount: string;
+  capVhtCenterChannelFreq1: string;
+  capVhtCenterChannelFreq2: string;
+  capVhtChannelSetWidth: string;
+  capVhtLinkAdaptation: string;
+  capVhtMaxMpduExp: string;
+  capVhtMaxAmpduExp: string;
+  capVhtShortGi: string[];
+  capVhtBeamformSingleUserBeamformer: boolean;
+  capVhtBeamformSingleUserBeamformee: boolean;
+  capVhtBeamformMultiUserBeamformer: boolean;
+  capVhtBeamformMultiUserBeamformee: boolean;
 }
 
 const TYPE_OPTIONS = ["access-point", "station", "monitor"] as const;
@@ -75,6 +87,9 @@ const MGMT_FRAME_PROTECTION_OPTIONS = ["optional", "required"] as const;
 const HT_CHANNEL_WIDTH_OPTIONS = ["ht20", "ht40-", "ht40+"] as const;
 const HT_SHORT_GI_OPTIONS = ["20", "40"] as const;
 const HT_SMPS_OPTIONS = ["off", "static", "dynamic"] as const;
+const VHT_SHORT_GI_OPTIONS = ["80", "160"] as const;
+const VHT_CHANNEL_SET_WIDTH_OPTIONS = ["80", "80+80", "160"] as const;
+const VHT_LINK_ADAPTATION_OPTIONS = ["2", "3"] as const;
 
 const EMPTY_FORM: WirelessFormState = {
   name: "",
@@ -114,6 +129,18 @@ const EMPTY_FORM: WirelessFormState = {
   capHtShortGi: [],
   capHtSmps: "",
   capHtStbcRx: "",
+  capVhtAntennaCount: "",
+  capVhtCenterChannelFreq1: "",
+  capVhtCenterChannelFreq2: "",
+  capVhtChannelSetWidth: "",
+  capVhtLinkAdaptation: "",
+  capVhtMaxMpduExp: "",
+  capVhtMaxAmpduExp: "",
+  capVhtShortGi: [],
+  capVhtBeamformSingleUserBeamformer: false,
+  capVhtBeamformSingleUserBeamformee: false,
+  capVhtBeamformMultiUserBeamformer: false,
+  capVhtBeamformMultiUserBeamformee: false,
 };
 
 function quoteCliValue(value: string): string {
@@ -194,6 +221,18 @@ function toFormState(value: WirelessInterfaceConfig): WirelessFormState {
     capHtShortGi: value.capHtShortGi,
     capHtSmps: value.capHtSmps,
     capHtStbcRx: value.capHtStbcRx,
+    capVhtAntennaCount: value.capVhtAntennaCount,
+    capVhtCenterChannelFreq1: value.capVhtCenterChannelFreq1,
+    capVhtCenterChannelFreq2: value.capVhtCenterChannelFreq2,
+    capVhtChannelSetWidth: value.capVhtChannelSetWidth,
+    capVhtLinkAdaptation: value.capVhtLinkAdaptation,
+    capVhtMaxMpduExp: value.capVhtMaxMpduExp,
+    capVhtMaxAmpduExp: value.capVhtMaxAmpduExp,
+    capVhtShortGi: value.capVhtShortGi,
+    capVhtBeamformSingleUserBeamformer: value.capVhtBeamformSingleUserBeamformer,
+    capVhtBeamformSingleUserBeamformee: value.capVhtBeamformSingleUserBeamformee,
+    capVhtBeamformMultiUserBeamformer: value.capVhtBeamformMultiUserBeamformer,
+    capVhtBeamformMultiUserBeamformee: value.capVhtBeamformMultiUserBeamformee,
   };
 }
 
@@ -293,6 +332,18 @@ function buildWirelessOperations(
       capHtShortGi: [],
       capHtSmps: "",
       capHtStbcRx: "",
+      capVhtAntennaCount: "",
+      capVhtCenterChannelFreq1: "",
+      capVhtCenterChannelFreq2: "",
+      capVhtChannelSetWidth: "",
+      capVhtLinkAdaptation: "",
+      capVhtMaxMpduExp: "",
+      capVhtMaxAmpduExp: "",
+      capVhtShortGi: [],
+      capVhtBeamformSingleUserBeamformer: false,
+      capVhtBeamformSingleUserBeamformee: false,
+      capVhtBeamformMultiUserBeamformer: false,
+      capVhtBeamformMultiUserBeamformee: false,
     } satisfies WirelessInterfaceConfig);
 
   syncScalar(operations, base, "description", candidate.description.trim(), currentSafe.description);
@@ -352,6 +403,55 @@ function buildWirelessOperations(
     candidate.capHtStbcRx.trim(),
     currentSafe.capHtStbcRx,
   );
+  syncScalar(
+    operations,
+    base,
+    "capabilities vht antenna-count",
+    candidate.capVhtAntennaCount.trim(),
+    currentSafe.capVhtAntennaCount,
+  );
+  syncScalar(
+    operations,
+    base,
+    "capabilities vht center-channel-freq-1",
+    candidate.capVhtCenterChannelFreq1.trim(),
+    currentSafe.capVhtCenterChannelFreq1,
+  );
+  syncScalar(
+    operations,
+    base,
+    "capabilities vht center-channel-freq-2",
+    candidate.capVhtCenterChannelFreq2.trim(),
+    currentSafe.capVhtCenterChannelFreq2,
+  );
+  syncScalar(
+    operations,
+    base,
+    "capabilities vht channel-set-width",
+    candidate.capVhtChannelSetWidth.trim(),
+    currentSafe.capVhtChannelSetWidth,
+  );
+  syncScalar(
+    operations,
+    base,
+    "capabilities vht link-adaptation",
+    candidate.capVhtLinkAdaptation.trim(),
+    currentSafe.capVhtLinkAdaptation,
+  );
+  syncScalar(
+    operations,
+    base,
+    "capabilities vht max-mpdu-exp",
+    candidate.capVhtMaxMpduExp.trim(),
+    currentSafe.capVhtMaxMpduExp,
+  );
+  syncScalar(
+    operations,
+    base,
+    "capabilities vht max-a-mpdu-exp",
+    candidate.capVhtMaxAmpduExp.trim(),
+    currentSafe.capVhtMaxAmpduExp,
+  );
 
   syncTagList(operations, base, "address", parseLines(candidate.addressesText), currentSafe.addresses);
   syncTagList(operations, base, "security wpa cipher", candidate.wpaCiphers, currentSafe.wpaCiphers);
@@ -368,6 +468,13 @@ function buildWirelessOperations(
     "capabilities ht short-gi",
     candidate.capHtShortGi,
     currentSafe.capHtShortGi,
+  );
+  syncTagList(
+    operations,
+    base,
+    "capabilities vht short-gi",
+    candidate.capVhtShortGi,
+    currentSafe.capVhtShortGi,
   );
 
   syncFlag(operations, base, "disable", candidate.disable, currentSafe.disable);
@@ -457,6 +564,34 @@ function buildWirelessOperations(
     "capabilities ht stbc tx",
     candidate.capHtStbcTx,
     currentSafe.capHtStbcTx,
+  );
+  syncFlag(
+    operations,
+    base,
+    "capabilities vht beamform single-user-beamformer",
+    candidate.capVhtBeamformSingleUserBeamformer,
+    currentSafe.capVhtBeamformSingleUserBeamformer,
+  );
+  syncFlag(
+    operations,
+    base,
+    "capabilities vht beamform single-user-beamformee",
+    candidate.capVhtBeamformSingleUserBeamformee,
+    currentSafe.capVhtBeamformSingleUserBeamformee,
+  );
+  syncFlag(
+    operations,
+    base,
+    "capabilities vht beamform multi-user-beamformer",
+    candidate.capVhtBeamformMultiUserBeamformer,
+    currentSafe.capVhtBeamformMultiUserBeamformer,
+  );
+  syncFlag(
+    operations,
+    base,
+    "capabilities vht beamform multi-user-beamformee",
+    candidate.capVhtBeamformMultiUserBeamformee,
+    currentSafe.capVhtBeamformMultiUserBeamformee,
   );
 
   const currentRadius = new Map(currentSafe.wpaRadiusServers.map((entry) => [entry.host, entry]));
@@ -608,6 +743,11 @@ export default function WirelessInterfacesPage() {
       { label: "Max stations", value: form.maxStations },
       { label: "Reduce transmit power", value: form.reduceTransmitPower },
       { label: "HT STBC RX", value: form.capHtStbcRx },
+      { label: "VHT antenna count", value: form.capVhtAntennaCount },
+      { label: "VHT center-channel-freq-1", value: form.capVhtCenterChannelFreq1 },
+      { label: "VHT center-channel-freq-2", value: form.capVhtCenterChannelFreq2 },
+      { label: "VHT max-mpdu-exp", value: form.capVhtMaxMpduExp },
+      { label: "VHT max-a-mpdu-exp", value: form.capVhtMaxAmpduExp },
     ];
     for (const field of numericFields) {
       const trimmed = field.value.trim();
@@ -1217,6 +1357,141 @@ export default function WirelessInterfacesPage() {
                 </div>
               </div>
 
+              <div className="space-y-3">
+                <Label>VHT Capability Sets</Label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {VHT_SHORT_GI_OPTIONS.map((value) => (
+                    <label key={value} className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={form.capVhtShortGi.includes(value)}
+                        onCheckedChange={(checked) =>
+                          setForm((previous) => ({
+                            ...previous,
+                            capVhtShortGi: checked
+                              ? uniqueNonEmpty([...previous.capVhtShortGi, value])
+                              : previous.capVhtShortGi.filter((entry) => entry !== value),
+                          }))
+                        }
+                      />
+                      short-gi {value}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="wireless-vht-channel-set-width">VHT Channel Set Width</Label>
+                  <Select
+                    value={form.capVhtChannelSetWidth || "none"}
+                    onValueChange={(value) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        capVhtChannelSetWidth: value === "none" ? "" : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="wireless-vht-channel-set-width">
+                      <SelectValue placeholder="Default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Default</SelectItem>
+                      {VHT_CHANNEL_SET_WIDTH_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="wireless-vht-link-adaptation">VHT Link Adaptation</Label>
+                  <Select
+                    value={form.capVhtLinkAdaptation || "none"}
+                    onValueChange={(value) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        capVhtLinkAdaptation: value === "none" ? "" : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="wireless-vht-link-adaptation">
+                      <SelectValue placeholder="Default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Default</SelectItem>
+                      {VHT_LINK_ADAPTATION_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="wireless-vht-antenna-count">VHT Antenna Count</Label>
+                  <Input
+                    id="wireless-vht-antenna-count"
+                    value={form.capVhtAntennaCount}
+                    onChange={(event) =>
+                      setForm((previous) => ({ ...previous, capVhtAntennaCount: event.target.value }))
+                    }
+                    placeholder="4"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="wireless-vht-max-mpdu-exp">VHT Max MPDU Exp</Label>
+                  <Input
+                    id="wireless-vht-max-mpdu-exp"
+                    value={form.capVhtMaxMpduExp}
+                    onChange={(event) =>
+                      setForm((previous) => ({ ...previous, capVhtMaxMpduExp: event.target.value }))
+                    }
+                    placeholder="7"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="wireless-vht-max-ampdu-exp">VHT Max A-MPDU Exp</Label>
+                  <Input
+                    id="wireless-vht-max-ampdu-exp"
+                    value={form.capVhtMaxAmpduExp}
+                    onChange={(event) =>
+                      setForm((previous) => ({ ...previous, capVhtMaxAmpduExp: event.target.value }))
+                    }
+                    placeholder="7"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="wireless-vht-center-channel-freq-1">VHT Center Channel Freq 1</Label>
+                  <Input
+                    id="wireless-vht-center-channel-freq-1"
+                    value={form.capVhtCenterChannelFreq1}
+                    onChange={(event) =>
+                      setForm((previous) => ({ ...previous, capVhtCenterChannelFreq1: event.target.value }))
+                    }
+                    placeholder="5210"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="wireless-vht-center-channel-freq-2">VHT Center Channel Freq 2</Label>
+                <Input
+                  id="wireless-vht-center-channel-freq-2"
+                  value={form.capVhtCenterChannelFreq2}
+                  onChange={(event) =>
+                    setForm((previous) => ({ ...previous, capVhtCenterChannelFreq2: event.target.value }))
+                  }
+                  placeholder="5290"
+                />
+              </div>
+
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
@@ -1361,6 +1636,54 @@ export default function WirelessInterfacesPage() {
                     }
                   />
                   HT STBC TX
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.capVhtBeamformSingleUserBeamformer}
+                    onCheckedChange={(checked) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        capVhtBeamformSingleUserBeamformer: Boolean(checked),
+                      }))
+                    }
+                  />
+                  VHT SU Beamformer
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.capVhtBeamformSingleUserBeamformee}
+                    onCheckedChange={(checked) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        capVhtBeamformSingleUserBeamformee: Boolean(checked),
+                      }))
+                    }
+                  />
+                  VHT SU Beamformee
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.capVhtBeamformMultiUserBeamformer}
+                    onCheckedChange={(checked) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        capVhtBeamformMultiUserBeamformer: Boolean(checked),
+                      }))
+                    }
+                  />
+                  VHT MU Beamformer
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.capVhtBeamformMultiUserBeamformee}
+                    onCheckedChange={(checked) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        capVhtBeamformMultiUserBeamformee: Boolean(checked),
+                      }))
+                    }
+                  />
+                  VHT MU Beamformee
                 </label>
               </div>
 

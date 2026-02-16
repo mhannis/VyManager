@@ -373,6 +373,16 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
+        title: "Update Check",
+        href: "/system/update-check",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "Watchdog",
+        href: "/system/watchdog",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
         title: "Acceleration",
         href: "/system/acceleration",
         requiredPermission: FeatureGroup.SYSTEM,

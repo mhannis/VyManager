@@ -172,6 +172,8 @@ def test_update_dns_config_emits_forwarding_and_host_override_ops(monkeypatch, a
         "allow_from": ["192.168.50.0/24"],
         "name_servers": ["1.1.1.1", "9.9.9.9"],
         "use_system_name_servers": False,
+        "system_name_servers": ["8.8.8.8", "resolver.lab.local"],
+        "system_domain_search": ["lab.local", "corp.example.com"],
         "cache_size": 150,
         "authoritative_domains": ["lab.local", "50.168.192.in-addr.arpa"],
         "domain_overrides": [
@@ -201,6 +203,10 @@ def test_update_dns_config_emits_forwarding_and_host_override_ops(monkeypatch, a
     assert ("service", "dns", "forwarding", "allow-from", "192.168.50.0/24") in op_paths
     assert ("service", "dns", "forwarding", "name-server", "1.1.1.1") in op_paths
     assert ("service", "dns", "forwarding", "cache-size", "150") in op_paths
+    assert ("system", "name-server", "8.8.8.8") in op_paths
+    assert ("system", "name-server", "resolver.lab.local") in op_paths
+    assert ("system", "domain-search", "lab.local") in op_paths
+    assert ("system", "domain-search", "corp.example.com") in op_paths
     assert (
         "service",
         "dns",
@@ -219,6 +225,47 @@ def test_update_dns_config_emits_forwarding_and_host_override_ops(monkeypatch, a
         "inet",
         "192.168.50.2",
     ) in op_paths
+
+
+def test_get_dns_config_includes_system_name_servers_and_domain_search(monkeypatch, app, allow_permissions):
+    service = DummyService(
+        full_config={
+            "service": {
+                "dns": {
+                    "forwarding": {
+                        "name-server": {"1.1.1.1": {}},
+                    }
+                }
+            },
+            "system": {
+                "name-server": {"9.9.9.9": {}, "resolver.lab.local": {}},
+                "domain-search": {"lab.local": {}, "corp.example.com": {}},
+            },
+        }
+    )
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    resp = client.get("/vyos/system/dns-config")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert sorted(data["system_name_servers"]) == ["9.9.9.9", "resolver.lab.local"]
+    assert sorted(data["system_domain_search"]) == ["corp.example.com", "lab.local"]
+
+
+def test_update_dns_config_rejects_invalid_system_domain_search(monkeypatch, app, allow_permissions):
+    service = DummyService(full_config={"service": {}, "system": {}})
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    body = {
+        "enabled": False,
+        "system_domain_search": ["bad domain!"],
+    }
+
+    resp = client.put("/vyos/system/dns-config", json=body)
+    assert resp.status_code == 400
+    assert "Invalid system domain-search" in resp.json().get("detail", "")
 
 
 def test_get_dynamic_dns_config_hides_password_value(monkeypatch, app, allow_permissions):

@@ -145,6 +145,8 @@ export interface DnsConfig {
   allow_from: string[];
   name_servers: string[];
   use_system_name_servers: boolean;
+  system_name_servers: string[];
+  system_domain_search: string[];
   cache_size: number | null;
   authoritative_domains: string[];
   domain_overrides: DnsForwardingDomainOverride[];
