@@ -20,6 +20,7 @@ completed_in_cycle:
   - System Acceleration VPP interface selections and table rows now use description-first interface labels for consistent interface identity across system/network/firewall pages.
   - Policies Route page now shows applied-interface badges with description-first labels when metadata is available.
   - Load Balancing outbound quick-select controls now honor read-only permission mode and disable interaction for users without write access.
+  - Local Route rule rows and delete confirmations now display inbound interfaces with description-first labels when metadata exists.
 validation:
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py
