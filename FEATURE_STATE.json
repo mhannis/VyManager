@@ -5,6 +5,7 @@
   "acceptance_criteria": [
     "Interfaces navigation keeps a dedicated `Interfaces` sidebar section with family entries.",
     "`/network/interfaces` acts as the primary ethernet/VLAN manager with quick-add actions and without duplicating full family-link navigation.",
+    "`Create Interface` opens a single wizard-style flow with a type selector spanning all interface families.",
     "Family actions route to dedicated per-interface pages.",
     "Interfaces page includes a clear Setup Wizard button.",
     "Existing detailed interface pages remain reachable for advanced settings and compatibility.",
@@ -133,12 +134,21 @@
         "frontend/src/components/layout/Sidebar.tsx"
       ],
       "notes": "Removed full family-link duplication from Interface Manager and renamed sidebar child entry back to `All Interfaces`."
+    },
+    {
+      "id": "IF-IA-16",
+      "owner_role": "UI|Backend|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/app/network/interfaces/page.tsx"
+      ],
+      "notes": "Unified `Create Interface` flow now supports all interface families with type-specific fields and existing API wrappers; Ethernet/VLAN launch dedicated modals from the same wizard."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
     "test": "cd frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
-    "lint": "cd frontend && npx eslint src/app/network/interfaces/page.tsx src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0"
+    "lint": "cd frontend && npx eslint src/app/network/interfaces/page.tsx --max-warnings=0"
   },
   "worktrees_or_threads": [
     {

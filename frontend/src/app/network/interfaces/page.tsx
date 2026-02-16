@@ -17,13 +17,26 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PageGuideDialog } from "@/components/common/PageGuideDialog";
-import { Plus, RefreshCw, AlertCircle, Search, Cable, Pencil, Trash2, Network } from "lucide-react";
+import {
+  Plus,
+  RefreshCw,
+  AlertCircle,
+  Search,
+  Cable,
+  Pencil,
+  Trash2,
+  Network,
+} from "lucide-react";
 import { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { ethernetService } from "@/lib/api/ethernet";
 import { showService } from "@/lib/api/show";
 import type { InterfacePhysical } from "@/lib/api/show";
-import type { EthernetInterface, EthernetCapabilities, VLANWithParent } from "@/lib/api/types/ethernet";
+import type {
+  EthernetInterface,
+  EthernetCapabilities,
+  VLANWithParent,
+} from "@/lib/api/types/ethernet";
 import { pageGuides } from "@/lib/help/pageGuides";
 import { ComprehensiveEthernetModal } from "@/components/network/ComprehensiveEthernetModal";
 import { ComprehensiveVLANModal } from "@/components/network/ComprehensiveVLANModal";
@@ -35,10 +48,51 @@ import { pppoeService } from "@/lib/api/pppoe";
 import { tunnelInterfaceService } from "@/lib/api/tunnel-interface";
 import { vtiService } from "@/lib/api/vti";
 import { vxlanService } from "@/lib/api/vxlan";
+import { bondingService } from "@/lib/api/bonding";
+import { bridgeInterfaceService } from "@/lib/api/bridge-interface";
+import { geneveService } from "@/lib/api/geneve";
+import { l2tpv3Service } from "@/lib/api/l2tpv3";
+import { macsecService } from "@/lib/api/macsec";
+import { openvpnInterfaceService } from "@/lib/api/openvpn-interface";
+import { pseudoEthernetService } from "@/lib/api/pseudo-ethernet";
+import { sstpcService } from "@/lib/api/sstpc";
+import { virtualEthernetService } from "@/lib/api/virtual-ethernet";
+import { wirelessService } from "@/lib/api/wireless";
+import { wwanService } from "@/lib/api/wwan";
 
 type InterfaceType = "all" | "ethernet" | "vlan";
 type InterfaceFamilyGroup = "core-l2" | "overlay-secure" | "access-wan";
-type QuickFamily = "dummy" | "loopback" | "pppoe" | "vti" | "vxlan" | "tunnel";
+type QuickFamily =
+  | "ethernet"
+  | "vlan"
+  | "dummy"
+  | "bonding"
+  | "bridge"
+  | "geneve"
+  | "l2tpv3"
+  | "loopback"
+  | "macsec"
+  | "openvpn"
+  | "pppoe"
+  | "pseudo-ethernet"
+  | "sstp-client"
+  | "tunnel"
+  | "virtual-ethernet"
+  | "vti"
+  | "vxlan"
+  | "wireless"
+  | "wwan";
+type GenericQuickFamily = Exclude<
+  QuickFamily,
+  | "ethernet"
+  | "vlan"
+  | "dummy"
+  | "loopback"
+  | "pppoe"
+  | "vti"
+  | "vxlan"
+  | "tunnel"
+>;
 
 interface InterfaceFamily {
   key: string;
@@ -143,7 +197,8 @@ const INTERFACE_FAMILIES: InterfaceFamily[] = [
     title: "L2TPv3",
     href: "/network/interfaces/l2tpv3",
     group: "overlay-secure",
-    summary: "Pseudowire transport with tunnel/session identifiers and cookies.",
+    summary:
+      "Pseudowire transport with tunnel/session identifiers and cookies.",
     commonFields: ["Remote Endpoint", "Session IDs", "MTU"],
   },
   {
@@ -151,7 +206,8 @@ const INTERFACE_FAMILIES: InterfaceFamily[] = [
     title: "MACsec",
     href: "/network/interfaces/macsec",
     group: "overlay-secure",
-    summary: "Layer-2 encryption with cipher, MKA/static peers, and replay settings.",
+    summary:
+      "Layer-2 encryption with cipher, MKA/static peers, and replay settings.",
     commonFields: ["Source Interface", "Cipher", "MTU"],
   },
   {
@@ -159,7 +215,8 @@ const INTERFACE_FAMILIES: InterfaceFamily[] = [
     title: "OpenVPN",
     href: "/network/interfaces/openvpn",
     group: "overlay-secure",
-    summary: "OpenVPN interface mode/server/client settings and crypto controls.",
+    summary:
+      "OpenVPN interface mode/server/client settings and crypto controls.",
     commonFields: ["Protocol", "Remote Host", "MTU"],
   },
   {
@@ -167,7 +224,8 @@ const INTERFACE_FAMILIES: InterfaceFamily[] = [
     title: "PPPoE Client",
     href: "/network/interfaces/pppoe",
     group: "access-wan",
-    summary: "WAN client dialer with authentication and route behavior controls.",
+    summary:
+      "WAN client dialer with authentication and route behavior controls.",
     commonFields: ["Source Interface", "Auth", "Default Route Distance"],
   },
   {
@@ -196,10 +254,70 @@ const INTERFACE_FAMILIES: InterfaceFamily[] = [
   },
 ];
 
-const QUICK_TUNNEL_ENCAPSULATION_OPTIONS = ["gre", "gretap", "ip6gre", "ipip", "ipip6", "ip6ip6", "sit"] as const;
+const QUICK_TUNNEL_ENCAPSULATION_OPTIONS = [
+  "gre",
+  "gretap",
+  "ip6gre",
+  "ipip",
+  "ipip6",
+  "ip6ip6",
+  "sit",
+] as const;
+const QUICK_BONDING_MODE_OPTIONS = [
+  "802.3ad",
+  "active-backup",
+  "balance-alb",
+  "balance-rr",
+  "balance-tlb",
+  "balance-xor",
+  "broadcast",
+] as const;
+
+const QUICK_FAMILY_OPTIONS: Array<{ key: QuickFamily; label: string }> = [
+  { key: "ethernet", label: "Ethernet (Physical)" },
+  { key: "vlan", label: "VLAN / QinQ" },
+  { key: "dummy", label: "Dummy" },
+  { key: "bonding", label: "Bonding" },
+  { key: "bridge", label: "Bridge" },
+  { key: "geneve", label: "Geneve" },
+  { key: "l2tpv3", label: "L2TPv3" },
+  { key: "loopback", label: "Loopback" },
+  { key: "macsec", label: "MACsec" },
+  { key: "openvpn", label: "OpenVPN" },
+  { key: "pppoe", label: "PPPoE Client" },
+  { key: "pseudo-ethernet", label: "Pseudo-Ethernet" },
+  { key: "sstp-client", label: "SSTP Client" },
+  { key: "tunnel", label: "Tunnel" },
+  { key: "virtual-ethernet", label: "Virtual-Ethernet" },
+  { key: "vti", label: "VTI" },
+  { key: "vxlan", label: "VXLAN" },
+  { key: "wireless", label: "Wireless" },
+  { key: "wwan", label: "WWAN" },
+];
+
+const GENERIC_FAMILY_TREE: Record<GenericQuickFamily, string> = {
+  bonding: "bonding",
+  bridge: "bridge",
+  geneve: "geneve",
+  l2tpv3: "l2tpv3",
+  macsec: "macsec",
+  openvpn: "openvpn",
+  "pseudo-ethernet": "pseudo-ethernet",
+  "sstp-client": "sstpc",
+  "virtual-ethernet": "virtual-ethernet",
+  wireless: "wireless",
+  wwan: "wwan",
+};
+
+const isGenericQuickFamily = (
+  value: QuickFamily | null,
+): value is GenericQuickFamily => {
+  if (!value) return false;
+  return Object.prototype.hasOwnProperty.call(GENERIC_FAMILY_TREE, value);
+};
 
 const VLAN_KIND_LABELS: Record<VLANWithParent["kind"], string> = {
-  "vif": "802.1Q",
+  vif: "802.1Q",
   "vif-s": "QinQ Service",
   "vif-c": "QinQ Customer",
 };
@@ -233,17 +351,24 @@ function quoteCliValue(value: string): string {
 
 function InterfacesPageContent() {
   const [interfaces, setInterfaces] = useState<EthernetInterface[]>([]);
-  const [physicalByInterface, setPhysicalByInterface] = useState<Record<string, InterfacePhysical>>({});
-  const [capabilities, setCapabilities] = useState<EthernetCapabilities | null>(null);
+  const [physicalByInterface, setPhysicalByInterface] = useState<
+    Record<string, InterfacePhysical>
+  >({});
+  const [capabilities, setCapabilities] = useState<EthernetCapabilities | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<InterfaceType>("all");
 
   // Ethernet Modal states
-  const [isCreateInterfaceModalOpen, setIsCreateInterfaceModalOpen] = useState(false);
-  const [editingInterface, setEditingInterface] = useState<EthernetInterface | null>(null);
-  const [deletingInterface, setDeletingInterface] = useState<EthernetInterface | null>(null);
+  const [isCreateInterfaceModalOpen, setIsCreateInterfaceModalOpen] =
+    useState(false);
+  const [editingInterface, setEditingInterface] =
+    useState<EthernetInterface | null>(null);
+  const [deletingInterface, setDeletingInterface] =
+    useState<EthernetInterface | null>(null);
 
   // VLAN Modal states
   const [isCreateVLANModalOpen, setIsCreateVLANModalOpen] = useState(false);
@@ -305,23 +430,63 @@ function InterfacesPageContent() {
     vrf: "",
     disabled: false,
   });
+  const [quickGenericForm, setQuickGenericForm] = useState({
+    name: "",
+    description: "",
+    addressesText: "",
+    mtu: "",
+    vrf: "",
+    disabled: false,
+    sourceInterface: "",
+    sourceAddress: "",
+    remote: "",
+    vni: "",
+    group: "",
+    membersText: "",
+    mode: "802.3ad",
+    peerName: "",
+    server: "",
+    username: "",
+    password: "",
+    apn: "",
+    ssid: "",
+    wirelessMode: "",
+    wirelessType: "",
+    physicalDevice: "",
+    countryCode: "",
+    l2tpSessionId: "",
+    l2tpPeerSessionId: "",
+    l2tpTunnelId: "",
+    l2tpPeerTunnelId: "",
+    macsecCipher: "",
+    openvpnMode: "client",
+    openvpnProtocol: "udp",
+    openvpnRemoteHost: "",
+    openvpnLocalPort: "",
+  });
   const loadData = async () => {
     try {
       setError(null);
       const [configData, capabilitiesData, physicalData] = await Promise.all([
         ethernetService.getConfig(),
         ethernetService.getCapabilities(),
-        showService.getInterfacePhysical().catch(() => ({ interfaces: [], total: 0 })),
+        showService
+          .getInterfacePhysical()
+          .catch(() => ({ interfaces: [], total: 0 })),
       ]);
       setInterfaces(configData.interfaces);
       setCapabilities(capabilitiesData);
-      const physicalMap = physicalData.interfaces.reduce<Record<string, InterfacePhysical>>((acc, item) => {
+      const physicalMap = physicalData.interfaces.reduce<
+        Record<string, InterfacePhysical>
+      >((acc, item) => {
         acc[item.interface] = item;
         return acc;
       }, {});
       setPhysicalByInterface(physicalMap);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load interface data");
+      setError(
+        err instanceof Error ? err.message : "Failed to load interface data",
+      );
     } finally {
       setLoading(false);
     }
@@ -373,7 +538,9 @@ function InterfacesPageContent() {
 
       return vlans;
     })
-    .sort((left, right) => left.fullName.localeCompare(right.fullName, undefined, { numeric: true }));
+    .sort((left, right) =>
+      left.fullName.localeCompare(right.fullName, undefined, { numeric: true }),
+    );
 
   // Calculate statistics
   const totalInterfaces = interfaces.length;
@@ -388,7 +555,9 @@ function InterfacesPageContent() {
       searchQuery === "" ||
       iface.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       iface.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      iface.addresses?.some((addr) => addr.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      iface.addresses?.some((addr) =>
+        addr.toLowerCase().includes(searchQuery.toLowerCase()),
+      ) ||
       iface.vrf?.toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesType && matchesSearch;
@@ -402,10 +571,14 @@ function InterfacesPageContent() {
       searchQuery === "" ||
       vlan.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       vlan.parentInterface.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      VLAN_KIND_LABELS[vlan.kind].toLowerCase().includes(searchQuery.toLowerCase()) ||
+      VLAN_KIND_LABELS[vlan.kind]
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
       vlan.service_vlan_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       vlan.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      vlan.addresses?.some((addr) => addr.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      vlan.addresses?.some((addr) =>
+        addr.toLowerCase().includes(searchQuery.toLowerCase()),
+      ) ||
       vlan.vrf?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
@@ -438,10 +611,21 @@ function InterfacesPageContent() {
     [],
   );
 
+  const quickFamilyTitle = useMemo(() => {
+    if (!quickFamily) return "Create Interface";
+    return (
+      QUICK_FAMILY_OPTIONS.find((option) => option.key === quickFamily)
+        ?.label ?? "Interface"
+    );
+  }, [quickFamily]);
+
   const openQuickEditor = (family: QuickFamily) => {
     setQuickFamily(family);
     setQuickError(null);
     setQuickSuccess(null);
+    if (family === "ethernet" || family === "vlan") {
+      return;
+    }
     if (family === "dummy") {
       setQuickDummyForm({
         name: "",
@@ -504,6 +688,43 @@ function InterfacesPageContent() {
       });
       return;
     }
+    if (isGenericQuickFamily(family)) {
+      setQuickGenericForm({
+        name: "",
+        description: "",
+        addressesText: "",
+        mtu: "",
+        vrf: "",
+        disabled: false,
+        sourceInterface: "",
+        sourceAddress: "",
+        remote: "",
+        vni: "",
+        group: "",
+        membersText: "",
+        mode: "802.3ad",
+        peerName: "",
+        server: "",
+        username: "",
+        password: "",
+        apn: "",
+        ssid: "",
+        wirelessMode: "",
+        wirelessType: "",
+        physicalDevice: "",
+        countryCode: "",
+        l2tpSessionId: "",
+        l2tpPeerSessionId: "",
+        l2tpTunnelId: "",
+        l2tpPeerTunnelId: "",
+        macsecCipher: "",
+        openvpnMode: "client",
+        openvpnProtocol: "udp",
+        openvpnRemoteHost: "",
+        openvpnLocalPort: "",
+      });
+      return;
+    }
     setQuickLoopbackForm({
       name: "",
       description: "",
@@ -519,7 +740,15 @@ function InterfacesPageContent() {
     setQuickSuccess(null);
 
     try {
-      if (quickFamily === "dummy") {
+      if (quickFamily === "ethernet") {
+        setQuickFamily(null);
+        setIsCreateInterfaceModalOpen(true);
+        return;
+      } else if (quickFamily === "vlan") {
+        setQuickFamily(null);
+        setIsCreateVLANModalOpen(true);
+        return;
+      } else if (quickFamily === "dummy") {
         const name = quickDummyForm.name.trim();
         if (!name) {
           throw new Error("Dummy interface name is required.");
@@ -530,8 +759,11 @@ function InterfacesPageContent() {
         const mtu = quickDummyForm.mtu.trim();
         const vrf = quickDummyForm.vrf.trim();
 
-        if (description) operations.push({ op: "set_description", value: description });
-        for (const address of parseMultilineUnique(quickDummyForm.addressesText)) {
+        if (description)
+          operations.push({ op: "set_description", value: description });
+        for (const address of parseMultilineUnique(
+          quickDummyForm.addressesText,
+        )) {
           operations.push({ op: "set_address", value: address });
         }
         if (mtu) operations.push({ op: "set_mtu", value: mtu });
@@ -539,7 +771,9 @@ function InterfacesPageContent() {
         operations.push({ op: quickDummyForm.disabled ? "disable" : "enable" });
 
         if (operations.length === 1 && operations[0].op === "enable") {
-          throw new Error("Provide at least one value (address, description, MTU, or VRF).");
+          throw new Error(
+            "Provide at least one value (address, description, MTU, or VRF).",
+          );
         }
 
         const response = await dummyService.batchConfigure({
@@ -547,9 +781,13 @@ function InterfacesPageContent() {
           operations,
         });
         if (!response.success) {
-          throw new Error(response.error || "VyOS rejected dummy interface configuration.");
+          throw new Error(
+            response.error || "VyOS rejected dummy interface configuration.",
+          );
         }
-        setQuickSuccess(`Dummy interface '${name}' created from Interface Manager.`);
+        setQuickSuccess(
+          `Dummy interface '${name}' created from Interface Manager.`,
+        );
       } else if (quickFamily === "vti") {
         const name = quickVtiForm.name.trim();
         if (!name) {
@@ -561,10 +799,14 @@ function InterfacesPageContent() {
 
         const description = quickVtiForm.description.trim();
         if (description) {
-          operations.push(`set ${base} description ${quoteCliValue(description)}`);
+          operations.push(
+            `set ${base} description ${quoteCliValue(description)}`,
+          );
         }
 
-        for (const address of parseMultilineUnique(quickVtiForm.addressesText)) {
+        for (const address of parseMultilineUnique(
+          quickVtiForm.addressesText,
+        )) {
           operations.push(`set ${base} address ${quoteCliValue(address)}`);
         }
 
@@ -586,14 +828,20 @@ function InterfacesPageContent() {
         }
 
         if (operations.length === 0) {
-          throw new Error("Provide at least one VTI value (address, description, MTU, VRF, or disable).");
+          throw new Error(
+            "Provide at least one VTI value (address, description, MTU, VRF, or disable).",
+          );
         }
 
         const response = await vtiService.batchConfigure(operations);
         if (!response.success) {
-          throw new Error(response.error || "VyOS rejected VTI interface configuration.");
+          throw new Error(
+            response.error || "VyOS rejected VTI interface configuration.",
+          );
         }
-        setQuickSuccess(`VTI interface '${name}' created from Interface Manager.`);
+        setQuickSuccess(
+          `VTI interface '${name}' created from Interface Manager.`,
+        );
       } else if (quickFamily === "vxlan") {
         const name = quickVxlanForm.name.trim();
         if (!name) {
@@ -628,12 +876,16 @@ function InterfacesPageContent() {
 
         const description = quickVxlanForm.description.trim();
         if (description) {
-          operations.push(`set ${base} description ${quoteCliValue(description)}`);
+          operations.push(
+            `set ${base} description ${quoteCliValue(description)}`,
+          );
         }
 
         const sourceInterface = quickVxlanForm.sourceInterface.trim();
         if (sourceInterface) {
-          operations.push(`set ${base} source-interface ${quoteCliValue(sourceInterface)}`);
+          operations.push(
+            `set ${base} source-interface ${quoteCliValue(sourceInterface)}`,
+          );
         }
 
         const mtu = quickVxlanForm.mtu.trim();
@@ -655,9 +907,13 @@ function InterfacesPageContent() {
 
         const response = await vxlanService.batchConfigure(operations);
         if (!response.success) {
-          throw new Error(response.error || "VyOS rejected VXLAN interface configuration.");
+          throw new Error(
+            response.error || "VyOS rejected VXLAN interface configuration.",
+          );
         }
-        setQuickSuccess(`VXLAN interface '${name}' created from Interface Manager.`);
+        setQuickSuccess(
+          `VXLAN interface '${name}' created from Interface Manager.`,
+        );
       } else if (quickFamily === "tunnel") {
         const name = quickTunnelForm.name.trim();
         if (!name) {
@@ -676,17 +932,23 @@ function InterfacesPageContent() {
 
         const operations: string[] = [];
         const base = `interfaces tunnel ${quoteCliValue(name)}`;
-        operations.push(`set ${base} source-address ${quoteCliValue(sourceAddress)}`);
+        operations.push(
+          `set ${base} source-address ${quoteCliValue(sourceAddress)}`,
+        );
         operations.push(`set ${base} remote ${quoteCliValue(remote)}`);
 
         const encapsulation = quickTunnelForm.encapsulation.trim();
         if (encapsulation) {
-          operations.push(`set ${base} encapsulation ${quoteCliValue(encapsulation)}`);
+          operations.push(
+            `set ${base} encapsulation ${quoteCliValue(encapsulation)}`,
+          );
         }
 
         const description = quickTunnelForm.description.trim();
         if (description) {
-          operations.push(`set ${base} description ${quoteCliValue(description)}`);
+          operations.push(
+            `set ${base} description ${quoteCliValue(description)}`,
+          );
         }
 
         const mtu = quickTunnelForm.mtu.trim();
@@ -706,11 +968,16 @@ function InterfacesPageContent() {
           operations.push(`set ${base} disable`);
         }
 
-        const response = await tunnelInterfaceService.batchConfigure(operations);
+        const response =
+          await tunnelInterfaceService.batchConfigure(operations);
         if (!response.success) {
-          throw new Error(response.error || "VyOS rejected tunnel interface configuration.");
+          throw new Error(
+            response.error || "VyOS rejected tunnel interface configuration.",
+          );
         }
-        setQuickSuccess(`Tunnel interface '${name}' created from Interface Manager.`);
+        setQuickSuccess(
+          `Tunnel interface '${name}' created from Interface Manager.`,
+        );
       } else if (quickFamily === "pppoe") {
         const name = quickPppoeForm.name.trim();
         if (!name) {
@@ -724,21 +991,29 @@ function InterfacesPageContent() {
 
         const operations: string[] = [];
         const base = `interfaces pppoe ${quoteCliValue(name)}`;
-        operations.push(`set ${base} source-interface ${quoteCliValue(sourceInterface)}`);
+        operations.push(
+          `set ${base} source-interface ${quoteCliValue(sourceInterface)}`,
+        );
 
         const description = quickPppoeForm.description.trim();
         if (description) {
-          operations.push(`set ${base} description ${quoteCliValue(description)}`);
+          operations.push(
+            `set ${base} description ${quoteCliValue(description)}`,
+          );
         }
 
         const username = quickPppoeForm.username.trim();
         if (username) {
-          operations.push(`set ${base} authentication username ${quoteCliValue(username)}`);
+          operations.push(
+            `set ${base} authentication username ${quoteCliValue(username)}`,
+          );
         }
 
         const password = quickPppoeForm.password.trim();
         if (password) {
-          operations.push(`set ${base} authentication password ${quoteCliValue(password)}`);
+          operations.push(
+            `set ${base} authentication password ${quoteCliValue(password)}`,
+          );
         }
 
         const mtu = quickPppoeForm.mtu.trim();
@@ -754,7 +1029,9 @@ function InterfacesPageContent() {
           if (!/^\d+$/.test(distance)) {
             throw new Error("Default route distance must be a whole number.");
           }
-          operations.push(`set ${base} default-route-distance ${quoteCliValue(distance)}`);
+          operations.push(
+            `set ${base} default-route-distance ${quoteCliValue(distance)}`,
+          );
         }
 
         if (quickPppoeForm.disabled) {
@@ -763,9 +1040,265 @@ function InterfacesPageContent() {
 
         const response = await pppoeService.batchConfigure(operations);
         if (!response.success) {
-          throw new Error(response.error || "VyOS rejected PPPoE interface configuration.");
+          throw new Error(
+            response.error || "VyOS rejected PPPoE interface configuration.",
+          );
         }
-        setQuickSuccess(`PPPoE interface '${name}' created from Interface Manager.`);
+        setQuickSuccess(
+          `PPPoE interface '${name}' created from Interface Manager.`,
+        );
+      } else if (isGenericQuickFamily(quickFamily)) {
+        const name = quickGenericForm.name.trim();
+        if (!name) {
+          throw new Error("Interface name is required.");
+        }
+
+        const operations: string[] = [];
+        const base = `interfaces ${GENERIC_FAMILY_TREE[quickFamily]} ${quoteCliValue(name)}`;
+
+        const description = quickGenericForm.description.trim();
+        if (description) {
+          operations.push(
+            `set ${base} description ${quoteCliValue(description)}`,
+          );
+        }
+
+        for (const address of parseMultilineUnique(
+          quickGenericForm.addressesText,
+        )) {
+          operations.push(`set ${base} address ${quoteCliValue(address)}`);
+        }
+
+        const mtu = quickGenericForm.mtu.trim();
+        if (mtu) {
+          if (!/^\d+$/.test(mtu)) {
+            throw new Error("MTU must be a whole number.");
+          }
+          operations.push(`set ${base} mtu ${quoteCliValue(mtu)}`);
+        }
+
+        const vrf = quickGenericForm.vrf.trim();
+        if (vrf) {
+          operations.push(`set ${base} vrf ${quoteCliValue(vrf)}`);
+        }
+
+        if (quickFamily === "bonding") {
+          const mode = quickGenericForm.mode.trim();
+          if (mode) {
+            operations.push(`set ${base} mode ${quoteCliValue(mode)}`);
+          }
+          for (const member of parseMultilineUnique(
+            quickGenericForm.membersText,
+          )) {
+            operations.push(
+              `set ${base} member interface ${quoteCliValue(member)}`,
+            );
+          }
+        } else if (quickFamily === "bridge") {
+          for (const member of parseMultilineUnique(
+            quickGenericForm.membersText,
+          )) {
+            operations.push(
+              `set ${base} member interface ${quoteCliValue(member)}`,
+            );
+          }
+        } else if (quickFamily === "geneve") {
+          const vni = quickGenericForm.vni.trim();
+          if (!vni || !/^\d+$/.test(vni)) {
+            throw new Error("Geneve VNI is required and must be a number.");
+          }
+          const remote = quickGenericForm.remote.trim();
+          if (!remote) {
+            throw new Error("Geneve remote endpoint is required.");
+          }
+          const sourceAddress = quickGenericForm.sourceAddress.trim();
+          const sourceInterface = quickGenericForm.sourceInterface.trim();
+          if (!sourceAddress && !sourceInterface) {
+            throw new Error("Set Geneve source address or source interface.");
+          }
+          operations.push(`set ${base} vni ${quoteCliValue(vni)}`);
+          operations.push(`set ${base} remote ${quoteCliValue(remote)}`);
+          if (sourceAddress) {
+            operations.push(
+              `set ${base} source-address ${quoteCliValue(sourceAddress)}`,
+            );
+          }
+          if (sourceInterface) {
+            operations.push(
+              `set ${base} source-interface ${quoteCliValue(sourceInterface)}`,
+            );
+          }
+        } else if (quickFamily === "l2tpv3") {
+          const sourceAddress = quickGenericForm.sourceAddress.trim();
+          const remote = quickGenericForm.remote.trim();
+          if (sourceAddress) {
+            operations.push(
+              `set ${base} source-address ${quoteCliValue(sourceAddress)}`,
+            );
+          }
+          if (remote) {
+            operations.push(`set ${base} remote ${quoteCliValue(remote)}`);
+          }
+          if (quickGenericForm.l2tpSessionId.trim()) {
+            operations.push(
+              `set ${base} session-id ${quoteCliValue(quickGenericForm.l2tpSessionId.trim())}`,
+            );
+          }
+          if (quickGenericForm.l2tpPeerSessionId.trim()) {
+            operations.push(
+              `set ${base} peer-session-id ${quoteCliValue(quickGenericForm.l2tpPeerSessionId.trim())}`,
+            );
+          }
+          if (quickGenericForm.l2tpTunnelId.trim()) {
+            operations.push(
+              `set ${base} tunnel-id ${quoteCliValue(quickGenericForm.l2tpTunnelId.trim())}`,
+            );
+          }
+          if (quickGenericForm.l2tpPeerTunnelId.trim()) {
+            operations.push(
+              `set ${base} peer-tunnel-id ${quoteCliValue(quickGenericForm.l2tpPeerTunnelId.trim())}`,
+            );
+          }
+        } else if (quickFamily === "macsec") {
+          const sourceInterface = quickGenericForm.sourceInterface.trim();
+          if (!sourceInterface) {
+            throw new Error("MACsec source interface is required.");
+          }
+          operations.push(
+            `set ${base} source-interface ${quoteCliValue(sourceInterface)}`,
+          );
+          if (quickGenericForm.macsecCipher.trim()) {
+            operations.push(
+              `set ${base} security cipher ${quoteCliValue(quickGenericForm.macsecCipher.trim())}`,
+            );
+          }
+        } else if (quickFamily === "openvpn") {
+          if (quickGenericForm.openvpnMode.trim()) {
+            operations.push(
+              `set ${base} mode ${quoteCliValue(quickGenericForm.openvpnMode.trim())}`,
+            );
+          }
+          if (quickGenericForm.openvpnProtocol.trim()) {
+            operations.push(
+              `set ${base} protocol ${quoteCliValue(quickGenericForm.openvpnProtocol.trim())}`,
+            );
+          }
+          if (quickGenericForm.openvpnRemoteHost.trim()) {
+            operations.push(
+              `set ${base} remote-host ${quoteCliValue(quickGenericForm.openvpnRemoteHost.trim())}`,
+            );
+          }
+          if (quickGenericForm.openvpnLocalPort.trim()) {
+            operations.push(
+              `set ${base} local-port ${quoteCliValue(quickGenericForm.openvpnLocalPort.trim())}`,
+            );
+          }
+        } else if (quickFamily === "pseudo-ethernet") {
+          const sourceInterface = quickGenericForm.sourceInterface.trim();
+          if (!sourceInterface) {
+            throw new Error("Pseudo-Ethernet source interface is required.");
+          }
+          operations.push(
+            `set ${base} source-interface ${quoteCliValue(sourceInterface)}`,
+          );
+        } else if (quickFamily === "sstp-client") {
+          const server = quickGenericForm.server.trim();
+          if (!server) {
+            throw new Error("SSTP server is required.");
+          }
+          operations.push(`set ${base} server ${quoteCliValue(server)}`);
+          if (quickGenericForm.username.trim()) {
+            operations.push(
+              `set ${base} authentication username ${quoteCliValue(quickGenericForm.username.trim())}`,
+            );
+          }
+          if (quickGenericForm.password.trim()) {
+            operations.push(
+              `set ${base} authentication password ${quoteCliValue(quickGenericForm.password.trim())}`,
+            );
+          }
+        } else if (quickFamily === "virtual-ethernet") {
+          const peerName = quickGenericForm.peerName.trim();
+          if (!peerName) {
+            throw new Error("Virtual-Ethernet peer name is required.");
+          }
+          operations.push(`set ${base} peer-name ${quoteCliValue(peerName)}`);
+        } else if (quickFamily === "wireless") {
+          const ssid = quickGenericForm.ssid.trim();
+          if (!ssid) {
+            throw new Error("Wireless SSID is required.");
+          }
+          operations.push(`set ${base} ssid ${quoteCliValue(ssid)}`);
+          if (quickGenericForm.wirelessMode.trim()) {
+            operations.push(
+              `set ${base} mode ${quoteCliValue(quickGenericForm.wirelessMode.trim())}`,
+            );
+          }
+          if (quickGenericForm.wirelessType.trim()) {
+            operations.push(
+              `set ${base} type ${quoteCliValue(quickGenericForm.wirelessType.trim())}`,
+            );
+          }
+          if (quickGenericForm.physicalDevice.trim()) {
+            operations.push(
+              `set ${base} physical-device ${quoteCliValue(quickGenericForm.physicalDevice.trim())}`,
+            );
+          }
+          if (quickGenericForm.countryCode.trim()) {
+            operations.push(
+              `set system wireless country-code ${quoteCliValue(quickGenericForm.countryCode.trim())}`,
+            );
+          }
+        } else if (quickFamily === "wwan") {
+          const apn = quickGenericForm.apn.trim();
+          if (apn) {
+            operations.push(`set ${base} apn ${quoteCliValue(apn)}`);
+          }
+        }
+
+        if (quickGenericForm.disabled) {
+          operations.push(`set ${base} disable`);
+        }
+
+        if (operations.length === 0) {
+          throw new Error(
+            "Provide at least one value to create this interface.",
+          );
+        }
+
+        const response = (await (() => {
+          if (quickFamily === "bonding")
+            return bondingService.batchConfigure(operations);
+          if (quickFamily === "bridge")
+            return bridgeInterfaceService.batchConfigure(operations);
+          if (quickFamily === "geneve")
+            return geneveService.batchConfigure(operations);
+          if (quickFamily === "l2tpv3")
+            return l2tpv3Service.batchConfigure(operations);
+          if (quickFamily === "macsec")
+            return macsecService.batchConfigure(operations);
+          if (quickFamily === "openvpn")
+            return openvpnInterfaceService.batchConfigure(operations);
+          if (quickFamily === "pseudo-ethernet")
+            return pseudoEthernetService.batchConfigure(operations);
+          if (quickFamily === "sstp-client")
+            return sstpcService.batchConfigure(operations);
+          if (quickFamily === "virtual-ethernet")
+            return virtualEthernetService.batchConfigure(operations);
+          if (quickFamily === "wireless")
+            return wirelessService.batchConfigure(operations);
+          return wwanService.batchConfigure(operations);
+        })()) as { success?: boolean; error?: string | null };
+
+        if (!response.success) {
+          throw new Error(
+            response.error ||
+              `VyOS rejected ${quickFamilyTitle} interface configuration.`,
+          );
+        }
+        setQuickSuccess(
+          `${quickFamilyTitle} interface '${name}' created from Interface Manager.`,
+        );
       } else {
         const name = quickLoopbackForm.name.trim();
         if (!name) {
@@ -776,25 +1309,39 @@ function InterfacesPageContent() {
         const base = `interfaces loopback ${quoteCliValue(name)}`;
         const description = quickLoopbackForm.description.trim();
         if (description) {
-          operations.push(`set ${base} description ${quoteCliValue(description)}`);
+          operations.push(
+            `set ${base} description ${quoteCliValue(description)}`,
+          );
         }
-        for (const address of parseMultilineUnique(quickLoopbackForm.addressesText)) {
+        for (const address of parseMultilineUnique(
+          quickLoopbackForm.addressesText,
+        )) {
           operations.push(`set ${base} address ${quoteCliValue(address)}`);
         }
         if (operations.length === 0) {
-          throw new Error("Provide at least one value (description or address).");
+          throw new Error(
+            "Provide at least one value (description or address).",
+          );
         }
 
         const response = await loopbackService.batchConfigure(operations);
         if (!response.success) {
-          throw new Error(response.error || "VyOS rejected loopback interface configuration.");
+          throw new Error(
+            response.error || "VyOS rejected loopback interface configuration.",
+          );
         }
-        setQuickSuccess(`Loopback interface '${name}' created from Interface Manager.`);
+        setQuickSuccess(
+          `Loopback interface '${name}' created from Interface Manager.`,
+        );
       }
 
       setQuickFamily(null);
     } catch (err) {
-      setQuickError(err instanceof Error ? err.message : "Failed to apply quick interface change.");
+      setQuickError(
+        err instanceof Error
+          ? err.message
+          : "Failed to apply quick interface change.",
+      );
     } finally {
       setQuickSaving(false);
     }
@@ -816,7 +1363,9 @@ function InterfacesPageContent() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Network Interfaces</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              Network Interfaces
+            </h1>
             <p className="text-muted-foreground mt-1">
               Manage and monitor network interface configurations
             </p>
@@ -833,8 +1382,12 @@ function InterfacesPageContent() {
                   <Network className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{totalInterfaces}</p>
-                  <p className="text-xs text-muted-foreground">Total Interfaces</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {totalInterfaces}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Total Interfaces
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -847,7 +1400,9 @@ function InterfacesPageContent() {
                   <Cable className="h-5 w-5 text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{totalInterfaces}</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {totalInterfaces}
+                  </p>
                   <p className="text-xs text-muted-foreground">Ethernet</p>
                 </div>
               </div>
@@ -861,7 +1416,9 @@ function InterfacesPageContent() {
                   <Network className="h-5 w-5 text-purple-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{totalVlans}</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {totalVlans}
+                  </p>
                   <p className="text-xs text-muted-foreground">VLANs</p>
                 </div>
               </div>
@@ -874,9 +1431,16 @@ function InterfacesPageContent() {
           <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-semibold text-destructive">Failed to load interfaces</h3>
+              <h3 className="font-semibold text-destructive">
+                Failed to load interfaces
+              </h3>
               <p className="text-sm text-destructive/90 mt-1">{error}</p>
-              <Button variant="outline" size="sm" onClick={loadData} className="mt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadData}
+                className="mt-3"
+              >
                 <RefreshCw className="h-3.5 w-3.5 mr-2" />
                 Try Again
               </Button>
@@ -888,7 +1452,9 @@ function InterfacesPageContent() {
           <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-semibold text-destructive">Quick Configure Failed</h3>
+              <h3 className="font-semibold text-destructive">
+                Quick Configure Failed
+              </h3>
               <p className="text-sm text-destructive/90 mt-1">{quickError}</p>
             </div>
           </div>
@@ -942,13 +1508,9 @@ function InterfacesPageContent() {
                 <Button asChild variant="outline">
                   <Link href="/network/setup-wizard">Open Setup Wizard</Link>
                 </Button>
-                <Button onClick={() => setIsCreateInterfaceModalOpen(true)}>
+                <Button onClick={() => openQuickEditor("ethernet")}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Interface
-                </Button>
-                <Button variant="outline" onClick={() => setIsCreateVLANModalOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create VLAN / QinQ
                 </Button>
               </div>
             </div>
@@ -956,43 +1518,57 @@ function InterfacesPageContent() {
             <Card className="border-border">
               <CardContent className="space-y-4 p-4">
                 <div className="flex flex-col gap-1">
-                  <h2 className="text-base font-semibold text-foreground">Common Interface Actions</h2>
+                  <h2 className="text-base font-semibold text-foreground">
+                    Common Interface Actions
+                  </h2>
                   <p className="text-sm text-muted-foreground">
-                    Quick-create common interface families from this page. Advanced family configuration is available from the left sidebar.
+                    Quick-create common interface families from this page.
+                    Advanced family configuration is available from the left
+                    sidebar.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {quickFamilies.map((family) => {
                     return (
-                    <div
-                      key={family.key}
-                      className="rounded-lg border border-border bg-card/40 p-3 transition-colors hover:border-primary/40"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <h3 className="font-semibold text-foreground">{family.title}</h3>
-                          <p className="text-xs text-muted-foreground">{family.summary}</p>
+                      <div
+                        key={family.key}
+                        className="rounded-lg border border-border bg-card/40 p-3 transition-colors hover:border-primary/40"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1">
+                            <h3 className="font-semibold text-foreground">
+                              {family.title}
+                            </h3>
+                            <p className="text-xs text-muted-foreground">
+                              {family.summary}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() =>
+                              openQuickEditor(family.key as QuickFamily)
+                            }
+                          >
+                            Quick Add
+                          </Button>
                         </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs"
-                          onClick={() => openQuickEditor(family.key as QuickFamily)}
-                        >
-                          Quick Add
-                        </Button>
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {family.commonFields.map((field) => (
+                            <Badge
+                              key={`${family.key}-${field}`}
+                              variant="secondary"
+                              className="text-[10px]"
+                            >
+                              {field}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {family.commonFields.map((field) => (
-                          <Badge key={`${family.key}-${field}`} variant="secondary" className="text-[10px]">
-                            {field}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  );
+                    );
                   })}
                 </div>
               </CardContent>
@@ -1004,56 +1580,235 @@ function InterfacesPageContent() {
         {!error && (
           <div className="space-y-4 mt-6">
             {/* Ethernet Interfaces */}
-            {(typeFilter === "all" || typeFilter === "ethernet") && filteredInterfaces.length > 0 && (
-              <div className="space-y-3">
-                {typeFilter === "all" && (
-                  <h2 className="text-lg font-semibold text-foreground">Ethernet Interfaces</h2>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredInterfaces.map((iface) => {
-                    const qinqCustomerCount = (iface.vif_s || []).reduce((count, serviceVlan) => {
-                      return count + (serviceVlan.vif_c?.length || 0);
-                    }, 0);
-                    const vlanCount = (iface.vif?.length || 0) + (iface.vif_s?.length || 0) + qinqCustomerCount;
-                    const physical = physicalByInterface[iface.name];
-                    const linkUp = physical?.link_up;
-                    const linkSpeed = linkUp === true ? normalizeLinkDetail(physical?.speed) : undefined;
-                    const linkDuplex = linkUp === true ? normalizeLinkDetail(physical?.duplex) : undefined;
-                    return (
-                      <Card key={iface.name} className="border-border hover:border-primary/50 transition-colors group">
+            {(typeFilter === "all" || typeFilter === "ethernet") &&
+              filteredInterfaces.length > 0 && (
+                <div className="space-y-3">
+                  {typeFilter === "all" && (
+                    <h2 className="text-lg font-semibold text-foreground">
+                      Ethernet Interfaces
+                    </h2>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredInterfaces.map((iface) => {
+                      const qinqCustomerCount = (iface.vif_s || []).reduce(
+                        (count, serviceVlan) => {
+                          return count + (serviceVlan.vif_c?.length || 0);
+                        },
+                        0,
+                      );
+                      const vlanCount =
+                        (iface.vif?.length || 0) +
+                        (iface.vif_s?.length || 0) +
+                        qinqCustomerCount;
+                      const physical = physicalByInterface[iface.name];
+                      const linkUp = physical?.link_up;
+                      const linkSpeed =
+                        linkUp === true
+                          ? normalizeLinkDetail(physical?.speed)
+                          : undefined;
+                      const linkDuplex =
+                        linkUp === true
+                          ? normalizeLinkDetail(physical?.duplex)
+                          : undefined;
+                      return (
+                        <Card
+                          key={iface.name}
+                          className="border-border hover:border-primary/50 transition-colors group"
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
+                                  <Cable className="h-4 w-4 text-blue-500" />
+                                </div>
+                                <div>
+                                  {iface.description ? (
+                                    <div
+                                      className="font-semibold text-foreground text-base truncate"
+                                      title={iface.description}
+                                    >
+                                      {iface.description}
+                                    </div>
+                                  ) : (
+                                    <code className="font-semibold font-mono text-foreground text-base">
+                                      {iface.name}
+                                    </code>
+                                  )}
+                                  {iface.description && (
+                                    <code className="text-xs font-mono text-muted-foreground">
+                                      {iface.name}
+                                    </code>
+                                  )}
+                                  {vlanCount > 0 && (
+                                    <div className="text-xs text-muted-foreground mt-0.5">
+                                      {vlanCount} VLAN(s)
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setEditingInterface(iface)}
+                                  className="h-7 w-7 p-0"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setDeletingInterface(iface)}
+                                  className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2 text-sm">
+                              <div className="flex flex-wrap gap-2">
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    linkUp === true
+                                      ? "bg-green-500/10 text-green-500 border-green-500/20 text-xs"
+                                      : linkUp === false
+                                        ? "bg-red-500/10 text-red-500 border-red-500/20 text-xs"
+                                        : "bg-muted text-muted-foreground border-border text-xs"
+                                  }
+                                >
+                                  {linkUp === true
+                                    ? "Link Up"
+                                    : linkUp === false
+                                      ? "Link Down"
+                                      : "Link Unknown"}
+                                </Badge>
+
+                                {linkSpeed && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {linkSpeed}
+                                  </Badge>
+                                )}
+
+                                {linkDuplex && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {linkDuplex}
+                                  </Badge>
+                                )}
+                              </div>
+
+                              {(physical?.nic_model || physical?.driver) && (
+                                <div
+                                  className="text-xs text-muted-foreground truncate"
+                                  title={
+                                    physical?.nic_model ||
+                                    physical?.driver ||
+                                    ""
+                                  }
+                                >
+                                  NIC: {physical?.nic_model || physical?.driver}
+                                </div>
+                              )}
+
+                              {iface.addresses &&
+                                iface.addresses.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {iface.addresses
+                                      .slice(0, 2)
+                                      .map((addr, idx) => (
+                                        <code
+                                          key={idx}
+                                          className="text-xs font-mono px-1.5 py-0.5 rounded bg-accent text-foreground"
+                                        >
+                                          {addr}
+                                        </code>
+                                      ))}
+                                    {iface.addresses.length > 2 && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs px-1.5 py-0"
+                                      >
+                                        +{iface.addresses.length - 2}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
+
+                              <div className="flex flex-wrap gap-2 pt-1">
+                                {iface.vrf && (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-purple-500/10 text-purple-500 border-purple-500/20 text-xs"
+                                  >
+                                    VRF: {iface.vrf}
+                                  </Badge>
+                                )}
+                                {iface.hw_id && (
+                                  <code className="text-xs font-mono text-muted-foreground">
+                                    {iface.hw_id}
+                                  </code>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+            {/* VLANs */}
+            {(typeFilter === "all" || typeFilter === "vlan") &&
+              filteredVlans.length > 0 && (
+                <div className="space-y-3">
+                  {typeFilter === "all" && (
+                    <h2 className="text-lg font-semibold text-foreground">
+                      VLANs
+                    </h2>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredVlans.map((vlan) => (
+                      <Card
+                        key={`${vlan.kind}:${vlan.fullName}`}
+                        className="border-border hover:border-primary/50 transition-colors group"
+                      >
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-2">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
-                              <Cable className="h-4 w-4 text-blue-500" />
-                            </div>
-                            <div>
-                              {iface.description ? (
-                                <div className="font-semibold text-foreground text-base truncate" title={iface.description}>
-                                  {iface.description}
-                                </div>
-                              ) : (
-                                <code className="font-semibold font-mono text-foreground text-base">
-                                  {iface.name}
-                                </code>
-                              )}
-                              {iface.description && (
-                                <code className="text-xs font-mono text-muted-foreground">
-                                  {iface.name}
-                                </code>
-                              )}
-                              {vlanCount > 0 && (
+                              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/10">
+                                <Network className="h-4 w-4 text-purple-500" />
+                              </div>
+                              <div>
+                                {vlan.description ? (
+                                  <div
+                                    className="font-semibold text-foreground text-base truncate"
+                                    title={vlan.description}
+                                  >
+                                    {vlan.description}
+                                  </div>
+                                ) : (
+                                  <code className="font-semibold font-mono text-foreground text-base">
+                                    {vlan.fullName}
+                                  </code>
+                                )}
+                                {vlan.description && (
+                                  <code className="text-xs font-mono text-muted-foreground">
+                                    {vlan.fullName}
+                                  </code>
+                                )}
                                 <div className="text-xs text-muted-foreground mt-0.5">
-                                  {vlanCount} VLAN(s)
+                                  Parent: {vlan.parentInterface} |{" "}
+                                  {VLAN_KIND_LABELS[vlan.kind]}
                                 </div>
-                              )}
                               </div>
                             </div>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setEditingInterface(iface)}
+                                onClick={() => setEditingVLAN(vlan)}
                                 className="h-7 w-7 p-0"
                               >
                                 <Pencil className="h-3.5 w-3.5" />
@@ -1061,7 +1816,7 @@ function InterfacesPageContent() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setDeletingInterface(iface)}
+                                onClick={() => setDeletingVLAN(vlan)}
                                 className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -1070,42 +1825,9 @@ function InterfacesPageContent() {
                           </div>
 
                           <div className="space-y-2 text-sm">
-                            <div className="flex flex-wrap gap-2">
-                              <Badge
-                                variant="outline"
-                                className={
-                                  linkUp === true
-                                    ? "bg-green-500/10 text-green-500 border-green-500/20 text-xs"
-                                    : linkUp === false
-                                      ? "bg-red-500/10 text-red-500 border-red-500/20 text-xs"
-                                      : "bg-muted text-muted-foreground border-border text-xs"
-                                }
-                              >
-                                {linkUp === true ? "Link Up" : linkUp === false ? "Link Down" : "Link Unknown"}
-                              </Badge>
-
-                              {linkSpeed && (
-                                <Badge variant="outline" className="text-xs">
-                                  {linkSpeed}
-                                </Badge>
-                              )}
-
-                              {linkDuplex && (
-                                <Badge variant="outline" className="text-xs">
-                                  {linkDuplex}
-                                </Badge>
-                              )}
-                            </div>
-
-                            {(physical?.nic_model || physical?.driver) && (
-                              <div className="text-xs text-muted-foreground truncate" title={physical?.nic_model || physical?.driver || ""}>
-                                NIC: {physical?.nic_model || physical?.driver}
-                              </div>
-                            )}
-
-                            {iface.addresses && iface.addresses.length > 0 && (
+                            {vlan.addresses && vlan.addresses.length > 0 && (
                               <div className="flex flex-wrap gap-1.5">
-                                {iface.addresses.slice(0, 2).map((addr, idx) => (
+                                {vlan.addresses.slice(0, 2).map((addr, idx) => (
                                   <code
                                     key={idx}
                                     className="text-xs font-mono px-1.5 py-0.5 rounded bg-accent text-foreground"
@@ -1113,143 +1835,64 @@ function InterfacesPageContent() {
                                     {addr}
                                   </code>
                                 ))}
-                                {iface.addresses.length > 2 && (
-                                  <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                                    +{iface.addresses.length - 2}
+                                {vlan.addresses.length > 2 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs px-1.5 py-0"
+                                  >
+                                    +{vlan.addresses.length - 2}
                                   </Badge>
                                 )}
                               </div>
                             )}
 
                             <div className="flex flex-wrap gap-2 pt-1">
-                              {iface.vrf && (
-                                <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/20 text-xs">
-                                  VRF: {iface.vrf}
+                              <Badge
+                                variant="outline"
+                                className="bg-purple-500/10 text-purple-500 border-purple-500/20 text-xs"
+                              >
+                                {VLAN_KIND_LABELS[vlan.kind]} {vlan.vlan_id}
+                              </Badge>
+                              {vlan.kind === "vif-c" &&
+                                vlan.service_vlan_id && (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-xs"
+                                  >
+                                    S-Tag: {vlan.service_vlan_id}
+                                  </Badge>
+                                )}
+                              {vlan.vrf && (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-purple-500/10 text-purple-500 border-purple-500/20 text-xs"
+                                >
+                                  VRF: {vlan.vrf}
                                 </Badge>
                               )}
-                              {iface.hw_id && (
-                                <code className="text-xs font-mono text-muted-foreground">
-                                  {iface.hw_id}
-                                </code>
+                              {vlan.disable ? (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-red-500/10 text-red-500 border-red-500/20 text-xs"
+                                >
+                                  Disabled
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-green-500/10 text-green-500 border-green-500/20 text-xs"
+                                >
+                                  Enabled
+                                </Badge>
                               )}
                             </div>
                           </div>
                         </CardContent>
                       </Card>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* VLANs */}
-            {(typeFilter === "all" || typeFilter === "vlan") && filteredVlans.length > 0 && (
-              <div className="space-y-3">
-                {typeFilter === "all" && (
-                  <h2 className="text-lg font-semibold text-foreground">VLANs</h2>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredVlans.map((vlan) => (
-                    <Card key={`${vlan.kind}:${vlan.fullName}`} className="border-border hover:border-primary/50 transition-colors group">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/10">
-                              <Network className="h-4 w-4 text-purple-500" />
-                            </div>
-                            <div>
-                              {vlan.description ? (
-                                <div className="font-semibold text-foreground text-base truncate" title={vlan.description}>
-                                  {vlan.description}
-                                </div>
-                              ) : (
-                                <code className="font-semibold font-mono text-foreground text-base">
-                                  {vlan.fullName}
-                                </code>
-                              )}
-                              {vlan.description && (
-                                <code className="text-xs font-mono text-muted-foreground">
-                                  {vlan.fullName}
-                                </code>
-                              )}
-                              <div className="text-xs text-muted-foreground mt-0.5">
-                                Parent: {vlan.parentInterface} | {VLAN_KIND_LABELS[vlan.kind]}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingVLAN(vlan)}
-                              className="h-7 w-7 p-0"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setDeletingVLAN(vlan)}
-                              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2 text-sm">
-                          {vlan.addresses && vlan.addresses.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5">
-                              {vlan.addresses.slice(0, 2).map((addr, idx) => (
-                                <code
-                                  key={idx}
-                                  className="text-xs font-mono px-1.5 py-0.5 rounded bg-accent text-foreground"
-                                >
-                                  {addr}
-                                </code>
-                              ))}
-                              {vlan.addresses.length > 2 && (
-                                <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                                  +{vlan.addresses.length - 2}
-                                </Badge>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            <Badge
-                              variant="outline"
-                              className="bg-purple-500/10 text-purple-500 border-purple-500/20 text-xs"
-                            >
-                              {VLAN_KIND_LABELS[vlan.kind]} {vlan.vlan_id}
-                            </Badge>
-                            {vlan.kind === "vif-c" && vlan.service_vlan_id && (
-                              <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-xs">
-                                S-Tag: {vlan.service_vlan_id}
-                              </Badge>
-                            )}
-                            {vlan.vrf && (
-                              <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/20 text-xs">
-                                VRF: {vlan.vrf}
-                              </Badge>
-                            )}
-                            {vlan.disable ? (
-                              <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20 text-xs">
-                                Disabled
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 text-xs">
-                                Enabled
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
 
             {/* Empty state */}
             {filteredInterfaces.length === 0 && filteredVlans.length === 0 && (
@@ -1261,8 +1904,8 @@ function InterfacesPageContent() {
                       {searchQuery
                         ? "No interfaces or VLANs found matching your search"
                         : typeFilter === "vlan"
-                        ? "No VLANs configured"
-                        : "No interfaces configured"}
+                          ? "No VLANs configured"
+                          : "No interfaces configured"}
                     </p>
                   </div>
                 </CardContent>
@@ -1272,7 +1915,9 @@ function InterfacesPageContent() {
             {/* Count */}
             {(filteredInterfaces.length > 0 || filteredVlans.length > 0) && (
               <p className="text-sm text-muted-foreground text-center">
-                Showing {filteredInterfaces.length + filteredVlans.length} of {totalInterfaces + totalVlans} item{totalInterfaces + totalVlans !== 1 ? "s" : ""}
+                Showing {filteredInterfaces.length + filteredVlans.length} of{" "}
+                {totalInterfaces + totalVlans} item
+                {totalInterfaces + totalVlans !== 1 ? "s" : ""}
               </p>
             )}
           </div>
@@ -1289,27 +1934,47 @@ function InterfacesPageContent() {
           }
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {quickFamily === "dummy"
-                ? "Quick Add Dummy Interface"
-                : quickFamily === "vti"
-                  ? "Quick Add VTI Interface"
-                : quickFamily === "vxlan"
-                  ? "Quick Add VXLAN Interface"
-                : quickFamily === "tunnel"
-                  ? "Quick Add Tunnel Interface"
-                : quickFamily === "pppoe"
-                  ? "Quick Add PPPoE Interface"
-                : quickFamily === "loopback"
-                  ? "Quick Add Loopback Interface"
-                  : "Quick Configure Interface"}
-            </DialogTitle>
+            <DialogTitle>Create {quickFamilyTitle} Interface</DialogTitle>
             <DialogDescription>
-              Quick configure from the unified manager. Use the full page for advanced options.
+              Select an interface type, then fill in the fields needed to create
+              it.
             </DialogDescription>
           </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor="quick-family-select">Interface Type</Label>
+            <select
+              id="quick-family-select"
+              value={quickFamily ?? "ethernet"}
+              onChange={(event) =>
+                openQuickEditor(event.target.value as QuickFamily)
+              }
+              disabled={quickSaving}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {QUICK_FAMILY_OPTIONS.map((option) => (
+                <option key={`quick-family-${option.key}`} value={option.key}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {quickFamily === "ethernet" && (
+            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+              Ethernet creation uses the full physical-interface editor so you
+              can select NIC capabilities and hardware-specific options.
+            </div>
+          )}
+
+          {quickFamily === "vlan" && (
+            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+              VLAN and QinQ creation uses the dedicated VLAN editor so parent
+              interface and tag options are validated.
+            </div>
+          )}
 
           {quickFamily === "dummy" && (
             <div className="grid gap-4 py-1">
@@ -1320,7 +1985,10 @@ function InterfacesPageContent() {
                     id="quick-dummy-name"
                     value={quickDummyForm.name}
                     onChange={(event) =>
-                      setQuickDummyForm((previous) => ({ ...previous, name: event.target.value }))
+                      setQuickDummyForm((previous) => ({
+                        ...previous,
+                        name: event.target.value,
+                      }))
                     }
                     placeholder="dum0"
                     disabled={quickSaving}
@@ -1332,7 +2000,10 @@ function InterfacesPageContent() {
                     id="quick-dummy-description"
                     value={quickDummyForm.description}
                     onChange={(event) =>
-                      setQuickDummyForm((previous) => ({ ...previous, description: event.target.value }))
+                      setQuickDummyForm((previous) => ({
+                        ...previous,
+                        description: event.target.value,
+                      }))
                     }
                     placeholder="Service loopback"
                     disabled={quickSaving}
@@ -1346,7 +2017,10 @@ function InterfacesPageContent() {
                     id="quick-dummy-mtu"
                     value={quickDummyForm.mtu}
                     onChange={(event) =>
-                      setQuickDummyForm((previous) => ({ ...previous, mtu: event.target.value }))
+                      setQuickDummyForm((previous) => ({
+                        ...previous,
+                        mtu: event.target.value,
+                      }))
                     }
                     placeholder="1500"
                     disabled={quickSaving}
@@ -1358,7 +2032,10 @@ function InterfacesPageContent() {
                     id="quick-dummy-vrf"
                     value={quickDummyForm.vrf}
                     onChange={(event) =>
-                      setQuickDummyForm((previous) => ({ ...previous, vrf: event.target.value }))
+                      setQuickDummyForm((previous) => ({
+                        ...previous,
+                        vrf: event.target.value,
+                      }))
                     }
                     placeholder="blue"
                     disabled={quickSaving}
@@ -1366,13 +2043,18 @@ function InterfacesPageContent() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="quick-dummy-addresses">Addresses (one CIDR per line)</Label>
+                <Label htmlFor="quick-dummy-addresses">
+                  Addresses (one CIDR per line)
+                </Label>
                 <Textarea
                   id="quick-dummy-addresses"
                   rows={4}
                   value={quickDummyForm.addressesText}
                   onChange={(event) =>
-                    setQuickDummyForm((previous) => ({ ...previous, addressesText: event.target.value }))
+                    setQuickDummyForm((previous) => ({
+                      ...previous,
+                      addressesText: event.target.value,
+                    }))
                   }
                   placeholder={"10.10.10.1/32\nfd00:10:10::1/128"}
                   disabled={quickSaving}
@@ -1383,11 +2065,17 @@ function InterfacesPageContent() {
                   id="quick-dummy-disable"
                   checked={quickDummyForm.disabled}
                   onCheckedChange={(checked) =>
-                    setQuickDummyForm((previous) => ({ ...previous, disabled: checked === true }))
+                    setQuickDummyForm((previous) => ({
+                      ...previous,
+                      disabled: checked === true,
+                    }))
                   }
                   disabled={quickSaving}
                 />
-                <Label htmlFor="quick-dummy-disable" className="text-sm font-normal">
+                <Label
+                  htmlFor="quick-dummy-disable"
+                  className="text-sm font-normal"
+                >
                   Create interface in disabled state
                 </Label>
               </div>
@@ -1403,7 +2091,10 @@ function InterfacesPageContent() {
                     id="quick-vti-name"
                     value={quickVtiForm.name}
                     onChange={(event) =>
-                      setQuickVtiForm((previous) => ({ ...previous, name: event.target.value }))
+                      setQuickVtiForm((previous) => ({
+                        ...previous,
+                        name: event.target.value,
+                      }))
                     }
                     placeholder="vti0"
                     disabled={quickSaving}
@@ -1415,7 +2106,10 @@ function InterfacesPageContent() {
                     id="quick-vti-description"
                     value={quickVtiForm.description}
                     onChange={(event) =>
-                      setQuickVtiForm((previous) => ({ ...previous, description: event.target.value }))
+                      setQuickVtiForm((previous) => ({
+                        ...previous,
+                        description: event.target.value,
+                      }))
                     }
                     placeholder="IPsec-VTI"
                     disabled={quickSaving}
@@ -1429,7 +2123,10 @@ function InterfacesPageContent() {
                     id="quick-vti-mtu"
                     value={quickVtiForm.mtu}
                     onChange={(event) =>
-                      setQuickVtiForm((previous) => ({ ...previous, mtu: event.target.value }))
+                      setQuickVtiForm((previous) => ({
+                        ...previous,
+                        mtu: event.target.value,
+                      }))
                     }
                     placeholder="1436"
                     disabled={quickSaving}
@@ -1441,7 +2138,10 @@ function InterfacesPageContent() {
                     id="quick-vti-vrf"
                     value={quickVtiForm.vrf}
                     onChange={(event) =>
-                      setQuickVtiForm((previous) => ({ ...previous, vrf: event.target.value }))
+                      setQuickVtiForm((previous) => ({
+                        ...previous,
+                        vrf: event.target.value,
+                      }))
                     }
                     placeholder="blue"
                     disabled={quickSaving}
@@ -1449,13 +2149,18 @@ function InterfacesPageContent() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="quick-vti-addresses">Addresses (one CIDR per line)</Label>
+                <Label htmlFor="quick-vti-addresses">
+                  Addresses (one CIDR per line)
+                </Label>
                 <Textarea
                   id="quick-vti-addresses"
                   rows={3}
                   value={quickVtiForm.addressesText}
                   onChange={(event) =>
-                    setQuickVtiForm((previous) => ({ ...previous, addressesText: event.target.value }))
+                    setQuickVtiForm((previous) => ({
+                      ...previous,
+                      addressesText: event.target.value,
+                    }))
                   }
                   placeholder={"10.255.10.1/30\nfd00:10:255::1/64"}
                   disabled={quickSaving}
@@ -1466,11 +2171,17 @@ function InterfacesPageContent() {
                   id="quick-vti-disable"
                   checked={quickVtiForm.disabled}
                   onCheckedChange={(checked) =>
-                    setQuickVtiForm((previous) => ({ ...previous, disabled: checked === true }))
+                    setQuickVtiForm((previous) => ({
+                      ...previous,
+                      disabled: checked === true,
+                    }))
                   }
                   disabled={quickSaving}
                 />
-                <Label htmlFor="quick-vti-disable" className="text-sm font-normal">
+                <Label
+                  htmlFor="quick-vti-disable"
+                  className="text-sm font-normal"
+                >
                   Create interface in disabled state
                 </Label>
               </div>
@@ -1486,7 +2197,10 @@ function InterfacesPageContent() {
                     id="quick-vxlan-name"
                     value={quickVxlanForm.name}
                     onChange={(event) =>
-                      setQuickVxlanForm((previous) => ({ ...previous, name: event.target.value }))
+                      setQuickVxlanForm((previous) => ({
+                        ...previous,
+                        name: event.target.value,
+                      }))
                     }
                     placeholder="vxlan10"
                     disabled={quickSaving}
@@ -1498,7 +2212,10 @@ function InterfacesPageContent() {
                     id="quick-vxlan-vni"
                     value={quickVxlanForm.vni}
                     onChange={(event) =>
-                      setQuickVxlanForm((previous) => ({ ...previous, vni: event.target.value }))
+                      setQuickVxlanForm((previous) => ({
+                        ...previous,
+                        vni: event.target.value,
+                      }))
                     }
                     placeholder="10"
                     disabled={quickSaving}
@@ -1511,7 +2228,10 @@ function InterfacesPageContent() {
                   id="quick-vxlan-description"
                   value={quickVxlanForm.description}
                   onChange={(event) =>
-                    setQuickVxlanForm((previous) => ({ ...previous, description: event.target.value }))
+                    setQuickVxlanForm((previous) => ({
+                      ...previous,
+                      description: event.target.value,
+                    }))
                   }
                   placeholder="Overlay Segment 10"
                   disabled={quickSaving}
@@ -1524,7 +2244,10 @@ function InterfacesPageContent() {
                     id="quick-vxlan-remote"
                     value={quickVxlanForm.remote}
                     onChange={(event) =>
-                      setQuickVxlanForm((previous) => ({ ...previous, remote: event.target.value }))
+                      setQuickVxlanForm((previous) => ({
+                        ...previous,
+                        remote: event.target.value,
+                      }))
                     }
                     placeholder="203.0.113.10"
                     disabled={quickSaving}
@@ -1536,7 +2259,10 @@ function InterfacesPageContent() {
                     id="quick-vxlan-group"
                     value={quickVxlanForm.group}
                     onChange={(event) =>
-                      setQuickVxlanForm((previous) => ({ ...previous, group: event.target.value }))
+                      setQuickVxlanForm((previous) => ({
+                        ...previous,
+                        group: event.target.value,
+                      }))
                     }
                     placeholder="239.0.0.10"
                     disabled={quickSaving}
@@ -1545,7 +2271,9 @@ function InterfacesPageContent() {
               </div>
               <div className="grid gap-2 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="quick-vxlan-source">Source Interface (optional)</Label>
+                  <Label htmlFor="quick-vxlan-source">
+                    Source Interface (optional)
+                  </Label>
                   <select
                     id="quick-vxlan-source"
                     value={quickVxlanForm.sourceInterface}
@@ -1560,7 +2288,10 @@ function InterfacesPageContent() {
                   >
                     <option value="">Select source interface</option>
                     {sourceInterfaceOptions.map((iface) => (
-                      <option key={`quick-vxlan-source-${iface.name}`} value={iface.name}>
+                      <option
+                        key={`quick-vxlan-source-${iface.name}`}
+                        value={iface.name}
+                      >
                         {iface.label}
                       </option>
                     ))}
@@ -1572,7 +2303,10 @@ function InterfacesPageContent() {
                     id="quick-vxlan-vrf"
                     value={quickVxlanForm.vrf}
                     onChange={(event) =>
-                      setQuickVxlanForm((previous) => ({ ...previous, vrf: event.target.value }))
+                      setQuickVxlanForm((previous) => ({
+                        ...previous,
+                        vrf: event.target.value,
+                      }))
                     }
                     placeholder="blue"
                     disabled={quickSaving}
@@ -1586,7 +2320,10 @@ function InterfacesPageContent() {
                     id="quick-vxlan-mtu"
                     value={quickVxlanForm.mtu}
                     onChange={(event) =>
-                      setQuickVxlanForm((previous) => ({ ...previous, mtu: event.target.value }))
+                      setQuickVxlanForm((previous) => ({
+                        ...previous,
+                        mtu: event.target.value,
+                      }))
                     }
                     placeholder="1500"
                     disabled={quickSaving}
@@ -1597,11 +2334,17 @@ function InterfacesPageContent() {
                     id="quick-vxlan-disable"
                     checked={quickVxlanForm.disabled}
                     onCheckedChange={(checked) =>
-                      setQuickVxlanForm((previous) => ({ ...previous, disabled: checked === true }))
+                      setQuickVxlanForm((previous) => ({
+                        ...previous,
+                        disabled: checked === true,
+                      }))
                     }
                     disabled={quickSaving}
                   />
-                  <Label htmlFor="quick-vxlan-disable" className="text-sm font-normal">
+                  <Label
+                    htmlFor="quick-vxlan-disable"
+                    className="text-sm font-normal"
+                  >
                     Create interface in disabled state
                   </Label>
                 </div>
@@ -1618,14 +2361,19 @@ function InterfacesPageContent() {
                     id="quick-tunnel-name"
                     value={quickTunnelForm.name}
                     onChange={(event) =>
-                      setQuickTunnelForm((previous) => ({ ...previous, name: event.target.value }))
+                      setQuickTunnelForm((previous) => ({
+                        ...previous,
+                        name: event.target.value,
+                      }))
                     }
                     placeholder="tun0"
                     disabled={quickSaving}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="quick-tunnel-encapsulation">Encapsulation</Label>
+                  <Label htmlFor="quick-tunnel-encapsulation">
+                    Encapsulation
+                  </Label>
                   <select
                     id="quick-tunnel-encapsulation"
                     value={quickTunnelForm.encapsulation}
@@ -1639,7 +2387,10 @@ function InterfacesPageContent() {
                     className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {QUICK_TUNNEL_ENCAPSULATION_OPTIONS.map((option) => (
-                      <option key={`quick-tunnel-encap-${option}`} value={option}>
+                      <option
+                        key={`quick-tunnel-encap-${option}`}
+                        value={option}
+                      >
                         {option}
                       </option>
                     ))}
@@ -1652,7 +2403,10 @@ function InterfacesPageContent() {
                   id="quick-tunnel-description"
                   value={quickTunnelForm.description}
                   onChange={(event) =>
-                    setQuickTunnelForm((previous) => ({ ...previous, description: event.target.value }))
+                    setQuickTunnelForm((previous) => ({
+                      ...previous,
+                      description: event.target.value,
+                    }))
                   }
                   placeholder="GRE to branch"
                   disabled={quickSaving}
@@ -1680,7 +2434,10 @@ function InterfacesPageContent() {
                     id="quick-tunnel-remote"
                     value={quickTunnelForm.remote}
                     onChange={(event) =>
-                      setQuickTunnelForm((previous) => ({ ...previous, remote: event.target.value }))
+                      setQuickTunnelForm((previous) => ({
+                        ...previous,
+                        remote: event.target.value,
+                      }))
                     }
                     placeholder="198.51.100.20"
                     disabled={quickSaving}
@@ -1694,7 +2451,10 @@ function InterfacesPageContent() {
                     id="quick-tunnel-mtu"
                     value={quickTunnelForm.mtu}
                     onChange={(event) =>
-                      setQuickTunnelForm((previous) => ({ ...previous, mtu: event.target.value }))
+                      setQuickTunnelForm((previous) => ({
+                        ...previous,
+                        mtu: event.target.value,
+                      }))
                     }
                     placeholder="1476"
                     disabled={quickSaving}
@@ -1706,7 +2466,10 @@ function InterfacesPageContent() {
                     id="quick-tunnel-vrf"
                     value={quickTunnelForm.vrf}
                     onChange={(event) =>
-                      setQuickTunnelForm((previous) => ({ ...previous, vrf: event.target.value }))
+                      setQuickTunnelForm((previous) => ({
+                        ...previous,
+                        vrf: event.target.value,
+                      }))
                     }
                     placeholder="blue"
                     disabled={quickSaving}
@@ -1718,11 +2481,17 @@ function InterfacesPageContent() {
                   id="quick-tunnel-disable"
                   checked={quickTunnelForm.disabled}
                   onCheckedChange={(checked) =>
-                    setQuickTunnelForm((previous) => ({ ...previous, disabled: checked === true }))
+                    setQuickTunnelForm((previous) => ({
+                      ...previous,
+                      disabled: checked === true,
+                    }))
                   }
                   disabled={quickSaving}
                 />
-                <Label htmlFor="quick-tunnel-disable" className="text-sm font-normal">
+                <Label
+                  htmlFor="quick-tunnel-disable"
+                  className="text-sm font-normal"
+                >
                   Create interface in disabled state
                 </Label>
               </div>
@@ -1738,7 +2507,10 @@ function InterfacesPageContent() {
                     id="quick-pppoe-name"
                     value={quickPppoeForm.name}
                     onChange={(event) =>
-                      setQuickPppoeForm((previous) => ({ ...previous, name: event.target.value }))
+                      setQuickPppoeForm((previous) => ({
+                        ...previous,
+                        name: event.target.value,
+                      }))
                     }
                     placeholder="pppoe0"
                     disabled={quickSaving}
@@ -1773,7 +2545,10 @@ function InterfacesPageContent() {
                   id="quick-pppoe-description"
                   value={quickPppoeForm.description}
                   onChange={(event) =>
-                    setQuickPppoeForm((previous) => ({ ...previous, description: event.target.value }))
+                    setQuickPppoeForm((previous) => ({
+                      ...previous,
+                      description: event.target.value,
+                    }))
                   }
                   placeholder="WAN-PPPoE"
                   disabled={quickSaving}
@@ -1781,25 +2556,35 @@ function InterfacesPageContent() {
               </div>
               <div className="grid gap-2 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="quick-pppoe-user">Authentication Username</Label>
+                  <Label htmlFor="quick-pppoe-user">
+                    Authentication Username
+                  </Label>
                   <Input
                     id="quick-pppoe-user"
                     value={quickPppoeForm.username}
                     onChange={(event) =>
-                      setQuickPppoeForm((previous) => ({ ...previous, username: event.target.value }))
+                      setQuickPppoeForm((previous) => ({
+                        ...previous,
+                        username: event.target.value,
+                      }))
                     }
                     placeholder="isp-user"
                     disabled={quickSaving}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="quick-pppoe-password">Authentication Password</Label>
+                  <Label htmlFor="quick-pppoe-password">
+                    Authentication Password
+                  </Label>
                   <Input
                     id="quick-pppoe-password"
                     type="password"
                     value={quickPppoeForm.password}
                     onChange={(event) =>
-                      setQuickPppoeForm((previous) => ({ ...previous, password: event.target.value }))
+                      setQuickPppoeForm((previous) => ({
+                        ...previous,
+                        password: event.target.value,
+                      }))
                     }
                     placeholder="isp-password"
                     disabled={quickSaving}
@@ -1813,14 +2598,19 @@ function InterfacesPageContent() {
                     id="quick-pppoe-mtu"
                     value={quickPppoeForm.mtu}
                     onChange={(event) =>
-                      setQuickPppoeForm((previous) => ({ ...previous, mtu: event.target.value }))
+                      setQuickPppoeForm((previous) => ({
+                        ...previous,
+                        mtu: event.target.value,
+                      }))
                     }
                     placeholder="1492"
                     disabled={quickSaving}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="quick-pppoe-distance">Default Route Distance (optional)</Label>
+                  <Label htmlFor="quick-pppoe-distance">
+                    Default Route Distance (optional)
+                  </Label>
                   <Input
                     id="quick-pppoe-distance"
                     value={quickPppoeForm.defaultRouteDistance}
@@ -1840,11 +2630,17 @@ function InterfacesPageContent() {
                   id="quick-pppoe-disable"
                   checked={quickPppoeForm.disabled}
                   onCheckedChange={(checked) =>
-                    setQuickPppoeForm((previous) => ({ ...previous, disabled: checked === true }))
+                    setQuickPppoeForm((previous) => ({
+                      ...previous,
+                      disabled: checked === true,
+                    }))
                   }
                   disabled={quickSaving}
                 />
-                <Label htmlFor="quick-pppoe-disable" className="text-sm font-normal">
+                <Label
+                  htmlFor="quick-pppoe-disable"
+                  className="text-sm font-normal"
+                >
                   Create interface in disabled state
                 </Label>
               </div>
@@ -1860,19 +2656,27 @@ function InterfacesPageContent() {
                     id="quick-loopback-name"
                     value={quickLoopbackForm.name}
                     onChange={(event) =>
-                      setQuickLoopbackForm((previous) => ({ ...previous, name: event.target.value }))
+                      setQuickLoopbackForm((previous) => ({
+                        ...previous,
+                        name: event.target.value,
+                      }))
                     }
                     placeholder="lo10"
                     disabled={quickSaving}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="quick-loopback-description">Description</Label>
+                  <Label htmlFor="quick-loopback-description">
+                    Description
+                  </Label>
                   <Input
                     id="quick-loopback-description"
                     value={quickLoopbackForm.description}
                     onChange={(event) =>
-                      setQuickLoopbackForm((previous) => ({ ...previous, description: event.target.value }))
+                      setQuickLoopbackForm((previous) => ({
+                        ...previous,
+                        description: event.target.value,
+                      }))
                     }
                     placeholder="Router ID"
                     disabled={quickSaving}
@@ -1880,17 +2684,609 @@ function InterfacesPageContent() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="quick-loopback-addresses">Addresses (one CIDR per line)</Label>
+                <Label htmlFor="quick-loopback-addresses">
+                  Addresses (one CIDR per line)
+                </Label>
                 <Textarea
                   id="quick-loopback-addresses"
                   rows={4}
                   value={quickLoopbackForm.addressesText}
                   onChange={(event) =>
-                    setQuickLoopbackForm((previous) => ({ ...previous, addressesText: event.target.value }))
+                    setQuickLoopbackForm((previous) => ({
+                      ...previous,
+                      addressesText: event.target.value,
+                    }))
                   }
                   placeholder={"10.255.255.1/32\nfd00:255:255::1/128"}
                   disabled={quickSaving}
                 />
+              </div>
+            </div>
+          )}
+
+          {isGenericQuickFamily(quickFamily) && (
+            <div className="grid gap-4 py-1">
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-generic-name">Interface Name</Label>
+                  <Input
+                    id="quick-generic-name"
+                    value={quickGenericForm.name}
+                    onChange={(event) =>
+                      setQuickGenericForm((previous) => ({
+                        ...previous,
+                        name: event.target.value,
+                      }))
+                    }
+                    placeholder="Interface name"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-generic-description">Description</Label>
+                  <Input
+                    id="quick-generic-description"
+                    value={quickGenericForm.description}
+                    onChange={(event) =>
+                      setQuickGenericForm((previous) => ({
+                        ...previous,
+                        description: event.target.value,
+                      }))
+                    }
+                    placeholder="Interface description"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-generic-mtu">MTU (optional)</Label>
+                  <Input
+                    id="quick-generic-mtu"
+                    value={quickGenericForm.mtu}
+                    onChange={(event) =>
+                      setQuickGenericForm((previous) => ({
+                        ...previous,
+                        mtu: event.target.value,
+                      }))
+                    }
+                    placeholder="1500"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-generic-vrf">VRF (optional)</Label>
+                  <Input
+                    id="quick-generic-vrf"
+                    value={quickGenericForm.vrf}
+                    onChange={(event) =>
+                      setQuickGenericForm((previous) => ({
+                        ...previous,
+                        vrf: event.target.value,
+                      }))
+                    }
+                    placeholder="blue"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="quick-generic-addresses">
+                  Addresses (one CIDR per line, optional)
+                </Label>
+                <Textarea
+                  id="quick-generic-addresses"
+                  rows={3}
+                  value={quickGenericForm.addressesText}
+                  onChange={(event) =>
+                    setQuickGenericForm((previous) => ({
+                      ...previous,
+                      addressesText: event.target.value,
+                    }))
+                  }
+                  placeholder={"10.10.10.1/24\nfd00:10::1/64"}
+                  disabled={quickSaving}
+                />
+              </div>
+
+              {(quickFamily === "bonding" || quickFamily === "bridge") && (
+                <div className="space-y-2">
+                  <Label htmlFor="quick-generic-members">
+                    Member Interfaces (one per line)
+                  </Label>
+                  <Textarea
+                    id="quick-generic-members"
+                    rows={3}
+                    value={quickGenericForm.membersText}
+                    onChange={(event) =>
+                      setQuickGenericForm((previous) => ({
+                        ...previous,
+                        membersText: event.target.value,
+                      }))
+                    }
+                    placeholder={"eth2\neth3"}
+                    disabled={quickSaving}
+                  />
+                </div>
+              )}
+
+              {quickFamily === "bonding" && (
+                <div className="space-y-2">
+                  <Label htmlFor="quick-generic-mode">Bonding Mode</Label>
+                  <select
+                    id="quick-generic-mode"
+                    value={quickGenericForm.mode}
+                    onChange={(event) =>
+                      setQuickGenericForm((previous) => ({
+                        ...previous,
+                        mode: event.target.value,
+                      }))
+                    }
+                    disabled={quickSaving}
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {QUICK_BONDING_MODE_OPTIONS.map((mode) => (
+                      <option key={`quick-bonding-mode-${mode}`} value={mode}>
+                        {mode}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {(quickFamily === "geneve" ||
+                quickFamily === "l2tpv3" ||
+                quickFamily === "macsec" ||
+                quickFamily === "pseudo-ethernet") && (
+                <div className="space-y-2">
+                  <Label htmlFor="quick-generic-source-interface">
+                    Source Interface (optional)
+                  </Label>
+                  <select
+                    id="quick-generic-source-interface"
+                    value={quickGenericForm.sourceInterface}
+                    onChange={(event) =>
+                      setQuickGenericForm((previous) => ({
+                        ...previous,
+                        sourceInterface: event.target.value,
+                      }))
+                    }
+                    disabled={quickSaving}
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="">Select source interface</option>
+                    {sourceInterfaceOptions.map((iface) => (
+                      <option
+                        key={`quick-generic-source-${iface.name}`}
+                        value={iface.name}
+                      >
+                        {iface.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {(quickFamily === "geneve" || quickFamily === "l2tpv3") && (
+                <div className="grid gap-2 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-source-address">
+                      Source Address
+                    </Label>
+                    <Input
+                      id="quick-generic-source-address"
+                      value={quickGenericForm.sourceAddress}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          sourceAddress: event.target.value,
+                        }))
+                      }
+                      placeholder="192.0.2.10"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-remote">
+                      Remote Endpoint
+                    </Label>
+                    <Input
+                      id="quick-generic-remote"
+                      value={quickGenericForm.remote}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          remote: event.target.value,
+                        }))
+                      }
+                      placeholder="198.51.100.20"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {quickFamily === "geneve" && (
+                <div className="space-y-2">
+                  <Label htmlFor="quick-generic-vni">VNI</Label>
+                  <Input
+                    id="quick-generic-vni"
+                    value={quickGenericForm.vni}
+                    onChange={(event) =>
+                      setQuickGenericForm((previous) => ({
+                        ...previous,
+                        vni: event.target.value,
+                      }))
+                    }
+                    placeholder="100"
+                    disabled={quickSaving}
+                  />
+                </div>
+              )}
+
+              {quickFamily === "l2tpv3" && (
+                <div className="grid gap-2 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-l2tp-session">
+                      Session ID (optional)
+                    </Label>
+                    <Input
+                      id="quick-generic-l2tp-session"
+                      value={quickGenericForm.l2tpSessionId}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          l2tpSessionId: event.target.value,
+                        }))
+                      }
+                      placeholder="100"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-l2tp-peer-session">
+                      Peer Session ID (optional)
+                    </Label>
+                    <Input
+                      id="quick-generic-l2tp-peer-session"
+                      value={quickGenericForm.l2tpPeerSessionId}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          l2tpPeerSessionId: event.target.value,
+                        }))
+                      }
+                      placeholder="100"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-l2tp-tunnel">
+                      Tunnel ID (optional)
+                    </Label>
+                    <Input
+                      id="quick-generic-l2tp-tunnel"
+                      value={quickGenericForm.l2tpTunnelId}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          l2tpTunnelId: event.target.value,
+                        }))
+                      }
+                      placeholder="10"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-l2tp-peer-tunnel">
+                      Peer Tunnel ID (optional)
+                    </Label>
+                    <Input
+                      id="quick-generic-l2tp-peer-tunnel"
+                      value={quickGenericForm.l2tpPeerTunnelId}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          l2tpPeerTunnelId: event.target.value,
+                        }))
+                      }
+                      placeholder="10"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {quickFamily === "macsec" && (
+                <div className="space-y-2">
+                  <Label htmlFor="quick-generic-macsec-cipher">
+                    Cipher (optional)
+                  </Label>
+                  <Input
+                    id="quick-generic-macsec-cipher"
+                    value={quickGenericForm.macsecCipher}
+                    onChange={(event) =>
+                      setQuickGenericForm((previous) => ({
+                        ...previous,
+                        macsecCipher: event.target.value,
+                      }))
+                    }
+                    placeholder="gcm-aes-128"
+                    disabled={quickSaving}
+                  />
+                </div>
+              )}
+
+              {quickFamily === "openvpn" && (
+                <div className="grid gap-2 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-openvpn-mode">Mode</Label>
+                    <Input
+                      id="quick-generic-openvpn-mode"
+                      value={quickGenericForm.openvpnMode}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          openvpnMode: event.target.value,
+                        }))
+                      }
+                      placeholder="client"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-openvpn-protocol">
+                      Protocol
+                    </Label>
+                    <Input
+                      id="quick-generic-openvpn-protocol"
+                      value={quickGenericForm.openvpnProtocol}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          openvpnProtocol: event.target.value,
+                        }))
+                      }
+                      placeholder="udp"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-openvpn-remote">
+                      Remote Host (optional)
+                    </Label>
+                    <Input
+                      id="quick-generic-openvpn-remote"
+                      value={quickGenericForm.openvpnRemoteHost}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          openvpnRemoteHost: event.target.value,
+                        }))
+                      }
+                      placeholder="vpn.example.com"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-openvpn-port">
+                      Local Port (optional)
+                    </Label>
+                    <Input
+                      id="quick-generic-openvpn-port"
+                      value={quickGenericForm.openvpnLocalPort}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          openvpnLocalPort: event.target.value,
+                        }))
+                      }
+                      placeholder="1194"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {quickFamily === "sstp-client" && (
+                <div className="grid gap-2 md:grid-cols-2">
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="quick-generic-sstp-server">Server</Label>
+                    <Input
+                      id="quick-generic-sstp-server"
+                      value={quickGenericForm.server}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          server: event.target.value,
+                        }))
+                      }
+                      placeholder="vpn.example.com"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-sstp-username">
+                      Username (optional)
+                    </Label>
+                    <Input
+                      id="quick-generic-sstp-username"
+                      value={quickGenericForm.username}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          username: event.target.value,
+                        }))
+                      }
+                      placeholder="vpn-user"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-sstp-password">
+                      Password (optional)
+                    </Label>
+                    <Input
+                      id="quick-generic-sstp-password"
+                      type="password"
+                      value={quickGenericForm.password}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          password: event.target.value,
+                        }))
+                      }
+                      placeholder="vpn-password"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {quickFamily === "virtual-ethernet" && (
+                <div className="space-y-2">
+                  <Label htmlFor="quick-generic-peer-name">Peer Name</Label>
+                  <Input
+                    id="quick-generic-peer-name"
+                    value={quickGenericForm.peerName}
+                    onChange={(event) =>
+                      setQuickGenericForm((previous) => ({
+                        ...previous,
+                        peerName: event.target.value,
+                      }))
+                    }
+                    placeholder="veth-peer0"
+                    disabled={quickSaving}
+                  />
+                </div>
+              )}
+
+              {quickFamily === "wireless" && (
+                <div className="grid gap-2 md:grid-cols-2">
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="quick-generic-ssid">SSID</Label>
+                    <Input
+                      id="quick-generic-ssid"
+                      value={quickGenericForm.ssid}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          ssid: event.target.value,
+                        }))
+                      }
+                      placeholder="VyManager-WiFi"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-wireless-mode">
+                      Mode (optional)
+                    </Label>
+                    <Input
+                      id="quick-generic-wireless-mode"
+                      value={quickGenericForm.wirelessMode}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          wirelessMode: event.target.value,
+                        }))
+                      }
+                      placeholder="g"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-wireless-type">
+                      Type (optional)
+                    </Label>
+                    <Input
+                      id="quick-generic-wireless-type"
+                      value={quickGenericForm.wirelessType}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          wirelessType: event.target.value,
+                        }))
+                      }
+                      placeholder="station"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-physical-device">
+                      Physical Device (optional)
+                    </Label>
+                    <Input
+                      id="quick-generic-physical-device"
+                      value={quickGenericForm.physicalDevice}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          physicalDevice: event.target.value,
+                        }))
+                      }
+                      placeholder="wlan0"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-generic-country">
+                      Country Code (optional)
+                    </Label>
+                    <Input
+                      id="quick-generic-country"
+                      value={quickGenericForm.countryCode}
+                      onChange={(event) =>
+                        setQuickGenericForm((previous) => ({
+                          ...previous,
+                          countryCode: event.target.value,
+                        }))
+                      }
+                      placeholder="US"
+                      disabled={quickSaving}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {quickFamily === "wwan" && (
+                <div className="space-y-2">
+                  <Label htmlFor="quick-generic-apn">APN (optional)</Label>
+                  <Input
+                    id="quick-generic-apn"
+                    value={quickGenericForm.apn}
+                    onChange={(event) =>
+                      setQuickGenericForm((previous) => ({
+                        ...previous,
+                        apn: event.target.value,
+                      }))
+                    }
+                    placeholder="internet"
+                    disabled={quickSaving}
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 rounded-md border border-border p-2">
+                <Checkbox
+                  id="quick-generic-disable"
+                  checked={quickGenericForm.disabled}
+                  onCheckedChange={(checked) =>
+                    setQuickGenericForm((previous) => ({
+                      ...previous,
+                      disabled: checked === true,
+                    }))
+                  }
+                  disabled={quickSaving}
+                />
+                <Label
+                  htmlFor="quick-generic-disable"
+                  className="text-sm font-normal"
+                >
+                  Create interface in disabled state
+                </Label>
               </div>
             </div>
           )}
@@ -1904,8 +3300,16 @@ function InterfacesPageContent() {
             >
               Cancel
             </Button>
-            <Button type="button" onClick={saveQuickEditor} disabled={quickSaving || !quickFamily}>
-              {quickSaving ? "Saving..." : "Apply"}
+            <Button
+              type="button"
+              onClick={saveQuickEditor}
+              disabled={quickSaving || !quickFamily}
+            >
+              {quickSaving
+                ? "Saving..."
+                : quickFamily === "ethernet" || quickFamily === "vlan"
+                  ? "Continue"
+                  : "Apply"}
             </Button>
           </DialogFooter>
         </DialogContent>

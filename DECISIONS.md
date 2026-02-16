@@ -252,3 +252,6 @@
 - 2026-02-16: Restored interface family entries in the left sidebar under `Interfaces` so operators can jump directly to each dedicated interface page.
 - 2026-02-16: Trimmed `/network/interfaces` to remove duplicated full family-link navigation; page now focuses on ethernet/VLAN management plus quick-create cards for common families.
 - 2026-02-16: Renamed the `Interfaces` child link from `Interface Manager` back to `All Interfaces` to match prior naming and reduce IA confusion.
+- 2026-02-16: `Create Interface` now opens a unified wizard modal with an interface-type selector covering all families instead of directly launching only the Ethernet modal.
+- 2026-02-16: The unified wizard uses existing per-family API wrappers and type-specific minimal fields; no backend contract changes were introduced in this slice.
+- 2026-02-16: Ethernet and VLAN/QinQ creation remain on their dedicated modals, but are now launched from the same unified create wizard so operator workflow starts from one button.

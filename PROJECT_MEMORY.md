@@ -58,7 +58,7 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
 - Deliver interface IA consolidation so operators can navigate interface configuration from one unified hub and a small set of logical groups.
-- Add inline quick-add on the unified hub for high-overlap families while preserving detailed per-type advanced editors and API contracts.
+- Provide a single `Create Interface` flow that supports all interface families with type-specific fields from one modal.
 
 ## Current Feature Spec
 Feature: **Interfaces IA Consolidation v2**
@@ -68,7 +68,8 @@ Acceptance criteria:
 - `/network/interfaces` keeps core ethernet/VLAN management plus quick-create actions, without duplicating full family-link navigation.
 - Interfaces page includes a clear `Open Setup Wizard` button.
 - Existing detailed interface pages remain reachable for compatibility and advanced settings.
-- Unified manager provides inline quick-add for `Dummy`, `Loopback`, `PPPoE`, `VTI`, `VXLAN`, and `Tunnel` families.
+- `Create Interface` opens a single wizard-style modal with interface-type selector covering all family types.
+- The wizard shows type-specific fields and applies creation via existing per-family APIs without backend contract changes.
 - Sidebar label for `/network/interfaces` is restored to the prior naming (`All Interfaces`).
 - PPPoE quick-add source-interface selection uses description-first labels (`Description (ethX)`) when available.
 - Build/typecheck/runtime smoke pass after the IA changes.
@@ -79,11 +80,10 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v2 cleanup applied; `/network/interfaces` now focuses on quick-create actions and no longer presents full family-link UI, and the sidebar child label is now `All Interfaces`.
+- Status: interface IA consolidation v2 wizard expansion applied; `Create Interface` now opens a unified type-select flow for all interface families, with dedicated Ethernet/VLAN modals launched from the same entry point.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/src/app/network/interfaces/page.tsx`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
@@ -93,7 +93,7 @@ Assumptions:
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/app/network/interfaces/page.tsx src/components/layout/Sidebar.tsx --max-warnings=0` passed.
+- `cd frontend && npx eslint src/app/network/interfaces/page.tsx --max-warnings=0` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
 - `cd frontend && npm run -s smoke:ui` remains blocked by missing host library `libnspr4.so` (recorded in `LAST_FAILURE.txt`).
@@ -313,3 +313,5 @@ Assumptions:
 - Interface family cards now use dedicated-page `Open` navigation only; inline panel/embed workspace approach was removed.
 - Interface Manager no longer shows full family-link navigation; it now surfaces only quick-create cards for common families to avoid redundant link lists.
 - Sidebar child label for `/network/interfaces` was renamed from `Interface Manager` back to `All Interfaces`.
+- `Create Interface` now uses one wizard modal with a full family selector (`Ethernet`, `VLAN/QinQ`, `Dummy`, `Bonding`, `Bridge`, `Geneve`, `L2TPv3`, `Loopback`, `MACsec`, `OpenVPN`, `PPPoE`, `Pseudo-Ethernet`, `SSTP`, `Tunnel`, `Virtual-Ethernet`, `VTI`, `VXLAN`, `Wireless`, `WWAN`).
+- Generic family create path now applies minimal type-specific commands via existing API wrappers (no backend route changes); Ethernet/VLAN routes to existing dedicated create modals from the same wizard flow.
