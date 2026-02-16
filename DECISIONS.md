@@ -248,3 +248,4 @@
 - 2026-02-16: Embedded workspace family pages now append `embedded=1` and `AppLayout` respects this mode by omitting sidebar/wrapper chrome, eliminating clipped content in the side panel.
 - 2026-02-16: Increased workspace panel width to full viewport (`w-screen max-w-none`) because operators still observed ~1.5in clipping after nested-layout removal.
 - 2026-02-16: Added dual family navigation actions (`Inline` and `Open Page`) to keep same-page workflow while preserving fast access to dedicated family pages.
+- 2026-02-16: Reverted interface family navigation to dedicated pages only and removed inline workspace/embed behavior based on operator preference for clear, non-buried per-family views.

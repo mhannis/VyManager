@@ -65,7 +65,7 @@ Feature: **Interfaces IA Consolidation v2**
 
 Acceptance criteria:
 - Interfaces sidebar is condensed to a single `Interfaces` entry.
-- `/network/interfaces` presents grouped interface-family cards and keeps `Open` workflows inline (no navigation away from manager).
+- `/network/interfaces` presents grouped interface-family cards that route to dedicated per-family pages.
 - Interfaces page includes a clear `Open Setup Wizard` button.
 - Existing detailed interface pages remain reachable for compatibility and advanced settings.
 - Unified manager provides inline quick-add for `Dummy`, `Loopback`, `PPPoE`, `VTI`, `VXLAN`, and `Tunnel` families.
@@ -78,11 +78,12 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback/PPPoE/VTI/VXLAN/Tunnel is implemented, sidebar is collapsed to single `Interfaces`, and family `Open` now launches inline workspace.
+- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback/PPPoE/VTI/VXLAN/Tunnel is implemented, sidebar is collapsed to single `Interfaces`, and family actions now use dedicated pages only.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
 - `frontend/src/app/network/interfaces/page.tsx`
+- `frontend/src/components/layout/AppLayout.tsx`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
@@ -307,4 +308,4 @@ Assumptions:
 - Interface family `Open` now launches an in-page advanced workspace (right-side sheet with embedded editor) so operators stay on `/network/interfaces`.
 - Added embedded AppLayout mode (`?embedded=1`) so editors rendered inside the workspace sheet do not include nested sidebar chrome, fixing clipped/cut-off content.
 - Workspace panel width is now full viewport (`w-screen max-w-none`) to remove remaining horizontal clipping after embedded-mode fix.
-- Interface family cards now expose both `Inline` and `Open Page` actions so operators can switch between same-page and dedicated-page workflows.
+- Interface family cards now use dedicated-page `Open` navigation only; inline panel/embed workspace approach was removed.
