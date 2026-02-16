@@ -23,6 +23,31 @@ STATE_ACTION_VALUES = {"", "accept", "drop", "reject"}
 LOG_LEVEL_VALUES = {"", "emerg", "alert", "crit", "err", "warn", "notice", "info", "debug"}
 MAX_TIMEOUT = 2147483647
 
+ENABLE_DISABLE_SET_OPERATIONS = {
+    "set_all_ping",
+    "set_broadcast_ping",
+    "set_ip_src_route",
+    "set_ipv6_src_route",
+    "set_receive_redirects",
+    "set_ipv6_receive_redirects",
+    "set_send_redirects",
+    "set_log_martians",
+    "set_syn_cookies",
+    "set_twa_hazards_protection",
+}
+SOURCE_VALIDATION_SET_OPERATIONS = {"set_source_validation"}
+STATE_ACTION_SET_OPERATIONS = {
+    "set_state_policy_established_action",
+    "set_state_policy_invalid_action",
+    "set_state_policy_related_action",
+}
+STATE_LOG_LEVEL_SET_OPERATIONS = {
+    "set_state_policy_established_log_level",
+    "set_state_policy_invalid_log_level",
+    "set_state_policy_related_log_level",
+}
+TIMEOUT_SET_OPERATION_PREFIX = "set_timeout_"
+
 
 # Stub functions for backwards compatibility with app.py
 def set_device_registry(registry):
@@ -371,6 +396,44 @@ def _validate_global_options_config(config: FirewallGlobalOptionsConfig) -> None
         _validate_timeout("timeouts.udp_stream", config.timeouts.udp_stream)
 
 
+def _normalize_batch_operation_value_or_400(op_name: str, value: Optional[str], parameter_count: int) -> Any:
+    """Validate and normalize batch operation values based on operation semantics."""
+    if parameter_count == 0:
+        if value is not None and str(value).strip():
+            raise HTTPException(status_code=400, detail=f"Operation {op_name} does not accept a value")
+        return None
+
+    if parameter_count != 1:
+        raise HTTPException(status_code=400, detail=f"Unsupported operation signature for {op_name}")
+
+    if value is None or not str(value).strip():
+        raise HTTPException(status_code=400, detail=f"Operation {op_name} requires a value")
+
+    normalized = str(value).strip()
+    lowered = normalized.lower()
+
+    if op_name in ENABLE_DISABLE_SET_OPERATIONS:
+        _validate_choice(op_name, lowered, ENABLE_DISABLE_VALUES)
+        return lowered
+    if op_name in SOURCE_VALIDATION_SET_OPERATIONS:
+        _validate_choice(op_name, lowered, SOURCE_VALIDATION_VALUES)
+        return lowered
+    if op_name in STATE_ACTION_SET_OPERATIONS:
+        _validate_choice(op_name, lowered, STATE_ACTION_VALUES)
+        return lowered
+    if op_name in STATE_LOG_LEVEL_SET_OPERATIONS:
+        _validate_choice(op_name, lowered, LOG_LEVEL_VALUES)
+        return lowered
+    if op_name.startswith(TIMEOUT_SET_OPERATION_PREFIX):
+        if not normalized.isdigit():
+            raise HTTPException(status_code=400, detail=f"Operation {op_name} requires an integer timeout value")
+        timeout_value = int(normalized)
+        _validate_timeout(op_name, timeout_value)
+        return timeout_value
+
+    return normalized
+
+
 # ============================================================================
 # Endpoint 3: Batch Operations
 # ============================================================================
@@ -401,20 +464,16 @@ async def firewall_global_options_batch_configure(http_request: Request, body: G
                 )
 
             sig = inspect.signature(method)
-            params = list(sig.parameters.keys())
+            params = [param for param in sig.parameters.keys() if param != "self"]
+            value = _normalize_batch_operation_value_or_400(operation.op, operation.value, len(params))
 
-            # Build arguments dynamically
-            args = []
-
-            # Add operation value if provided and method accepts it
-            if operation.value and len(params) > 0:
-                # Check if we need to convert to int for timeout operations
-                if "timeout" in operation.op and operation.value.isdigit():
-                    args.append(int(operation.value))
+            try:
+                if len(params) == 0:
+                    method()
                 else:
-                    args.append(operation.value)
-
-            method(*args)
+                    method(value)
+            except TypeError as exc:
+                raise HTTPException(status_code=400, detail=f"Error calling operation {operation.op}: {str(exc)}")
 
         # Execute batch
         response = service.execute_batch(builder)

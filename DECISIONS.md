@@ -2,6 +2,7 @@
 
 ## Decision Log
 
+- 2026-02-16: Hardened `firewall global-options` `/batch` endpoint with per-operation value validation (required/no-arg arity checks, enum validation, timeout integer/range validation) and canonical lowercase normalization, so malformed batch payloads return deterministic `400` errors instead of leaking method-signature/runtime errors.
 - 2026-02-16: Hardened `firewall zones` upsert validation to enforce cross-zone interface uniqueness and canonicalized/validated `from_zone` references (including `LOCAL`) before apply, to prevent ambiguous zone membership and typo-driven policy mappings.
 - 2026-02-16: Hardened `firewall flowtables` batch/delete endpoints with strict backend input validation (flowtable name, operation allowlist, required values, interface names, offload enums) before builder execution, preserving existing API contracts while reducing invalid apply attempts and misclassified server errors.
 - 2026-02-16: Reviewer sub-agent was unavailable due thread cap (`max 6`), so this slice used manual in-process review and applied one follow-up correctness fix before approval: offload values are normalized to lowercase prior to command generation.

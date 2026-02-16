@@ -51,7 +51,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `F-01` (`partial`): IPv4 rule coverage parity pass (advanced match conditions, state behaviors, action sub-options).
 - `F-02` (`partial`): IPv6 rule coverage parity pass in progress (canonical icmpv6/hop-limit operation wiring fixed, legacy op aliases retained for compatibility, advanced controls still pending).
 - `F-03` (`partial`): Firewall groups type parity in progress (added typed create/edit validation + backend server-side value validation + HTTP status hardening; remaining advanced/reference depth pending).
-- `F-04` (`partial`): Global options parity pass in progress (added server-side enum/timeout validation and explicit 400 semantics; deeper option coverage still pending).
+- `F-04` (`partial`): Global options parity pass in progress (added server-side enum/timeout validation for both `/update` and `/batch`, with explicit 400 semantics and batch value normalization; deeper option coverage still pending).
 - `F-05` (`partial`): Flowtables parity pass in progress (backend validation hardening for names/ops/interfaces/offload + dedicated tests complete; remaining tunable-depth UX/verification pending).
 - `F-06` (`partial`): Zone workflow hardening in progress (cross-zone validation added: interface overlap protection + `from_zone` existence/canonicalization with `LOCAL`; remaining onboarding/UX depth pending).
 

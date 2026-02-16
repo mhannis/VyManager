@@ -71,7 +71,7 @@
       "id": "F-04",
       "domain": "firewall",
       "status": "partial",
-      "title": "Global options parity pass (enum/timeout backend validation added; deeper option coverage pending)"
+      "title": "Global options parity pass (update+batch enum/timeout validation and batch normalization added; deeper option coverage pending)"
     },
     {
       "id": "F-05",
