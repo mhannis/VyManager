@@ -324,6 +324,8 @@ export interface LocalUserAuthState {
   has_plaintext_password: boolean;
   has_encrypted_password: boolean;
   has_public_keys: boolean;
+  has_otp: boolean;
+  has_principal: boolean;
 }
 
 export interface LocalUserSummary {
@@ -331,6 +333,10 @@ export interface LocalUserSummary {
   full_name?: string | null;
   level?: string | null;
   disabled: boolean;
+  principal?: string | null;
+  otp_key_configured: boolean;
+  otp_rate_limit?: number | null;
+  otp_window_size?: number | null;
   auth: LocalUserAuthState;
   public_key_names: string[];
   public_keys: string[];
@@ -351,6 +357,10 @@ export interface LocalUserCreateRequest {
   password_type?: LocalUserPasswordType;
   ssh_public_keys: string[];
   disabled?: boolean;
+  principal?: string | null;
+  otp_key?: string | null;
+  otp_rate_limit?: number | null;
+  otp_window_size?: number | null;
 }
 
 export interface LocalUserUpdateRequest {
@@ -360,6 +370,10 @@ export interface LocalUserUpdateRequest {
   password_type?: LocalUserPasswordType;
   ssh_public_keys?: string[] | null;
   disabled?: boolean | null;
+  principal?: string | null;
+  otp_key?: string | null;
+  otp_rate_limit?: number | null;
+  otp_window_size?: number | null;
 }
 
 export interface LocalUserOperationResponse {

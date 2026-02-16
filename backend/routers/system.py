@@ -876,6 +876,8 @@ class LocalUserAuthState(BaseModel):
     has_plaintext_password: bool = False
     has_encrypted_password: bool = False
     has_public_keys: bool = False
+    has_otp: bool = False
+    has_principal: bool = False
 
 
 class LocalUserSummary(BaseModel):
@@ -883,6 +885,10 @@ class LocalUserSummary(BaseModel):
     full_name: Optional[str] = None
     level: Optional[str] = None
     disabled: bool = False
+    principal: Optional[str] = None
+    otp_key_configured: bool = False
+    otp_rate_limit: Optional[int] = None
+    otp_window_size: Optional[int] = None
     auth: LocalUserAuthState = Field(default_factory=LocalUserAuthState)
     public_key_names: List[str] = Field(default_factory=list)
     public_keys: List[str] = Field(default_factory=list)
@@ -901,6 +907,10 @@ class LocalUserCreateRequest(BaseModel):
     password_type: Literal["plaintext", "encrypted"] = "plaintext"
     ssh_public_keys: List[str] = Field(default_factory=list)
     disabled: bool = False
+    principal: Optional[str] = None
+    otp_key: Optional[str] = None
+    otp_rate_limit: Optional[int] = Field(default=None, ge=1, le=65535)
+    otp_window_size: Optional[int] = Field(default=None, ge=1, le=65535)
 
 
 class LocalUserUpdateRequest(BaseModel):
@@ -910,6 +920,10 @@ class LocalUserUpdateRequest(BaseModel):
     password_type: Literal["plaintext", "encrypted"] = "plaintext"
     ssh_public_keys: Optional[List[str]] = None
     disabled: Optional[bool] = None
+    principal: Optional[str] = None
+    otp_key: Optional[str] = None
+    otp_rate_limit: Optional[int] = Field(default=None, ge=1, le=65535)
+    otp_window_size: Optional[int] = Field(default=None, ge=1, le=65535)
 
 
 class LocalUserOperationResponse(BaseModel):
@@ -1689,6 +1703,24 @@ def _normalize_local_level_or_400(level: str) -> str:
     return clean
 
 
+def _normalize_local_principal_or_400(principal: str) -> str:
+    clean = principal.strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail="principal cannot be empty")
+    if len(clean) > 255:
+        raise HTTPException(status_code=400, detail="principal must be 255 characters or fewer")
+    return clean
+
+
+def _normalize_local_otp_key_or_400(otp_key: str) -> str:
+    clean = otp_key.strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail="otp_key cannot be empty")
+    if len(clean) > 512:
+        raise HTTPException(status_code=400, detail="otp_key must be 512 characters or fewer")
+    return clean
+
+
 def _extract_local_users_raw(full_config: Dict[str, Any]) -> Dict[str, Any]:
     system_root = _as_dict(full_config.get("system"))
     login_root = _as_dict(system_root.get("login"))
@@ -1706,6 +1738,7 @@ def _parse_local_users(full_config: Dict[str, Any]) -> List[LocalUserSummary]:
 
         data = _as_dict(user_data)
         auth = _as_dict(data.get("authentication"))
+        otp_auth = _as_dict(auth.get("otp"))
         public_keys = _as_dict(auth.get("public-keys"))
         parsed_public_keys: List[str] = []
         for key_entry in public_keys.values():
@@ -1714,16 +1747,34 @@ def _parse_local_users(full_config: Dict[str, Any]) -> List[LocalUserSummary]:
             if isinstance(key_value, str) and key_value.strip():
                 parsed_public_keys.append(key_value.strip())
 
+        principal_value = auth.get("principal")
+        principal = principal_value.strip() if isinstance(principal_value, str) and principal_value.strip() else None
+        otp_key_value = otp_auth.get("key")
+        otp_key_configured = bool(isinstance(otp_key_value, str) and otp_key_value.strip())
+        otp_rate_limit = _safe_int(otp_auth.get("rate-limit"))
+        if otp_rate_limit is not None and (otp_rate_limit < 1 or otp_rate_limit > 65535):
+            otp_rate_limit = None
+        otp_window_size = _safe_int(otp_auth.get("window-size"))
+        if otp_window_size is not None and (otp_window_size < 1 or otp_window_size > 65535):
+            otp_window_size = None
+        has_otp = otp_key_configured or otp_rate_limit is not None or otp_window_size is not None
+
         parsed_users.append(
             LocalUserSummary(
                 username=name,
                 full_name=data.get("full-name"),
                 level=data.get("level"),
                 disabled="disable" in data,
+                principal=principal,
+                otp_key_configured=otp_key_configured,
+                otp_rate_limit=otp_rate_limit,
+                otp_window_size=otp_window_size,
                 auth=LocalUserAuthState(
                     has_plaintext_password=bool(_as_dict(auth).get("plaintext-password")),
                     has_encrypted_password=bool(_as_dict(auth).get("encrypted-password")),
                     has_public_keys=bool(public_keys),
+                    has_otp=has_otp,
+                    has_principal=bool(principal),
                 ),
                 public_key_names=sorted(
                     [str(key).strip() for key in public_keys.keys() if str(key).strip()]
@@ -2985,13 +3036,26 @@ async def create_local_user(request: Request, body: LocalUserCreateRequest) -> L
     full_name = (body.full_name or "").strip()
     level = (body.level or "").strip()
     password = (body.password or "").strip()
+    principal = (body.principal or "").strip()
+    otp_key = (body.otp_key or "").strip()
     public_keys = [entry.strip() for entry in body.ssh_public_keys if entry and entry.strip()]
+    otp_rate_limit = body.otp_rate_limit
+    otp_window_size = body.otp_window_size
 
     if level:
         level = _normalize_local_level_or_400(level)
+    if principal:
+        principal = _normalize_local_principal_or_400(principal)
+    if otp_key:
+        otp_key = _normalize_local_otp_key_or_400(otp_key)
 
     if not password and not public_keys:
         raise HTTPException(status_code=400, detail="Provide at least a password or one SSH public key")
+    if (otp_rate_limit is not None or otp_window_size is not None) and not otp_key:
+        raise HTTPException(
+            status_code=400,
+            detail="otp_key is required when otp_rate_limit or otp_window_size is provided",
+        )
 
     # De-duplicate SSH keys while preserving order.
     deduped_keys: List[str] = []
@@ -3029,6 +3093,14 @@ async def create_local_user(request: Request, body: LocalUserCreateRequest) -> L
                 }
             )
 
+        if principal:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": ["system", "login", "user", username, "authentication", "principal", principal],
+                }
+            )
+
         if password:
             password_key = "plaintext-password" if body.password_type == "plaintext" else "encrypted-password"
             operations.append(
@@ -3060,6 +3132,55 @@ async def create_local_user(request: Request, body: LocalUserCreateRequest) -> L
                         f"key-{index}",
                         "key",
                         ssh_key,
+                    ],
+                }
+            )
+
+        if otp_key:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": [
+                        "system",
+                        "login",
+                        "user",
+                        username,
+                        "authentication",
+                        "otp",
+                        "key",
+                        otp_key,
+                    ],
+                }
+            )
+        if otp_rate_limit is not None:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": [
+                        "system",
+                        "login",
+                        "user",
+                        username,
+                        "authentication",
+                        "otp",
+                        "rate-limit",
+                        str(otp_rate_limit),
+                    ],
+                }
+            )
+        if otp_window_size is not None:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": [
+                        "system",
+                        "login",
+                        "user",
+                        username,
+                        "authentication",
+                        "otp",
+                        "window-size",
+                        str(otp_window_size),
                     ],
                 }
             )
@@ -3109,6 +3230,7 @@ async def update_local_user(
 
         current_auth = _as_dict(current_user.get("authentication"))
         operations: List[Dict[str, Any]] = []
+        fields_set = body.model_fields_set
 
         if body.full_name is not None:
             full_name = body.full_name.strip()
@@ -3255,6 +3377,133 @@ async def update_local_user(
             else:
                 operations.append(
                     {"op": "delete", "path": ["system", "login", "user", user_name, "disable"]}
+                )
+
+        if "principal" in fields_set:
+            principal = (body.principal or "").strip()
+            if principal:
+                principal = _normalize_local_principal_or_400(principal)
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            user_name,
+                            "authentication",
+                            "principal",
+                            principal,
+                        ],
+                    }
+                )
+            else:
+                operations.append(
+                    {
+                        "op": "delete",
+                        "path": ["system", "login", "user", user_name, "authentication", "principal"],
+                    }
+                )
+
+        if "otp_key" in fields_set:
+            otp_key = (body.otp_key or "").strip()
+            if otp_key:
+                otp_key = _normalize_local_otp_key_or_400(otp_key)
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            user_name,
+                            "authentication",
+                            "otp",
+                            "key",
+                            otp_key,
+                        ],
+                    }
+                )
+            else:
+                operations.append(
+                    {
+                        "op": "delete",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            user_name,
+                            "authentication",
+                            "otp",
+                            "key",
+                        ],
+                    }
+                )
+
+        if "otp_rate_limit" in fields_set:
+            if body.otp_rate_limit is None:
+                operations.append(
+                    {
+                        "op": "delete",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            user_name,
+                            "authentication",
+                            "otp",
+                            "rate-limit",
+                        ],
+                    }
+                )
+            else:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            user_name,
+                            "authentication",
+                            "otp",
+                            "rate-limit",
+                            str(body.otp_rate_limit),
+                        ],
+                    }
+                )
+
+        if "otp_window_size" in fields_set:
+            if body.otp_window_size is None:
+                operations.append(
+                    {
+                        "op": "delete",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            user_name,
+                            "authentication",
+                            "otp",
+                            "window-size",
+                        ],
+                    }
+                )
+            else:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            user_name,
+                            "authentication",
+                            "otp",
+                            "window-size",
+                            str(body.otp_window_size),
+                        ],
+                    }
                 )
 
         if operations:

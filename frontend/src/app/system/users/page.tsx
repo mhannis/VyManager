@@ -53,6 +53,19 @@ function keysToTextarea(keys: string[]): string {
   return keys.join("\n");
 }
 
+function parseOptionalOtpNumber(value: string): number | null {
+  const text = value.trim();
+  if (!text) return null;
+  if (!/^\d+$/.test(text)) {
+    throw new Error("OTP rate/window values must be whole numbers.");
+  }
+  const parsed = Number(text);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
+    throw new Error("OTP rate/window values must be between 1 and 65535.");
+  }
+  return parsed;
+}
+
 export default function SystemUsersPage() {
   const { canWrite } = usePermissions();
   const canEdit = canWrite(FeatureGroup.SYSTEM);
@@ -72,6 +85,10 @@ export default function SystemUsersPage() {
   const [createPassword, setCreatePassword] = useState("");
   const [createPasswordType, setCreatePasswordType] = useState<"plaintext" | "encrypted">("plaintext");
   const [createDisabled, setCreateDisabled] = useState(false);
+  const [createPrincipal, setCreatePrincipal] = useState("");
+  const [createOtpKey, setCreateOtpKey] = useState("");
+  const [createOtpRateLimit, setCreateOtpRateLimit] = useState("");
+  const [createOtpWindowSize, setCreateOtpWindowSize] = useState("");
   const [createKeys, setCreateKeys] = useState("");
 
   const [editFullName, setEditFullName] = useState("");
@@ -79,6 +96,10 @@ export default function SystemUsersPage() {
   const [editPassword, setEditPassword] = useState("");
   const [editPasswordType, setEditPasswordType] = useState<"plaintext" | "encrypted">("plaintext");
   const [editDisabled, setEditDisabled] = useState(false);
+  const [editPrincipal, setEditPrincipal] = useState("");
+  const [editOtpKey, setEditOtpKey] = useState("");
+  const [editOtpRateLimit, setEditOtpRateLimit] = useState("");
+  const [editOtpWindowSize, setEditOtpWindowSize] = useState("");
   const [editKeys, setEditKeys] = useState("");
 
   const selectedUser = useMemo(
@@ -113,6 +134,10 @@ export default function SystemUsersPage() {
     setEditFullName(selectedUser.full_name || "");
     setEditLevel(selectedUser.level || "admin");
     setEditDisabled(selectedUser.disabled);
+    setEditPrincipal(selectedUser.principal || "");
+    setEditOtpKey("");
+    setEditOtpRateLimit(selectedUser.otp_rate_limit ? String(selectedUser.otp_rate_limit) : "");
+    setEditOtpWindowSize(selectedUser.otp_window_size ? String(selectedUser.otp_window_size) : "");
     setEditKeys(keysToTextarea(selectedUser.public_keys || []));
     setEditPassword("");
     setEditPasswordType("plaintext");
@@ -125,6 +150,12 @@ export default function SystemUsersPage() {
     setError(null);
     setSuccess(null);
     try {
+      const otpRateLimit = parseOptionalOtpNumber(createOtpRateLimit);
+      const otpWindowSize = parseOptionalOtpNumber(createOtpWindowSize);
+      if ((otpRateLimit !== null || otpWindowSize !== null) && !createOtpKey.trim()) {
+        throw new Error("OTP key is required when OTP rate-limit or window-size is provided.");
+      }
+
       await systemService.createLocalUser({
         username: createUserName.trim(),
         full_name: createFullName.trim() || null,
@@ -133,6 +164,10 @@ export default function SystemUsersPage() {
         password_type: createPasswordType,
         ssh_public_keys: keyTextareaToList(createKeys),
         disabled: createDisabled,
+        principal: createPrincipal.trim() || null,
+        otp_key: createOtpKey.trim() || null,
+        otp_rate_limit: otpRateLimit,
+        otp_window_size: otpWindowSize,
       });
       setSuccess(`Local user '${createUserName.trim()}' created.`);
       setCreateUserName("");
@@ -141,6 +176,10 @@ export default function SystemUsersPage() {
       setCreatePassword("");
       setCreatePasswordType("plaintext");
       setCreateDisabled(false);
+      setCreatePrincipal("");
+      setCreateOtpKey("");
+      setCreateOtpRateLimit("");
+      setCreateOtpWindowSize("");
       setCreateKeys("");
       await loadData();
     } catch (err) {
@@ -157,6 +196,9 @@ export default function SystemUsersPage() {
     setError(null);
     setSuccess(null);
     try {
+      const otpRateLimit = parseOptionalOtpNumber(editOtpRateLimit);
+      const otpWindowSize = parseOptionalOtpNumber(editOtpWindowSize);
+
       await systemService.updateLocalUser(selectedUser.username, {
         full_name: editFullName.trim(),
         level: editLevel.trim(),
@@ -164,6 +206,10 @@ export default function SystemUsersPage() {
         password_type: editPasswordType,
         ssh_public_keys: keyTextareaToList(editKeys),
         disabled: editDisabled,
+        principal: editPrincipal.trim(),
+        otp_key: editOtpKey.trim(),
+        otp_rate_limit: otpRateLimit,
+        otp_window_size: otpWindowSize,
       });
       setSuccess(`Local user '${selectedUser.username}' updated.`);
       await loadData();
@@ -328,6 +374,51 @@ export default function SystemUsersPage() {
                 />
                 Create as disabled
               </label>
+              <details className="rounded-md border border-border/60 p-3">
+                <summary className="cursor-pointer text-sm font-medium text-foreground">
+                  Advanced Authentication
+                </summary>
+                <div className="mt-3 grid gap-3">
+                  <div>
+                    <Label>Principal</Label>
+                    <Input
+                      value={createPrincipal}
+                      onChange={(event) => setCreatePrincipal(event.target.value)}
+                      placeholder="user@realm.example"
+                      disabled={!canEdit || saving}
+                    />
+                  </div>
+                  <div>
+                    <Label>OTP Key</Label>
+                    <Input
+                      value={createOtpKey}
+                      onChange={(event) => setCreateOtpKey(event.target.value)}
+                      placeholder="Shared secret"
+                      disabled={!canEdit || saving}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label>OTP Rate Limit</Label>
+                      <Input
+                        value={createOtpRateLimit}
+                        onChange={(event) => setCreateOtpRateLimit(event.target.value)}
+                        placeholder="30"
+                        disabled={!canEdit || saving}
+                      />
+                    </div>
+                    <div>
+                      <Label>OTP Window Size</Label>
+                      <Input
+                        value={createOtpWindowSize}
+                        onChange={(event) => setCreateOtpWindowSize(event.target.value)}
+                        placeholder="6"
+                        disabled={!canEdit || saving}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </details>
               <Button onClick={handleCreateUser} disabled={!canEdit || saving}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create User
@@ -422,6 +513,53 @@ export default function SystemUsersPage() {
                     />
                     User disabled
                   </label>
+                  <details className="rounded-md border border-border/60 p-3">
+                    <summary className="cursor-pointer text-sm font-medium text-foreground">
+                      Advanced Authentication
+                    </summary>
+                    <div className="mt-3 grid gap-3">
+                      <div>
+                        <Label>Principal</Label>
+                        <Input
+                          value={editPrincipal}
+                          onChange={(event) => setEditPrincipal(event.target.value)}
+                          placeholder="user@realm.example"
+                          disabled={!canEdit || saving}
+                        />
+                      </div>
+                      <div>
+                        <Label>OTP Key</Label>
+                        <Input
+                          value={editOtpKey}
+                          onChange={(event) => setEditOtpKey(event.target.value)}
+                          placeholder={
+                            selectedUser?.otp_key_configured ? "Configured (set new value to rotate)" : "Shared secret"
+                          }
+                          disabled={!canEdit || saving}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label>OTP Rate Limit</Label>
+                          <Input
+                            value={editOtpRateLimit}
+                            onChange={(event) => setEditOtpRateLimit(event.target.value)}
+                            placeholder="30"
+                            disabled={!canEdit || saving}
+                          />
+                        </div>
+                        <div>
+                          <Label>OTP Window Size</Label>
+                          <Input
+                            value={editOtpWindowSize}
+                            onChange={(event) => setEditOtpWindowSize(event.target.value)}
+                            placeholder="6"
+                            disabled={!canEdit || saving}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </details>
                   <div className="flex gap-2">
                     <Button onClick={handleSaveUser} disabled={!canEdit || saving}>
                       <Save className="mr-2 h-4 w-4" />
@@ -456,6 +594,8 @@ export default function SystemUsersPage() {
                       <TableHead>Full Name</TableHead>
                       <TableHead>Level</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Principal</TableHead>
+                      <TableHead>OTP</TableHead>
                       <TableHead>Password</TableHead>
                       <TableHead>SSH Keys</TableHead>
                     </TableRow>
@@ -475,6 +615,25 @@ export default function SystemUsersPage() {
                           <Badge variant={user.disabled ? "secondary" : "default"}>
                             {user.disabled ? "Disabled" : "Enabled"}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {user.principal || "-"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {user.otp_key_configured && <Badge variant="outline">key</Badge>}
+                            {typeof user.otp_rate_limit === "number" && (
+                              <Badge variant="outline">rate {user.otp_rate_limit}</Badge>
+                            )}
+                            {typeof user.otp_window_size === "number" && (
+                              <Badge variant="outline">window {user.otp_window_size}</Badge>
+                            )}
+                            {!user.otp_key_configured &&
+                              typeof user.otp_rate_limit !== "number" &&
+                              typeof user.otp_window_size !== "number" && (
+                                <Badge variant="secondary">none</Badge>
+                              )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">

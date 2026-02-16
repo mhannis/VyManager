@@ -1,8 +1,14 @@
 feature_id: system-interfaces-largest-buckets-2026-02-16
-title: System + Interfaces largest bucket depth pass (`SYS-10`, `SYS-16`, `IF-13`)
+title: System + Interfaces largest bucket depth pass (`SYS-09`, `SYS-10`, `SYS-16`, `IF-13`)
 status: in_progress
 branch: feature/containers-automation-v1
 completed_in_cycle:
+  - Deepened `SYS-09` local login-user parity:
+    - backend `system/local-users` now supports `authentication principal`
+    - backend `system/local-users` now supports OTP controls (`otp key`, `otp rate-limit`, `otp window-size`) with range validation
+    - local-user parse/model now exposes principal and OTP state (`otp_key_configured`, `otp_rate_limit`, `otp_window_size`)
+  - Extended `System -> Users` UI with form-first principal and OTP controls for create/edit workflows, including input validation and clear/delete semantics.
+  - Added backend regression coverage `backend/tests/test_system_local_users_parity.py` for local-user principal/OTP parsing, validation, and update operation generation.
   - Added backend config-tree wrappers for `system update-check` and `system watchdog` (`/vyos/system-update-check/*`, `/vyos/system-watchdog/*`) and registered both in app routing.
   - Added full GUI pages for `System -> Update Check` and `System -> Watchdog` with structured form-based save flows (no command textbox UX).
   - Added sidebar navigation and navigation-visibility support for the new System pages.
@@ -33,16 +39,17 @@ completed_in_cycle:
     - retained optional ping/startup-delay/test-interval controls for compatibility
   - Updated System how-to guides for Update Check and Watchdog to reflect the expanded controls.
 validation:
-  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py
+  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_local_users_parity.py tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py
   - cd frontend && npx tsc --noEmit --pretty false
+  - cd frontend && npm run -s lint  # warnings-only baseline remains; no errors
   - cd frontend && npm run -s build
   - cd frontend && npm run -s smoke:runtime
-  - cd frontend && npm run -s lint  # warnings-only baseline remains; no errors
+  - cd frontend && npm run -s smoke:ui
   - tmux restart: vm-ui session restarted after build (`npm run -s start -- --hostname 0.0.0.0 --port 3000`)
 known_limitations:
   - Frontend lint baseline still contains pre-existing repo-wide warnings outside this slice.
-  - Browser Playwright smoke is blocked on host dependency (`libnspr4.so` missing); runtime smoke + build/typecheck passed.
+  - UI smoke can fail transiently with stale chunk artifacts if `vm-ui` serves an older build after a rebuild; restart `vm-ui` before rerunning `smoke:ui`.
 next_queue:
-  - Continue `system` bucket depth: login/user parity deepening and remaining time/update/watchdog option coverage verification.
+  - Continue `system` bucket depth: global login auth/banner/session parity (radius, tacacs, pre/post-login banner, session limits).
   - Continue `interfaces` bucket depth for WWAN/Wireless advanced leaves and live-save guide verification.
   - Continue backlog progression in requested guide order after this batch is reviewed.

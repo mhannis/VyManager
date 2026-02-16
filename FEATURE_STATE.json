@@ -1,13 +1,14 @@
 {
   "feature_id": "system-interfaces-largest-buckets-2026-02-16",
-  "title": "System + Interfaces largest bucket depth pass",
+  "title": "System + Interfaces largest bucket depth pass (including SYS-09 login/user parity)",
   "status": "in_progress",
   "acceptance_criteria": [
     "DNS settings support system name-server and system domain-search ownership through GUI and backend validation.",
     "System Update Check and System Watchdog have dedicated form-first pages backed by scoped backend wrappers.",
     "Sidebar/navigation includes new System pages and smoke probes cover their routes.",
     "Wireless interface editor supports additional VHT capabilities from VyOS guide and saves via structured controls.",
-    "Backend and frontend validation commands pass for touched files."
+    "Backend and frontend validation commands pass for touched files.",
+    "System local user workflows cover principal and OTP authentication controls with backend validation and form-based UI."
   ],
   "assumptions": [
     "System update-check parity in this slice targets documented `system update-check url` support.",
@@ -125,11 +126,31 @@
         "frontend/src/app/system/watchdog/page.tsx"
       ],
       "notes": "Validated with frontend TypeScript check, production build, and runtime smoke; restarted vm-ui to ensure new UI is served."
+    },
+    {
+      "id": "T11",
+      "owner_role": "Backend",
+      "status": "done",
+      "files": [
+        "backend/routers/system.py",
+        "backend/tests/test_system_local_users_parity.py"
+      ],
+      "notes": "Extended local-user API/model/parse and write operations for principal + OTP controls (key/rate-limit/window-size) with regression coverage."
+    },
+    {
+      "id": "T12",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/users/page.tsx",
+        "frontend/src/lib/api/system.ts"
+      ],
+      "notes": "Extended System Users create/edit/inventory UI to manage principal + OTP controls with client-side numeric validation and clear semantics."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_local_users_parity.py tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s lint && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [

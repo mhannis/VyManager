@@ -139,7 +139,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `SYS-06` (`partial`): IP system options page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-07` (`partial`): IPv6 system options page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-08` (`partial`): LCD page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
-- `SYS-09` (`partial`): Login/user management parity deepening.
+- `SYS-09` (`partial`): Login/user management parity deepening in progress (local user CRUD now includes `authentication principal` + OTP controls `key`, `rate-limit`, and `window-size` with form-based UI and backend validation/tests). Remaining depth: global login auth/banner/session workflows (`radius`, `tacacs`, pre/post-login banner, session limits) and live multi-auth verification.
 - `SYS-10` (`partial`): Name-server ownership and resolver integration cleanup.
 - `SYS-11` (`partial`): Build System Proxy page. Baseline form-first page + backend wrapper are implemented; option-depth parity and live validation remain.
 - `SYS-12` (`partial`): sFlow page + backend wrapper are implemented; option-depth parity and live workflow validation remain.

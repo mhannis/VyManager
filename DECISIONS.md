@@ -339,3 +339,6 @@
 - 2026-02-16: Implemented `system syslog` via a thin config-tree wrapper (`/vyos/system-syslog/*`) instead of changing backend core services, maintaining existing API architecture while enabling dedicated GUI parity work.
 - 2026-02-16: Added a dedicated `System -> Syslog` form-first page with structured global marker/source/FQDN options plus console/file/remote destination editing (including remote protocol/port/format and TLS baseline settings).
 - 2026-02-16: Added `system-syslog` coverage to wrapper regression tests (`capabilities`, `config`, and `batch` scope validation) and added `/system/syslog` to runtime/browser smoke routes.
+- 2026-02-16: Prioritized `SYS-09` local-user parity depth by extending existing `/vyos/system/local-users` CRUD (principal + OTP fields) instead of introducing a new login router/page, preserving API contracts and minimizing migration risk.
+- 2026-02-16: Kept OTP secret handling non-disclosing in read models (`otp_key_configured` boolean only) while exposing rate/window settings to maintain operational visibility without leaking shared secrets.
+- 2026-02-16: Browser smoke failure on `/system/users` was caused by stale chunk artifacts (`ChunkLoadError`) after rebuild; runtime process restart (`vm-ui`) is now treated as required before rerunning `smoke:ui` when chunk drift appears.
