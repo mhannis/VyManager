@@ -867,10 +867,13 @@ export default function LoadBalancingPage() {
                         return (
                           <label
                             key={option.value}
-                            className="flex cursor-pointer items-center gap-2 rounded-md border border-border/50 px-2 py-1.5 text-sm hover:bg-muted/40"
+                            className={`flex items-center gap-2 rounded-md border border-border/50 px-2 py-1.5 text-sm ${
+                              canEdit ? "cursor-pointer hover:bg-muted/40" : "cursor-not-allowed opacity-70"
+                            }`}
                           >
                             <Checkbox
                               checked={isChecked}
+                              disabled={!canEdit}
                               onCheckedChange={(checked) =>
                                 toggleRuleOutboundInterface(option.value, checked === true)
                               }
