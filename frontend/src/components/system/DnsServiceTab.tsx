@@ -58,6 +58,60 @@ function isValidHostnameLike(value: string): boolean {
   });
 }
 
+function isValidIPv4(value: string): boolean {
+  const match = value.trim().match(/^(\d{1,3})(?:\.(\d{1,3})){3}$/);
+  if (!match) return false;
+  return value
+    .trim()
+    .split(".")
+    .every((octet) => {
+      const parsed = Number.parseInt(octet, 10);
+      return Number.isInteger(parsed) && parsed >= 0 && parsed <= 255;
+    });
+}
+
+function isValidIPv6(value: string): boolean {
+  const candidate = value.trim();
+  if (!candidate.includes(":")) return false;
+  if (!/^[0-9A-Fa-f:]+$/.test(candidate)) return false;
+  const parts = candidate.split(":");
+  if (parts.length < 2 || parts.length > 8) return false;
+  let emptySegments = 0;
+  for (const segment of parts) {
+    if (segment.length === 0) {
+      emptySegments += 1;
+      continue;
+    }
+    if (segment.length > 4) return false;
+  }
+  // Allow at most one compressed section ("::"), represented by two empty segments.
+  if (emptySegments > 2) return false;
+  return true;
+}
+
+function isValidIpAddress(value: string): boolean {
+  return isValidIPv4(value) || isValidIPv6(value);
+}
+
+function isValidCidr(value: string): boolean {
+  const [address, prefixRaw] = value.trim().split("/");
+  if (!address || prefixRaw === undefined) return false;
+  const prefix = Number.parseInt(prefixRaw, 10);
+  if (!Number.isInteger(prefix)) return false;
+  if (isValidIPv4(address)) {
+    return prefix >= 0 && prefix <= 32;
+  }
+  if (isValidIPv6(address)) {
+    return prefix >= 0 && prefix <= 128;
+  }
+  return false;
+}
+
+function isValidDnsServerToken(value: string): boolean {
+  const candidate = value.trim();
+  return isValidIpAddress(candidate) || isValidHostnameLike(candidate);
+}
+
 export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder" }: DnsServiceTabProps) {
   const [config, setConfig] = useState<DnsConfig | null>(null);
   const [loading, setLoading] = useState(false);
@@ -130,6 +184,50 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
   const handleSave = async () => {
     if (!config) return;
 
+    const normalizedListenAddresses = fromCsv(toCsv(config.listen_addresses));
+    const normalizedAllowFrom = fromCsv(toCsv(config.allow_from));
+    const normalizedNameServers = fromCsv(toCsv(config.name_servers));
+    const normalizedAuthoritativeDomains = fromCsv(toCsv(config.authoritative_domains));
+    const normalizedLocalDomain = config.local_domain_name?.trim() || null;
+
+    for (const address of normalizedListenAddresses) {
+      if (!isValidIpAddress(address)) {
+        setError(`Invalid listen address '${address}'.`);
+        setSuccess(null);
+        return;
+      }
+    }
+
+    for (const network of normalizedAllowFrom) {
+      if (!isValidCidr(network)) {
+        setError(`Invalid allow-from network '${network}'.`);
+        setSuccess(null);
+        return;
+      }
+    }
+
+    for (const server of normalizedNameServers) {
+      if (!isValidDnsServerToken(server)) {
+        setError(`Invalid DNS name server '${server}'.`);
+        setSuccess(null);
+        return;
+      }
+    }
+
+    for (const domain of normalizedAuthoritativeDomains) {
+      if (!isValidHostnameLike(domain)) {
+        setError(`Invalid authoritative domain '${domain}'.`);
+        setSuccess(null);
+        return;
+      }
+    }
+
+    if (normalizedLocalDomain && !isValidHostnameLike(normalizedLocalDomain)) {
+      setError(`Invalid local domain name '${normalizedLocalDomain}'.`);
+      setSuccess(null);
+      return;
+    }
+
     const normalizedDomainOverrides = config.domain_overrides.map((entry) => ({
       domain: entry.domain.trim(),
       name_servers: fromCsv(toCsv(entry.name_servers)),
@@ -147,6 +245,13 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
         setError(`Domain override row ${index + 1} has an invalid domain name.`);
         setSuccess(null);
         return;
+      }
+      for (const server of entry.name_servers) {
+        if (!isValidDnsServerToken(server)) {
+          setError(`Domain override row ${index + 1} has an invalid name server '${server}'.`);
+          setSuccess(null);
+          return;
+        }
       }
     }
 
@@ -191,17 +296,24 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
           return;
         }
       }
+      for (const address of entry.addresses) {
+        if (!isValidIpAddress(address)) {
+          setError(`Host override row ${index + 1} has an invalid address '${address}'.`);
+          setSuccess(null);
+          return;
+        }
+      }
     }
 
     const payload: DnsConfig = {
       enabled: config.enabled,
-      local_domain_name: config.local_domain_name?.trim() || null,
-      listen_addresses: fromCsv(toCsv(config.listen_addresses)),
-      allow_from: fromCsv(toCsv(config.allow_from)),
-      name_servers: fromCsv(toCsv(config.name_servers)),
+      local_domain_name: normalizedLocalDomain,
+      listen_addresses: normalizedListenAddresses,
+      allow_from: normalizedAllowFrom,
+      name_servers: normalizedNameServers,
       use_system_name_servers: config.use_system_name_servers,
       cache_size: config.cache_size,
-      authoritative_domains: fromCsv(toCsv(config.authoritative_domains)),
+      authoritative_domains: normalizedAuthoritativeDomains,
       domain_overrides: normalizedDomainOverrides
         .filter((entry) => entry.domain.length > 0 && entry.name_servers.length > 0),
       host_overrides: normalizedHostOverrides
