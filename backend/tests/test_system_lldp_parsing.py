@@ -93,3 +93,16 @@ def test_parse_lldp_neighbors_structured_output_nested_with_interface_hint():
     assert neighbors[0].chassis_id == "66:77:88:99:aa:bb"
     assert neighbors[0].port_id == "Gi1/0/2"
     assert neighbors[0].system_name == "edge-switch"
+
+
+def test_parse_lldp_neighbors_structured_output_json_text_payload():
+    payload = {
+        "data": "{\"neighbors\":[{\"interface\":\"eth7\",\"chassis-id\":\"aa:bb:cc:dd:ee:ff\",\"port-id\":\"Gi1/0/7\",\"systemName\":\"dist-switch\"}]}"
+    }
+
+    neighbors = system_router._parse_lldp_neighbors_structured_output(payload)
+    assert len(neighbors) == 1
+    assert neighbors[0].local_interface == "eth7"
+    assert neighbors[0].chassis_id == "aa:bb:cc:dd:ee:ff"
+    assert neighbors[0].port_id == "Gi1/0/7"
+    assert neighbors[0].system_name == "dist-switch"

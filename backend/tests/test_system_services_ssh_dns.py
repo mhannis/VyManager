@@ -534,3 +534,45 @@ def test_get_lldp_status_falls_back_to_structured_detail_payload(monkeypatch, ap
     assert data["neighbors"][0]["port_id"] == "Gi1/0/2"
     assert data["neighbors"][0]["system_name"] == "edge-switch"
     assert not data.get("error")
+
+
+def test_get_lldp_status_parses_json_text_neighbors_payload(monkeypatch, app, allow_permissions):
+    service = DummyService(
+        full_config={
+            "service": {
+                "lldp": {
+                    "interface": {
+                        "all": {}
+                    }
+                }
+            }
+        }
+    )
+
+    def show(path=None):
+        if path == ["lldp", "neighbors"]:
+            return DummyVyOSResponse(
+                status=200,
+                result={
+                    "data": "{\"neighbors\":[{\"interface\":\"eth8\",\"chassis-id\":\"11:22:33:44:55:66\",\"port-id\":\"Gi1/0/8\",\"systemName\":\"agg-switch\"}]}"
+                },
+            )
+        if path == ["lldp", "neighbors", "detail"]:
+            return DummyVyOSResponse(status=200, result={"data": ""})
+        return DummyVyOSResponse(status=200, result={"data": ""})
+
+    service.device.show = show
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    resp = client.get("/vyos/system/lldp-status")
+    assert resp.status_code == 200
+    data = resp.json()
+
+    assert data["enabled"] is True
+    assert len(data["neighbors"]) == 1
+    assert data["neighbors"][0]["local_interface"] == "eth8"
+    assert data["neighbors"][0]["chassis_id"] == "11:22:33:44:55:66"
+    assert data["neighbors"][0]["port_id"] == "Gi1/0/8"
+    assert data["neighbors"][0]["system_name"] == "agg-switch"
+    assert not data.get("error")

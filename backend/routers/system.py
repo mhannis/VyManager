@@ -1345,6 +1345,16 @@ def _parse_lldp_neighbors_structured_output(payload: Any) -> List[LldpNeighbor]:
         )
 
     def walk(node: Any, hinted_interface: Optional[str] = None) -> None:
+        if isinstance(node, str):
+            stripped = node.strip()
+            if stripped.startswith("{") or stripped.startswith("["):
+                try:
+                    parsed = json.loads(stripped)
+                except json.JSONDecodeError:
+                    return
+                walk(parsed, hinted_interface)
+            return
+
         if isinstance(node, dict):
             append_candidate(node, hinted_interface)
             for key, value in node.items():
