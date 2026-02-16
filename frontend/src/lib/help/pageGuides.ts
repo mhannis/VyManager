@@ -26,6 +26,9 @@ export const pageGuides: Record<
   | "firewallBridge"
   | "firewallFlowtables"
   | "systemFlowAccounting"
+  | "systemConntrack"
+  | "systemSerialConsole"
+  | "systemDefaultRoute"
   | "systemProxy"
   | "systemSysctl"
   | "containers"
@@ -792,6 +795,96 @@ export const pageGuides: Record<
         items: [
           "No telemetry is usually interface-selection or collector reachability related.",
           "If export is inconsistent, verify sampling/timeout settings and collector port expectations.",
+        ],
+      },
+    ],
+  },
+  systemConntrack: {
+    title: "System Conntrack How-To",
+    summary:
+      "Tune connection tracking table size, TCP behavior, and helper modules for your traffic profile.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/system/conntrack.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Set global table sizing first (`table-size`, `expect-table-size`, `hash-size`).",
+          "Adjust TCP behavior (`half-open-connections`, `loose`, `max-retrans`) based on workload.",
+          "Enable only required helper modules to reduce unnecessary protocol parsing.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save changes and refresh to confirm values persist.",
+          "Monitor connection stability and expected session capacity after tuning.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Too-small tables can cause dropped sessions under load.",
+          "If specific application flows break, review helper module requirements and TCP loose mode.",
+        ],
+      },
+    ],
+  },
+  systemSerialConsole: {
+    title: "System Serial Console How-To",
+    summary:
+      "Configure serial console devices and line speed under `system console` for platform access and recovery.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/system/console.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Add the serial device first (for example `ttyS0`).",
+          "Set speed to match host BIOS, hypervisor, or terminal server expectations.",
+          "Validate one device at a time before adding additional console devices.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save and refresh to verify devices and speeds persist.",
+          "Confirm you can connect over serial at the configured bitrate.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Mismatched baud rate causes unreadable output.",
+          "If serial access fails, verify the device path exists on the platform.",
+        ],
+      },
+    ],
+  },
+  systemDefaultRoute: {
+    title: "System Default Route How-To",
+    summary:
+      "Manage IPv4 default route next-hops (`0.0.0.0/0`) with distance and disable controls.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/protocols/static.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Add primary next-hop first.",
+          "Add backup next-hop(s) with higher distance for failover behavior.",
+          "Disable next-hops only for temporary operational testing or maintenance windows.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save and refresh to verify next-hop list persists.",
+          "Confirm route preference behavior using operational routing status.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Route installation issues are commonly caused by unreachable gateway addresses.",
+          "Unexpected failover behavior usually indicates distance values are equal or inverted.",
         ],
       },
     ],
