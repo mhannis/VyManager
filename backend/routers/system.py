@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List, Tuple, Literal
 from datetime import datetime, timezone
 import asyncio
+import json
 import re
 
 from session_vyos_service import get_session_vyos_service
@@ -1229,6 +1230,136 @@ def _strip_ansi(text: str) -> str:
 
 def _split_table_columns(line: str) -> List[str]:
     return [segment.strip() for segment in re.split(r"\s{2,}", line.strip()) if segment.strip()]
+
+
+LLDP_INTERFACE_HINT_RE = re.compile(r"^[A-Za-z]+[0-9][A-Za-z0-9._:-]*$")
+
+
+def _normalize_lldp_key(value: Any) -> str:
+    if not isinstance(value, str):
+        return ""
+    return re.sub(r"[^a-z0-9]+", "_", value.strip().lower()).strip("_")
+
+
+def _looks_like_interface_name(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    return bool(LLDP_INTERFACE_HINT_RE.match(value.strip()))
+
+
+def _first_nonempty_scalar(mapping: Dict[str, Any], aliases: List[str]) -> Optional[str]:
+    for alias in aliases:
+        if alias not in mapping:
+            continue
+        value = mapping[alias]
+        if isinstance(value, (dict, list)):
+            continue
+        cleaned = str(value).strip()
+        if cleaned:
+            return cleaned
+    return None
+
+
+def _parse_lldp_neighbors_structured_output(payload: Any) -> List[LldpNeighbor]:
+    """
+    Parse structured LLDP payloads returned by some VyOS/pyvyos show paths.
+    This complements table/text parsing and is only used as a fallback.
+    """
+    neighbors: List[LldpNeighbor] = []
+    seen: set[Tuple[str, str, str, str, str]] = set()
+
+    def append_candidate(candidate: Dict[str, Any], hinted_interface: Optional[str]) -> None:
+        normalized = {_normalize_lldp_key(key): value for key, value in candidate.items()}
+        if not normalized:
+            return
+
+        local_interface = _first_nonempty_scalar(
+            normalized,
+            [
+                "local_interface",
+                "interface",
+                "local_port",
+                "ifname",
+                "name",
+            ],
+        ) or hinted_interface
+        chassis_id = _first_nonempty_scalar(normalized, ["chassis_id", "chassisid"])
+        port_id = _first_nonempty_scalar(normalized, ["port_id", "portid", "remote_port", "remote_port_id"])
+        port_description = _first_nonempty_scalar(
+            normalized,
+            ["port_description", "port_descr", "portdescription", "portdescr"],
+        )
+        system_name = _first_nonempty_scalar(
+            normalized,
+            ["system_name", "systemname", "sys_name", "sysname", "system"],
+        )
+        system_description = _first_nonempty_scalar(
+            normalized,
+            ["system_description", "systemdescription", "sys_description", "sysdescr"],
+        )
+        platform = _first_nonempty_scalar(normalized, ["platform"])
+        capabilities = _first_nonempty_scalar(normalized, ["capabilities", "capability"])
+
+        if not any(
+            (
+                local_interface,
+                chassis_id,
+                port_id,
+                port_description,
+                system_name,
+                system_description,
+                platform,
+                capabilities,
+            )
+        ):
+            return
+
+        try:
+            raw = json.dumps(candidate, ensure_ascii=False, sort_keys=True)
+        except TypeError:
+            raw = str(candidate)
+
+        dedupe_key = (
+            local_interface or "",
+            chassis_id or "",
+            port_id or "",
+            system_name or "",
+            raw,
+        )
+        if dedupe_key in seen:
+            return
+        seen.add(dedupe_key)
+
+        neighbors.append(
+            LldpNeighbor(
+                local_interface=local_interface,
+                chassis_id=chassis_id,
+                port_id=port_id,
+                port_description=port_description,
+                system_name=system_name,
+                system_description=system_description,
+                platform=platform,
+                capabilities=capabilities,
+                raw=raw,
+            )
+        )
+
+    def walk(node: Any, hinted_interface: Optional[str] = None) -> None:
+        if isinstance(node, dict):
+            append_candidate(node, hinted_interface)
+            for key, value in node.items():
+                next_hint = hinted_interface
+                if _looks_like_interface_name(key):
+                    next_hint = str(key).strip()
+                walk(value, next_hint)
+            return
+
+        if isinstance(node, list):
+            for item in node:
+                walk(item, hinted_interface)
+
+    walk(payload)
+    return neighbors
 
 
 def _parse_lldp_neighbors_output(output: str) -> List[LldpNeighbor]:
@@ -3259,8 +3390,15 @@ async def get_lldp_status(request: Request, refresh: bool = False) -> LldpStatus
             detail_output = _extract_show_output(detail_response.result)
 
         neighbors = _parse_lldp_neighbors_output(neighbors_output) if neighbors_output else []
+        if not neighbors and not isinstance(neighbors_response, Exception):
+            neighbors = _parse_lldp_neighbors_structured_output(getattr(neighbors_response, "result", None))
+
         if not neighbors and detail_output:
             neighbors = _parse_lldp_neighbors_detail_output(detail_output)
+            if neighbors:
+                error = None
+        if not neighbors and not isinstance(detail_response, Exception):
+            neighbors = _parse_lldp_neighbors_structured_output(getattr(detail_response, "result", None))
             if neighbors:
                 error = None
 

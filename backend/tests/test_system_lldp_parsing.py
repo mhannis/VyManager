@@ -51,3 +51,45 @@ Interface:    eth6, via: LLDP, RID: 1, Time: 0 day, 00:00:45
     assert second.chassis_id == "mac 66:77:88:99:aa:bb"
     assert second.port_id == "ifname Gi1/0/2"
     assert second.system_name == "edge-switch"
+
+
+def test_parse_lldp_neighbors_structured_output_list():
+    payload = {
+        "success": True,
+        "data": [
+            {
+                "interface": "eth5",
+                "chassis-id": "00:11:22:33:44:55",
+                "port-id": "Gi1/0/1",
+                "sys-name": "core-switch",
+                "port-description": "Uplink",
+            }
+        ],
+    }
+
+    neighbors = system_router._parse_lldp_neighbors_structured_output(payload)
+    assert len(neighbors) == 1
+    assert neighbors[0].local_interface == "eth5"
+    assert neighbors[0].chassis_id == "00:11:22:33:44:55"
+    assert neighbors[0].port_id == "Gi1/0/1"
+    assert neighbors[0].system_name == "core-switch"
+    assert neighbors[0].port_description == "Uplink"
+
+
+def test_parse_lldp_neighbors_structured_output_nested_with_interface_hint():
+    payload = {
+        "data": {
+            "eth6": {
+                "chassisId": "66:77:88:99:aa:bb",
+                "portId": "Gi1/0/2",
+                "systemName": "edge-switch",
+            }
+        }
+    }
+
+    neighbors = system_router._parse_lldp_neighbors_structured_output(payload)
+    assert len(neighbors) == 1
+    assert neighbors[0].local_interface == "eth6"
+    assert neighbors[0].chassis_id == "66:77:88:99:aa:bb"
+    assert neighbors[0].port_id == "Gi1/0/2"
+    assert neighbors[0].system_name == "edge-switch"
