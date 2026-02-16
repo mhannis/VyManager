@@ -6,6 +6,7 @@ completed_in_cycle:
   - Hardened firewall rule create/edit modals to enforce action-dependent required targets before submit.
   - `jump` action now requires a jump target chain in both create and edit flows.
   - `offload` action now requires a flowtable target in both create and edit flows.
+  - Action-specific selectors and submit are now blocked when required target resources are unavailable.
   - Invalid action/target combinations now fail in UI with explicit error messages instead of relying on backend rejection.
 validation:
   - cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime

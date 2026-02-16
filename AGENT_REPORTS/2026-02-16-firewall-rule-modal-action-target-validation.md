@@ -13,6 +13,10 @@ Added:
   - `jump` action now requires a jump target chain
   - `offload` action now requires a flowtable target
 - early UI error feedback via existing error banner before API call.
+- action-target option availability guardrails:
+  - jump target selector is disabled when no custom chains exist
+  - offload target selector is disabled when no flowtables exist
+  - submit button stays disabled when the selected action requires unavailable targets
 
 ## Validation Run
 - `cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime`

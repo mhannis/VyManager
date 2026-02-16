@@ -67,6 +67,7 @@ Feature: **Firewall rule modal action-target validation (`F-01`/`F-02` UX depth 
 Acceptance criteria:
 - Require a jump target when rule action is `jump` in create/edit modals.
 - Require a flowtable target when rule action is `offload` in create/edit modals.
+- Block action-target selectors and submit when required targets are unavailable.
 - Block submission and display actionable inline error messages for missing action-dependent targets.
 - Preserve existing API contracts and backend behavior (UI-only validation).
 - Pass backend+frontend validation gates.
@@ -118,6 +119,7 @@ Assumptions:
 
 ## Agent Handoff Notes
 - Firewall rule create/edit modals now enforce action-dependent targets (`jump` requires jump target chain, `offload` requires flowtable) and block submit with explicit UI errors when missing.
+- Firewall rule modals now disable jump/offload target selectors when no custom chains/flowtables are available and keep submit disabled for those blocked action states.
 - Firewall zones create/edit flows now pre-validate policy textarea rows (`FROM_ZONE:FIREWALL_NAME`) and block submit for malformed lines or duplicate from-zones, reducing backend round-trip failures.
 - Firewall zones policy textareas now include guidance for one mapping per from-zone and explicit `LOCAL` pseudo-zone usage.
 - Firewall zones guided setup now runs a local interface-ownership preflight and blocks preset apply when interfaces are still bound to other zones, with conflict details shown in the UI error banner.

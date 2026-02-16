@@ -803,6 +803,9 @@ export function EditFirewallRuleModal({
     protocol === "ipv4" ? g.type === "network-group" : g.type === "ipv6-network-group"
   );
   const portGroups = groups.filter((g) => g.type === "port-group");
+  const missingJumpTargets = action === "jump" && customChains.length === 0;
+  const missingOffloadTargets = action === "offload" && flowtables.length === 0;
+  const hasActionTargetDependencyBlock = missingJumpTargets || missingOffloadTargets;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -875,7 +878,7 @@ export function EditFirewallRuleModal({
               {action === "jump" && (
                 <div className="space-y-2">
                   <Label htmlFor="jumpTarget">Jump Target *</Label>
-                  <Select value={jumpTarget} onValueChange={setJumpTarget}>
+                  <Select value={jumpTarget} onValueChange={setJumpTarget} disabled={customChains.length === 0}>
                     <SelectTrigger id="jumpTarget">
                       <SelectValue placeholder="Select custom chain" />
                     </SelectTrigger>
@@ -887,13 +890,18 @@ export function EditFirewallRuleModal({
                       ))}
                     </SelectContent>
                   </Select>
+                  {customChains.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      No custom chains available. Create a custom chain before using Jump action.
+                    </p>
+                  )}
                 </div>
               )}
 
               {action === "offload" && (
                 <div className="space-y-2">
                   <Label htmlFor="offloadTarget">Flowtable *</Label>
-                  <Select value={offloadTarget} onValueChange={setOffloadTarget}>
+                  <Select value={offloadTarget} onValueChange={setOffloadTarget} disabled={flowtables.length === 0}>
                     <SelectTrigger id="offloadTarget">
                       <SelectValue placeholder="Select flowtable" />
                     </SelectTrigger>
@@ -910,6 +918,11 @@ export function EditFirewallRuleModal({
                       ))}
                     </SelectContent>
                   </Select>
+                  {flowtables.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      No flowtables available. Create a flowtable before using Offload action.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -1796,7 +1809,7 @@ export function EditFirewallRuleModal({
           <Button variant="outline" onClick={handleClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
+          <Button onClick={handleSubmit} disabled={loading || hasActionTargetDependencyBlock}>
             {loading ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />

@@ -7,6 +7,7 @@
     "Create Rule modal rejects `offload` action submissions without a flowtable target.",
     "Edit Rule modal rejects `jump` action submissions without a jump target.",
     "Edit Rule modal rejects `offload` action submissions without a flowtable target.",
+    "When action targets are unavailable (no custom chains/flowtables), selectors and submit are blocked with clear guidance.",
     "UI shows clear error messages for missing action-dependent targets before API calls.",
     "Frontend typecheck/build/runtime smoke pass after modal validation changes."
   ],
