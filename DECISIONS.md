@@ -239,3 +239,5 @@
 - 2026-02-16: Added inline quick-add flows for `Dummy` and `Loopback` directly in the unified Interfaces manager using existing APIs (`/vyos/dummy/batch` and `/vyos/loopback-interface/configure`) to increase single-page usability without changing backend contracts.
 - 2026-02-16: Extended unified Interfaces manager quick-add to include `PPPoE` using existing `/vyos/pppoe-interface/configure` command-batch contract (no new backend endpoints).
 - 2026-02-16: PPPoE quick-add source interface now uses a description-first selector (`Description (ethX)`) instead of free text to reduce input errors while still writing canonical interface names.
+- 2026-02-16: Extended unified Interfaces manager quick-add to include `VTI` and `VXLAN` using existing `/vyos/vti-interface/configure` and `/vyos/vxlan-interface/configure` command-batch contracts (no new backend endpoints).
+- 2026-02-16: VXLAN quick-add enforces core validity in-manager (required `vni` and exactly one of `remote` or `group`) to avoid invalid apply attempts before moving to advanced pages.

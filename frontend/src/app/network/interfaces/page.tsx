@@ -33,11 +33,13 @@ import { DeleteVLANModal } from "@/components/network/DeleteVLANModal";
 import { dummyService, type DummyBatchOperation } from "@/lib/api/dummy";
 import { loopbackService } from "@/lib/api/loopback";
 import { pppoeService } from "@/lib/api/pppoe";
+import { vtiService } from "@/lib/api/vti";
+import { vxlanService } from "@/lib/api/vxlan";
 
 type InterfaceType = "all" | "ethernet" | "vlan";
 type InterfaceFamilyGroup = "core-l2" | "overlay-secure" | "access-wan";
 type InterfaceFamilyFilter = "all" | InterfaceFamilyGroup;
-type QuickFamily = "dummy" | "loopback" | "pppoe";
+type QuickFamily = "dummy" | "loopback" | "pppoe" | "vti" | "vxlan";
 
 interface InterfaceFamily {
   key: string;
@@ -286,6 +288,25 @@ function InterfacesPageContent() {
     defaultRouteDistance: "",
     disabled: false,
   });
+  const [quickVtiForm, setQuickVtiForm] = useState({
+    name: "",
+    description: "",
+    addressesText: "",
+    mtu: "",
+    vrf: "",
+    disabled: false,
+  });
+  const [quickVxlanForm, setQuickVxlanForm] = useState({
+    name: "",
+    description: "",
+    vni: "",
+    sourceInterface: "",
+    remote: "",
+    group: "",
+    mtu: "",
+    vrf: "",
+    disabled: false,
+  });
   const groupParam = searchParams.get("group");
   const familyFilter: InterfaceFamilyFilter = isFamilyFilter(groupParam) ? groupParam : "all";
 
@@ -444,6 +465,31 @@ function InterfacesPageContent() {
       });
       return;
     }
+    if (family === "vti") {
+      setQuickVtiForm({
+        name: "",
+        description: "",
+        addressesText: "",
+        mtu: "",
+        vrf: "",
+        disabled: false,
+      });
+      return;
+    }
+    if (family === "vxlan") {
+      setQuickVxlanForm({
+        name: "",
+        description: "",
+        vni: "",
+        sourceInterface: "",
+        remote: "",
+        group: "",
+        mtu: "",
+        vrf: "",
+        disabled: false,
+      });
+      return;
+    }
     setQuickLoopbackForm({
       name: "",
       description: "",
@@ -490,6 +536,114 @@ function InterfacesPageContent() {
           throw new Error(response.error || "VyOS rejected dummy interface configuration.");
         }
         setQuickSuccess(`Dummy interface '${name}' created from Interface Manager.`);
+      } else if (quickFamily === "vti") {
+        const name = quickVtiForm.name.trim();
+        if (!name) {
+          throw new Error("VTI interface name is required.");
+        }
+
+        const operations: string[] = [];
+        const base = `interfaces vti ${quoteCliValue(name)}`;
+
+        const description = quickVtiForm.description.trim();
+        if (description) {
+          operations.push(`set ${base} description ${quoteCliValue(description)}`);
+        }
+
+        for (const address of parseMultilineUnique(quickVtiForm.addressesText)) {
+          operations.push(`set ${base} address ${quoteCliValue(address)}`);
+        }
+
+        const mtu = quickVtiForm.mtu.trim();
+        if (mtu) {
+          if (!/^\d+$/.test(mtu)) {
+            throw new Error("VTI MTU must be a whole number.");
+          }
+          operations.push(`set ${base} mtu ${quoteCliValue(mtu)}`);
+        }
+
+        const vrf = quickVtiForm.vrf.trim();
+        if (vrf) {
+          operations.push(`set ${base} vrf ${quoteCliValue(vrf)}`);
+        }
+
+        if (quickVtiForm.disabled) {
+          operations.push(`set ${base} disable`);
+        }
+
+        if (operations.length === 0) {
+          throw new Error("Provide at least one VTI value (address, description, MTU, VRF, or disable).");
+        }
+
+        const response = await vtiService.batchConfigure(operations);
+        if (!response.success) {
+          throw new Error(response.error || "VyOS rejected VTI interface configuration.");
+        }
+        setQuickSuccess(`VTI interface '${name}' created from Interface Manager.`);
+      } else if (quickFamily === "vxlan") {
+        const name = quickVxlanForm.name.trim();
+        if (!name) {
+          throw new Error("VXLAN interface name is required.");
+        }
+
+        const vni = quickVxlanForm.vni.trim();
+        if (!vni) {
+          throw new Error("VXLAN VNI is required.");
+        }
+        if (!/^\d+$/.test(vni)) {
+          throw new Error("VXLAN VNI must be a whole number.");
+        }
+
+        const remote = quickVxlanForm.remote.trim();
+        const group = quickVxlanForm.group.trim();
+        if (!remote && !group) {
+          throw new Error("Set either remote (unicast) or group (multicast).");
+        }
+        if (remote && group) {
+          throw new Error("Use either remote or group, not both.");
+        }
+
+        const operations: string[] = [];
+        const base = `interfaces vxlan ${quoteCliValue(name)}`;
+        operations.push(`set ${base} vni ${quoteCliValue(vni)}`);
+        if (remote) {
+          operations.push(`set ${base} remote ${quoteCliValue(remote)}`);
+        } else {
+          operations.push(`set ${base} group ${quoteCliValue(group)}`);
+        }
+
+        const description = quickVxlanForm.description.trim();
+        if (description) {
+          operations.push(`set ${base} description ${quoteCliValue(description)}`);
+        }
+
+        const sourceInterface = quickVxlanForm.sourceInterface.trim();
+        if (sourceInterface) {
+          operations.push(`set ${base} source-interface ${quoteCliValue(sourceInterface)}`);
+        }
+
+        const mtu = quickVxlanForm.mtu.trim();
+        if (mtu) {
+          if (!/^\d+$/.test(mtu)) {
+            throw new Error("VXLAN MTU must be a whole number.");
+          }
+          operations.push(`set ${base} mtu ${quoteCliValue(mtu)}`);
+        }
+
+        const vrf = quickVxlanForm.vrf.trim();
+        if (vrf) {
+          operations.push(`set ${base} vrf ${quoteCliValue(vrf)}`);
+        }
+
+        if (quickVxlanForm.disabled) {
+          operations.push(`set ${base} disable`);
+        }
+
+        const response = await vxlanService.batchConfigure(operations);
+        if (!response.success) {
+          throw new Error(response.error || "VyOS rejected VXLAN interface configuration.");
+        }
+        setQuickSuccess(`VXLAN interface '${name}' created from Interface Manager.`);
       } else if (quickFamily === "pppoe") {
         const name = quickPppoeForm.name.trim();
         if (!name) {
@@ -757,7 +911,11 @@ function InterfacesPageContent() {
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {visibleFamilies.map((family) => {
                     const supportsQuickConfigure =
-                      family.key === "dummy" || family.key === "loopback" || family.key === "pppoe";
+                      family.key === "dummy" ||
+                      family.key === "loopback" ||
+                      family.key === "pppoe" ||
+                      family.key === "vti" ||
+                      family.key === "vxlan";
                     return (
                     <div
                       key={family.key}
@@ -1098,6 +1256,10 @@ function InterfacesPageContent() {
             <DialogTitle>
               {quickFamily === "dummy"
                 ? "Quick Add Dummy Interface"
+                : quickFamily === "vti"
+                  ? "Quick Add VTI Interface"
+                : quickFamily === "vxlan"
+                  ? "Quick Add VXLAN Interface"
                 : quickFamily === "pppoe"
                   ? "Quick Add PPPoE Interface"
                 : quickFamily === "loopback"
@@ -1188,6 +1350,221 @@ function InterfacesPageContent() {
                 <Label htmlFor="quick-dummy-disable" className="text-sm font-normal">
                   Create interface in disabled state
                 </Label>
+              </div>
+            </div>
+          )}
+
+          {quickFamily === "vti" && (
+            <div className="grid gap-4 py-1">
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-vti-name">Interface Name</Label>
+                  <Input
+                    id="quick-vti-name"
+                    value={quickVtiForm.name}
+                    onChange={(event) =>
+                      setQuickVtiForm((previous) => ({ ...previous, name: event.target.value }))
+                    }
+                    placeholder="vti0"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-vti-description">Description</Label>
+                  <Input
+                    id="quick-vti-description"
+                    value={quickVtiForm.description}
+                    onChange={(event) =>
+                      setQuickVtiForm((previous) => ({ ...previous, description: event.target.value }))
+                    }
+                    placeholder="IPsec-VTI"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-vti-mtu">MTU (optional)</Label>
+                  <Input
+                    id="quick-vti-mtu"
+                    value={quickVtiForm.mtu}
+                    onChange={(event) =>
+                      setQuickVtiForm((previous) => ({ ...previous, mtu: event.target.value }))
+                    }
+                    placeholder="1436"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-vti-vrf">VRF (optional)</Label>
+                  <Input
+                    id="quick-vti-vrf"
+                    value={quickVtiForm.vrf}
+                    onChange={(event) =>
+                      setQuickVtiForm((previous) => ({ ...previous, vrf: event.target.value }))
+                    }
+                    placeholder="blue"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quick-vti-addresses">Addresses (one CIDR per line)</Label>
+                <Textarea
+                  id="quick-vti-addresses"
+                  rows={3}
+                  value={quickVtiForm.addressesText}
+                  onChange={(event) =>
+                    setQuickVtiForm((previous) => ({ ...previous, addressesText: event.target.value }))
+                  }
+                  placeholder={"10.255.10.1/30\nfd00:10:255::1/64"}
+                  disabled={quickSaving}
+                />
+              </div>
+              <div className="flex items-center gap-2 rounded-md border border-border p-2">
+                <Checkbox
+                  id="quick-vti-disable"
+                  checked={quickVtiForm.disabled}
+                  onCheckedChange={(checked) =>
+                    setQuickVtiForm((previous) => ({ ...previous, disabled: checked === true }))
+                  }
+                  disabled={quickSaving}
+                />
+                <Label htmlFor="quick-vti-disable" className="text-sm font-normal">
+                  Create interface in disabled state
+                </Label>
+              </div>
+            </div>
+          )}
+
+          {quickFamily === "vxlan" && (
+            <div className="grid gap-4 py-1">
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-vxlan-name">Interface Name</Label>
+                  <Input
+                    id="quick-vxlan-name"
+                    value={quickVxlanForm.name}
+                    onChange={(event) =>
+                      setQuickVxlanForm((previous) => ({ ...previous, name: event.target.value }))
+                    }
+                    placeholder="vxlan10"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-vxlan-vni">VNI</Label>
+                  <Input
+                    id="quick-vxlan-vni"
+                    value={quickVxlanForm.vni}
+                    onChange={(event) =>
+                      setQuickVxlanForm((previous) => ({ ...previous, vni: event.target.value }))
+                    }
+                    placeholder="10"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quick-vxlan-description">Description</Label>
+                <Input
+                  id="quick-vxlan-description"
+                  value={quickVxlanForm.description}
+                  onChange={(event) =>
+                    setQuickVxlanForm((previous) => ({ ...previous, description: event.target.value }))
+                  }
+                  placeholder="Overlay Segment 10"
+                  disabled={quickSaving}
+                />
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-vxlan-remote">Remote (Unicast)</Label>
+                  <Input
+                    id="quick-vxlan-remote"
+                    value={quickVxlanForm.remote}
+                    onChange={(event) =>
+                      setQuickVxlanForm((previous) => ({ ...previous, remote: event.target.value }))
+                    }
+                    placeholder="203.0.113.10"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-vxlan-group">Group (Multicast)</Label>
+                  <Input
+                    id="quick-vxlan-group"
+                    value={quickVxlanForm.group}
+                    onChange={(event) =>
+                      setQuickVxlanForm((previous) => ({ ...previous, group: event.target.value }))
+                    }
+                    placeholder="239.0.0.10"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-vxlan-source">Source Interface (optional)</Label>
+                  <select
+                    id="quick-vxlan-source"
+                    value={quickVxlanForm.sourceInterface}
+                    onChange={(event) =>
+                      setQuickVxlanForm((previous) => ({
+                        ...previous,
+                        sourceInterface: event.target.value,
+                      }))
+                    }
+                    disabled={quickSaving}
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="">Select source interface</option>
+                    {sourceInterfaceOptions.map((iface) => (
+                      <option key={`quick-vxlan-source-${iface.name}`} value={iface.name}>
+                        {iface.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-vxlan-vrf">VRF (optional)</Label>
+                  <Input
+                    id="quick-vxlan-vrf"
+                    value={quickVxlanForm.vrf}
+                    onChange={(event) =>
+                      setQuickVxlanForm((previous) => ({ ...previous, vrf: event.target.value }))
+                    }
+                    placeholder="blue"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-vxlan-mtu">MTU (optional)</Label>
+                  <Input
+                    id="quick-vxlan-mtu"
+                    value={quickVxlanForm.mtu}
+                    onChange={(event) =>
+                      setQuickVxlanForm((previous) => ({ ...previous, mtu: event.target.value }))
+                    }
+                    placeholder="1500"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="flex items-center gap-2 rounded-md border border-border p-2 md:mt-7">
+                  <Checkbox
+                    id="quick-vxlan-disable"
+                    checked={quickVxlanForm.disabled}
+                    onCheckedChange={(checked) =>
+                      setQuickVxlanForm((previous) => ({ ...previous, disabled: checked === true }))
+                    }
+                    disabled={quickSaving}
+                  />
+                  <Label htmlFor="quick-vxlan-disable" className="text-sm font-normal">
+                    Create interface in disabled state
+                  </Label>
+                </div>
               </div>
             </div>
           )}

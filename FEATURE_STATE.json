@@ -7,6 +7,7 @@
     "`/network/interfaces` acts as the primary hub with family grouping and direct access to all detailed editors.",
     "Existing detailed interface pages remain reachable for advanced settings and compatibility.",
     "Inline PPPoE quick-add supports source interface selection with description-first labels.",
+    "Inline VTI and VXLAN quick-add flows are available from Interface Manager for common setup.",
     "Build/typecheck/runtime smoke pass after IA changes."
   ],
   "assumptions": [
@@ -65,12 +66,22 @@
     {
       "id": "IF-IA-06",
       "owner_role": "UI|Backend|Test",
-      "status": "todo",
+      "status": "doing",
       "files": [
         "frontend/src/app/network/interfaces/page.tsx",
         "frontend/src/lib/api/*interface*.ts"
       ],
-      "notes": "Extend inline quick-add/edit coverage to additional families (Tunnel/VTI/VXLAN) while preserving advanced pages."
+      "notes": "Extended inline quick-add coverage to VTI and VXLAN families while preserving advanced pages."
+    },
+    {
+      "id": "IF-IA-07",
+      "owner_role": "UI|Backend|Test",
+      "status": "todo",
+      "files": [
+        "frontend/src/app/network/interfaces/page.tsx",
+        "frontend/src/lib/api/tunnel-interface.ts"
+      ],
+      "notes": "Add tunnel-family quick-add flow to unified manager with required source/remote validation."
     }
   ],
   "commands": {
