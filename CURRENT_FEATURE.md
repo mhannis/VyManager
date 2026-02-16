@@ -20,6 +20,11 @@ completed_in_cycle:
   - Updated strict backlog statuses:
     - PR-03 => partial
     - VRF-02 => partial
+    - X-01 => partial
+  - Added option-level parity scoring artifacts:
+    - scripts/score_option_parity.py
+    - OPTION_PARITY_SCORECARD.json
+    - OPTION_PARITY_SCORECARD.md
 validation:
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_config_tree_wrapper_capabilities.py
   - cd frontend && npx tsc --noEmit --pretty false
@@ -30,7 +35,7 @@ validation:
 known_limitations:
   - Browser smoke (Playwright) still blocked by missing host dependency libnspr4.so.
 next_queue:
-  - X-01 option-level parity scorer
   - X-02 fixture save/apply/reload loops
   - X-03 config snapshot tests by domain
+  - Improve option-level scorer precision and add CI threshold gating
   - Continue partial-depth sweeps (protocols/services/firewall/interfaces/vpn/system)

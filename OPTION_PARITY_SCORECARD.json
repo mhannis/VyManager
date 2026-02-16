@@ -1,0 +1,2411 @@
+{
+  "generated_at": "2026-02-16T13:50:21+00:00",
+  "source": "CONFIG_COVERAGE_MATRIX.json",
+  "method": "docs_cfgcmd_leaf_match_against_repo_command_paths",
+  "summary": {
+    "total_pages": 129,
+    "total_cfgcmd": 3513,
+    "matched_cfgcmd": 293,
+    "coverage_percent": 8.34
+  },
+  "domains": [
+    {
+      "domain": "container",
+      "total_cfgcmd": 52,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "unmatched_examples": [
+        "set container name <name> allow-host-networks",
+        "set container name <name> allow-host-pid"
+      ]
+    },
+    {
+      "domain": "firewall",
+      "total_cfgcmd": 767,
+      "matched_cfgcmd": 3,
+      "coverage_percent": 0.39,
+      "status": "missing",
+      "unmatched_examples": [
+        "set firewall [ipv4 | ipv6] forward filter rule <1-999999> action offload",
+        "set firewall [ipv4 | ipv6] forward filter rule <1-999999> offload-target <flowtable>",
+        "set firewall bridge [forward | output] filter rule <1-999999> set connection-mark <0-2147483647>",
+        "set firewall bridge [prerouting | forward | output] filter rule <1-999999> set dscp <0-63>",
+        "set firewall global-options all-ping [enable | disable]",
+        "set firewall global-options apply-to-bridged-traffic [ipv4 | ipv6]",
+        "set firewall group address-group <name> address [address | address range]",
+        "set firewall group domain-group <name> address <domain>"
+      ]
+    },
+    {
+      "domain": "ha",
+      "total_cfgcmd": 12,
+      "matched_cfgcmd": 2,
+      "coverage_percent": 16.67,
+      "status": "missing",
+      "unmatched_examples": [
+        "set high-availability vrrp global-parameters garp interval <0.000-1000>",
+        "set high-availability vrrp global-parameters garp master-delay <1-255>"
+      ]
+    },
+    {
+      "domain": "interfaces",
+      "total_cfgcmd": 1036,
+      "matched_cfgcmd": 13,
+      "coverage_percent": 1.25,
+      "status": "missing",
+      "unmatched_examples": [
+        "set interfaces bonding <interface> address <address | dhcp | dhcpv6>",
+        "set interfaces bonding <interface> arp-monitor interval <time>",
+        "set interfaces bridge <interface> address <address | dhcp | dhcpv6>",
+        "set interfaces bridge <interface> aging <time>",
+        "set interfaces dummy <interface> address <address>",
+        "set interfaces dummy <interface> description <description>",
+        "set interfaces ethernet <interface> address <address | dhcp | dhcpv6>",
+        "set interfaces ethernet <interface> dhcp-options client-id <description>"
+      ]
+    },
+    {
+      "domain": "load_balancing",
+      "total_cfgcmd": 43,
+      "matched_cfgcmd": 4,
+      "coverage_percent": 9.3,
+      "status": "missing",
+      "unmatched_examples": [
+        "set load-balancing haproxy backend <name> health-check <protocol>",
+        "set load-balancing haproxy backend <name> http-check"
+      ]
+    },
+    {
+      "domain": "meta",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "unmatched_examples": []
+    },
+    {
+      "domain": "nat",
+      "total_cfgcmd": 9,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "unmatched_examples": [
+        "set nat [source | destination] rule <rule> load-balance backend <x.x.x.x> weight <1-100>",
+        "set nat [source | destination] rule <rule> load-balance hash [source-address | destination-address | source-port | destination-port | random]",
+        "set nat cgnat log-allocation",
+        "set nat cgnat pool external <pool-name> external-port-range <port-range>"
+      ]
+    },
+    {
+      "domain": "pki",
+      "total_cfgcmd": 15,
+      "matched_cfgcmd": 14,
+      "coverage_percent": 93.33,
+      "status": "implemented",
+      "unmatched_examples": [
+        "set pki certificate <name> acme rsa-key-size <2048 | 3072 | 4096>"
+      ]
+    },
+    {
+      "domain": "policy",
+      "total_cfgcmd": 234,
+      "matched_cfgcmd": 29,
+      "coverage_percent": 12.39,
+      "status": "missing",
+      "unmatched_examples": [
+        "set policy access-list <acl_number>",
+        "set policy access-list <acl_number> description <text>",
+        "set policy local-route rule <1-32765> destination address <x.x.x.x|x.x.x.x/x>",
+        "set policy local-route rule <1-32765> destination port <1-65535>",
+        "set policy prefix-list <text> description <text>",
+        "set policy prefix-list <text> rule <1-65535> description <text>",
+        "set policy route <name> default-log",
+        "set policy route <name> description <text>"
+      ]
+    },
+    {
+      "domain": "protocols",
+      "total_cfgcmd": 436,
+      "matched_cfgcmd": 114,
+      "coverage_percent": 26.15,
+      "status": "missing",
+      "unmatched_examples": [
+        "set interfaces <inttype> <intname> ip rip authentication md5 <id> password <text>",
+        "set interfaces <inttype> <intname> ip rip authentication plaintext-password <text>",
+        "set protocol static route <subnet> reject",
+        "set protocol static route6 <subnet> reject",
+        "set protocols babel distribute-list <ipv4|ipv6> access-list <in|out> <number>",
+        "set protocols babel distribute-list <ipv4|ipv6> interface <interface> access-list <in|out> <number>",
+        "set protocols bfd peer <address>",
+        "set protocols bfd peer <address> echo-mode"
+      ]
+    },
+    {
+      "domain": "services",
+      "total_cfgcmd": 400,
+      "matched_cfgcmd": 95,
+      "coverage_percent": 23.75,
+      "status": "missing",
+      "unmatched_examples": [
+        "set service broadcast-relay id <n> address <ipv4-address>",
+        "set service broadcast-relay id <n> description <description>",
+        "set service console-server device <device> parity [even | odd | none]",
+        "set service console-server device <device> speed [ 300 | 1200 | 2400 | 4800 | 9600 | 19200 | 38400 | 57600 | 115200 ]",
+        "set service dhcp-relay disable",
+        "set service dhcp-relay interface <interface>",
+        "set service dhcp-server client-class <name> relay-agent-information circuit-id <value>",
+        "set service dhcp-server client-class <name> relay-agent-information remote-id <value>"
+      ]
+    },
+    {
+      "domain": "system",
+      "total_cfgcmd": 184,
+      "matched_cfgcmd": 12,
+      "coverage_percent": 6.52,
+      "status": "missing",
+      "unmatched_examples": [
+        "set system acceleration qat",
+        "set system conntrack expect-table-size <1-50000000>",
+        "set system conntrack hash-size <1-50000000>",
+        "set system domain-name <domain>",
+        "set system domain-search <domain>",
+        "set system flow-accounting buffer-size <buffer size>",
+        "set system flow-accounting disable-imt",
+        "set system frr bmp"
+      ]
+    },
+    {
+      "domain": "traffic_policy",
+      "total_cfgcmd": 51,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "unmatched_examples": [
+        "set qos policy cake <text> bandwidth <value>",
+        "set qos policy cake <text> description"
+      ]
+    },
+    {
+      "domain": "vpn",
+      "total_cfgcmd": 258,
+      "matched_cfgcmd": 4,
+      "coverage_percent": 1.55,
+      "status": "missing",
+      "unmatched_examples": [
+        "set protocols nhrp tunnel <tunnel> authentication <secret>",
+        "set protocols nhrp tunnel <tunnel> holdtime <timeout>",
+        "set vpn ipsec authentication psk <name> dhcp-interface",
+        "set vpn ipsec authentication psk id <id>",
+        "set vpn ipsec esp-group <name> compression",
+        "set vpn ipsec esp-group <name> disable-rekey",
+        "set vpn l2tp remote-access authentication local-users username <user> disable",
+        "set vpn l2tp remote-access authentication local-users username <user> password <pass>"
+      ]
+    },
+    {
+      "domain": "vrf",
+      "total_cfgcmd": 16,
+      "matched_cfgcmd": 3,
+      "coverage_percent": 18.75,
+      "status": "missing",
+      "unmatched_examples": [
+        "set interfaces <dummy | ethernet | bonding | bridge | pppoe> <interface> vrf <name>",
+        "set vrf <name> ip protocol <protocol> route-map <route-map>"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "index": 1,
+      "title": "Container",
+      "url": "https://docs.vyos.io/en/latest/configuration/container/index.html",
+      "domain": "container",
+      "cli_scope": "container",
+      "total_cfgcmd": 52,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set container name <name> allow-host-networks",
+        "set container name <name> allow-host-pid",
+        "set container name <name> arguments <arguments>",
+        "set container name <name> capability <text>",
+        "set container name <name> command <command>"
+      ]
+    },
+    {
+      "index": 2,
+      "title": "Bridge Firewall Configuration",
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/bridge.html",
+      "domain": "firewall",
+      "cli_scope": "firewall bridge",
+      "total_cfgcmd": 101,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set firewall bridge [forward | output] filter rule <1-999999> set connection-mark <0-2147483647>",
+        "set firewall bridge [prerouting | forward | output] filter rule <1-999999> set dscp <0-63>",
+        "set firewall bridge [prerouting | forward | output] filter rule <1-999999> set hop-limit <0-255>",
+        "set firewall bridge [prerouting | forward | output] filter rule <1-999999> set mark <1-2147483647>",
+        "set firewall bridge [prerouting | forward | output] filter rule <1-999999> set tcp-mss <500-1460>"
+      ]
+    },
+    {
+      "index": 3,
+      "title": "Flowtables Firewall Configuration",
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/flowtables.html",
+      "domain": "firewall",
+      "cli_scope": "firewall flowtables",
+      "total_cfgcmd": 6,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set firewall [ipv4 | ipv6] forward filter rule <1-999999> action offload",
+        "set firewall [ipv4 | ipv6] forward filter rule <1-999999> offload-target <flowtable>",
+        "set firewall flowtable <flow_table_name> description <text>",
+        "set firewall flowtable <flow_table_name> interface <iface>",
+        "set firewall flowtable <flow_table_name> offload <hardware | software>"
+      ]
+    },
+    {
+      "index": 4,
+      "title": "Global Options Firewall Configuration",
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/global-options.html",
+      "domain": "firewall",
+      "cli_scope": "firewall global options",
+      "total_cfgcmd": 34,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set firewall global-options all-ping [enable | disable]",
+        "set firewall global-options apply-to-bridged-traffic [ipv4 | ipv6]",
+        "set firewall global-options broadcast-ping [enable | disable]",
+        "set firewall global-options ip-src-route [enable | disable]",
+        "set firewall global-options ipv6-receive-redirects [enable | disable]"
+      ]
+    },
+    {
+      "index": 5,
+      "title": "Firewall groups",
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/groups.html",
+      "domain": "firewall",
+      "cli_scope": "firewall groups",
+      "total_cfgcmd": 34,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 2.94,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set firewall group address-group <name> address [address | address range]",
+        "set firewall group domain-group <name> address <domain>",
+        "set firewall group domain-group <name> description <text>",
+        "set firewall group dynamic-group address-group <name>",
+        "set firewall group dynamic-group address-group <name> description <text>"
+      ]
+    },
+    {
+      "index": 6,
+      "title": "Firewall",
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/index.html",
+      "domain": "firewall",
+      "cli_scope": "firewall",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 7,
+      "title": "IPv4 Firewall Configuration",
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/ipv4.html",
+      "domain": "firewall",
+      "cli_scope": "firewall ipv4",
+      "total_cfgcmd": 293,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 0.34,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set firewall ipv4 [input | forward] filter rule <1-999999> action synproxy",
+        "set firewall ipv4 [input | forward] filter rule <1-999999> protocol tcp",
+        "set firewall ipv4 [input | forward] filter rule <1-999999> synproxy tcp mss <501-65535>",
+        "set firewall ipv4 [input | forward] filter rule <1-999999> synproxy tcp window-scale <1-14>",
+        "set firewall ipv4 forward filter default-action [accept | drop]"
+      ]
+    },
+    {
+      "index": 8,
+      "title": "IPv6 Firewall Configuration",
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/ipv6.html",
+      "domain": "firewall",
+      "cli_scope": "firewall ipv6",
+      "total_cfgcmd": 289,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 0.35,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set firewall ipv4 output [filter | raw] rule <1-999999> set connection-mark <0-2147483647>",
+        "set firewall ipv6 [input | forward] filter rule <1-999999> action synproxy",
+        "set firewall ipv6 [input | forward] filter rule <1-999999> protocol tcp",
+        "set firewall ipv6 [input | forward] filter rule <1-999999> synproxy tcp mss <501-65535>",
+        "set firewall ipv6 [input | forward] filter rule <1-999999> synproxy tcp window-scale <1-14>"
+      ]
+    },
+    {
+      "index": 9,
+      "title": "Zone Based Firewall",
+      "url": "https://docs.vyos.io/en/latest/configuration/firewall/zone.html",
+      "domain": "firewall",
+      "cli_scope": "firewall zone",
+      "total_cfgcmd": 10,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set firewall zone <destination zone> default-firewall ipv6-name <ipv6-rule-set-name>",
+        "set firewall zone <destination zone> default-firewall name <ipv4-rule-set-name>",
+        "set firewall zone <destination zone> from <source zone> firewall ipv6-name <ipv6-rule-set-name>",
+        "set firewall zone <destination zone> from <source zone> firewall name <ipv4-rule-set-name>",
+        "set firewall zone <name> default-action [drop | reject]"
+      ]
+    },
+    {
+      "index": 10,
+      "title": "High availability",
+      "url": "https://docs.vyos.io/en/latest/configuration/highavailability/index.html",
+      "domain": "ha",
+      "cli_scope": "highavailability",
+      "total_cfgcmd": 12,
+      "matched_cfgcmd": 2,
+      "coverage_percent": 16.67,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set high-availability vrrp global-parameters garp interval <0.000-1000>",
+        "set high-availability vrrp global-parameters garp master-delay <1-255>",
+        "set high-availability vrrp global-parameters garp master-refresh <1-600>",
+        "set high-availability vrrp global-parameters garp master-refresh-repeat <1-600>",
+        "set high-availability vrrp global-parameters garp master-repeat <1-600>"
+      ]
+    },
+    {
+      "index": 11,
+      "title": "Configuration Guide",
+      "url": "https://docs.vyos.io/en/latest/configuration/index.html",
+      "domain": "meta",
+      "cli_scope": "configuration",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 12,
+      "title": "Bond / link aggregation",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/bonding.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces bonding",
+      "total_cfgcmd": 97,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces bonding <interface> address <address | dhcp | dhcpv6>",
+        "set interfaces bonding <interface> arp-monitor interval <time>",
+        "set interfaces bonding <interface> arp-monitor target <address>",
+        "set interfaces bonding <interface> description <description>",
+        "set interfaces bonding <interface> dhcp-options client-id <description>"
+      ]
+    },
+    {
+      "index": 13,
+      "title": "Bridge",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/bridge.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces bridge",
+      "total_cfgcmd": 98,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 1.02,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces bridge <interface> address <address | dhcp | dhcpv6>",
+        "set interfaces bridge <interface> aging <time>",
+        "set interfaces bridge <interface> description <description>",
+        "set interfaces bridge <interface> dhcp-options client-id <description>",
+        "set interfaces bridge <interface> dhcp-options default-route-distance <distance>"
+      ]
+    },
+    {
+      "index": 14,
+      "title": "Dummy",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/dummy.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces dummy",
+      "total_cfgcmd": 4,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces dummy <interface> address <address>",
+        "set interfaces dummy <interface> description <description>",
+        "set interfaces dummy <interface> disable",
+        "set interfaces dummy <interface> vrf <vrf>"
+      ]
+    },
+    {
+      "index": 15,
+      "title": "Ethernet",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/ethernet.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces ethernet",
+      "total_cfgcmd": 160,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 0.62,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces ethernet <interface> address <address | dhcp | dhcpv6>",
+        "set interfaces ethernet <interface> dhcp-options client-id <description>",
+        "set interfaces ethernet <interface> dhcp-options default-route-distance <distance>",
+        "set interfaces ethernet <interface> dhcp-options host-name <hostname>",
+        "set interfaces ethernet <interface> dhcp-options no-default-route"
+      ]
+    },
+    {
+      "index": 16,
+      "title": "GENEVE",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/geneve.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces geneve",
+      "total_cfgcmd": 26,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 3.85,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces geneve <interface> address <address>",
+        "set interfaces geneve <interface> description <description>",
+        "set interfaces geneve <interface> disable",
+        "set interfaces geneve <interface> ip adjust-mss <mss | clamp-mss-to-pmtu>",
+        "set interfaces geneve <interface> ip arp-cache-timeout"
+      ]
+    },
+    {
+      "index": 17,
+      "title": "Interfaces",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/index.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 18,
+      "title": "L2TPv3",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/l2tpv3.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces l2tpv3",
+      "total_cfgcmd": 33,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 3.03,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces l2tpv3 <interface> address <address>",
+        "set interfaces l2tpv3 <interface> description <description>",
+        "set interfaces l2tpv3 <interface> disable",
+        "set interfaces l2tpv3 <interface> disable-flow-control",
+        "set interfaces l2tpv3 <interface> disable-link-detect"
+      ]
+    },
+    {
+      "index": 19,
+      "title": "Loopback",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/loopback.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces loopback",
+      "total_cfgcmd": 2,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 50.0,
+      "status": "partial",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces loopback <interface> address <address>"
+      ]
+    },
+    {
+      "index": 20,
+      "title": "MACsec",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/macsec.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces macsec",
+      "total_cfgcmd": 52,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 1.92,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces macsec <interface> address <address | dhcp | dhcpv6>",
+        "set interfaces macsec <interface> description <description>",
+        "set interfaces macsec <interface> dhcp-options client-id <description>",
+        "set interfaces macsec <interface> dhcp-options default-route-distance <distance>",
+        "set interfaces macsec <interface> dhcp-options host-name <hostname>"
+      ]
+    },
+    {
+      "index": 21,
+      "title": "Site-to-Site",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/openvpn-examples.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces openvpn examples",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 22,
+      "title": "OpenVPN",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/openvpn.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces openvpn",
+      "total_cfgcmd": 81,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces openvpn <interface> authentication password <text>",
+        "set interfaces openvpn <interface> authentication username <text>",
+        "set interfaces openvpn <interface> description <description>",
+        "set interfaces openvpn <interface> device-type <tap | tun>",
+        "set interfaces openvpn <interface> disable"
+      ]
+    },
+    {
+      "index": 23,
+      "title": "PPPoE",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/pppoe.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces pppoe",
+      "total_cfgcmd": 27,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 3.7,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces pppoe <interface> access-concentrator <name>",
+        "set interfaces pppoe <interface> authentication password <password>",
+        "set interfaces pppoe <interface> authentication username <username>",
+        "set interfaces pppoe <interface> connect-on-demand",
+        "set interfaces pppoe <interface> default-route-distance <distance>"
+      ]
+    },
+    {
+      "index": 24,
+      "title": "MACVLAN - Pseudo Ethernet",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/pseudo-ethernet.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces pseudo ethernet",
+      "total_cfgcmd": 83,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 1.2,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces pseudo-ethernet <interface> address <address | dhcp | dhcpv6>",
+        "set interfaces pseudo-ethernet <interface> description <description>",
+        "set interfaces pseudo-ethernet <interface> dhcp-options client-id <description>",
+        "set interfaces pseudo-ethernet <interface> dhcp-options default-route-distance <distance>",
+        "set interfaces pseudo-ethernet <interface> dhcp-options host-name <hostname>"
+      ]
+    },
+    {
+      "index": 25,
+      "title": "SSTP Client",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/sstp-client.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces sstp client",
+      "total_cfgcmd": 11,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 9.09,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces sstpc <interface> default-route-distance <distance>",
+        "set interfaces sstpc <interface> description <description>",
+        "set interfaces sstpc <interface> disable",
+        "set interfaces sstpc <interface> ip adjust-mss <mss | clamp-mss-to-pmtu>",
+        "set interfaces sstpc <interface> ip disable-forwarding"
+      ]
+    },
+    {
+      "index": 26,
+      "title": "Tunnel",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/tunnel.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces tunnel",
+      "total_cfgcmd": 25,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces tunnel <interface> address <address>",
+        "set interfaces tunnel <interface> description <description>",
+        "set interfaces tunnel <interface> disable",
+        "set interfaces tunnel <interface> disable-flow-control",
+        "set interfaces tunnel <interface> disable-link-detect"
+      ]
+    },
+    {
+      "index": 27,
+      "title": "Virtual Ethernet",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/virtual-ethernet.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces virtual ethernet",
+      "total_cfgcmd": 85,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces virtual-ethernet <interface> address <address | dhcp | dhcpv6>",
+        "set interfaces virtual-ethernet <interface> description <description>",
+        "set interfaces virtual-ethernet <interface> disable",
+        "set interfaces virtual-ethernet <interface> vif <vlan-id>",
+        "set interfaces virtual-ethernet <interface> vif <vlan-id> address <address | dhcp | dhcpv6>"
+      ]
+    },
+    {
+      "index": 28,
+      "title": "VTI - Virtual Tunnel Interface",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/vti.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces vti",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 29,
+      "title": "VXLAN",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/vxlan.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces vxlan",
+      "total_cfgcmd": 38,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 2.63,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces vxlan <interface> address <address>",
+        "set interfaces vxlan <interface> description <description>",
+        "set interfaces vxlan <interface> disable",
+        "set interfaces vxlan <interface> disable-flow-control",
+        "set interfaces vxlan <interface> disable-link-detect"
+      ]
+    },
+    {
+      "index": 30,
+      "title": "WireGuard",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/wireguard.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces wireguard",
+      "total_cfgcmd": 2,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces wireguard <interface> per-client-thread",
+        "set interfaces wireguard <interface> private-key <private-key>"
+      ]
+    },
+    {
+      "index": 31,
+      "title": "WLAN/WIFI - Wireless LAN",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/wireless.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces wireless",
+      "total_cfgcmd": 172,
+      "matched_cfgcmd": 2,
+      "coverage_percent": 1.16,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces wireless <interface> address <address | dhcp | dhcpv6>",
+        "set interfaces wireless <interface> capabilities he antenna-pattern-fixed",
+        "set interfaces wireless <interface> capabilities he beamform <single-user-beamformer | single-user-beamformee | multi-user-beamformer>",
+        "set interfaces wireless <interface> capabilities he bss-color <number>",
+        "set interfaces wireless <interface> capabilities he center-channel-freq <freq-1 | freq-2> <number>"
+      ]
+    },
+    {
+      "index": 32,
+      "title": "WWAN - Wireless Wide-Area-Network",
+      "url": "https://docs.vyos.io/en/latest/configuration/interfaces/wwan.html",
+      "domain": "interfaces",
+      "cli_scope": "interfaces wwan",
+      "total_cfgcmd": 40,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 2.5,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces wwan <interface> address <address | dhcp | dhcpv6>",
+        "set interfaces wwan <interface> description <description>",
+        "set interfaces wwan <interface> dhcp-options client-id <description>",
+        "set interfaces wwan <interface> dhcp-options default-route-distance <distance>",
+        "set interfaces wwan <interface> dhcp-options host-name <hostname>"
+      ]
+    },
+    {
+      "index": 33,
+      "title": "Haproxy",
+      "url": "https://docs.vyos.io/en/latest/configuration/loadbalancing/haproxy.html",
+      "domain": "load_balancing",
+      "cli_scope": "loadbalancing haproxy",
+      "total_cfgcmd": 43,
+      "matched_cfgcmd": 4,
+      "coverage_percent": 9.3,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set load-balancing haproxy backend <name> health-check <protocol>",
+        "set load-balancing haproxy backend <name> http-check",
+        "set load-balancing haproxy backend <name> http-check expect <condition>",
+        "set load-balancing haproxy backend <name> http-check method <method>",
+        "set load-balancing haproxy backend <name> http-check uri <path>"
+      ]
+    },
+    {
+      "index": 34,
+      "title": "Load-balancing",
+      "url": "https://docs.vyos.io/en/latest/configuration/loadbalancing/index.html",
+      "domain": "load_balancing",
+      "cli_scope": "loadbalancing",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 35,
+      "title": "WAN load balancing",
+      "url": "https://docs.vyos.io/en/latest/configuration/loadbalancing/wan.html",
+      "domain": "load_balancing",
+      "cli_scope": "loadbalancing wan",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 36,
+      "title": "CGNAT",
+      "url": "https://docs.vyos.io/en/latest/configuration/nat/cgnat.html",
+      "domain": "nat",
+      "cli_scope": "nat cgnat",
+      "total_cfgcmd": 7,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set nat cgnat log-allocation",
+        "set nat cgnat pool external <pool-name> external-port-range <port-range>",
+        "set nat cgnat pool external <pool-name> per-user-limit port <num>",
+        "set nat cgnat pool external <pool-name> range [address | address range | network] [seq]",
+        "set nat cgnat pool internal <pool-name> range [address range | network]"
+      ]
+    },
+    {
+      "index": 37,
+      "title": "NAT",
+      "url": "https://docs.vyos.io/en/latest/configuration/nat/index.html",
+      "domain": "nat",
+      "cli_scope": "nat",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 38,
+      "title": "NAT44",
+      "url": "https://docs.vyos.io/en/latest/configuration/nat/nat44.html",
+      "domain": "nat",
+      "cli_scope": "nat nat44",
+      "total_cfgcmd": 2,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set nat [source | destination] rule <rule> load-balance backend <x.x.x.x> weight <1-100>",
+        "set nat [source | destination] rule <rule> load-balance hash [source-address | destination-address | source-port | destination-port | random]"
+      ]
+    },
+    {
+      "index": 39,
+      "title": "NAT64",
+      "url": "https://docs.vyos.io/en/latest/configuration/nat/nat64.html",
+      "domain": "nat",
+      "cli_scope": "nat nat64",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 40,
+      "title": "NAT66(NPTv6)",
+      "url": "https://docs.vyos.io/en/latest/configuration/nat/nat66.html",
+      "domain": "nat",
+      "cli_scope": "nat nat66",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 41,
+      "title": "PKI",
+      "url": "https://docs.vyos.io/en/latest/configuration/pki/index.html",
+      "domain": "pki",
+      "cli_scope": "pki",
+      "total_cfgcmd": 15,
+      "matched_cfgcmd": 14,
+      "coverage_percent": 93.33,
+      "status": "implemented",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set pki certificate <name> acme rsa-key-size <2048 | 3072 | 4096>"
+      ]
+    },
+    {
+      "index": 42,
+      "title": "Access List Policy",
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/access-list.html",
+      "domain": "policy",
+      "cli_scope": "policy access list",
+      "total_cfgcmd": 8,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set policy access-list <acl_number>",
+        "set policy access-list <acl_number> description <text>",
+        "set policy access-list <acl_number> rule <1-65535> <destination|source> <any|host|inverse-mask|network>",
+        "set policy access-list <acl_number> rule <1-65535> action <permit|deny>",
+        "set policy access-list6 <text>"
+      ]
+    },
+    {
+      "index": 43,
+      "title": "BGP - AS Path Policy",
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/as-path-list.html",
+      "domain": "policy",
+      "cli_scope": "policy as path list",
+      "total_cfgcmd": 5,
+      "matched_cfgcmd": 5,
+      "coverage_percent": 100.0,
+      "status": "implemented",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 44,
+      "title": "BGP - Community List",
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/community-list.html",
+      "domain": "policy",
+      "cli_scope": "policy community list",
+      "total_cfgcmd": 5,
+      "matched_cfgcmd": 5,
+      "coverage_percent": 100.0,
+      "status": "implemented",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 45,
+      "title": "BGP Example",
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/examples.html",
+      "domain": "policy",
+      "cli_scope": "policy examples",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 46,
+      "title": "BGP - Extended Community List",
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/extcommunity-list.html",
+      "domain": "policy",
+      "cli_scope": "policy extcommunity list",
+      "total_cfgcmd": 5,
+      "matched_cfgcmd": 5,
+      "coverage_percent": 100.0,
+      "status": "implemented",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 47,
+      "title": "Policy",
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/index.html",
+      "domain": "policy",
+      "cli_scope": "policy",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 48,
+      "title": "BGP - Large Community List",
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/large-community-list.html",
+      "domain": "policy",
+      "cli_scope": "policy large community list",
+      "total_cfgcmd": 5,
+      "matched_cfgcmd": 5,
+      "coverage_percent": 100.0,
+      "status": "implemented",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 49,
+      "title": "Local Route Policy",
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/local-route.html",
+      "domain": "policy",
+      "cli_scope": "policy local route",
+      "total_cfgcmd": 18,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set policy local-route rule <1-32765> destination address <x.x.x.x|x.x.x.x/x>",
+        "set policy local-route rule <1-32765> destination port <1-65535>",
+        "set policy local-route rule <1-32765> fwmark <1-2147483647>",
+        "set policy local-route rule <1-32765> inbound-interface <interface>",
+        "set policy local-route rule <1-32765> protocol <protocol>"
+      ]
+    },
+    {
+      "index": 50,
+      "title": "Prefix List Policy",
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/prefix-list.html",
+      "domain": "policy",
+      "cli_scope": "policy prefix list",
+      "total_cfgcmd": 32,
+      "matched_cfgcmd": 3,
+      "coverage_percent": 9.38,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set policy prefix-list <text> description <text>",
+        "set policy prefix-list <text> rule <1-65535> description <text>",
+        "set policy prefix-list <text> rule <1-65535> ge <0-32>",
+        "set policy prefix-list <text> rule <1-65535> le <0-32>",
+        "set policy prefix-list pl4-example-name rule 10 action \u2018permit\u2019"
+      ]
+    },
+    {
+      "index": 51,
+      "title": "Route Map Policy",
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/route-map.html",
+      "domain": "policy",
+      "cli_scope": "policy route map",
+      "total_cfgcmd": 68,
+      "matched_cfgcmd": 5,
+      "coverage_percent": 7.35,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set policy route-map <text> description <text>",
+        "set policy route-map <text> rule <1-65535> call <text>",
+        "set policy route-map <text> rule <1-65535> continue <1-65535>",
+        "set policy route-map <text> rule <1-65535> description <text>",
+        "set policy route-map <text> rule <1-65535> match as-path <text>"
+      ]
+    },
+    {
+      "index": 52,
+      "title": "Route and Route6 Policy",
+      "url": "https://docs.vyos.io/en/latest/configuration/policy/route.html",
+      "domain": "policy",
+      "cli_scope": "policy route",
+      "total_cfgcmd": 88,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 1.14,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set policy route <name> default-log",
+        "set policy route <name> description <text>",
+        "set policy route <name> rule <n> action drop",
+        "set policy route <name> rule <n> connection-mark <1-2147483647>",
+        "set policy route <name> rule <n> description <text>"
+      ]
+    },
+    {
+      "index": 53,
+      "title": "ARP",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/arp.html",
+      "domain": "protocols",
+      "cli_scope": "protocols arp",
+      "total_cfgcmd": 1,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 100.0,
+      "status": "implemented",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 54,
+      "title": "Babel",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/babel.html",
+      "domain": "protocols",
+      "cli_scope": "protocols babel",
+      "total_cfgcmd": 21,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols babel distribute-list <ipv4|ipv6> access-list <in|out> <number>",
+        "set protocols babel distribute-list <ipv4|ipv6> interface <interface> access-list <in|out> <number>",
+        "set protocols babel distribute-list <ipv4|ipv6> interface <interface> prefix-list <in|out> <name>",
+        "set protocols babel distribute-list <ipv4|ipv6> prefix-list <in|out> <name>",
+        "set protocols babel interface <interface>"
+      ]
+    },
+    {
+      "index": 55,
+      "title": "BFD",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/bfd.html",
+      "domain": "protocols",
+      "cli_scope": "protocols bfd",
+      "total_cfgcmd": 18,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 5.56,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols bfd peer <address>",
+        "set protocols bfd peer <address> echo-mode",
+        "set protocols bfd peer <address> interval [receive | transmit] <10-60000>",
+        "set protocols bfd peer <address> interval echo-interval <10-60000>",
+        "set protocols bfd peer <address> interval multiplier <2-255>"
+      ]
+    },
+    {
+      "index": 56,
+      "title": "BGP",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/bgp.html",
+      "domain": "protocols",
+      "cli_scope": "protocols bgp",
+      "total_cfgcmd": 82,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 1.22,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols bgp address-family <ipv4-unicast|ipv6-unicast> aggregate-address <prefix>",
+        "set protocols bgp address-family <ipv4-unicast|ipv6-unicast> aggregate-address <prefix> as-set",
+        "set protocols bgp address-family <ipv4-unicast|ipv6-unicast> aggregate-address <prefix> summary-only",
+        "set protocols bgp address-family <ipv4-unicast|ipv6-unicast> maximum-paths <ebgp|ibgp> <number>",
+        "set protocols bgp address-family <ipv4-unicast|ipv6-unicast> network <prefix>"
+      ]
+    },
+    {
+      "index": 57,
+      "title": "Failover",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/failover.html",
+      "domain": "protocols",
+      "cli_scope": "protocols failover",
+      "total_cfgcmd": 6,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 16.67,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols failover route <subnet> next-hop <address> check policy <policy>",
+        "set protocols failover route <subnet> next-hop <address> check target <target-address>",
+        "set protocols failover route <subnet> next-hop <address> check timeout <timeout>",
+        "set protocols failover route <subnet> next-hop <address> check type <protocol>",
+        "set protocols failover route <subnet> next-hop <address> metric <metric>"
+      ]
+    },
+    {
+      "index": 58,
+      "title": "IGMP Proxy",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/igmp-proxy.html",
+      "domain": "protocols",
+      "cli_scope": "protocols igmp proxy",
+      "total_cfgcmd": 4,
+      "matched_cfgcmd": 3,
+      "coverage_percent": 75.0,
+      "status": "partial",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols igmp-proxy interface <interface> role <upstream | downstream>"
+      ]
+    },
+    {
+      "index": 59,
+      "title": "Protocols",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/index.html",
+      "domain": "protocols",
+      "cli_scope": "protocols",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 60,
+      "title": "IS-IS",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/isis.html",
+      "domain": "protocols",
+      "cli_scope": "protocols isis",
+      "total_cfgcmd": 48,
+      "matched_cfgcmd": 25,
+      "coverage_percent": 52.08,
+      "status": "partial",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols isis fast-reroute lfa local load-sharing disable <level-1|level-2>",
+        "set protocols isis fast-reroute lfa local priority-limit <medium|high|critical> <level-1|level-2>",
+        "set protocols isis fast-reroute lfa local tiebreaker <downstream|lowest-backup-metric|node-protecting> index <number> <level-1|level-2>",
+        "set protocols isis fast-reroute lfa remote prefix-list <name> <level-1|level-2>",
+        "set protocols isis interface <interface> fast-reroute lfa [level-1 | level-2] enable this command enables per-prefix local lfa fast reroute link protection"
+      ]
+    },
+    {
+      "index": 61,
+      "title": "MPLS",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/mpls.html",
+      "domain": "protocols",
+      "cli_scope": "protocols mpls",
+      "total_cfgcmd": 33,
+      "matched_cfgcmd": 5,
+      "coverage_percent": 15.15,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols mpls ldp allocation ipv4 access-list <access list number>",
+        "set protocols mpls ldp allocation ipv6 access-list6 <access list number>",
+        "set protocols mpls ldp discovery hello-ipv4-holdtime <seconds>",
+        "set protocols mpls ldp discovery hello-ipv4-interval <seconds>",
+        "set protocols mpls ldp discovery hello-ipv6-holdtime <seconds>"
+      ]
+    },
+    {
+      "index": 62,
+      "title": "Multicast",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/multicast.html",
+      "domain": "protocols",
+      "cli_scope": "protocols multicast",
+      "total_cfgcmd": 4,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols static mroute <subnet> interface <interface> [distance <distance>]",
+        "set protocols static mroute <subnet> interface <interface> disable",
+        "set protocols static mroute <subnet> next-hop <address> [distance <distance>]",
+        "set protocols static mroute <subnet> next-hop <address> disable"
+      ]
+    },
+    {
+      "index": 63,
+      "title": "OpenFabric",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/openfabric.html",
+      "domain": "protocols",
+      "cli_scope": "protocols openfabric",
+      "total_cfgcmd": 18,
+      "matched_cfgcmd": 16,
+      "coverage_percent": 88.89,
+      "status": "implemented",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols openfabric interface <interface> hello-interval <seconds>",
+        "set protocols openfabric interface <interface> passive"
+      ]
+    },
+    {
+      "index": 64,
+      "title": "OSPF",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/ospf.html",
+      "domain": "protocols",
+      "cli_scope": "protocols ospf",
+      "total_cfgcmd": 87,
+      "matched_cfgcmd": 17,
+      "coverage_percent": 19.54,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols ospf aggregation timer <seconds>",
+        "set protocols ospf area <number> area-type nssa",
+        "set protocols ospf area <number> area-type nssa default-cost <number>",
+        "set protocols ospf area <number> area-type nssa no-summary",
+        "set protocols ospf area <number> area-type nssa translate <always|candidate|never>"
+      ]
+    },
+    {
+      "index": 65,
+      "title": "PIM \u2013 Protocol Independent Multicast",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/pim.html",
+      "domain": "protocols",
+      "cli_scope": "protocols pim",
+      "total_cfgcmd": 24,
+      "matched_cfgcmd": 15,
+      "coverage_percent": 62.5,
+      "status": "partial",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols pim interface <interface> bfd [profile <name>]",
+        "set protocols pim interface <interface> dr-priority <n>",
+        "set protocols pim interface <interface> hello <n>",
+        "set protocols pim interface <interface> igmp query-interval <seconds>",
+        "set protocols pim interface <interface> igmp query-max-response-time <n>"
+      ]
+    },
+    {
+      "index": 66,
+      "title": "PIM6 - Protocol Independent Multicast for IPv6",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/pim6.html",
+      "domain": "protocols",
+      "cli_scope": "protocols pim6",
+      "total_cfgcmd": 9,
+      "matched_cfgcmd": 3,
+      "coverage_percent": 33.33,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols pim6 interface <interface-name> mld disable",
+        "set protocols pim6 interface <interface-name> mld interval <seconds>",
+        "set protocols pim6 interface <interface-name> mld last-member-query-count <count>",
+        "set protocols pim6 interface <interface-name> mld last-member-query-interval <milliseconds>",
+        "set protocols pim6 interface <interface-name> mld max-response-time <milliseconds>"
+      ]
+    },
+    {
+      "index": 67,
+      "title": "RIP",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/rip.html",
+      "domain": "protocols",
+      "cli_scope": "protocols rip",
+      "total_cfgcmd": 25,
+      "matched_cfgcmd": 12,
+      "coverage_percent": 48.0,
+      "status": "partial",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces <inttype> <intname> ip rip authentication md5 <id> password <text>",
+        "set interfaces <inttype> <intname> ip rip authentication plaintext-password <text>",
+        "set interfaces <inttype> <intname> ip rip split-horizon disable",
+        "set interfaces <inttype> <intname> ip rip split-horizon poison-reverse",
+        "set protocols rip distribute-list access-list <in|out> <number>"
+      ]
+    },
+    {
+      "index": 68,
+      "title": "RPKI",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/rpki.html",
+      "domain": "protocols",
+      "cli_scope": "protocols rpki",
+      "total_cfgcmd": 8,
+      "matched_cfgcmd": 8,
+      "coverage_percent": 100.0,
+      "status": "implemented",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 69,
+      "title": "Segment Routing",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/segment-routing.html",
+      "domain": "protocols",
+      "cli_scope": "protocols segment routing",
+      "total_cfgcmd": 15,
+      "matched_cfgcmd": 2,
+      "coverage_percent": 13.33,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols isis segment-routing global-block high-label-value <label-value>",
+        "set protocols isis segment-routing global-block low-label-value <label-value>",
+        "set protocols isis segment-routing local-block <low-label-value <label-value>",
+        "set protocols isis segment-routing local-block high-label-value <label-value>",
+        "set protocols isis segment-routing maximum-label-depth <1-16>"
+      ]
+    },
+    {
+      "index": 70,
+      "title": "Static",
+      "url": "https://docs.vyos.io/en/latest/configuration/protocols/static.html",
+      "domain": "protocols",
+      "cli_scope": "protocols static",
+      "total_cfgcmd": 33,
+      "matched_cfgcmd": 4,
+      "coverage_percent": 12.12,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocol static route <subnet> reject",
+        "set protocol static route6 <subnet> reject",
+        "set protocols static route <subnet> blackhole",
+        "set protocols static route <subnet> blackhole distance <distance>",
+        "set protocols static route <subnet> blackhole tag <tag>"
+      ]
+    },
+    {
+      "index": 71,
+      "title": "UDP Broadcast Relay",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/broadcast-relay.html",
+      "domain": "services",
+      "cli_scope": "service broadcast relay",
+      "total_cfgcmd": 6,
+      "matched_cfgcmd": 2,
+      "coverage_percent": 33.33,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service broadcast-relay id <n> address <ipv4-address>",
+        "set service broadcast-relay id <n> description <description>",
+        "set service broadcast-relay id <n> disable",
+        "set service broadcast-relay id <n> interface <interface>"
+      ]
+    },
+    {
+      "index": 72,
+      "title": "Config Sync",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/config-sync.html",
+      "domain": "services",
+      "cli_scope": "service config sync",
+      "total_cfgcmd": 3,
+      "matched_cfgcmd": 3,
+      "coverage_percent": 100.0,
+      "status": "implemented",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 73,
+      "title": "Conntrack Sync",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/conntrack-sync.html",
+      "domain": "services",
+      "cli_scope": "service conntrack sync",
+      "total_cfgcmd": 14,
+      "matched_cfgcmd": 14,
+      "coverage_percent": 100.0,
+      "status": "implemented",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 74,
+      "title": "Console Server",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/console-server.html",
+      "domain": "services",
+      "cli_scope": "service console server",
+      "total_cfgcmd": 7,
+      "matched_cfgcmd": 5,
+      "coverage_percent": 71.43,
+      "status": "partial",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service console-server device <device> parity [even | odd | none]",
+        "set service console-server device <device> speed [ 300 | 1200 | 2400 | 4800 | 9600 | 19200 | 38400 | 57600 | 115200 ]"
+      ]
+    },
+    {
+      "index": 75,
+      "title": "DHCP Relay",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/dhcp-relay.html",
+      "domain": "services",
+      "cli_scope": "service dhcp relay",
+      "total_cfgcmd": 14,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service dhcp-relay disable",
+        "set service dhcp-relay interface <interface>",
+        "set service dhcp-relay listen-interface <interface>",
+        "set service dhcp-relay relay-options hop-count <count>",
+        "set service dhcp-relay relay-options max-size <size>"
+      ]
+    },
+    {
+      "index": 76,
+      "title": "DHCP Server",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/dhcp-server.html",
+      "domain": "services",
+      "cli_scope": "service dhcp server",
+      "total_cfgcmd": 59,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service dhcp-server client-class <name> relay-agent-information circuit-id <value>",
+        "set service dhcp-server client-class <name> relay-agent-information remote-id <value>",
+        "set service dhcp-server dynamic-dns-update",
+        "set service dhcp-server dynamic-dns-update [forward|reverse]-domain <domain-name> dns-server <number> address <ip-address>",
+        "set service dhcp-server dynamic-dns-update [forward|reverse]-domain <domain-name> dns-server <number> port <port>"
+      ]
+    },
+    {
+      "index": 77,
+      "title": "DNS Forwarding",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/dns.html",
+      "domain": "services",
+      "cli_scope": "service dns",
+      "total_cfgcmd": 42,
+      "matched_cfgcmd": 2,
+      "coverage_percent": 4.76,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service dns dynamic interval <60-3600>",
+        "set service dns dynamic name <service-name> address interface <interface>",
+        "set service dns dynamic name <service-name> address web <url>",
+        "set service dns dynamic name <service-name> address web skip <pattern>",
+        "set service dns dynamic name <service-name> description <text>"
+      ]
+    },
+    {
+      "index": 78,
+      "title": "Event Handler",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/eventhandler.html",
+      "domain": "services",
+      "cli_scope": "service eventhandler",
+      "total_cfgcmd": 6,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service event-handler event <event-handler name>",
+        "set service event-handler event <event-handler name> filter pattern <regex>",
+        "set service event-handler event <event-handler name> filter syslog-identifier <sylogid name>",
+        "set service event-handler event <event-handler name> script arguments <arguments>",
+        "set service event-handler event <event-handler name> script environment <env name> value <env value>"
+      ]
+    },
+    {
+      "index": 79,
+      "title": "HTTP API",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/https.html",
+      "domain": "services",
+      "cli_scope": "service https",
+      "total_cfgcmd": 19,
+      "matched_cfgcmd": 10,
+      "coverage_percent": 52.63,
+      "status": "partial",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service https api graphql authentication expiration",
+        "set service https api graphql authentication secret-length",
+        "set service https api graphql authentication type <key | token>",
+        "set service https api graphql cors allow-origin <origin>",
+        "set service https api graphql introspection"
+      ]
+    },
+    {
+      "index": 80,
+      "title": "Service",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/index.html",
+      "domain": "services",
+      "cli_scope": "service",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 81,
+      "title": "IPoE Server",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/ipoe-server.html",
+      "domain": "services",
+      "cli_scope": "service ipoe server",
+      "total_cfgcmd": 45,
+      "matched_cfgcmd": 13,
+      "coverage_percent": 28.89,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service ipoe-server authentication interface <interface> mac <mac> rate-limit download <bandwidth>",
+        "set service ipoe-server authentication interface <interface> mac <mac> rate-limit upload <bandwidth>",
+        "set service ipoe-server authentication interface <interface> mac <mac> vlan <vlan-id>",
+        "set service ipoe-server authentication mode <local | radius>",
+        "set service ipoe-server authentication radius dynamic-author key <secret>"
+      ]
+    },
+    {
+      "index": 82,
+      "title": "LLDP",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/lldp.html",
+      "domain": "services",
+      "cli_scope": "service lldp",
+      "total_cfgcmd": 6,
+      "matched_cfgcmd": 2,
+      "coverage_percent": 33.33,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service lldp interface <interface> mode [disable|rx-tx|rx|tx]",
+        "set service lldp legacy-protocols <cdp|edp|fdp|sonmp>",
+        "set service lldp management-address <address>",
+        "set service lldp snmp"
+      ]
+    },
+    {
+      "index": 83,
+      "title": "mDNS Repeater",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/mdns.html",
+      "domain": "services",
+      "cli_scope": "service mdns",
+      "total_cfgcmd": 6,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 16.67,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service mdns repeater allow-service <service>",
+        "set service mdns repeater browse-domain <domain>",
+        "set service mdns repeater cache-entries <entries>",
+        "set service mdns repeater disable",
+        "set service mdns repeater ip-version <ipv4 | ipv6 | both>"
+      ]
+    },
+    {
+      "index": 84,
+      "title": "Monitoring",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/monitoring.html",
+      "domain": "services",
+      "cli_scope": "service monitoring",
+      "total_cfgcmd": 37,
+      "matched_cfgcmd": 2,
+      "coverage_percent": 5.41,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service monitoring prometheus blackbox-exporter listen-address <address>",
+        "set service monitoring prometheus blackbox-exporter port <port>",
+        "set service monitoring prometheus blackbox-exporter vrf <name>",
+        "set service monitoring prometheus frr-exporter listen-address <address>",
+        "set service monitoring prometheus frr-exporter port <port>"
+      ]
+    },
+    {
+      "index": 85,
+      "title": "NTP",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/ntp.html",
+      "domain": "services",
+      "cli_scope": "service ntp",
+      "total_cfgcmd": 9,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 11.11,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service ntp allow-client address <address>",
+        "set service ntp leap-second [ignore|smear|system|timezone]",
+        "set service ntp listen-address <address>",
+        "set service ntp ptp",
+        "set service ntp ptp port <port>"
+      ]
+    },
+    {
+      "index": 86,
+      "title": "PPPoE Server",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/pppoe-server.html",
+      "domain": "services",
+      "cli_scope": "service pppoe server",
+      "total_cfgcmd": 62,
+      "matched_cfgcmd": 16,
+      "coverage_percent": 25.81,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service pppoe-server authentication local-users username <name> password <password>",
+        "set service pppoe-server authentication local-users username <user> disable",
+        "set service pppoe-server authentication local-users username <user> rate-limit download <bandwidth>",
+        "set service pppoe-server authentication local-users username <user> rate-limit upload <bandwidth>",
+        "set service pppoe-server authentication local-users username <user> static-ip <address>"
+      ]
+    },
+    {
+      "index": 87,
+      "title": "Router Advertisements",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/router-advert.html",
+      "domain": "services",
+      "cli_scope": "service router advert",
+      "total_cfgcmd": 5,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 20.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service router-advert interface <interface> nat64prefix <prefix/mask>",
+        "set service router-advert interface <interface> no-send-advert",
+        "set service router-advert interface <interface> no-send-interval",
+        "set service router-advert interface <interface> \u2026"
+      ]
+    },
+    {
+      "index": 88,
+      "title": "Salt-Minion",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/salt-minion.html",
+      "domain": "services",
+      "cli_scope": "service salt minion",
+      "total_cfgcmd": 5,
+      "matched_cfgcmd": 4,
+      "coverage_percent": 80.0,
+      "status": "partial",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service salt-minion master <hostname | ip>"
+      ]
+    },
+    {
+      "index": 89,
+      "title": "SNMP",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/snmp.html",
+      "domain": "services",
+      "cli_scope": "service snmp",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 90,
+      "title": "SSH",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/ssh.html",
+      "domain": "services",
+      "cli_scope": "service ssh",
+      "total_cfgcmd": 20,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 5.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service ssh access-control <allow | deny> <group | user> <name>",
+        "set service ssh cipher <cipher>",
+        "set service ssh client-keepalive-interval <interval>",
+        "set service ssh disable-host-validation",
+        "set service ssh disable-password-authentication"
+      ]
+    },
+    {
+      "index": 91,
+      "title": "suricata",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/suricata.html",
+      "domain": "services",
+      "cli_scope": "service suricata",
+      "total_cfgcmd": 4,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 25.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service suricata address-group <text> <address | group>",
+        "set service suricata log eve <filename | filetype | type>",
+        "set service suricata port-group <text> <address | group>"
+      ]
+    },
+    {
+      "index": 92,
+      "title": "TFTP Server",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/tftp-server.html",
+      "domain": "services",
+      "cli_scope": "service tftp server",
+      "total_cfgcmd": 4,
+      "matched_cfgcmd": 3,
+      "coverage_percent": 75.0,
+      "status": "partial",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service tftp-server listen-address <address> vrf <name>"
+      ]
+    },
+    {
+      "index": 93,
+      "title": "Webproxy",
+      "url": "https://docs.vyos.io/en/latest/configuration/service/webproxy.html",
+      "domain": "services",
+      "cli_scope": "service webproxy",
+      "total_cfgcmd": 27,
+      "matched_cfgcmd": 14,
+      "coverage_percent": 51.85,
+      "status": "partial",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set service webproxy authentication ldap base-dn <base-dn>",
+        "set service webproxy authentication ldap bind-dn <bind-dn>",
+        "set service webproxy authentication ldap filter-expression <expr>",
+        "set service webproxy authentication ldap password <password>",
+        "set service webproxy authentication ldap persistent-connection"
+      ]
+    },
+    {
+      "index": 94,
+      "title": "Acceleration",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/acceleration.html",
+      "domain": "system",
+      "cli_scope": "system acceleration",
+      "total_cfgcmd": 1,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system acceleration qat"
+      ]
+    },
+    {
+      "index": 95,
+      "title": "Conntrack",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/conntrack.html",
+      "domain": "system",
+      "cli_scope": "system conntrack",
+      "total_cfgcmd": 54,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 1.85,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system conntrack expect-table-size <1-50000000>",
+        "set system conntrack hash-size <1-50000000>",
+        "set system conntrack ignore [ipv4 | ipv6] rule <1-999999> description <text>",
+        "set system conntrack ignore [ipv4 | ipv6] rule <1-999999> destination address <ip-address>",
+        "set system conntrack ignore [ipv4 | ipv6] rule <1-999999> destination port <port>"
+      ]
+    },
+    {
+      "index": 96,
+      "title": "Serial Console",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/console.html",
+      "domain": "system",
+      "cli_scope": "system console",
+      "total_cfgcmd": 2,
+      "matched_cfgcmd": 2,
+      "coverage_percent": 100.0,
+      "status": "implemented",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 97,
+      "title": "Default Gateway/Route",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/default-route.html",
+      "domain": "system",
+      "cli_scope": "system default route",
+      "total_cfgcmd": 1,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 100.0,
+      "status": "implemented",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 98,
+      "title": "Flow Accounting",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/flow-accounting.html",
+      "domain": "system",
+      "cli_scope": "system flow accounting",
+      "total_cfgcmd": 12,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 8.33,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system flow-accounting buffer-size <buffer size>",
+        "set system flow-accounting disable-imt",
+        "set system flow-accounting enable-egress",
+        "set system flow-accounting interface <interface>",
+        "set system flow-accounting netflow engine-id <id>"
+      ]
+    },
+    {
+      "index": 99,
+      "title": "FRR",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/frr.html",
+      "domain": "system",
+      "cli_scope": "system frr",
+      "total_cfgcmd": 5,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system frr bmp",
+        "set system frr descriptors <numer>",
+        "set system frr irdp",
+        "set system frr profile <traditional | datacenter>",
+        "set system frr snmp <daemon>"
+      ]
+    },
+    {
+      "index": 100,
+      "title": "Host Information",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/host-name.html",
+      "domain": "system",
+      "cli_scope": "system host name",
+      "total_cfgcmd": 4,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system domain-name <domain>",
+        "set system host-name <hostname>",
+        "set system static-host-mapping host-name <hostname> alias <alias>",
+        "set system static-host-mapping host-name <hostname> inet <address>"
+      ]
+    },
+    {
+      "index": 101,
+      "title": "System",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/index.html",
+      "domain": "system",
+      "cli_scope": "system",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 102,
+      "title": "IP",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/ip.html",
+      "domain": "system",
+      "cli_scope": "system ip",
+      "total_cfgcmd": 9,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 11.11,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system ip arp table-size <number>",
+        "set system ip disable-directed-broadcast",
+        "set system ip import-table <table-id>",
+        "set system ip import-table <table-id> distance <distance>",
+        "set system ip import-table <table-id> route-map <route-map>"
+      ]
+    },
+    {
+      "index": 103,
+      "title": "IPv6",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/ipv6.html",
+      "domain": "system",
+      "cli_scope": "system ipv6",
+      "total_cfgcmd": 6,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 16.67,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system ipv6 multipath layer4-hashing",
+        "set system ipv6 neighbor table-size <number>",
+        "set system ipv6 nht no-resolve-via-default",
+        "set system ipv6 protocol <protocol> route-map <route-map>",
+        "set system ipv6 strict-dad"
+      ]
+    },
+    {
+      "index": 104,
+      "title": "System Display (LCD)",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/lcd.html",
+      "domain": "system",
+      "cli_scope": "system lcd",
+      "total_cfgcmd": 2,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 50.0,
+      "status": "partial",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system lcd device <device>"
+      ]
+    },
+    {
+      "index": 105,
+      "title": "Login/user management",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/login.html",
+      "domain": "system",
+      "cli_scope": "system login",
+      "total_cfgcmd": 28,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system login banner post-login <message>",
+        "set system login banner pre-login <message>",
+        "set system login max-login-session <number>",
+        "set system login radius server <address> disable",
+        "set system login radius server <address> key <secret>"
+      ]
+    },
+    {
+      "index": 106,
+      "title": "System DNS",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/name-server.html",
+      "domain": "system",
+      "cli_scope": "system name server",
+      "total_cfgcmd": 2,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system domain-search <domain>",
+        "set system name-server <address>"
+      ]
+    },
+    {
+      "index": 107,
+      "title": "Option",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/option.html",
+      "domain": "system",
+      "cli_scope": "system option",
+      "total_cfgcmd": 15,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system option ctrl-alt-delete <ignore | reboot | poweroff>",
+        "set system option http-client source-address <address>",
+        "set system option http-client source-interface <interface>",
+        "set system option kernel amd-pstate-driver <mode>",
+        "set system option kernel disable-mitigations"
+      ]
+    },
+    {
+      "index": 108,
+      "title": "System Proxy",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/proxy.html",
+      "domain": "system",
+      "cli_scope": "system proxy",
+      "total_cfgcmd": 4,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 25.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system proxy password <password>",
+        "set system proxy port <port>",
+        "set system proxy username <username>"
+      ]
+    },
+    {
+      "index": 109,
+      "title": "sFlow",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/sflow.html",
+      "domain": "system",
+      "cli_scope": "system sflow",
+      "total_cfgcmd": 8,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 12.5,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system sflow agent-address <address>",
+        "set system sflow agent-interface <interface>",
+        "set system sflow drop-monitor-limit <limit>",
+        "set system sflow enable-egress",
+        "set system sflow interface <interface>"
+      ]
+    },
+    {
+      "index": 110,
+      "title": "Sysctl",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/sysctl.html",
+      "domain": "system",
+      "cli_scope": "system sysctl",
+      "total_cfgcmd": 1,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 100.0,
+      "status": "implemented",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 111,
+      "title": "Syslog",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/syslog.html",
+      "domain": "system",
+      "cli_scope": "system syslog",
+      "total_cfgcmd": 18,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system syslog console facility <keyword> level <keyword>",
+        "set system syslog file <filename> facility <keyword> level <keyword>",
+        "set system syslog marker disable",
+        "set system syslog marker interval <number>",
+        "set system syslog preserve-fqdn"
+      ]
+    },
+    {
+      "index": 112,
+      "title": "Task Scheduler",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/task-scheduler.html",
+      "domain": "system",
+      "cli_scope": "system task scheduler",
+      "total_cfgcmd": 4,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 25.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system task-scheduler task <task> crontab-spec <spec>",
+        "set system task-scheduler task <task> executable arguments <args>",
+        "set system task-scheduler task <task> executable path <path>"
+      ]
+    },
+    {
+      "index": 113,
+      "title": "Time Zone",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/time-zone.html",
+      "domain": "system",
+      "cli_scope": "system time zone",
+      "total_cfgcmd": 1,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system time-zone <timezone>"
+      ]
+    },
+    {
+      "index": 114,
+      "title": "Updates",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/updates.html",
+      "domain": "system",
+      "cli_scope": "system updates",
+      "total_cfgcmd": 2,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system update-check auto-check",
+        "set system update-check url <url>"
+      ]
+    },
+    {
+      "index": 115,
+      "title": "Watchdog",
+      "url": "https://docs.vyos.io/en/latest/configuration/system/watchdog.html",
+      "domain": "system",
+      "cli_scope": "system watchdog",
+      "total_cfgcmd": 5,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set system watchdog",
+        "set system watchdog module <module-name>",
+        "set system watchdog reboot-timeout <seconds>",
+        "set system watchdog shutdown-timeout <seconds>",
+        "set system watchdog timeout <seconds>"
+      ]
+    },
+    {
+      "index": 116,
+      "title": "Traffic Policy",
+      "url": "https://docs.vyos.io/en/latest/configuration/trafficpolicy/index.html",
+      "domain": "traffic_policy",
+      "cli_scope": "trafficpolicy",
+      "total_cfgcmd": 51,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set qos policy cake <text> bandwidth <value>",
+        "set qos policy cake <text> description",
+        "set qos policy cake <text> flow-isolation blind",
+        "set qos policy cake <text> flow-isolation dst-host",
+        "set qos policy cake <text> flow-isolation dual-dst-host"
+      ]
+    },
+    {
+      "index": 117,
+      "title": "DMVPN",
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/dmvpn.html",
+      "domain": "vpn",
+      "cli_scope": "vpn dmvpn",
+      "total_cfgcmd": 15,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 6.67,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set protocols nhrp tunnel <tunnel> authentication <secret>",
+        "set protocols nhrp tunnel <tunnel> holdtime <timeout>",
+        "set protocols nhrp tunnel <tunnel> map tunnel-ip <tunnel-ip> nbma <nbma-ip>",
+        "set protocols nhrp tunnel <tunnel> mtu <mtu>",
+        "set protocols nhrp tunnel <tunnel> multicast <nbma-ip>"
+      ]
+    },
+    {
+      "index": 118,
+      "title": "VPN",
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/index.html",
+      "domain": "vpn",
+      "cli_scope": "vpn",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 119,
+      "title": "IPsec",
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/ipsec/index.html",
+      "domain": "vpn",
+      "cli_scope": "vpn ipsec",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 120,
+      "title": "IPsec General Information",
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/ipsec/ipsec_general.html",
+      "domain": "vpn",
+      "cli_scope": "vpn ipsec ipsec_general",
+      "total_cfgcmd": 31,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 3.23,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set vpn ipsec esp-group <name> compression",
+        "set vpn ipsec esp-group <name> disable-rekey",
+        "set vpn ipsec esp-group <name> life-bytes <bytes>",
+        "set vpn ipsec esp-group <name> life-packets <packets>",
+        "set vpn ipsec esp-group <name> lifetime <timeout>"
+      ]
+    },
+    {
+      "index": 121,
+      "title": "IPSec IKEv2 Remote Access VPN",
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/ipsec/remoteaccess_ipsec.html",
+      "domain": "vpn",
+      "cli_scope": "vpn ipsec remoteaccess_ipsec",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 122,
+      "title": "IPsec Site-to-Site VPN",
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/ipsec/site2site_ipsec.html",
+      "domain": "vpn",
+      "cli_scope": "vpn ipsec site2site_ipsec",
+      "total_cfgcmd": 36,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set vpn ipsec authentication psk <name> dhcp-interface",
+        "set vpn ipsec authentication psk id <id>",
+        "set vpn ipsec authentication psk secret <secret>",
+        "set vpn ipsec authentication psk secret-type <type>",
+        "set vpn ipsec authentication x509 passphrase <passphrase>"
+      ]
+    },
+    {
+      "index": 123,
+      "title": "Troubleshooting Site-to-Site VPN IPsec",
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/ipsec/troubleshooting_ipsec.html",
+      "domain": "vpn",
+      "cli_scope": "vpn ipsec troubleshooting_ipsec",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 124,
+      "title": "L2TP",
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/l2tp.html",
+      "domain": "vpn",
+      "cli_scope": "vpn l2tp",
+      "total_cfgcmd": 61,
+      "matched_cfgcmd": 2,
+      "coverage_percent": 3.28,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set vpn l2tp remote-access authentication local-users username <user> disable",
+        "set vpn l2tp remote-access authentication local-users username <user> password <pass>",
+        "set vpn l2tp remote-access authentication local-users username <user> rate-limit download <bandwidth>",
+        "set vpn l2tp remote-access authentication local-users username <user> rate-limit upload <bandwidth>",
+        "set vpn l2tp remote-access authentication local-users username <user> static-ip <address>"
+      ]
+    },
+    {
+      "index": 125,
+      "title": "OpenConnect",
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/openconnect.html",
+      "domain": "vpn",
+      "cli_scope": "vpn openconnect",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 126,
+      "title": "PPTP-Server",
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/pptp.html",
+      "domain": "vpn",
+      "cli_scope": "vpn pptp",
+      "total_cfgcmd": 56,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set vpn pptp remote-access authentication local-users username <user> disable",
+        "set vpn pptp remote-access authentication local-users username <user> password <pass>",
+        "set vpn pptp remote-access authentication local-users username <user> rate-limit download <bandwidth>",
+        "set vpn pptp remote-access authentication local-users username <user> rate-limit upload <bandwidth>",
+        "set vpn pptp remote-access authentication local-users username <user> static-ip <address>"
+      ]
+    },
+    {
+      "index": 127,
+      "title": "RSA-Keys",
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/rsa-keys.html",
+      "domain": "vpn",
+      "cli_scope": "vpn rsa keys",
+      "total_cfgcmd": 0,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "n/a",
+      "parse_error": null,
+      "unmatched_examples": []
+    },
+    {
+      "index": 128,
+      "title": "SSTP Server",
+      "url": "https://docs.vyos.io/en/latest/configuration/vpn/sstp.html",
+      "domain": "vpn",
+      "cli_scope": "vpn sstp",
+      "total_cfgcmd": 59,
+      "matched_cfgcmd": 0,
+      "coverage_percent": 0.0,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set vpn sstp authentication local-users username <user> disable",
+        "set vpn sstp authentication local-users username <user> password <pass>",
+        "set vpn sstp authentication local-users username <user> rate-limit download <bandwidth>",
+        "set vpn sstp authentication local-users username <user> rate-limit upload <bandwidth>",
+        "set vpn sstp authentication local-users username <user> static-ip <address>"
+      ]
+    },
+    {
+      "index": 129,
+      "title": "VRF",
+      "url": "https://docs.vyos.io/en/latest/configuration/vrf/index.html",
+      "domain": "vrf",
+      "cli_scope": "vrf",
+      "total_cfgcmd": 16,
+      "matched_cfgcmd": 3,
+      "coverage_percent": 18.75,
+      "status": "missing",
+      "parse_error": null,
+      "unmatched_examples": [
+        "set interfaces <dummy | ethernet | bonding | bridge | pppoe> <interface> vrf <name>",
+        "set vrf <name> ip protocol <protocol> route-map <route-map>",
+        "set vrf <name> ipv6 protocol <protocol> route-map <route-map>",
+        "set vrf name <name> ip nht no-resolve-via-default",
+        "set vrf name <name> ipv6 nht no-resolve-via-default"
+      ]
+    }
+  ]
+}

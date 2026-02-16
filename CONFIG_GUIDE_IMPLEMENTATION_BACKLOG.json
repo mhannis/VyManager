@@ -502,7 +502,7 @@
     {
       "id": "X-01",
       "domain": "cross-cutting",
-      "status": "missing",
+      "status": "partial",
       "title": "Option-level parity scorer"
     },
     {

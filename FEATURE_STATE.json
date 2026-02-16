@@ -7,6 +7,7 @@
     "Routing UI includes dedicated Segment Routing page with OSPF/IS-IS SR block and Prefix-SID management.",
     "VRF page includes dedicated L3VPN workflow for RD/RT/label/route-leaking/route-map controls and BGP MPLS forwarding interfaces.",
     "Left navigation is consolidated to a single VRF item; L3VPN is represented as an in-page tab.",
+    "Option-level parity scorecard generation exists and produces machine/human-readable outputs from docs cfgcmd leaves.",
     "Strict backlog tasks PR-03 and VRF-02 are moved out of missing status.",
     "Backend tests and frontend typecheck/lint/build/runtime smoke pass."
   ],
@@ -71,6 +72,19 @@
         "frontend/scripts/smoke-ui.mjs"
       ],
       "notes": "Added segment-routing and vrf-l3vpn routes to smoke probes; runtime smoke passes."
+    },
+    {
+      "id": "X01-SCORER",
+      "owner_role": "Test|Analyst",
+      "status": "done",
+      "files": [
+        "scripts/score_option_parity.py",
+        "OPTION_PARITY_SCORECARD.json",
+        "OPTION_PARITY_SCORECARD.md",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "Implemented option-level parity scorer from docs cfgcmd leaves and moved X-01 to partial."
     },
     {
       "id": "REVIEW",

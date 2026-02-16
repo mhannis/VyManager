@@ -151,7 +151,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 ---
 
 ## Program-Level Cross-Cutting Backlog
-- `X-01`: Replace detection-only parity scoring with option-level parity checks per docs leaf.
+- `X-01` (`partial`): Added option-level parity scorer (`scripts/score_option_parity.py`) with JSON/MD scorecards; next step is improving matching precision and enforcing per-domain thresholds in CI.
 - `X-02`: Add domain fixtures for save/apply/reload verification loops.
 - `X-03`: Add command snapshot tests per domain (`show configuration commands` deltas).
 - `X-04`: Add browser smoke routes for every newly added/updated page.

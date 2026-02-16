@@ -60,7 +60,7 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Continue reducing strict backlog by implementing missing/partial domains in robust form-first UX.
 - Move protocol and VRF backlog forward while preserving thin-wrapper backend contracts.
 - Next strict-missing focus now shifts to cross-cutting gates:
-  - `X-01`, `X-02`, `X-03`, `X-05`
+  - `X-02`, `X-03`, `X-05`
 
 ## Current Feature Spec
 Feature: **Protocols + VRF parity slice (`PR-03`, `VRF-02`)**
@@ -83,7 +83,7 @@ Assumptions:
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
 - Status: completed Segment Routing + VRF L3VPN implementation slice and consolidated VRF navigation model.
-- Backlog audit (2026-02-16, strict option-level tracker): `85` total tasks remain (`4 missing`, `72 partial`, `9 verify`) after moving `PR-03` and `VRF-02` to partial.
+- Backlog audit (2026-02-16, strict option-level tracker): `85` total tasks remain (`3 missing`, `73 partial`, `9 verify`) after moving `PR-03`, `VRF-02`, and `X-01` to partial.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
@@ -102,6 +102,9 @@ Assumptions:
 - `frontend/src/lib/help/routingProtocolGuides.ts`
 - `frontend/scripts/check-runtime.sh`
 - `frontend/scripts/smoke-ui.mjs`
+- `scripts/score_option_parity.py`
+- `OPTION_PARITY_SCORECARD.json`
+- `OPTION_PARITY_SCORECARD.md`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `LAST_FAILURE.txt`
@@ -131,12 +134,11 @@ Assumptions:
 
 ## TODO Backlog (next queue)
 - Finish cross-cutting parity quality gates:
-  - `X-01` option-level parity scorer
   - `X-02` fixture-based save/apply/reload loops
   - `X-03` config snapshot tests by domain
   - `X-05` final robustness relook pass
 - Start option-depth parity sweep for high-impact partial domains (Firewall, Interfaces, Protocols, Services, VPN, System).
-- Build option-level parity scoring to replace detection-only completion claims (`X-01`).
+- Improve option-level parity scorer precision and add CI thresholds (`X-01` hardening).
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
@@ -350,3 +352,6 @@ Assumptions:
 - `/network/interfaces` now aggregates non-Ethernet family instances (bonding/bridge/dummy/geneve/l2tpv3/loopback/macsec/openvpn/pppoe/pseudo-ethernet/sstp/tunnel/virtual-ethernet/vti/vxlan/wireless/wwan) into a single inventory section so created interfaces are visible on the main page.
 - `Interfaces` sidebar now shows only `Setup Wizard` and `All Interfaces` (family deep links removed from side panel).
 - `Common Interface Actions` panel was removed from the interfaces page because the same actions are now covered by the wizard type selector.
+- Added dedicated Segment Routing backend router (`/vyos/segment-routing/*`) and form-first UI (`/routing/infrastructure/segment-routing`) with OSPF/IS-IS label block + Prefix SID management.
+- VRF page now includes explicit `VRF Core` and `L3VPN` tabs in one place; L3VPN workflows are no longer a separate left-nav item.
+- Added initial option-level parity scoring pipeline (`scripts/score_option_parity.py`) and generated `OPTION_PARITY_SCORECARD.json/.md`; backlog `X-01` moved from missing to partial.

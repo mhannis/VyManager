@@ -1,8 +1,7 @@
-timestamp: 2026-02-16T13:44:28Z
-failing_command: cd frontend && npm run -s smoke:ui
-error_summary: Browser smoke test could not launch Playwright Chromium because required shared library libnspr4.so is missing on the host.
+timestamp: 2026-02-16T13:48:11Z
+failing_command: python3 inspect CONFIG_COVERAGE_MATRIX.json expecting key 'entries'
+error_summary: Script probe failed with KeyError because CONFIG_COVERAGE_MATRIX.json schema uses top-level key 'items' instead of 'entries'.
 last_output:
-UI smoke test failed to execute: browserType.launch: Target page, context or browser has been closed
-/home/redhot/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
-suspected_cause: Playwright Chromium system dependencies are not installed in this environment.
-next_step: Install browser deps (e.g. sudo npx playwright install-deps) or keep using runtime smoke as gate on this host.
+KeyError: 'entries'
+suspected_cause: Matrix schema assumption was stale.
+next_step: Parse matrix from the 'items' key and continue implementing option-level parity scorer.
