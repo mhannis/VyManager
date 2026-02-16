@@ -44,8 +44,9 @@ import { DeleteRouteRuleModal } from "@/components/policies/DeleteRouteRuleModal
 import { RouteRuleRow } from "@/components/policies/RouteRuleRow";
 import { RouteReorderBanner } from "@/components/policies/RouteReorderBanner";
 import { ManagePolicyInterfacesModal } from "@/components/policies/ManagePolicyInterfacesModal";
-import { cn } from "@/lib/utils";
+import { cn, formatInterfaceDisplayName } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ethernetService } from "@/lib/api/ethernet";
 
 export default function RoutePage() {
   const [ipv4Policies, setIpv4Policies] = useState<PolicyRoute[]>([]);
@@ -79,6 +80,7 @@ export default function RoutePage() {
 
   // Interface management states
   const [policyInterfaces, setPolicyInterfaces] = useState<Array<{name: string, type: string}>>([]);
+  const [interfaceLabelByName, setInterfaceLabelByName] = useState<Record<string, string>>({});
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -93,13 +95,20 @@ export default function RoutePage() {
     try {
       setLoading(true);
       setError(null);
-      const [config, caps] = await Promise.all([
+      const [config, caps, ethernetConfig] = await Promise.all([
         routeService.getConfig(refresh),
         routeService.getCapabilities(),
+        ethernetService.getConfig().catch(() => ({ interfaces: [] })),
       ]);
       setIpv4Policies(config.ipv4_policies);
       setIpv6Policies(config.ipv6_policies);
       setCapabilities(caps);
+      setInterfaceLabelByName(
+        (ethernetConfig.interfaces || []).reduce<Record<string, string>>((acc, iface) => {
+          acc[iface.name] = formatInterfaceDisplayName(iface.name, iface.description ?? null);
+          return acc;
+        }, {})
+      );
 
       // Reset reorder state
       setHasChanges(false);
@@ -516,7 +525,7 @@ export default function RoutePage() {
                             className="px-3 py-1.5 flex items-center gap-2 bg-background"
                           >
                             <Network className="h-3 w-3" />
-                            <span className="font-mono text-sm">{iface.name}</span>
+                            <span className="text-sm">{interfaceLabelByName[iface.name] || iface.name}</span>
                             <span className="text-muted-foreground text-xs">({iface.type})</span>
                           </Badge>
                         ))}
