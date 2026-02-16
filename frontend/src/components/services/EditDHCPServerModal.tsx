@@ -134,7 +134,14 @@ export function EditDHCPServerModal({
     setLease(subnet.lease || "");
 
     // DNS fields
-    setNameServers(subnet.name_servers.length > 0 ? subnet.name_servers : [""]);
+    const fallbackGateway = (subnet.default_router || "").trim();
+    setNameServers(
+      subnet.name_servers.length > 0
+        ? subnet.name_servers
+        : fallbackGateway
+          ? [fallbackGateway]
+          : [""]
+    );
     setDomainSearch(subnet.domain_search.length > 0 ? subnet.domain_search : []);
 
     // DHCP Pool fields
@@ -162,6 +169,17 @@ export function EditDHCPServerModal({
 
     setError(null);
   };
+
+  useEffect(() => {
+    const gateway = defaultRouter.trim();
+    if (!gateway || !isValidIPv4(gateway)) {
+      return;
+    }
+    setNameServers((previous) => {
+      const hasConfiguredServer = previous.some((entry) => entry.trim().length > 0);
+      return hasConfiguredServer ? previous : [gateway];
+    });
+  }, [defaultRouter]);
 
   const resetForm = () => {
     loadSubnetData();

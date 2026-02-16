@@ -171,6 +171,17 @@ export function CreateDHCPServerModal({
     }
   }, [open, existingNetwork, prefill]);
 
+  useEffect(() => {
+    const gateway = defaultRouter.trim();
+    if (!gateway || !isValidIPv4(gateway)) {
+      return;
+    }
+    setNameServers((previous) => {
+      const hasConfiguredServer = previous.some((entry) => entry.trim().length > 0);
+      return hasConfiguredServer ? previous : [gateway];
+    });
+  }, [defaultRouter]);
+
   const loadExistingNetworks = async () => {
     try {
       const config = await dhcpService.getConfig();
