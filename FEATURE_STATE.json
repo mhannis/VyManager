@@ -1,17 +1,19 @@
 {
-  "feature_id": "firewall-groups-backend-hardening-f03-2026-02-16",
-  "title": "Firewall groups backend validation hardening and HTTP status fix",
+  "feature_id": "firewall-ipv6-ops-and-global-options-hardening-2026-02-16",
+  "title": "Firewall IPv6 operation parity and global-options validation hardening",
   "status": "in_review",
   "acceptance_criteria": [
-    "Firewall groups batch API validates group names server-side.",
-    "Firewall groups batch API validates value payloads by operation type server-side.",
-    "Firewall groups batch API preserves HTTPException status codes instead of converting them to 500.",
-    "Backend tests cover invalid group name, invalid remote URL, invalid MAC, and valid remote-group success paths.",
-    "Backend and frontend validation commands pass for this slice."
+    "IPv4 and IPv6 firewall batch/reorder endpoints preserve HTTPException status codes (400-level errors are not converted to 500).",
+    "IPv6 firewall batch endpoint accepts legacy op names for ICMP and TTL while mapping to canonical icmpv6/hop-limit methods.",
+    "Frontend IPv6 firewall rule create/update flows send canonical icmpv6 and hop-limit operation names.",
+    "Firewall rule create/edit UI labels packet modification field as Hop Limit for IPv6.",
+    "Firewall global-options update endpoint validates enum and timeout fields and returns 400 for invalid payloads.",
+    "Regression tests cover new firewall batch semantics and global-options validation behavior."
   ],
   "assumptions": [
-    "Validation is intentionally strict for malformed values and should block invalid writes before commit.",
-    "Playwright browser smoke remains out-of-gate due host dependency and is intentionally excluded this cycle."
+    "TTL field is kept in shared UI model for compatibility, but maps to hop-limit on IPv6 command generation.",
+    "Timeout lower bound is enforced as 1 second to prevent invalid conntrack values from reaching commit.",
+    "Browser e2e smoke remains out-of-gate on this host until Playwright shared libraries are installed."
   ],
   "tasks": [
     {
@@ -19,39 +21,59 @@
       "owner_role": "Backend|Integration",
       "status": "done",
       "files": [
-        "backend/routers/firewall/groups.py"
+        "backend/routers/firewall/ipv4.py",
+        "backend/routers/firewall/ipv6.py",
+        "backend/routers/firewall_global_options/firewall_global_options.py"
       ],
-      "notes": "Added typed validation helpers for group names and operation values; fixed HTTPException passthrough in batch endpoint."
+      "notes": "Added HTTPException passthrough, IPv6 op aliases, and global-options payload validation."
     },
     {
       "id": "T2",
-      "owner_role": "Test",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "backend/tests/test_firewall_groups_validation.py"
+        "frontend/src/lib/api/firewall-ipv6.ts",
+        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
+        "frontend/src/components/firewall/EditFirewallRuleModal.tsx"
       ],
-      "notes": "Added API tests for invalid-name/URL/MAC 400 responses and valid remote-group success path."
+      "notes": "Updated IPv6 operation names and Hop Limit labeling in create/edit workflows."
     },
     {
       "id": "T3",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/test_firewall_batch_semantics.py",
+        "backend/tests/test_firewall_global_options_validation.py"
+      ],
+      "notes": "Added regression tests for HTTP error semantics, IPv6 legacy alias compatibility, and global-options validation."
+    },
+    {
+      "id": "T4",
       "owner_role": "Reviewer",
       "status": "doing",
       "files": [
-        "backend/routers/firewall/groups.py",
-        "backend/tests/test_firewall_groups_validation.py"
+        "backend/routers/firewall/ipv4.py",
+        "backend/routers/firewall/ipv6.py",
+        "backend/routers/firewall_global_options/firewall_global_options.py",
+        "frontend/src/lib/api/firewall-ipv6.ts",
+        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
+        "frontend/src/components/firewall/EditFirewallRuleModal.tsx",
+        "backend/tests/test_firewall_batch_semantics.py",
+        "backend/tests/test_firewall_global_options_validation.py"
       ],
-      "notes": "Manual review pass pending before moving to next firewall-depth slice."
+      "notes": "Manual review pass pending before moving to next backlog slice."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_groups_validation.py tests/test_containers_automation_v1.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_batch_semantics.py tests/test_firewall_global_options_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Firewall groups hardening + backlog continuation",
+      "purpose": "Firewall option-depth hardening and backlog continuation",
       "status": "active"
     }
   ]

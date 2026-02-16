@@ -59,7 +59,7 @@
       "id": "F-02",
       "domain": "firewall",
       "status": "partial",
-      "title": "IPv6 rule advanced match/action parity"
+      "title": "IPv6 rule advanced match/action parity (canonical icmpv6/hop-limit mapping fixed with legacy alias compatibility)"
     },
     {
       "id": "F-03",
@@ -71,7 +71,7 @@
       "id": "F-04",
       "domain": "firewall",
       "status": "partial",
-      "title": "Global options parity pass"
+      "title": "Global options parity pass (enum/timeout backend validation added; deeper option coverage pending)"
     },
     {
       "id": "F-05",

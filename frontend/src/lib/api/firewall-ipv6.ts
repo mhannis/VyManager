@@ -39,6 +39,7 @@ export interface FirewallRuleInterface {
 export interface FirewallRulePacketMods {
   dscp?: string | null;
   mark?: string | null;
+  // IPv6 uses hop-limit; kept as ttl for shared modal compatibility.
   ttl?: string | null;
 }
 
@@ -370,7 +371,7 @@ class FirewallIPv6Service {
         operations.push({ op: "set_rule_set_mark", value: config.packet_mods.mark });
       }
       if (config.packet_mods.ttl) {
-        operations.push({ op: "set_rule_set_ttl", value: config.packet_mods.ttl });
+        operations.push({ op: "set_rule_set_hop_limit", value: config.packet_mods.ttl });
       }
     }
 
@@ -388,7 +389,7 @@ class FirewallIPv6Service {
 
     // Set ICMP type
     if (config.icmp_type_name) {
-      operations.push({ op: "set_rule_icmp_type_name", value: config.icmp_type_name });
+      operations.push({ op: "set_rule_icmpv6_type_name", value: config.icmp_type_name });
     }
 
     // Set jump target
@@ -690,7 +691,7 @@ class FirewallIPv6Service {
         operations.push({ op: "delete_rule_set_mark" });
       }
       if (currentRule.packet_mods?.ttl) {
-        operations.push({ op: "delete_rule_set_ttl" });
+        operations.push({ op: "delete_rule_set_hop_limit" });
       }
 
       if (config.packet_mods) {
@@ -701,7 +702,7 @@ class FirewallIPv6Service {
           operations.push({ op: "set_rule_set_mark", value: config.packet_mods.mark });
         }
         if (config.packet_mods.ttl) {
-          operations.push({ op: "set_rule_set_ttl", value: config.packet_mods.ttl });
+          operations.push({ op: "set_rule_set_hop_limit", value: config.packet_mods.ttl });
         }
       }
     }
@@ -732,12 +733,12 @@ class FirewallIPv6Service {
     if (hasChanged(config.icmp_type_name, currentRule.icmp_type_name)) {
       // Delete old ICMP type
       if (currentRule.icmp_type_name) {
-        operations.push({ op: "delete_rule_icmp_type_name" });
+        operations.push({ op: "delete_rule_icmpv6_type_name" });
       }
 
       // Set new ICMP type
       if (config.icmp_type_name) {
-        operations.push({ op: "set_rule_icmp_type_name", value: config.icmp_type_name });
+        operations.push({ op: "set_rule_icmpv6_type_name", value: config.icmp_type_name });
       }
     }
 

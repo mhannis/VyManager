@@ -1580,7 +1580,7 @@ export function CreateFirewallRuleModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="ttl">TTL</Label>
+                  <Label htmlFor="ttl">{protocol === "ipv6" ? "Hop Limit" : "TTL"}</Label>
                   <Input
                     id="ttl"
                     value={ttl}

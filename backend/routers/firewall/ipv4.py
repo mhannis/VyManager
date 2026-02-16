@@ -523,6 +523,8 @@ async def firewall_ipv4_batch_configure(http_request: Request, request: Firewall
             data={"message": "Firewall configuration updated"},
             error=response.error if response.error else None
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -676,5 +678,7 @@ async def firewall_ipv4_reorder_rules(http_request: Request, request: ReorderFir
             data={"message": "Rules reordered successfully"},
             error=response.error if response.error else None
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

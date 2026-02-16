@@ -17,6 +17,12 @@ import inspect
 
 router = APIRouter(prefix="/vyos/firewall/global-options", tags=["firewall-global-options"])
 
+ENABLE_DISABLE_VALUES = {"", "enable", "disable"}
+SOURCE_VALIDATION_VALUES = {"", "strict", "loose", "disable"}
+STATE_ACTION_VALUES = {"", "accept", "drop", "reject"}
+LOG_LEVEL_VALUES = {"", "emerg", "alert", "crit", "err", "warn", "notice", "info", "debug"}
+MAX_TIMEOUT = 2147483647
+
 
 # Stub functions for backwards compatibility with app.py
 def set_device_registry(registry):
@@ -298,6 +304,73 @@ def _parse_int(value) -> Optional[int]:
         return None
 
 
+def _validate_choice(field_name: str, value: Optional[str], allowed_values: set[str]) -> None:
+    """Validate string enum-like values for global options."""
+    if value is None:
+        return
+    if value not in allowed_values:
+        allowed = ", ".join(sorted(v for v in allowed_values if v))
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid value for {field_name}: '{value}'. Allowed values: {allowed}",
+        )
+
+
+def _validate_timeout(field_name: str, value: Optional[int]) -> None:
+    """Validate conntrack timeout values."""
+    if value is None:
+        return
+    if not isinstance(value, int):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid timeout for {field_name}: must be an integer",
+        )
+    if value < 1 or value > MAX_TIMEOUT:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid timeout for {field_name}: must be between 1 and {MAX_TIMEOUT}",
+        )
+
+
+def _validate_global_options_config(config: FirewallGlobalOptionsConfig) -> None:
+    """Validate user-provided global-options payload before command generation."""
+    _validate_choice("all_ping", config.all_ping, ENABLE_DISABLE_VALUES)
+    _validate_choice("broadcast_ping", config.broadcast_ping, ENABLE_DISABLE_VALUES)
+    _validate_choice("ip_src_route", config.ip_src_route, ENABLE_DISABLE_VALUES)
+    _validate_choice("ipv6_src_route", config.ipv6_src_route, ENABLE_DISABLE_VALUES)
+    _validate_choice("receive_redirects", config.receive_redirects, ENABLE_DISABLE_VALUES)
+    _validate_choice("ipv6_receive_redirects", config.ipv6_receive_redirects, ENABLE_DISABLE_VALUES)
+    _validate_choice("send_redirects", config.send_redirects, ENABLE_DISABLE_VALUES)
+    _validate_choice("log_martians", config.log_martians, ENABLE_DISABLE_VALUES)
+    _validate_choice("syn_cookies", config.syn_cookies, ENABLE_DISABLE_VALUES)
+    _validate_choice("twa_hazards_protection", config.twa_hazards_protection, ENABLE_DISABLE_VALUES)
+    _validate_choice("source_validation", config.source_validation, SOURCE_VALIDATION_VALUES)
+
+    for policy_name, policy in (
+        ("state_policy_established", config.state_policy_established),
+        ("state_policy_invalid", config.state_policy_invalid),
+        ("state_policy_related", config.state_policy_related),
+    ):
+        if policy is None:
+            continue
+        _validate_choice(f"{policy_name}.action", policy.action, STATE_ACTION_VALUES)
+        _validate_choice(f"{policy_name}.log_level", policy.log_level, LOG_LEVEL_VALUES)
+
+    if config.timeouts is not None:
+        _validate_timeout("timeouts.icmp", config.timeouts.icmp)
+        _validate_timeout("timeouts.other", config.timeouts.other)
+        _validate_timeout("timeouts.tcp_close", config.timeouts.tcp_close)
+        _validate_timeout("timeouts.tcp_close_wait", config.timeouts.tcp_close_wait)
+        _validate_timeout("timeouts.tcp_established", config.timeouts.tcp_established)
+        _validate_timeout("timeouts.tcp_fin_wait", config.timeouts.tcp_fin_wait)
+        _validate_timeout("timeouts.tcp_last_ack", config.timeouts.tcp_last_ack)
+        _validate_timeout("timeouts.tcp_syn_recv", config.timeouts.tcp_syn_recv)
+        _validate_timeout("timeouts.tcp_syn_sent", config.timeouts.tcp_syn_sent)
+        _validate_timeout("timeouts.tcp_time_wait", config.timeouts.tcp_time_wait)
+        _validate_timeout("timeouts.udp_other", config.timeouts.udp_other)
+        _validate_timeout("timeouts.udp_stream", config.timeouts.udp_stream)
+
+
 # ============================================================================
 # Endpoint 3: Batch Operations
 # ============================================================================
@@ -374,6 +447,7 @@ async def update_firewall_global_options(http_request: Request, config: Firewall
     await require_write_permission(http_request, FeatureGroup.FIREWALL_GLOBAL_OPTIONS)
 
     try:
+        _validate_global_options_config(config)
         service = get_session_vyos_service(http_request)
         version = service.get_version()
         builder = FirewallGlobalOptionsBatchBuilder(version=version)
@@ -405,6 +479,8 @@ async def update_firewall_global_options(http_request: Request, config: Firewall
             data={"message": "Configuration updated"},
             error=response.error if response.error else None
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

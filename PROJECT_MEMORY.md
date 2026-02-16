@@ -58,44 +58,52 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
 - Continue reducing strict backlog by implementing partial domains in robust form-first UX.
-- Continue firewall option-depth parity with robust backend validation and predictable API error behavior.
+- Continue firewall option-depth parity with robust backend validation, correct IPv6 operation mapping, and predictable API error behavior.
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Firewall groups backend hardening (`F-03` depth pass)**
+Feature: **Firewall IPv6 operation parity + global-options validation hardening (`F-02`/`F-04` depth pass)**
 
 Acceptance criteria:
-- Validate firewall-group batch `group_name` server-side.
-- Validate batch operation values by type server-side (address/range, CIDR, MAC, ports/services, interface, domain, URL).
-- Preserve `HTTPException` status codes in batch endpoint (stop converting `400` to `500`).
-- Add backend tests for invalid-name/URL/MAC and valid remote-group success path.
+- Preserve `HTTPException` status codes in firewall IPv4/IPv6 batch+reorder endpoints (stop converting `400` to `500`).
+- Correct IPv6 firewall op mapping to canonical command operations (`icmpv6` + `hop-limit`) in frontend API calls.
+- Keep backward compatibility by aliasing legacy IPv6 op names on backend batch endpoint.
+- Validate firewall global-options update payloads server-side (enum checks + timeout bounds) with explicit `400` responses.
+- Add backend tests for batch error semantics, IPv6 legacy op compatibility, and global-options validation.
 - Pass backend+frontend validation gates.
 
 Assumptions:
-- Existing valid clients continue to work; only malformed values should now be rejected earlier.
+- Existing valid clients continue to work; malformed values should now fail earlier with `400`.
+- Shared firewall modal model keeps `ttl` field for compatibility while IPv6 maps it to hop-limit command semantics.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: firewall groups backend hardening slice in review.
-- Backlog audit (2026-02-16, strict option-level tracker): `F-03` remains `partial` with new typed validation and backend error-path hardening.
+- Status: firewall ipv6/global-options hardening slice in review.
+- Backlog audit (2026-02-16, strict option-level tracker): `F-02`/`F-04` progressed with op semantics fix + global-options input validation.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `backend/routers/firewall/groups.py`
-- `backend/tests/test_firewall_groups_validation.py`
-- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
-- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
+- `backend/routers/firewall/ipv4.py`
+- `backend/routers/firewall/ipv6.py`
+- `backend/routers/firewall_global_options/firewall_global_options.py`
+- `backend/tests/test_firewall_batch_semantics.py`
+- `backend/tests/test_firewall_global_options_validation.py`
+- `frontend/src/lib/api/firewall-ipv6.ts`
+- `frontend/src/components/firewall/CreateFirewallRuleModal.tsx`
+- `frontend/src/components/firewall/EditFirewallRuleModal.tsx`
+- `LAST_FAILURE.txt`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
 - `DECISIONS.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_groups_validation.py tests/test_containers_automation_v1.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py` passed.
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_batch_semantics.py tests/test_firewall_global_options_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
+- `cd frontend && npm run -s lint` passed with existing warnings only (0 errors).
 - `cd frontend && npm run -s smoke:ui` still blocked on host dependency (`libnspr4.so` missing).
 
 ## Risks / Open Questions
@@ -117,6 +125,13 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Firewall IPv4 and IPv6 batch/reorder endpoints now preserve `HTTPException` statuses; unknown operations return `400` instead of being wrapped into `500`.
+- Firewall IPv6 batch endpoint now supports legacy operation aliases (`icmp_type_name` and `set_ttl` forms) while executing canonical `icmpv6`/`hop-limit` methods for backward compatibility.
+- Frontend IPv6 firewall API now emits canonical operation names (`set_rule_icmpv6_type_name`, `delete_rule_icmpv6_type_name`, `set_rule_set_hop_limit`, `delete_rule_set_hop_limit`) and create/edit modals label the field as `Hop Limit`.
+- Firewall global-options `/update` now validates enum and timeout payload values server-side and returns explicit `400` errors for invalid inputs before commit.
+- Added backend regression coverage:
+  - `test_firewall_batch_semantics.py` (HTTP error semantics + IPv6 legacy alias compatibility)
+  - `test_firewall_global_options_validation.py` (global-options value and timeout validation)
 - Firewall groups batch endpoint now performs typed server-side validation and preserves HTTPException status codes; invalid values return `400` instead of being wrapped into `500`.
 - Added backend API tests for firewall groups validation (`test_firewall_groups_validation.py`) covering invalid group name, remote URL, MAC, and valid remote-group success path.
 - Container network safety validation now enforces prefix overlap checks (`upsert /networks`) and static-address/subnet checks (`upsert/install /{container_name}`) in backend before apply.

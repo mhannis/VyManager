@@ -477,10 +477,17 @@ async def firewall_ipv6_batch_configure(http_request: Request, request: Firewall
         service = get_session_vyos_service(http_request)
         version = service.get_version()
         builder = FirewallIPv6BatchBuilder(version=version)
+        legacy_aliases = {
+            # Backward-compatibility for older frontend payloads
+            "set_rule_icmp_type_name": "set_rule_icmpv6_type_name",
+            "delete_rule_icmp_type_name": "delete_rule_icmpv6_type_name",
+            "set_rule_set_ttl": "set_rule_set_hop_limit",
+            "delete_rule_set_ttl": "delete_rule_set_hop_limit",
+        }
 
         # Process operations using inspect for dynamic method calls
         for operation in request.operations:
-            method_name = operation.op
+            method_name = legacy_aliases.get(operation.op, operation.op)
             if not hasattr(builder, method_name):
                 raise HTTPException(
                     status_code=400,
@@ -523,6 +530,8 @@ async def firewall_ipv6_batch_configure(http_request: Request, request: Firewall
             data={"message": "Firewall configuration updated"},
             error=response.error if response.error else None
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -676,5 +685,7 @@ async def firewall_ipv6_reorder_rules(http_request: Request, request: ReorderFir
             data={"message": "Rules reordered successfully"},
             error=response.error if response.error else None
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
