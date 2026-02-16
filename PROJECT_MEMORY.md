@@ -82,7 +82,7 @@ Acceptance criteria:
 - `System` navigation now exposes `System Identification` and `Guided Setup` as separate pages.
 - Services sidebar is consolidated to a single `All Services` child entry.
 - `/system/services` defaults to the first ordered tab when no explicit `tab=` query is provided.
-- `DHCP Server` is exposed within `/system/services` as an explicit tab with summary + direct jump to `/network/dhcp`.
+- `DHCP Server` is exposed within `/system/services` as an explicit tab that embeds the full DHCP workspace UI.
 - Build/typecheck/runtime smoke pass after the IA changes.
 
 Assumptions:
@@ -91,7 +91,7 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v2 cleanup applied per operator UX feedback; sidebar visibility moved to a dedicated settings page with full tree control, System IA split into identification + guided setup, Services sidebar consolidated to a single entry, and DHCP surfaced within the Services tab set.
+- Status: interface IA consolidation v2 cleanup applied per operator UX feedback; sidebar visibility moved to a dedicated settings page with full tree control, System IA split into identification + guided setup, Services sidebar consolidated to a single entry, and DHCP fully embedded within the Services tab set via shared workspace component.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
@@ -102,6 +102,8 @@ Assumptions:
 - `frontend/src/app/system/options/page.tsx`
 - `frontend/src/app/system/identification/page.tsx`
 - `frontend/src/app/system/services/page.tsx`
+- `frontend/src/components/services/DhcpServerWorkspace.tsx`
+- `frontend/src/app/network/dhcp/page.tsx`
 - `frontend/src/app/configuration/page.tsx`
 - `frontend/src/components/dashboard/ServicesStatusCard.tsx`
 - `CURRENT_FEATURE.md`
@@ -121,7 +123,7 @@ Assumptions:
 - Browser smoke depends on host-specific Playwright shared libs path.
 - Sidebar visibility preferences are currently browser-local (localStorage) rather than profile-synced.
 - Services sidebar consolidation keeps the tabbed services UI as the primary workflow; only a minimal shortcut set is exposed in sidebar navigation.
-- DHCP remains critical: the dedicated `/network/dhcp` editor remains authoritative, and Services now includes a DHCP tab that links into it.
+- DHCP remains critical: the dedicated `/network/dhcp` editor remains authoritative, and Services now includes a DHCP tab that embeds the same management workspace.
 - `uvicorn --reload` showed intermittent local connect hangs on `:8000` after restart; stable session should run non-reload mode for operator testing.
 - Some command semantics in HA/Traffic Policy/PKI still need live VyOS operational validation across more versions/hardware.
 - Reviewer sub-agent dispatch can fail when thread cap is saturated; manual review fallback is required in that case.
@@ -150,7 +152,7 @@ Assumptions:
 - System IA update applied: `System Identification` now lives at `/system/identification`, and `/system/options` is a dedicated Guided Setup launcher for the three baseline setup actions.
 - Services sidebar IA update applied: reduced to `All Services`, with detailed per-service navigation handled inside `/system/services`.
 - Services landing behavior update applied: `/system/services` now opens the first ordered tab by default instead of starting at NTP.
-- Services coverage update applied: added `DHCP Server` tab inside `/system/services` (including single-view query support and summary card) and corrected dashboard links to use `tab=` query keys.
+- Services coverage update applied: added `DHCP Server` tab inside `/system/services` (including single-view query support), corrected dashboard links to use `tab=` query keys, and embedded the full DHCP workspace component in-tab.
 - Navigation preferences IA update applied: controls moved to `/settings/navigation`, expanded to full tree, and hard-locked for `Settings` + `Navigation`.
 - Removed `Configuration Guide` from left navigation and added `Settings -> Sidebar Visibility` with persistent per-browser hide/show toggles for top-level nav items.
 - Generated new authoritative planning artifacts:

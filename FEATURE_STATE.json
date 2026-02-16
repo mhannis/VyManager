@@ -22,7 +22,7 @@
     "`/system/options` is a dedicated Guided Setup launcher page with the 3 baseline setup actions.",
     "Services sidebar is consolidated to a single `All Services` child entry while detailed service tabs remain inside the Services page.",
     "`All Services` opens with a deterministic first tab instead of defaulting to NTP.",
-    "DHCP Server is available as an explicit tab inside `All Services` and provides a direct jump to full DHCP management.",
+    "DHCP Server is available as an explicit tab inside `All Services` and renders the embedded DHCP management workspace directly.",
     "Build/typecheck/runtime smoke pass after IA changes."
   ],
   "assumptions": [
@@ -240,6 +240,17 @@
         "frontend/src/components/dashboard/ServicesStatusCard.tsx"
       ],
       "notes": "Added `DHCP Server` as a first-class services tab (including single-view query handling and summary card), while keeping sidebar consolidated to `All Services`."
+    },
+    {
+      "id": "IF-IA-25",
+      "owner_role": "UI|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/components/services/DhcpServerWorkspace.tsx",
+        "frontend/src/app/network/dhcp/page.tsx",
+        "frontend/src/app/system/services/page.tsx"
+      ],
+      "notes": "Extracted DHCP UI into a reusable workspace component and embedded that full workspace directly in the Services DHCP tab while reusing it for the dedicated `/network/dhcp` page."
     }
   ],
   "commands": {

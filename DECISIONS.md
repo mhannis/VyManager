@@ -267,3 +267,4 @@
 - 2026-02-16: Reverted the temporary `DHCP Server` sidebar shortcut to keep Services consistent under one `All Services` entry; improved discoverability by changing `/system/services` default tab to the first ordered service tab (instead of NTP) when no `tab=` query is present.
 - 2026-02-16: To keep Services navigation consistent while preserving DHCP discoverability, added `DHCP Server` as a tab within `/system/services` (including single-view routing) instead of adding a separate sidebar shortcut; tab includes a summary and direct jump to `/network/dhcp`.
 - 2026-02-16: Updated Services Status dashboard links to use canonical `tab=` query parameters (`service=` legacy links were not selecting the intended tabs reliably).
+- 2026-02-16: Replaced the DHCP summary/link stopgap in Services with a shared embeddable DHCP workspace (`DhcpServerWorkspace`) and reused the same component for `/network/dhcp`, so both surfaces render the full DHCP UX consistently.

@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +38,6 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 import { showService } from "@/lib/api/show";
 import { interfacesService } from "@/lib/api/interfaces";
-import { dhcpService, type DHCPConfigResponse } from "@/lib/api/dhcp";
 import {
   systemService,
   type LldpConfig,
@@ -83,6 +81,7 @@ import { WebproxyServiceTab } from "@/components/system/WebproxyServiceTab";
 import { PppoeServerServiceTab } from "@/components/system/PppoeServerServiceTab";
 import { IpoeServerServiceTab } from "@/components/system/IpoeServerServiceTab";
 import { RouterAdvertServiceTab } from "@/components/system/RouterAdvertServiceTab";
+import { DhcpServerWorkspace } from "@/components/services/DhcpServerWorkspace";
 import { formatInterfaceDisplayName } from "@/lib/utils";
 
 const EMPTY_SERVER: NtpServerConfig = {
@@ -241,8 +240,6 @@ function SystemServicesPageContent() {
   const [mdnsConfig, setMdnsConfig] = useState<MdnsRepeaterConfig | null>(null);
   const [mdnsStatus, setMdnsStatus] = useState<MdnsRepeaterStatus | null>(null);
   const [mdnsLoading, setMdnsLoading] = useState(false);
-  const [dhcpServerConfig, setDhcpServerConfig] = useState<DHCPConfigResponse | null>(null);
-  const [dhcpServerLoading, setDhcpServerLoading] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -252,9 +249,8 @@ function SystemServicesPageContent() {
     if (activeTab === "ntp") return ntpLoading;
     if (activeTab === "lldp") return lldpLoading;
     if (activeTab === "mdns") return mdnsLoading;
-    if (activeTab === "dhcp-server") return dhcpServerLoading;
     return false;
-  }, [activeTab, dhcpServerLoading, lldpLoading, mdnsLoading, ntpLoading]);
+  }, [activeTab, lldpLoading, mdnsLoading, ntpLoading]);
 
   useEffect(() => {
     const requested =
@@ -381,20 +377,6 @@ function SystemServicesPageContent() {
     }
   };
 
-  const loadDhcpServerData = async (refresh: boolean = false) => {
-    setDhcpServerLoading(true);
-    setError(null);
-
-    try {
-      const data = await dhcpService.getConfig(refresh);
-      setDhcpServerConfig(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load DHCP server data.");
-    } finally {
-      setDhcpServerLoading(false);
-    }
-  };
-
   useEffect(() => {
     loadInterfaces();
     loadNtpData(false);
@@ -407,18 +389,7 @@ function SystemServicesPageContent() {
     if (activeTab === "mdns" && !mdnsConfig && !mdnsLoading) {
       loadMdnsData(false);
     }
-    if (activeTab === "dhcp-server" && !dhcpServerConfig && !dhcpServerLoading) {
-      loadDhcpServerData(false);
-    }
-  }, [
-    activeTab,
-    dhcpServerConfig,
-    dhcpServerLoading,
-    lldpConfig,
-    lldpLoading,
-    mdnsConfig,
-    mdnsLoading,
-  ]);
+  }, [activeTab, lldpConfig, lldpLoading, mdnsConfig, mdnsLoading]);
 
   const handleRefresh = async () => {
     setSuccess(null);
@@ -432,10 +403,6 @@ function SystemServicesPageContent() {
     }
     if (activeTab === "mdns") {
       await loadMdnsData(true);
-      return;
-    }
-    if (activeTab === "dhcp-server") {
-      await loadDhcpServerData(true);
       return;
     }
     setServiceRefreshNonce((previous) => previous + 1);
@@ -1788,43 +1755,7 @@ function SystemServicesPageContent() {
           </TabsContent>
 
           <TabsContent value="dhcp-server" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>DHCP Server</CardTitle>
-                <CardDescription>
-                  DHCP server management is handled on the dedicated page with full subnet, range, and mapping controls.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {dhcpServerLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading DHCP server summary...</p>
-                ) : (
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-md border p-3">
-                      <p className="text-xs text-muted-foreground">Shared Networks</p>
-                      <p className="mt-1 text-lg font-semibold">
-                        {dhcpServerConfig?.shared_networks.length ?? 0}
-                      </p>
-                    </div>
-                    <div className="rounded-md border p-3">
-                      <p className="text-xs text-muted-foreground">Configured Subnets</p>
-                      <p className="mt-1 text-lg font-semibold">
-                        {dhcpServerConfig?.total_subnets ?? 0}
-                      </p>
-                    </div>
-                    <div className="rounded-md border p-3">
-                      <p className="text-xs text-muted-foreground">Static Mappings</p>
-                      <p className="mt-1 text-lg font-semibold">
-                        {dhcpServerConfig?.total_static_mappings ?? 0}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                <Button asChild>
-                  <Link href="/network/dhcp">Open DHCP Server</Link>
-                </Button>
-              </CardContent>
-            </Card>
+            <DhcpServerWorkspace embedded />
           </TabsContent>
 
           <TabsContent value="tftp-server" className="space-y-6">

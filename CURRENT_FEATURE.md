@@ -63,7 +63,8 @@ notes:
   - `System -> Guided Setup` now contains the three setup actions (Network Wizard, Zone Guided Setup, Firewall Policies).
   - Services sidebar navigation is consolidated to `All Services`; service-specific controls remain in `/system/services` tabs.
   - `/system/services` now defaults to the first ordered service tab when no explicit `tab=` query is provided (no NTP bias).
-  - `DHCP Server` is now an explicit service tab inside `All Services` with summary details and a direct `Open DHCP Server` action to `/network/dhcp`.
+  - `DHCP Server` is now an explicit service tab inside `All Services` using the actual embedded DHCP workspace component (not a summary-card link workaround).
+  - `/network/dhcp` now wraps the same reusable DHCP workspace component so DHCP UX stays consistent across Network and Services surfaces.
   - Validation for this increment:
     - `cd frontend && npx tsc --noEmit --pretty false`
     - `cd frontend && npx eslint src/components/layout/Sidebar.tsx src/lib/sidebar-visibility.ts src/app/settings/page.tsx src/app/settings/navigation/page.tsx src/app/system/options/page.tsx src/app/system/identification/page.tsx src/app/configuration/page.tsx src/components/dashboard/ServicesStatusCard.tsx --max-warnings=0`
