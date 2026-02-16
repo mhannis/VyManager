@@ -265,11 +265,6 @@ const navigation: NavItem[] = [
         href: "/system/services",
         requiredPermission: FeatureGroup.SYSTEM,
       },
-      {
-        title: "DHCP Server",
-        href: "/network/dhcp",
-        requiredPermission: FeatureGroup.DHCP,
-      },
     ]),
   },
   {

@@ -20,7 +20,8 @@
     "Settings and the `Navigation` settings link are always visible and cannot be hidden.",
     "System navigation replaces `Options & Coverage` with `System Identification` and `Guided Setup` entries.",
     "`/system/options` is a dedicated Guided Setup launcher page with the 3 baseline setup actions.",
-    "Services sidebar is consolidated to a minimal set (`All Services` plus `DHCP Server` quick link) while detailed service tabs remain inside the Services page.",
+    "Services sidebar is consolidated to a single `All Services` child entry while detailed service tabs remain inside the Services page.",
+    "`All Services` opens with a deterministic first tab instead of defaulting to NTP.",
     "Build/typecheck/runtime smoke pass after IA changes."
   ],
   "assumptions": [
@@ -217,12 +218,23 @@
         "frontend/src/lib/sidebar-visibility.ts"
       ],
       "notes": "Restored a direct `DHCP Server` child link under `Services` after consolidation so DHCP remains discoverable without opening the Services hub first."
+    },
+    {
+      "id": "IF-IA-23",
+      "owner_role": "UI|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/components/layout/Sidebar.tsx",
+        "frontend/src/lib/sidebar-visibility.ts",
+        "frontend/src/app/system/services/page.tsx"
+      ],
+      "notes": "Reverted Services back to a single `All Services` child and set services-page default tab to the first ordered tab so `/system/services` no longer opens on NTP by default."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
     "test": "cd frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
-    "lint": "cd frontend && npx eslint src/components/layout/Sidebar.tsx src/lib/sidebar-visibility.ts src/app/settings/page.tsx src/app/settings/navigation/page.tsx src/app/system/options/page.tsx src/app/system/identification/page.tsx src/app/configuration/page.tsx src/components/dashboard/ServicesStatusCard.tsx --max-warnings=0"
+    "lint": "cd frontend && npx eslint src/components/layout/Sidebar.tsx src/lib/sidebar-visibility.ts src/app/settings/page.tsx src/app/settings/navigation/page.tsx src/app/system/options/page.tsx src/app/system/identification/page.tsx src/app/configuration/page.tsx src/components/dashboard/ServicesStatusCard.tsx src/app/system/services/page.tsx --max-warnings=0"
   },
   "worktrees_or_threads": [
     {

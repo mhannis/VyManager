@@ -264,3 +264,4 @@
 - 2026-02-16: Consolidated `Services` sidebar nav to a single `All Services` entry; detailed service selection remains in `/system/services` tabs to reduce left-nav clutter while preserving full feature coverage.
 - 2026-02-16: Added `resolveSidebarChildId(href)` in `sidebar-visibility` and reused it in `Sidebar` child-id generation so visibility settings stay in sync with rendered nav ids.
 - 2026-02-16: After Services sidebar consolidation, restored a direct `DHCP Server` child link under `Services` to keep the DHCP workflow discoverable while retaining a reduced sidebar (`All Services` + DHCP quick link).
+- 2026-02-16: Reverted the temporary `DHCP Server` sidebar shortcut to keep Services consistent under one `All Services` entry; improved discoverability by changing `/system/services` default tab to the first ordered service tab (instead of NTP) when no `tab=` query is present.

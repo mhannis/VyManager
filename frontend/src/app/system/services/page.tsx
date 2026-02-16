@@ -151,6 +151,7 @@ const SERVICE_TAB_VALUES: ServiceTab[] = [
   "tftp-server",
   "webproxy",
 ];
+const DEFAULT_SERVICE_TAB: ServiceTab = SERVICE_TAB_VALUES[0];
 
 const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
   ntp: "NTP",
@@ -212,7 +213,7 @@ function SystemServicesPageContent() {
   const canEditSystem = canWrite(FeatureGroup.SYSTEM);
   const singleServiceView = searchParams.get("view") === "single";
 
-  const [activeTab, setActiveTab] = useState<ServiceTab>("ntp");
+  const [activeTab, setActiveTab] = useState<ServiceTab>(DEFAULT_SERVICE_TAB);
   const [serviceRefreshNonce, setServiceRefreshNonce] = useState(0);
 
   const [availableInterfaces, setAvailableInterfaces] = useState<string[]>([]);
@@ -244,8 +245,15 @@ function SystemServicesPageContent() {
 
   useEffect(() => {
     const requested = normalizeServiceTab(searchParams.get("tab"));
-    if (requested && requested !== activeTab) {
-      setActiveTab(requested);
+    if (requested) {
+      if (requested !== activeTab) {
+        setActiveTab(requested);
+      }
+      return;
+    }
+
+    if (activeTab !== DEFAULT_SERVICE_TAB) {
+      setActiveTab(DEFAULT_SERVICE_TAB);
     }
   }, [activeTab, searchParams]);
 

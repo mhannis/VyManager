@@ -80,7 +80,8 @@ Acceptance criteria:
 - `Settings -> Navigation` provides persistent controls to show/hide top-level and child sidebar items.
 - `Settings` and `Navigation` controls are fixed-visible and cannot be hidden.
 - `System` navigation now exposes `System Identification` and `Guided Setup` as separate pages.
-- Services sidebar is consolidated to `All Services` plus a direct `DHCP Server` shortcut.
+- Services sidebar is consolidated to a single `All Services` child entry.
+- `/system/services` defaults to the first ordered tab when no explicit `tab=` query is provided.
 - Build/typecheck/runtime smoke pass after the IA changes.
 
 Assumptions:
@@ -89,7 +90,7 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v2 cleanup applied per operator UX feedback; sidebar visibility moved to a dedicated settings page with full tree control, System IA split into identification + guided setup, and Services sidebar consolidated to a minimal set with DHCP quick access restored.
+- Status: interface IA consolidation v2 cleanup applied per operator UX feedback; sidebar visibility moved to a dedicated settings page with full tree control, System IA split into identification + guided setup, and Services sidebar consolidated to a single entry with deterministic default tab selection.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
@@ -144,7 +145,8 @@ Assumptions:
 
 ## Agent Handoff Notes
 - System IA update applied: `System Identification` now lives at `/system/identification`, and `/system/options` is a dedicated Guided Setup launcher for the three baseline setup actions.
-- Services sidebar IA update applied: reduced to `All Services` plus direct `DHCP Server`, with detailed per-service navigation handled inside `/system/services`.
+- Services sidebar IA update applied: reduced to `All Services`, with detailed per-service navigation handled inside `/system/services`.
+- Services landing behavior update applied: `/system/services` now opens the first ordered tab by default instead of starting at NTP.
 - Navigation preferences IA update applied: controls moved to `/settings/navigation`, expanded to full tree, and hard-locked for `Settings` + `Navigation`.
 - Removed `Configuration Guide` from left navigation and added `Settings -> Sidebar Visibility` with persistent per-browser hide/show toggles for top-level nav items.
 - Generated new authoritative planning artifacts:
