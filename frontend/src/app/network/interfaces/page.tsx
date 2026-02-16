@@ -252,6 +252,14 @@ function quoteCliValue(value: string): string {
   return `'${trimmed.replace(/'/g, `'\"'\"'`)}'`;
 }
 
+function withEmbeddedMode(href: string): string {
+  const [path, query] = href.split("?");
+  const params = new URLSearchParams(query || "");
+  params.set("embedded", "1");
+  const queryString = params.toString();
+  return queryString ? `${path}?${queryString}` : path;
+}
+
 function InterfacesPageContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -1359,7 +1367,7 @@ function InterfacesPageContent() {
               <div className="min-h-0 flex-1">
                 <iframe
                   title={`${advancedFamily.title} advanced editor`}
-                  src={advancedFamily.href}
+                  src={withEmbeddedMode(advancedFamily.href)}
                   className="h-full w-full border-0"
                 />
               </div>

@@ -245,3 +245,4 @@
 - 2026-02-16: Simplified sidebar IA by collapsing Interfaces navigation to a single `Interfaces` entry; kept setup flow discoverable with an explicit `Open Setup Wizard` button on the Interfaces page.
 - 2026-02-16: Interface family card actions now render `Current` for exact active-view links to avoid confusing no-op `Open` clicks on the page already in focus.
 - 2026-02-16: Family `Open` actions on `Network -> Interfaces` now launch a same-page advanced workspace panel (sheet + embedded family editor) instead of navigating away, per operator UX preference.
+- 2026-02-16: Embedded workspace family pages now append `embedded=1` and `AppLayout` respects this mode by omitting sidebar/wrapper chrome, eliminating clipped content in the side panel.

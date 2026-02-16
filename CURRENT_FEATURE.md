@@ -8,7 +8,7 @@ commits:
   - d87861c (interfaces inline quick add for VTI/VXLAN)
   - daff875 (interfaces inline quick add for tunnel)
   - 55814ca (interfaces sidebar collapse to single nav item + setup wizard button polish)
-  - pending (interfaces in-page advanced workspace panel for family open actions)
+  - pending (interfaces in-page advanced workspace panel for family open actions + embedded layout mode)
 notes:
   - Interfaces sidebar remains consolidated to:
     - `Interfaces`
@@ -33,6 +33,7 @@ notes:
     - `POST /vyos/vxlan-interface/configure`
     - `POST /vyos/tunnel-interface/configure`
   - Family `Open` actions now stay on `/network/interfaces` by launching an in-page advanced workspace panel (right-side sheet) for the selected family editor.
+  - Embedded family editors now run with `?embedded=1` and render via a stripped AppLayout mode (no nested sidebar), so content is fully visible in the side panel.
   - Interface family cards now show `Current` (disabled) when a card targets the exact view already open, so `Open` no longer appears broken on the current page.
   - Setup wizard remains available on the Interfaces page via `Open Setup Wizard`.
   - Validation for this increment:

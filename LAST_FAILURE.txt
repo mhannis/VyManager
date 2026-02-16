@@ -1,7 +1,11 @@
-timestamp: 2026-02-16T00:37:15Z
-failing_command: jq . FEATURE_STATE.json > /tmp/feature_state.valid && echo ok
-error_summary: JSON validation command failed because `jq` is not installed in this environment. The state file itself was not modified by the failure.
+timestamp: 2026-02-16T01:06:50Z
+failing_command: cd frontend && npx eslint src/components/layout/AppLayout.tsx src/app/network/interfaces/page.tsx --max-warnings=0
+error_summary: ESLint failed due `react-hooks/set-state-in-effect` in AppLayout embed detection. The effect called setIsEmbedded synchronously.
 last_output:
-/bin/bash: line 1: jq: command not found
-suspected_cause: Host toolchain does not include jq.
-next_step: Validate JSON using Python stdlib (`python3 -m json.tool FEATURE_STATE.json`) and continue normal gates.
+/home/redhot/VyOS/VyManager/frontend/src/components/layout/AppLayout.tsx
+  21:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders ... react-hooks/set-state-in-effect
+
+✖ 1 problem (0 errors, 1 warning)
+ESLint found too many warnings (maximum: 0).
+suspected_cause: Embed-mode detection was implemented via setState in useEffect.
+next_step: Replace effect/state with pure render-time query parsing and rerun lint/build/smoke.

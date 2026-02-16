@@ -6,6 +6,7 @@
     "Interfaces navigation is consolidated to a single `Interfaces` sidebar entry.",
     "`/network/interfaces` acts as the primary hub with family grouping and direct access to all detailed editors.",
     "Family `Open` actions operate inline on `/network/interfaces` (no page navigation away from manager).",
+    "Embedded advanced workspace renders without nested sidebar/layout clipping.",
     "Interfaces page includes a clear Setup Wizard button.",
     "Existing detailed interface pages remain reachable for advanced settings and compatibility.",
     "Inline PPPoE quick-add supports source interface selection with description-first labels.",
@@ -112,6 +113,16 @@
         "frontend/src/app/network/interfaces/page.tsx"
       ],
       "notes": "Family `Open` actions now launch an in-page advanced workspace panel (sheet + iframe) so operators remain on `/network/interfaces`."
+    },
+    {
+      "id": "IF-IA-11",
+      "owner_role": "UI|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/components/layout/AppLayout.tsx",
+        "frontend/src/app/network/interfaces/page.tsx"
+      ],
+      "notes": "Added embedded-layout mode and pass `embedded=1` into family workspace iframe URLs to remove nested sidebar/layout clipping in the panel."
     }
   ],
   "commands": {
