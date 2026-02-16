@@ -33,35 +33,57 @@ import { useSession, signOut } from "@/lib/auth-client";
 import { useSessionStore } from "@/store/session-store";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
+import {
+  loadHiddenSidebarIds,
+  resolveSidebarChildId,
+  SIDEBAR_VISIBILITY_CHANGE_EVENT,
+  SIDEBAR_VISIBILITY_STORAGE_KEY,
+  SidebarItemId,
+} from "@/lib/sidebar-visibility";
 
 interface NavItem {
+  id: SidebarItemId;
   title: string;
   href?: string;
   icon: React.ComponentType<{ className?: string }>;
   requiredPermission?: FeatureGroup; // If set, user must have READ access to this feature
-  children?: {
-    title: string;
-    href: string;
-    requiredPermission?: FeatureGroup; // If set, user must have READ access to this feature
-  }[];
+  children?: NavChild[];
 }
+
+interface NavChild {
+  id: SidebarItemId;
+  title: string;
+  href: string;
+  requiredPermission?: FeatureGroup; // If set, user must have READ access to this feature
+}
+
+type NavChildInput = Omit<NavChild, "id"> & { id?: SidebarItemId };
+
+const withChildIds = (children: NavChildInput[]): NavChild[] =>
+  children.map((child) => ({
+    ...child,
+    id: child.id ?? resolveSidebarChildId(child.href),
+  }));
 
 const navigation: NavItem[] = [
   {
+    id: "dashboard",
     title: "Dashboard",
     href: "/",
     icon: LayoutDashboard,
   },
   {
+    id: "containers",
     title: "Containers",
     href: "/system/containers",
     icon: Building2,
     requiredPermission: FeatureGroup.SYSTEM,
   },
   {
+    id: "firewall",
     title: "Firewall",
     icon: Shield,
-    children: [
+    children: withChildIds([
       {
         title: "Policies",
         href: "/firewall/policies",
@@ -92,18 +114,20 @@ const navigation: NavItem[] = [
         href: "/firewall/flowtables",
         requiredPermission: FeatureGroup.FIREWALL_FLOWTABLES,
       },
-    ],
+    ]),
   },
   {
+    id: "high-availability",
     title: "High Availability",
     href: "/network/high-availability",
     icon: Server,
     requiredPermission: FeatureGroup.NETWORK,
   },
   {
+    id: "interfaces",
     title: "Interfaces",
     icon: Network,
-    children: [
+    children: withChildIds([
       {
         title: "Setup Wizard",
         href: "/network/setup-wizard",
@@ -114,24 +138,27 @@ const navigation: NavItem[] = [
         href: "/network/interfaces",
         requiredPermission: FeatureGroup.INTERFACES,
       },
-    ],
+    ]),
   },
   {
+    id: "load-balancing",
     title: "Load Balancing",
     href: "/network/load-balancing",
     icon: Route,
     requiredPermission: FeatureGroup.LOAD_BALANCING,
   },
   {
+    id: "nat",
     title: "NAT",
     href: "/network/nat",
     icon: Network,
     requiredPermission: FeatureGroup.NAT,
   },
   {
+    id: "policy",
     title: "Policy",
     icon: FileText,
-    children: [
+    children: withChildIds([
       {
         title: "Overview",
         href: "/policies",
@@ -187,18 +214,20 @@ const navigation: NavItem[] = [
         href: "/policies/examples",
         requiredPermission: FeatureGroup.ACCESS_LIST,
       },
-    ],
+    ]),
   },
   {
+    id: "pki",
     title: "PKI",
     href: "/system/pki",
     icon: Shield,
     requiredPermission: FeatureGroup.SYSTEM,
   },
   {
+    id: "protocols",
     title: "Protocols",
     icon: Route,
-    children: [
+    children: withChildIds([
       {
         title: "Overview",
         href: "/routing/protocols",
@@ -224,144 +253,32 @@ const navigation: NavItem[] = [
         href: "/routing/multicast",
         requiredPermission: FeatureGroup.MULTICAST,
       },
-    ],
+    ]),
   },
   {
+    id: "services",
     title: "Services",
     icon: Wrench,
-    children: [
+    children: withChildIds([
       {
-        title: "Broadcast Relay",
-        href: "/system/services?tab=broadcast-relay&view=single",
+        title: "All Services",
+        href: "/system/services",
         requiredPermission: FeatureGroup.SYSTEM,
       },
-      {
-        title: "Config Sync",
-        href: "/system/services?tab=config-sync&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "Console Server",
-        href: "/system/services?tab=console-server&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "Conntrack Sync",
-        href: "/system/services?tab=conntrack-sync&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "DHCP Relay",
-        href: "/system/services?tab=dhcp-relay&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "DHCP Server",
-        href: "/network/dhcp",
-        requiredPermission: FeatureGroup.DHCP,
-      },
-      {
-        title: "DNS Forwarder",
-        href: "/system/services?tab=dns-forwarder&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "DNS Resolver",
-        href: "/system/services?tab=dns-resolver&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "Dynamic DNS",
-        href: "/system/services?tab=dynamic-dns&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "Event Handler",
-        href: "/system/services?tab=event-handler&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "HTTP API",
-        href: "/system/services?tab=https-api&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "IPoE Server",
-        href: "/system/services?tab=ipoe-server&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "LLDP",
-        href: "/system/services?tab=lldp&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "mDNS Repeater",
-        href: "/system/services?tab=mdns&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "Monitoring",
-        href: "/system/services?tab=monitoring&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "NTP",
-        href: "/system/services?tab=ntp&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "PPPoE Server",
-        href: "/system/services?tab=pppoe-server&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "Router Advert",
-        href: "/system/services?tab=router-advert&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "Salt Minion",
-        href: "/system/services?tab=salt-minion&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "SNMP",
-        href: "/system/services?tab=snmp&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "SSH",
-        href: "/system/services?tab=ssh&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "Suricata",
-        href: "/system/services?tab=suricata&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "TFTP Server",
-        href: "/system/services?tab=tftp-server&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-      {
-        title: "Webproxy",
-        href: "/system/services?tab=webproxy&view=single",
-        requiredPermission: FeatureGroup.SYSTEM,
-      },
-    ],
+    ]),
   },
   {
+    id: "traffic-policy",
     title: "Traffic Policy",
     href: "/network/traffic-policy",
     icon: FileText,
     requiredPermission: FeatureGroup.NETWORK,
   },
   {
+    id: "vpn",
     title: "VPN",
     icon: Lock,
-    children: [
+    children: withChildIds([
       {
         title: "Overview",
         href: "/vpn",
@@ -407,37 +324,53 @@ const navigation: NavItem[] = [
         href: "/vpn/wireguard",
         requiredPermission: FeatureGroup.WIREGUARD,
       },
-    ],
+    ]),
   },
   {
+    id: "vrf",
     title: "VRF",
     href: "/network/vrf",
     icon: Route,
     requiredPermission: FeatureGroup.VRF,
   },
   {
+    id: "l3vpn-vrfs",
     title: "L3VPN VRFs",
     href: "/network/vrf?section=l3vpn",
     icon: Route,
     requiredPermission: FeatureGroup.VRF,
   },
   {
-    title: "Configuration Guide",
-    href: "/configuration",
-    icon: FileText,
-    requiredPermission: FeatureGroup.SYSTEM,
-  },
-  {
+    id: "settings",
     title: "Settings",
-    href: "/settings",
     icon: Settings,
+    children: withChildIds([
+      {
+        id: "settings-general",
+        title: "General",
+        href: "/settings",
+      },
+      {
+        id: "settings-navigation",
+        title: "Navigation",
+        href: "/settings/navigation",
+      },
+    ]),
   },
   {
+    id: "system",
     title: "System",
     icon: Server,
-    children: [
+    children: withChildIds([
       {
-        title: "Options & Coverage",
+        id: "system-identification",
+        title: "System Identification",
+        href: "/system/identification",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        id: "system-guided-setup",
+        title: "Guided Setup",
         href: "/system/options",
         requiredPermission: FeatureGroup.SYSTEM,
       },
@@ -471,7 +404,7 @@ const navigation: NavItem[] = [
         href: "/system/users",
         requiredPermission: FeatureGroup.SYSTEM,
       },
-    ],
+    ]),
   },
 ];
 
@@ -481,6 +414,9 @@ export function Sidebar() {
   const router = useRouter();
   const [openOverrides, setOpenOverrides] = useState<Record<string, boolean>>(
     {},
+  );
+  const [hiddenSidebarIds, setHiddenSidebarIds] = useState<Set<SidebarItemId>>(
+    new Set(),
   );
   const { data: session } = useSession();
   const { activeSession, loadSession, disconnectFromInstance } =
@@ -515,6 +451,37 @@ export function Sidebar() {
     loadSession();
   }, [loadSession]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const syncHiddenItems = () => {
+      setHiddenSidebarIds(loadHiddenSidebarIds());
+    };
+    syncHiddenItems();
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key && event.key !== SIDEBAR_VISIBILITY_STORAGE_KEY) return;
+      syncHiddenItems();
+    };
+    const handleVisibilityChange = () => {
+      syncHiddenItems();
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener(
+      SIDEBAR_VISIBILITY_CHANGE_EVENT,
+      handleVisibilityChange as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(
+        SIDEBAR_VISIBILITY_CHANGE_EVENT,
+        handleVisibilityChange as EventListener,
+      );
+    };
+  }, []);
+
   const handleLogout = async () => {
     // Disconnect from instance before logging out to clean up active_sessions
     if (activeSession) {
@@ -529,9 +496,14 @@ export function Sidebar() {
     router.push("/login");
   };
 
+  const navigationWithVisibility = useMemo(
+    () => navigation.filter((item) => !hiddenSidebarIds.has(item.id)),
+    [hiddenSidebarIds],
+  );
+
   const activeParents = useMemo(() => {
     const activeParents: string[] = [];
-    navigation.forEach((item) => {
+    navigationWithVisibility.forEach((item) => {
       if (item.children) {
         const hasActiveChild = item.children.some((child) =>
           isHrefActive(child.href),
@@ -542,7 +514,7 @@ export function Sidebar() {
       }
     });
     return activeParents;
-  }, [isHrefActive]);
+  }, [isHrefActive, navigationWithVisibility]);
 
   const isItemOpen = (title: string) =>
     openOverrides[title] ?? activeParents.includes(title);
@@ -570,6 +542,10 @@ export function Sidebar() {
         // Filter children first
         if (item.children) {
           const visibleChildren = item.children.filter((child) => {
+            if (hiddenSidebarIds.has(child.id)) {
+              return false;
+            }
+
             // If no permission required, always show
             if (!child.requiredPermission) return true;
 
@@ -743,7 +719,7 @@ export function Sidebar() {
       .filter((item): item is NavItem => item !== null);
   };
 
-  const visibleNavigation = filterNavigation(navigation);
+  const visibleNavigation = filterNavigation(navigationWithVisibility);
 
   return (
     <div className="flex h-screen w-64 flex-col border-r border-border bg-card">
@@ -814,7 +790,7 @@ export function Sidebar() {
                       const isChildActive = isHrefActive(child.href);
                       return (
                         <Link
-                          key={child.href}
+                          key={child.id}
                           href={child.href}
                           className={cn(
                             "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",

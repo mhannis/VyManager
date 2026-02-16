@@ -17,6 +17,10 @@ commits:
   - 647f6e0 (unified create-interface wizard with all interface families)
   - 51ea487 (main-page additional-family inventory)
   - pending (remove sidebar bulk family links + remove common interface actions panel)
+  - pending (remove redundant configuration guide nav + add sidebar visibility controls in settings)
+  - pending (move navigation controls to dedicated settings page with full tree support)
+  - pending (split System Identification from Guided Setup and update System sidebar IA)
+  - pending (consolidate Services sidebar navigation to `All Services`)
 notes:
   - Interfaces sidebar remains consolidated to:
     - `Interfaces`
@@ -51,9 +55,15 @@ notes:
   - `Interfaces` sidebar is trimmed back to `Setup Wizard` + `All Interfaces`; family bulk links are removed.
   - `Common Interface Actions` panel is removed from `/network/interfaces`; interface creation remains wizard-driven from the single `Create Interface` button.
   - Setup wizard remains available on the Interfaces page via `Open Setup Wizard`.
+  - `Configuration Guide` is removed from the left sidebar to reduce redundant navigation.
+  - `Settings -> Navigation` now exposes persistent full-tree sidebar visibility toggles (top-level and child links).
+  - `Settings` and `Navigation` are now fixed-visible controls and cannot be hidden.
+  - `System -> System Identification` now contains hostname/timezone/domain settings.
+  - `System -> Guided Setup` now contains the three setup actions (Network Wizard, Zone Guided Setup, Firewall Policies).
+  - Services sidebar navigation is consolidated to `All Services`; service-specific controls remain in `/system/services` tabs.
   - Validation for this increment:
     - `cd frontend && npx tsc --noEmit --pretty false`
-    - `cd frontend && npx eslint src/app/network/interfaces/page.tsx --max-warnings=0`
+    - `cd frontend && npx eslint src/components/layout/Sidebar.tsx src/lib/sidebar-visibility.ts src/app/settings/page.tsx src/app/settings/navigation/page.tsx src/app/system/options/page.tsx src/app/system/identification/page.tsx src/app/configuration/page.tsx src/components/dashboard/ServicesStatusCard.tsx --max-warnings=0`
     - `cd frontend && npm run -s build`
     - `cd frontend && npm run -s smoke:runtime`
   - Browser smoke (`npm run -s smoke:ui`) remains blocked by host dependency `libnspr4.so`.

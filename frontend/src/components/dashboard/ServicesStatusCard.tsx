@@ -92,7 +92,7 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
           detail: sshResult.value.enabled
             ? `Port ${sshResult.value.port ?? 22}`
             : "Remote CLI disabled",
-          href: "/system/options",
+          href: "/system/services?tab=ssh&view=single",
         });
       } else {
         failedCalls += 1;
@@ -101,7 +101,7 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
           name: "SSH",
           state: "unknown",
           detail: "Status unavailable",
-          href: "/system/options",
+          href: "/system/services?tab=ssh&view=single",
         });
       }
 

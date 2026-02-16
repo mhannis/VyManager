@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { RebootModal } from "@/components/system/RebootModal";
 import { PoweroffModal } from "@/components/system/PoweroffModal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Power, PowerOff, Settings as SettingsIcon } from "lucide-react";
+import { PanelLeft, Power, PowerOff, Settings as SettingsIcon } from "lucide-react";
 
 export default function SettingsPage() {
   const [rebootModalOpen, setRebootModalOpen] = useState(false);
@@ -32,8 +33,28 @@ export default function SettingsPage() {
             Settings
           </h1>
           <p className="text-muted-foreground mt-2">
-            Manage system power and configuration settings
+            Manage system behavior and power controls
           </p>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Customization</h2>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PanelLeft className="h-5 w-5" />
+                Navigation Preferences
+              </CardTitle>
+              <CardDescription>
+                Configure visibility for sidebar sections on a dedicated navigation settings page.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="outline" className="w-full md:w-auto">
+                <Link href="/settings/navigation">Open Navigation Settings</Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Power Management Section */}

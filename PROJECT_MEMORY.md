@@ -59,6 +59,9 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
 - Deliver interface IA consolidation so operators can navigate interface configuration from one unified hub and a small set of logical groups.
 - Provide a single `Create Interface` flow that supports all interface families with type-specific fields from one modal.
+- Add operator-level sidebar personalization so basic users can hide irrelevant top-level navigation items without permission changes.
+- Refine System IA: separate identity controls from guided setup and remove ambiguous “Options & Coverage” naming.
+- Consolidate Services sidebar navigation where practical while keeping full service controls inside the Services page.
 
 ## Current Feature Spec
 Feature: **Interfaces IA Consolidation v2**
@@ -73,6 +76,11 @@ Acceptance criteria:
 - Main Interfaces page includes a consolidated inventory section for non-Ethernet/VLAN interface families.
 - Common Interface Actions card is removed from `/network/interfaces` (covered by the wizard type selector).
 - Sidebar label for `/network/interfaces` remains `All Interfaces`.
+- Redundant `Configuration Guide` entry is removed from the left sidebar.
+- `Settings -> Navigation` provides persistent controls to show/hide top-level and child sidebar items.
+- `Settings` and `Navigation` controls are fixed-visible and cannot be hidden.
+- `System` navigation now exposes `System Identification` and `Guided Setup` as separate pages.
+- Services sidebar is consolidated to a single `All Services` child entry.
 - Build/typecheck/runtime smoke pass after the IA changes.
 
 Assumptions:
@@ -81,27 +89,35 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v2 cleanup applied per operator UX feedback; side-nav interface family list is removed again and `Common Interface Actions` card is removed from Interfaces page.
+- Status: interface IA consolidation v2 cleanup applied per operator UX feedback; sidebar visibility moved to a dedicated settings page with full tree control, System IA split into identification + guided setup, and Services sidebar consolidated to `All Services`.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
 - `frontend/src/components/layout/Sidebar.tsx`
-- `frontend/src/app/network/interfaces/page.tsx`
+- `frontend/src/app/settings/page.tsx`
+- `frontend/src/app/settings/navigation/page.tsx`
+- `frontend/src/lib/sidebar-visibility.ts`
+- `frontend/src/app/system/options/page.tsx`
+- `frontend/src/app/system/identification/page.tsx`
+- `frontend/src/app/configuration/page.tsx`
+- `frontend/src/components/dashboard/ServicesStatusCard.tsx`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
 - `DECISIONS.md`
+- `LAST_FAILURE.txt`
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/components/layout/Sidebar.tsx src/app/network/interfaces/page.tsx --max-warnings=0` passed.
+- `cd frontend && npx eslint src/components/layout/Sidebar.tsx src/lib/sidebar-visibility.ts src/app/settings/page.tsx src/app/settings/navigation/page.tsx src/app/system/options/page.tsx src/app/system/identification/page.tsx src/app/configuration/page.tsx src/components/dashboard/ServicesStatusCard.tsx --max-warnings=0` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
-- `cd frontend && npm run -s smoke:ui` remains blocked by missing host library `libnspr4.so` (recorded in `LAST_FAILURE.txt`).
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
 - Browser smoke depends on host-specific Playwright shared libs path.
+- Sidebar visibility preferences are currently browser-local (localStorage) rather than profile-synced.
+- Services sidebar consolidation keeps the tabbed services UI as the primary workflow; deep links remain available but are no longer all listed in sidebar navigation.
 - `uvicorn --reload` showed intermittent local connect hangs on `:8000` after restart; stable session should run non-reload mode for operator testing.
 - Some command semantics in HA/Traffic Policy/PKI still need live VyOS operational validation across more versions/hardware.
 - Reviewer sub-agent dispatch can fail when thread cap is saturated; manual review fallback is required in that case.
@@ -127,6 +143,10 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- System IA update applied: `System Identification` now lives at `/system/identification`, and `/system/options` is a dedicated Guided Setup launcher for the three baseline setup actions.
+- Services sidebar IA update applied: reduced to `All Services` under `Services`, with detailed per-service navigation handled inside `/system/services`.
+- Navigation preferences IA update applied: controls moved to `/settings/navigation`, expanded to full tree, and hard-locked for `Settings` + `Navigation`.
+- Removed `Configuration Guide` from left navigation and added `Settings -> Sidebar Visibility` with persistent per-browser hide/show toggles for top-level nav items.
 - Generated new authoritative planning artifacts:
   - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
   - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`

@@ -15,6 +15,12 @@
     "Inline PPPoE quick-add supports source interface selection with description-first labels.",
     "Inline VTI and VXLAN quick-add flows are available from Interface Manager for common setup.",
     "Inline Tunnel quick-add flow is available with required source/remote validation.",
+    "Sidebar no longer shows the redundant `Configuration Guide` entry.",
+    "Navigation visibility is managed on a dedicated `Settings -> Navigation` page and supports top-level plus child links.",
+    "Settings and the `Navigation` settings link are always visible and cannot be hidden.",
+    "System navigation replaces `Options & Coverage` with `System Identification` and `Guided Setup` entries.",
+    "`/system/options` is a dedicated Guided Setup launcher page with the 3 baseline setup actions.",
+    "Services sidebar is consolidated to a single `All Services` child entry while service tabs remain inside the Services page.",
     "Build/typecheck/runtime smoke pass after IA changes."
   ],
   "assumptions": [
@@ -155,12 +161,58 @@
         "frontend/src/app/network/interfaces/page.tsx"
       ],
       "notes": "Removed interface-family bulk links from sidebar and removed `Common Interface Actions` card from Interfaces page, keeping one wizard-driven create workflow."
+    },
+    {
+      "id": "IF-IA-18",
+      "owner_role": "UI|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/components/layout/Sidebar.tsx",
+        "frontend/src/app/settings/page.tsx",
+        "frontend/src/lib/sidebar-visibility.ts"
+      ],
+      "notes": "Removed `Configuration Guide` from sidebar navigation and added persistent Settings-based controls to hide/show top-level sidebar items."
+    },
+    {
+      "id": "IF-IA-19",
+      "owner_role": "UI|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/app/settings/page.tsx",
+        "frontend/src/app/settings/navigation/page.tsx",
+        "frontend/src/components/layout/Sidebar.tsx",
+        "frontend/src/lib/sidebar-visibility.ts"
+      ],
+      "notes": "Moved visibility controls to a dedicated navigation settings page, expanded controls to full tree levels, and made Settings/Navigation non-hideable."
+    },
+    {
+      "id": "IF-IA-20",
+      "owner_role": "UI|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/options/page.tsx",
+        "frontend/src/app/system/identification/page.tsx",
+        "frontend/src/components/layout/Sidebar.tsx",
+        "frontend/src/lib/sidebar-visibility.ts",
+        "frontend/src/app/configuration/page.tsx"
+      ],
+      "notes": "Split system identity into `/system/identification`, converted `/system/options` to Guided Setup, and updated System sidebar labels/links."
+    },
+    {
+      "id": "IF-IA-21",
+      "owner_role": "UI|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/components/layout/Sidebar.tsx",
+        "frontend/src/lib/sidebar-visibility.ts"
+      ],
+      "notes": "Consolidated Services sidebar navigation to a single `All Services` entry while keeping internal tabbed service coverage on `/system/services`."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
     "test": "cd frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
-    "lint": "cd frontend && npx eslint src/components/layout/Sidebar.tsx src/app/network/interfaces/page.tsx --max-warnings=0"
+    "lint": "cd frontend && npx eslint src/components/layout/Sidebar.tsx src/lib/sidebar-visibility.ts src/app/settings/page.tsx src/app/settings/navigation/page.tsx src/app/system/options/page.tsx src/app/system/identification/page.tsx src/app/configuration/page.tsx src/components/dashboard/ServicesStatusCard.tsx --max-warnings=0"
   },
   "worktrees_or_threads": [
     {

@@ -1,9 +1,12 @@
-timestamp: 2026-02-16T02:35:15Z
-failing_command: npx -y prettier --check frontend/src/app/network/interfaces/page.tsx
-error_summary: Prettier check failed because the modified interfaces page had formatting drift after the wizard refactor.
+timestamp: 2026-02-16T02:59:13Z
+failing_command: cd frontend && npx eslint src/components/layout/Sidebar.tsx src/app/settings/page.tsx src/lib/sidebar-visibility.ts --max-warnings=0
+error_summary: ESLint failed with `react-hooks/set-state-in-effect` in `src/app/settings/page.tsx` after initial sidebar-settings implementation.
 last_output:
-Checking formatting...
-[warn] frontend/src/app/network/interfaces/page.tsx
-[warn] Code style issues found in the above file. Run Prettier with --write to fix.
-suspected_cause: Large JSX conditional additions were not formatted after patching.
-next_step: Run `npx -y prettier --write frontend/src/app/network/interfaces/page.tsx`, then rerun lint/build/smoke gates.
+/home/redhot/VyOS/VyManager/frontend/src/app/settings/page.tsx
+  27:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders  react-hooks/set-state-in-effect
+
+✖ 1 problem (0 errors, 1 warning)
+
+ESLint found too many warnings (maximum: 0).
+suspected_cause: Initial state sync used `setHiddenSidebarIds(...)` directly inside `useEffect`.
+next_step: Initialize sidebar visibility state lazily with `useState(() => loadHiddenSidebarIds())` and rerun lint/build/runtime smoke.

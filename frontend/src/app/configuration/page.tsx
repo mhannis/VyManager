@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 
 const SECTIONS = [
-  { title: "System", href: "/system/options", note: "Core host, user, and system settings" },
+  { title: "System", href: "/system/identification", note: "Core host identity, user, and system settings" },
   { title: "Interfaces", href: "/network/interfaces", note: "Physical, VLAN, and address configuration" },
   { title: "Firewall", href: "/firewall/policies", note: "Policy, groups, zones, and bridge rules" },
   { title: "NAT", href: "/network/nat", note: "Source and destination NAT rules" },
