@@ -123,6 +123,9 @@ from routers.system_default_route import system_default_route as system_default_
 from routers.system_frr import system_frr as system_frr_router
 from routers.system_ip import system_ip as system_ip_router
 from routers.system_ipv6 import system_ipv6 as system_ipv6_router
+from routers.system_lcd import system_lcd as system_lcd_router
+from routers.system_sflow import system_sflow as system_sflow_router
+from routers.system_task_scheduler import system_task_scheduler as system_task_scheduler_router
 
 # Load backend/.env when uvicorn is started without exported shell vars.
 load_dotenv(Path(__file__).resolve().parent / ".env")
@@ -433,6 +436,9 @@ app.include_router(system_default_route_router)
 app.include_router(system_frr_router)
 app.include_router(system_ip_router)
 app.include_router(system_ipv6_router)
+app.include_router(system_lcd_router)
+app.include_router(system_sflow_router)
+app.include_router(system_task_scheduler_router)
 app.include_router(system.router)
 app.include_router(power_router.router)
 app.include_router(config_router.router)

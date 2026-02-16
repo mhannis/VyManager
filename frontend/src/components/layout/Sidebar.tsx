@@ -410,8 +410,18 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
+        title: "LCD",
+        href: "/system/lcd",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
         title: "Proxy",
         href: "/system/proxy",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "sFlow",
+        href: "/system/sflow",
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
@@ -432,6 +442,11 @@ const navigation: NavItem[] = [
       {
         title: "Users",
         href: "/system/users",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "Task Scheduler",
+        href: "/system/task-scheduler",
         requiredPermission: FeatureGroup.SYSTEM,
       },
     ]),

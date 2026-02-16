@@ -1,13 +1,13 @@
 {
-  "feature_id": "system-frr-ip-ipv6-baseline-v1-2026-02-16",
-  "title": "System baseline pages: FRR, IP, IPv6",
+  "feature_id": "system-lcd-sflow-task-scheduler-baseline-v1-2026-02-16",
+  "title": "System baseline pages: LCD, sFlow, Task Scheduler",
   "status": "in_progress",
   "acceptance_criteria": [
-    "System FRR page exists at /system/frr with scoped batch operations.",
-    "System IP page exists at /system/ip with scoped batch operations and structured forms.",
-    "System IPv6 page exists at /system/ipv6 with scoped batch operations and structured forms.",
-    "Backend exposes wrappers /vyos/system-frr/*, /vyos/system-ip/*, and /vyos/system-ipv6/*.",
-    "System sidebar includes links for FRR, IP, and IPv6 pages.",
+    "System LCD page exists at /system/lcd with scoped batch operations.",
+    "System sFlow page exists at /system/sflow with scoped batch operations and structured forms.",
+    "System Task Scheduler page exists at /system/task-scheduler with scoped batch operations and structured forms.",
+    "Backend exposes wrappers /vyos/system-lcd/*, /vyos/system-sflow/*, and /vyos/system-task-scheduler/*.",
+    "System sidebar includes links for LCD, sFlow, and Task Scheduler pages.",
     "Runtime/browser smoke default routes include all three pages.",
     "Targeted backend wrapper tests, frontend typecheck/lint/build/runtime smoke pass."
   ],
@@ -17,35 +17,35 @@
   ],
   "tasks": [
     {
-      "id": "SYSMOD-01",
+      "id": "SYSSVC-01",
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/system_frr.py",
-        "backend/routers/system_ip.py",
-        "backend/routers/system_ipv6.py",
+        "backend/routers/system_lcd.py",
+        "backend/routers/system_sflow.py",
+        "backend/routers/system_task_scheduler.py",
         "backend/app.py"
       ],
       "notes": "Added and registered thin config-tree wrappers preserving existing API/session contracts."
     },
     {
-      "id": "SYSMOD-02",
+      "id": "SYSSVC-02",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/system/frr/page.tsx",
-        "frontend/src/app/system/ip/page.tsx",
-        "frontend/src/app/system/ipv6/page.tsx",
-        "frontend/src/lib/api/system-frr.ts",
-        "frontend/src/lib/api/system-ip.ts",
-        "frontend/src/lib/api/system-ipv6.ts",
+        "frontend/src/app/system/lcd/page.tsx",
+        "frontend/src/app/system/sflow/page.tsx",
+        "frontend/src/app/system/task-scheduler/page.tsx",
+        "frontend/src/lib/api/system-lcd.ts",
+        "frontend/src/lib/api/system-sflow.ts",
+        "frontend/src/lib/api/system-task-scheduler.ts",
         "frontend/src/lib/help/pageGuides.ts",
         "frontend/src/components/layout/Sidebar.tsx"
       ],
       "notes": "Implemented dedicated form-first pages and added System nav links."
     },
     {
-      "id": "SYSMOD-03",
+      "id": "SYSSVC-03",
       "owner_role": "Test",
       "status": "done",
       "files": [
@@ -56,50 +56,51 @@
       "notes": "Extended wrapper tests and smoke route probes for new pages."
     },
     {
-      "id": "SYSMOD-04",
+      "id": "SYSSVC-04",
       "owner_role": "Analyst|Planner",
       "status": "done",
       "files": [
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
       ],
-      "notes": "Moved SYS-05/SYS-06/SYS-07 from missing to partial in strict parity backlog."
+      "notes": "Moved SYS-08/SYS-12/SYS-15 from missing to partial in strict parity backlog."
     },
     {
-      "id": "SYSNEXT-04",
+      "id": "NEXT-PR-03",
       "owner_role": "Backend|UI|Test",
       "status": "todo",
       "files": [
-        "backend/routers/system_lcd.py",
-        "frontend/src/app/system/lcd/page.tsx"
+        "backend/routers/segment_routing.py",
+        "frontend/src/app/routing/unicast-protocols/segment-routing/page.tsx"
       ],
-      "notes": "Implement SYS-08 LCD page."
+      "notes": "Implement protocols segment routing page with robust form workflow."
     },
     {
-      "id": "SYSNEXT-05",
+      "id": "NEXT-VRF-02",
       "owner_role": "Backend|UI|Test",
       "status": "todo",
       "files": [
-        "backend/routers/system_sflow.py",
-        "frontend/src/app/system/sflow/page.tsx"
+        "backend/routers/vrf/vrf.py",
+        "frontend/src/app/network/vrf/page.tsx"
       ],
-      "notes": "Implement SYS-12 sFlow page."
+      "notes": "Add dedicated L3VPN VRF workflow beyond baseline VRF options."
     },
     {
-      "id": "SYSNEXT-06",
-      "owner_role": "Backend|UI|Test",
+      "id": "NEXT-X",
+      "owner_role": "Test|Reviewer",
       "status": "todo",
       "files": [
-        "backend/routers/system_task_scheduler.py",
-        "frontend/src/app/system/task-scheduler/page.tsx"
+        "scripts/generate_phase1_backlog.py",
+        "backend/tests/",
+        "frontend/scripts/"
       ],
-      "notes": "Implement SYS-15 task scheduler page."
+      "notes": "Implement X-01/X-02/X-03/X-05 cross-cutting parity and robustness gates."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
     "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
-    "lint": "cd frontend && npx eslint src/app/system/frr/page.tsx src/app/system/ip/page.tsx src/app/system/ipv6/page.tsx src/lib/api/system-frr.ts src/lib/api/system-ip.ts src/lib/api/system-ipv6.ts src/lib/help/pageGuides.ts src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0"
+    "lint": "cd frontend && npx eslint src/app/system/lcd/page.tsx src/app/system/sflow/page.tsx src/app/system/task-scheduler/page.tsx src/lib/api/system-lcd.ts src/lib/api/system-sflow.ts src/lib/api/system-task-scheduler.ts src/lib/help/pageGuides.ts src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0"
   },
   "worktrees_or_threads": [
     {

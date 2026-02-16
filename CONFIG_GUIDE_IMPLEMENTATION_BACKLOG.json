@@ -448,8 +448,8 @@
     {
       "id": "SYS-08",
       "domain": "system",
-      "status": "missing",
-      "title": "LCD page"
+      "status": "partial",
+      "title": "LCD page (baseline page+wrapper implemented; option-depth validation pending)"
     },
     {
       "id": "SYS-09",
@@ -472,8 +472,8 @@
     {
       "id": "SYS-12",
       "domain": "system",
-      "status": "missing",
-      "title": "sFlow page"
+      "status": "partial",
+      "title": "sFlow page (baseline page+wrapper implemented; option-depth validation pending)"
     },
     {
       "id": "SYS-13",
@@ -490,8 +490,8 @@
     {
       "id": "SYS-15",
       "domain": "system",
-      "status": "missing",
-      "title": "Task Scheduler page"
+      "status": "partial",
+      "title": "Task Scheduler page (baseline page+wrapper implemented; option-depth validation pending)"
     },
     {
       "id": "SYS-16",

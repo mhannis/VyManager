@@ -274,3 +274,6 @@
 - 2026-02-16: Implemented `SYS-05`, `SYS-06`, and `SYS-07` as thin wrapper + dedicated form-first pages (`/system/frr`, `/system/ip`, `/system/ipv6`) to reduce system-domain missing backlog without changing core backend abstractions.
 - 2026-02-16: For FRR/IP/IPv6 forms, command leaves were aligned to the VyOS documentation pages (`system/frr.html`, `system/ip.html`, `system/ipv6.html`) and modeled as explicit form controls (no free-form CLI text input).
 - 2026-02-16: Updated strict parity backlog (`CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.*`) moving `SYS-05/06/07` from `missing` to `partial` after baseline implementation.
+- 2026-02-16: Implemented `SYS-08`, `SYS-12`, and `SYS-15` as thin wrapper + dedicated form-first pages (`/system/lcd`, `/system/sflow`, `/system/task-scheduler`) to clear remaining missing System pages in the strict backlog.
+- 2026-02-16: For this System slice, sFlow and Task Scheduler UIs were modeled as structured CRUD forms (collectors/tasks) with diff-based command generation and no free-form CLI entry.
+- 2026-02-16: Updated strict parity backlog (`CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.*`) moving `SYS-08/12/15` from `missing` to `partial` after baseline implementation.

@@ -30,6 +30,9 @@ import routers.system_default_route as system_default_route_router
 import routers.system_frr as system_frr_router
 import routers.system_ip as system_ip_router
 import routers.system_ipv6 as system_ipv6_router
+import routers.system_lcd as system_lcd_router
+import routers.system_sflow as system_sflow_router
+import routers.system_task_scheduler as system_task_scheduler_router
 import routers.load_balancing.load_balancing as load_balancing_router
 import routers.pki.pki as pki_router
 import routers.traffic_policy.traffic_policy as traffic_policy_router
@@ -293,6 +296,38 @@ class DummyService:
                     },
                     "strict-dad": {},
                 },
+                "lcd": {
+                    "model": "CFA635",
+                    "device": "/dev/ttyUSB0",
+                },
+                "sflow": {
+                    "agent-address": "192.0.2.14",
+                    "agent-interface": "eth0",
+                    "drop-monitor-limit": "50",
+                    "enable-egress": {},
+                    "interface": {
+                        "eth0": {},
+                        "eth1": {},
+                    },
+                    "polling": "30",
+                    "sampling-rate": "1000",
+                    "server": {
+                        "192.0.2.1": {
+                            "port": "6343",
+                        }
+                    },
+                },
+                "task-scheduler": {
+                    "task": {
+                        "backup-config": {
+                            "interval": "300",
+                            "executable": {
+                                "path": "/config/scripts/backup.sh",
+                                "arguments": "--quick",
+                            },
+                        }
+                    }
+                },
                 "proxy": {
                     "url": "http://proxy.lab.local",
                     "port": "3128",
@@ -370,6 +405,9 @@ def app():
     app.include_router(system_frr_router.system_frr)
     app.include_router(system_ip_router.system_ip)
     app.include_router(system_ipv6_router.system_ipv6)
+    app.include_router(system_lcd_router.system_lcd)
+    app.include_router(system_sflow_router.system_sflow)
+    app.include_router(system_task_scheduler_router.system_task_scheduler)
     return app
 
 
@@ -429,6 +467,9 @@ def mock_service(monkeypatch):
         "/vyos/system-frr/capabilities",
         "/vyos/system-ip/capabilities",
         "/vyos/system-ipv6/capabilities",
+        "/vyos/system-lcd/capabilities",
+        "/vyos/system-sflow/capabilities",
+        "/vyos/system-task-scheduler/capabilities",
     ],
 )
 def test_config_tree_wrapper_capabilities_payload(app, allow_permissions, mock_service, path):
@@ -475,6 +516,9 @@ def test_config_tree_wrapper_capabilities_payload(app, allow_permissions, mock_s
         ("/vyos/system-frr/config", "frr", "profile"),
         ("/vyos/system-ip/config", "ip", "protocol"),
         ("/vyos/system-ipv6/config", "ipv6", "strict-dad"),
+        ("/vyos/system-lcd/config", "lcd", "model"),
+        ("/vyos/system-sflow/config", "sflow", "server"),
+        ("/vyos/system-task-scheduler/config", "task_scheduler", "task"),
     ],
 )
 def test_config_tree_wrapper_config_payload(
@@ -655,6 +699,21 @@ def test_wireless_config_includes_country_code(app, allow_permissions, mock_serv
             "/vyos/system-ipv6/batch",
             "set system ipv6 disable-forwarding",
             "set system frr profile datacenter",
+        ),
+        (
+            "/vyos/system-lcd/batch",
+            "set system lcd model CFA635",
+            "set system sflow polling 30",
+        ),
+        (
+            "/vyos/system-sflow/batch",
+            "set system sflow polling 30",
+            "set system task-scheduler task backup-config interval 300",
+        ),
+        (
+            "/vyos/system-task-scheduler/batch",
+            "set system task-scheduler task backup-config interval 300",
+            "set system lcd model CFA635",
         ),
     ],
 )

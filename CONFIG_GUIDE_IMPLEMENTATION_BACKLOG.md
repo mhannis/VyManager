@@ -138,14 +138,14 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `SYS-05` (`partial`): FRR system page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-06` (`partial`): IP system options page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-07` (`partial`): IPv6 system options page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
-- `SYS-08` (`missing`): Build LCD page (if platform supports).
+- `SYS-08` (`partial`): LCD page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-09` (`partial`): Login/user management parity deepening.
 - `SYS-10` (`partial`): Name-server ownership and resolver integration cleanup.
 - `SYS-11` (`partial`): Build System Proxy page. Baseline form-first page + backend wrapper are implemented; option-depth parity and live validation remain.
-- `SYS-12` (`missing`): Build sFlow page.
+- `SYS-12` (`partial`): sFlow page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-13` (`partial`): Build Sysctl page. Baseline parameter CRUD page + backend wrapper are implemented; option-depth parity and live validation remain.
 - `SYS-14` (`partial`): Syslog page parity completion (destinations/templates/severity controls).
-- `SYS-15` (`missing`): Build Task Scheduler page.
+- `SYS-15` (`partial`): Task Scheduler page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-16` (`partial`): Time-zone/update/watchdog option parity completion.
 
 ---

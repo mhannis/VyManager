@@ -32,6 +32,9 @@ export const pageGuides: Record<
   | "systemFrr"
   | "systemIp"
   | "systemIpv6"
+  | "systemLcd"
+  | "systemSflow"
+  | "systemTaskScheduler"
   | "systemProxy"
   | "systemSysctl"
   | "containers"
@@ -978,6 +981,95 @@ export const pageGuides: Record<
         items: [
           "Neighbor issues are often table-size or duplicate-address related; review strict DAD behavior carefully.",
           "Protocol route-map mismatches are commonly due to wrong protocol token or route-map name.",
+        ],
+      },
+    ],
+  },
+  systemLcd: {
+    title: "System LCD How-To",
+    summary:
+      "Configure LCD model and device mapping for supported hardware platforms.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/system/lcd.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Set the LCD model first, then the device path exposed by your platform.",
+          "Apply only on systems that physically support LCD integration.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save and refresh to confirm model/device persist.",
+          "Confirm on-device LCD behavior matches expectations after apply.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "If no LCD output appears, verify the hardware model and device path are correct.",
+          "LCD support can vary by platform build; test on target hardware.",
+        ],
+      },
+    ],
+  },
+  systemSflow: {
+    title: "System sFlow How-To",
+    summary:
+      "Configure sFlow exporter identity, sampling behavior, monitored interfaces, and collector servers.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/system/sflow.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Set agent address/interface and baseline polling/sampling values first.",
+          "Select monitored interfaces, then add collector servers with ports.",
+          "Enable egress export only when your analysis tooling expects it.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save and refresh to confirm collector and interface lists persist.",
+          "Verify collector receives flow samples from expected interfaces.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "No telemetry usually means collector reachability, server port, or interface selection mismatch.",
+          "Sampling rates that are too high can impact control-plane overhead on smaller platforms.",
+        ],
+      },
+    ],
+  },
+  systemTaskScheduler: {
+    title: "Task Scheduler How-To",
+    summary:
+      "Create recurring automation tasks using interval or crontab scheduling under `system task-scheduler`.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/system/task-scheduler.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Define task name and executable path first.",
+          "Choose either interval-based scheduling or a crontab spec.",
+          "Add arguments only when your script requires them.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save and refresh to confirm tasks persist with expected schedule.",
+          "Verify task side effects/logs to ensure the executable path and arguments are correct.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Failed tasks often come from wrong script path, permissions, or malformed schedule values.",
+          "Use explicit absolute paths for scripts and binaries.",
         ],
       },
     ],

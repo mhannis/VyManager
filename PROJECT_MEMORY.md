@@ -57,21 +57,23 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 ## Current Objective
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
-- Continue System-domain parity work with dedicated form-first pages and scoped backend wrappers.
-- Complete remaining missing System pages (`SYS-08`, `SYS-12`, `SYS-15`) after the FRR/IP/IPv6 baseline slice.
+- Complete remaining strict-backlog `missing` items after System baseline completion:
+  - `PR-03` Segment Routing
+  - `VRF-02` L3VPN VRF workflow
+  - `X-01`, `X-02`, `X-03`, `X-05` cross-cutting parity/test hardening
 
 ## Current Feature Spec
-Feature: **System baseline parity slice (`SYS-05`, `SYS-06`, `SYS-07`)**
+Feature: **System baseline parity slice (`SYS-08`, `SYS-12`, `SYS-15`)**
 
 Acceptance criteria:
 - Add scoped backend wrappers for:
-  - `system frr` (`/vyos/system-frr/*`)
-  - `system ip` (`/vyos/system-ip/*`)
-  - `system ipv6` (`/vyos/system-ipv6/*`)
+  - `system lcd` (`/vyos/system-lcd/*`)
+  - `system sflow` (`/vyos/system-sflow/*`)
+  - `system task-scheduler` (`/vyos/system-task-scheduler/*`)
 - Add dedicated form-first pages:
-  - `/system/frr`
-  - `/system/ip`
-  - `/system/ipv6`
+  - `/system/lcd`
+  - `/system/sflow`
+  - `/system/task-scheduler`
 - Register routes in backend app and wrapper capability tests.
 - Expose the new pages in `System` sidebar navigation.
 - Include new routes in runtime/browser smoke defaults.
@@ -83,22 +85,22 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: completed baseline implementation + wiring for `System FRR`, `System IP`, and `System IPv6` pages with backend wrappers, tests, and sidebar/smoke integration.
-- Backlog audit (2026-02-16, strict option-level tracker): `85` total tasks remain in backlog artifacts (`9 missing`, `67 partial`, `9 verify`); route-detection parity artifacts are intentionally treated as insufficient for completion status.
+- Status: completed baseline implementation + wiring for `System LCD`, `System sFlow`, and `System Task Scheduler` pages with backend wrappers, tests, and sidebar/smoke integration.
+- Backlog audit (2026-02-16, strict option-level tracker): `85` total tasks remain in backlog artifacts (`6 missing`, `70 partial`, `9 verify`); route-detection parity artifacts are intentionally treated as insufficient for completion status.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `backend/routers/system_frr.py`
-- `backend/routers/system_ip.py`
-- `backend/routers/system_ipv6.py`
+- `backend/routers/system_lcd.py`
+- `backend/routers/system_sflow.py`
+- `backend/routers/system_task_scheduler.py`
 - `backend/app.py`
 - `backend/tests/test_config_tree_wrapper_capabilities.py`
-- `frontend/src/app/system/frr/page.tsx`
-- `frontend/src/app/system/ip/page.tsx`
-- `frontend/src/app/system/ipv6/page.tsx`
-- `frontend/src/lib/api/system-frr.ts`
-- `frontend/src/lib/api/system-ip.ts`
-- `frontend/src/lib/api/system-ipv6.ts`
+- `frontend/src/app/system/lcd/page.tsx`
+- `frontend/src/app/system/sflow/page.tsx`
+- `frontend/src/app/system/task-scheduler/page.tsx`
+- `frontend/src/lib/api/system-lcd.ts`
+- `frontend/src/lib/api/system-sflow.ts`
+- `frontend/src/lib/api/system-task-scheduler.ts`
 - `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/src/lib/help/pageGuides.ts`
 - `frontend/scripts/check-runtime.sh`
@@ -113,7 +115,7 @@ Assumptions:
 ### Validation This Cycle
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/app/system/frr/page.tsx src/app/system/ip/page.tsx src/app/system/ipv6/page.tsx src/lib/api/system-frr.ts src/lib/api/system-ip.ts src/lib/api/system-ipv6.ts src/lib/help/pageGuides.ts src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0` passed.
+- `cd frontend && npx eslint src/app/system/lcd/page.tsx src/app/system/sflow/page.tsx src/app/system/task-scheduler/page.tsx src/lib/api/system-lcd.ts src/lib/api/system-sflow.ts src/lib/api/system-task-scheduler.ts src/lib/help/pageGuides.ts src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
 
@@ -128,15 +130,23 @@ Assumptions:
 - Reviewer sub-agent dispatch can fail when thread cap is saturated; manual review fallback is required in that case.
 
 ## TODO Backlog (next queue)
-- Continue remaining System missing pages in guide order:
-  - `SYS-08` LCD
-  - `SYS-12` sFlow
-  - `SYS-15` Task Scheduler
-- Start option-depth parity sweep for `SYS-04`, `SYS-11`, and `SYS-13` after baseline validation.
+- Implement remaining strict-backlog missing functional pages:
+  - `PR-03` Segment Routing implementation
+  - `VRF-02` L3VPN VRF workflow
+- Finish cross-cutting parity quality gates:
+  - `X-01` option-level parity scorer
+  - `X-02` fixture-based save/apply/reload loops
+  - `X-03` config snapshot tests by domain
+  - `X-05` final robustness relook pass
+- Start option-depth parity sweep for high-impact partial domains (Firewall, Interfaces, Protocols, Services, VPN, System).
 - Build option-level parity scoring to replace detection-only completion claims (`X-01`).
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Added thin system wrappers `system_lcd`, `system_sflow`, and `system_task_scheduler` via `build_config_tree_router(...)`, preserving existing service/session architecture and API contract style.
+- Added dedicated form-first pages `/system/lcd`, `/system/sflow`, and `/system/task-scheduler` with diff-based set/delete batch operations and in-page help dialogs.
+- Added `System` sidebar entries and smoke coverage for the new routes so runtime regressions are caught by default.
+- Updated strict option-level backlog artifacts: `SYS-08`, `SYS-12`, and `SYS-15` moved from `missing` to `partial`.
 - Added thin system wrappers `system_frr`, `system_ip`, and `system_ipv6` via `build_config_tree_router(...)`, preserving existing service/session architecture and API contract style.
 - Added dedicated form-first pages `/system/frr`, `/system/ip`, and `/system/ipv6` with diff-based set/delete batch operations and in-page help dialogs.
 - Added `System` sidebar entries and smoke coverage for the new routes so runtime regressions are caught by default.
