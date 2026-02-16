@@ -71,7 +71,8 @@ Acceptance criteria:
   - `Access & WAN`
 - `/network/interfaces` presents grouped interface-family cards with direct `Open` links to each detailed editor.
 - Existing detailed interface pages remain reachable for compatibility and advanced settings.
-- Unified manager provides inline quick-add for `Dummy` and `Loopback` families.
+- Unified manager provides inline quick-add for `Dummy`, `Loopback`, and `PPPoE` families.
+- PPPoE quick-add source-interface selection uses description-first labels (`Description (ethX)`) when available.
 - Build/typecheck/runtime smoke pass after the IA changes.
 
 Assumptions:
@@ -80,18 +81,15 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback is implemented and validated locally.
+- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback/PPPoE is implemented and validated locally.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
 - `frontend/src/app/network/interfaces/page.tsx`
-- `frontend/src/components/layout/Sidebar.tsx`
-- `frontend/scripts/check-runtime.sh`
-- `frontend/scripts/smoke-ui.mjs`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
+- `PROJECT_MEMORY.md`
 - `DECISIONS.md`
-- `LAST_FAILURE.txt`
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
@@ -302,3 +300,5 @@ Assumptions:
 - Extended `System` IA and `System -> Options & Coverage` quick links to surface Flow Accounting, Proxy, and Sysctl workflows.
 - Updated backlog artifacts so `SYS-04`, `SYS-11`, and `SYS-13` are tracked as `partial` (baseline implemented, option-depth validation pending).
 - Latest validation snapshot: backend tests `140 passed`, frontend typecheck passed, targeted eslint passed, frontend build passed, runtime smoke passed; browser smoke remains blocked on missing `libnspr4.so`.
+- Interface Manager quick-add now supports PPPoE creation inline using the existing `/vyos/pppoe-interface/configure` batch API (no backend contract changes).
+- PPPoE quick-add source-interface input now uses a dropdown populated from discovered interfaces with description-first labels to keep selection consistent and reduce misconfiguration risk.

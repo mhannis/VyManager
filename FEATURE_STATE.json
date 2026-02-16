@@ -6,6 +6,7 @@
     "Interfaces navigation is consolidated to logical groups instead of long per-type sidebar sprawl.",
     "`/network/interfaces` acts as the primary hub with family grouping and direct access to all detailed editors.",
     "Existing detailed interface pages remain reachable for advanced settings and compatibility.",
+    "Inline PPPoE quick-add supports source interface selection with description-first labels.",
     "Build/typecheck/runtime smoke pass after IA changes."
   ],
   "assumptions": [
@@ -59,7 +60,7 @@
       "files": [
         "frontend/src/app/network/interfaces/page.tsx"
       ],
-      "notes": "Added inline quick-add modal flows in unified manager for Dummy and Loopback families using existing APIs."
+      "notes": "Added inline quick-add modal flows in unified manager for Dummy, Loopback, and PPPoE families using existing APIs, including description-first source-interface selection for PPPoE."
     },
     {
       "id": "IF-IA-06",
@@ -69,7 +70,7 @@
         "frontend/src/app/network/interfaces/page.tsx",
         "frontend/src/lib/api/*interface*.ts"
       ],
-      "notes": "Extend inline quick-add/edit coverage to additional families (PPPoE, Tunnel/VTI, VXLAN) while preserving advanced pages."
+      "notes": "Extend inline quick-add/edit coverage to additional families (Tunnel/VTI/VXLAN) while preserving advanced pages."
     }
   ],
   "commands": {

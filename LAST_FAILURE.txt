@@ -1,11 +1,7 @@
-timestamp: 2026-02-16T00:19:08Z
-failing_command: cd frontend && npx eslint src/app/network/interfaces/page.tsx src/components/layout/Sidebar.tsx scripts/check-runtime.sh scripts/smoke-ui.mjs --max-warnings=0
-error_summary: Lint gate failed because shell script file was passed to ESLint but no matching configuration exists for `.sh`, producing a warning treated as failure with `--max-warnings=0`.
+timestamp: 2026-02-16T00:37:15Z
+failing_command: jq . FEATURE_STATE.json > /tmp/feature_state.valid && echo ok
+error_summary: JSON validation command failed because `jq` is not installed in this environment. The state file itself was not modified by the failure.
 last_output:
-/home/redhot/VyOS/VyManager/frontend/scripts/check-runtime.sh
-  0:0  warning  File ignored because no matching configuration was supplied
-
-✖ 1 problem (0 errors, 1 warning)
-ESLint found too many warnings (maximum: 0).
-suspected_cause: Targeted lint command incorrectly included a shell script that should not be linted by ESLint.
-next_step: Run ESLint against TS/JS targets only (exclude `scripts/check-runtime.sh`) and keep shell checks separate.
+/bin/bash: line 1: jq: command not found
+suspected_cause: Host toolchain does not include jq.
+next_step: Validate JSON using Python stdlib (`python3 -m json.tool FEATURE_STATE.json`) and continue normal gates.

@@ -32,11 +32,12 @@ import { DeleteEthernetModal } from "@/components/network/DeleteEthernetModal";
 import { DeleteVLANModal } from "@/components/network/DeleteVLANModal";
 import { dummyService, type DummyBatchOperation } from "@/lib/api/dummy";
 import { loopbackService } from "@/lib/api/loopback";
+import { pppoeService } from "@/lib/api/pppoe";
 
 type InterfaceType = "all" | "ethernet" | "vlan";
 type InterfaceFamilyGroup = "core-l2" | "overlay-secure" | "access-wan";
 type InterfaceFamilyFilter = "all" | InterfaceFamilyGroup;
-type QuickFamily = "dummy" | "loopback";
+type QuickFamily = "dummy" | "loopback" | "pppoe";
 
 interface InterfaceFamily {
   key: string;
@@ -275,6 +276,16 @@ function InterfacesPageContent() {
     description: "",
     addressesText: "",
   });
+  const [quickPppoeForm, setQuickPppoeForm] = useState({
+    name: "",
+    sourceInterface: "",
+    description: "",
+    username: "",
+    password: "",
+    mtu: "",
+    defaultRouteDistance: "",
+    disabled: false,
+  });
   const groupParam = searchParams.get("group");
   const familyFilter: InterfaceFamilyFilter = isFamilyFilter(groupParam) ? groupParam : "all";
 
@@ -383,6 +394,20 @@ function InterfacesPageContent() {
     );
   });
 
+  const sourceInterfaceOptions = useMemo(
+    () =>
+      interfaces
+        .map((iface) => {
+          const description = iface.description?.trim();
+          return {
+            name: iface.name,
+            label: description ? `${description} (${iface.name})` : iface.name,
+          };
+        })
+        .sort((left, right) => left.label.localeCompare(right.label)),
+    [interfaces],
+  );
+
   const visibleFamilies = useMemo(
     () =>
       INTERFACE_FAMILIES.filter((family) =>
@@ -402,6 +427,19 @@ function InterfacesPageContent() {
         addressesText: "",
         mtu: "",
         vrf: "",
+        disabled: false,
+      });
+      return;
+    }
+    if (family === "pppoe") {
+      setQuickPppoeForm({
+        name: "",
+        sourceInterface: "",
+        description: "",
+        username: "",
+        password: "",
+        mtu: "",
+        defaultRouteDistance: "",
         disabled: false,
       });
       return;
@@ -452,6 +490,61 @@ function InterfacesPageContent() {
           throw new Error(response.error || "VyOS rejected dummy interface configuration.");
         }
         setQuickSuccess(`Dummy interface '${name}' created from Interface Manager.`);
+      } else if (quickFamily === "pppoe") {
+        const name = quickPppoeForm.name.trim();
+        if (!name) {
+          throw new Error("PPPoE interface name is required.");
+        }
+
+        const sourceInterface = quickPppoeForm.sourceInterface.trim();
+        if (!sourceInterface) {
+          throw new Error("PPPoE source interface is required.");
+        }
+
+        const operations: string[] = [];
+        const base = `interfaces pppoe ${quoteCliValue(name)}`;
+        operations.push(`set ${base} source-interface ${quoteCliValue(sourceInterface)}`);
+
+        const description = quickPppoeForm.description.trim();
+        if (description) {
+          operations.push(`set ${base} description ${quoteCliValue(description)}`);
+        }
+
+        const username = quickPppoeForm.username.trim();
+        if (username) {
+          operations.push(`set ${base} authentication username ${quoteCliValue(username)}`);
+        }
+
+        const password = quickPppoeForm.password.trim();
+        if (password) {
+          operations.push(`set ${base} authentication password ${quoteCliValue(password)}`);
+        }
+
+        const mtu = quickPppoeForm.mtu.trim();
+        if (mtu) {
+          if (!/^\d+$/.test(mtu)) {
+            throw new Error("PPPoE MTU must be a whole number.");
+          }
+          operations.push(`set ${base} mtu ${quoteCliValue(mtu)}`);
+        }
+
+        const distance = quickPppoeForm.defaultRouteDistance.trim();
+        if (distance) {
+          if (!/^\d+$/.test(distance)) {
+            throw new Error("Default route distance must be a whole number.");
+          }
+          operations.push(`set ${base} default-route-distance ${quoteCliValue(distance)}`);
+        }
+
+        if (quickPppoeForm.disabled) {
+          operations.push(`set ${base} disable`);
+        }
+
+        const response = await pppoeService.batchConfigure(operations);
+        if (!response.success) {
+          throw new Error(response.error || "VyOS rejected PPPoE interface configuration.");
+        }
+        setQuickSuccess(`PPPoE interface '${name}' created from Interface Manager.`);
       } else {
         const name = quickLoopbackForm.name.trim();
         if (!name) {
@@ -663,7 +756,8 @@ function InterfacesPageContent() {
 
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {visibleFamilies.map((family) => {
-                    const supportsQuickConfigure = family.key === "dummy" || family.key === "loopback";
+                    const supportsQuickConfigure =
+                      family.key === "dummy" || family.key === "loopback" || family.key === "pppoe";
                     return (
                     <div
                       key={family.key}
@@ -1004,6 +1098,8 @@ function InterfacesPageContent() {
             <DialogTitle>
               {quickFamily === "dummy"
                 ? "Quick Add Dummy Interface"
+                : quickFamily === "pppoe"
+                  ? "Quick Add PPPoE Interface"
                 : quickFamily === "loopback"
                   ? "Quick Add Loopback Interface"
                   : "Quick Configure Interface"}
@@ -1090,6 +1186,128 @@ function InterfacesPageContent() {
                   disabled={quickSaving}
                 />
                 <Label htmlFor="quick-dummy-disable" className="text-sm font-normal">
+                  Create interface in disabled state
+                </Label>
+              </div>
+            </div>
+          )}
+
+          {quickFamily === "pppoe" && (
+            <div className="grid gap-4 py-1">
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-pppoe-name">Interface Name</Label>
+                  <Input
+                    id="quick-pppoe-name"
+                    value={quickPppoeForm.name}
+                    onChange={(event) =>
+                      setQuickPppoeForm((previous) => ({ ...previous, name: event.target.value }))
+                    }
+                    placeholder="pppoe0"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-pppoe-source">Source Interface</Label>
+                  <select
+                    id="quick-pppoe-source"
+                    value={quickPppoeForm.sourceInterface}
+                    onChange={(event) =>
+                      setQuickPppoeForm((previous) => ({
+                        ...previous,
+                        sourceInterface: event.target.value,
+                      }))
+                    }
+                    disabled={quickSaving}
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="">Select source interface</option>
+                    {sourceInterfaceOptions.map((iface) => (
+                      <option key={iface.name} value={iface.name}>
+                        {iface.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quick-pppoe-description">Description</Label>
+                <Input
+                  id="quick-pppoe-description"
+                  value={quickPppoeForm.description}
+                  onChange={(event) =>
+                    setQuickPppoeForm((previous) => ({ ...previous, description: event.target.value }))
+                  }
+                  placeholder="WAN-PPPoE"
+                  disabled={quickSaving}
+                />
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-pppoe-user">Authentication Username</Label>
+                  <Input
+                    id="quick-pppoe-user"
+                    value={quickPppoeForm.username}
+                    onChange={(event) =>
+                      setQuickPppoeForm((previous) => ({ ...previous, username: event.target.value }))
+                    }
+                    placeholder="isp-user"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-pppoe-password">Authentication Password</Label>
+                  <Input
+                    id="quick-pppoe-password"
+                    type="password"
+                    value={quickPppoeForm.password}
+                    onChange={(event) =>
+                      setQuickPppoeForm((previous) => ({ ...previous, password: event.target.value }))
+                    }
+                    placeholder="isp-password"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-pppoe-mtu">MTU (optional)</Label>
+                  <Input
+                    id="quick-pppoe-mtu"
+                    value={quickPppoeForm.mtu}
+                    onChange={(event) =>
+                      setQuickPppoeForm((previous) => ({ ...previous, mtu: event.target.value }))
+                    }
+                    placeholder="1492"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-pppoe-distance">Default Route Distance (optional)</Label>
+                  <Input
+                    id="quick-pppoe-distance"
+                    value={quickPppoeForm.defaultRouteDistance}
+                    onChange={(event) =>
+                      setQuickPppoeForm((previous) => ({
+                        ...previous,
+                        defaultRouteDistance: event.target.value,
+                      }))
+                    }
+                    placeholder="1"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-md border border-border p-2">
+                <Checkbox
+                  id="quick-pppoe-disable"
+                  checked={quickPppoeForm.disabled}
+                  onCheckedChange={(checked) =>
+                    setQuickPppoeForm((previous) => ({ ...previous, disabled: checked === true }))
+                  }
+                  disabled={quickSaving}
+                />
+                <Label htmlFor="quick-pppoe-disable" className="text-sm font-normal">
                   Create interface in disabled state
                 </Label>
               </div>
