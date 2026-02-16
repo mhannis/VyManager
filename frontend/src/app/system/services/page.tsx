@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +39,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 import { showService } from "@/lib/api/show";
 import { interfacesService } from "@/lib/api/interfaces";
+import { dhcpService, type DHCPConfigResponse } from "@/lib/api/dhcp";
 import {
   systemService,
   type LldpConfig,
@@ -106,6 +108,7 @@ type ServiceTab =
   | "config-sync"
   | "console-server"
   | "conntrack-sync"
+  | "dhcp-server"
   | "dhcp-relay"
   | "dns-forwarder"
   | "dns-resolver"
@@ -131,6 +134,7 @@ const SERVICE_TAB_VALUES: ServiceTab[] = [
   "config-sync",
   "console-server",
   "conntrack-sync",
+  "dhcp-server",
   "dhcp-relay",
   "dns-forwarder",
   "dns-resolver",
@@ -162,6 +166,7 @@ const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
   "config-sync": "Config Sync",
   "console-server": "Console Server",
   "conntrack-sync": "Conntrack Sync",
+  "dhcp-server": "DHCP Server",
   "salt-minion": "Salt Minion",
   "https-api": "HTTP API",
   "ipoe-server": "IPoE Server",
@@ -181,7 +186,12 @@ const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
 
 function normalizeServiceTab(raw: string | null): ServiceTab | null {
   if (!raw) return null;
-  const normalized = raw === "dns" ? "dns-forwarder" : raw;
+  const normalized =
+    raw === "dns"
+      ? "dns-forwarder"
+      : raw === "mdns-repeater"
+        ? "mdns"
+        : raw;
   if ((SERVICE_TAB_VALUES as string[]).includes(normalized)) {
     return normalized as ServiceTab;
   }
@@ -231,6 +241,8 @@ function SystemServicesPageContent() {
   const [mdnsConfig, setMdnsConfig] = useState<MdnsRepeaterConfig | null>(null);
   const [mdnsStatus, setMdnsStatus] = useState<MdnsRepeaterStatus | null>(null);
   const [mdnsLoading, setMdnsLoading] = useState(false);
+  const [dhcpServerConfig, setDhcpServerConfig] = useState<DHCPConfigResponse | null>(null);
+  const [dhcpServerLoading, setDhcpServerLoading] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -240,11 +252,14 @@ function SystemServicesPageContent() {
     if (activeTab === "ntp") return ntpLoading;
     if (activeTab === "lldp") return lldpLoading;
     if (activeTab === "mdns") return mdnsLoading;
+    if (activeTab === "dhcp-server") return dhcpServerLoading;
     return false;
-  }, [activeTab, lldpLoading, mdnsLoading, ntpLoading]);
+  }, [activeTab, dhcpServerLoading, lldpLoading, mdnsLoading, ntpLoading]);
 
   useEffect(() => {
-    const requested = normalizeServiceTab(searchParams.get("tab"));
+    const requested =
+      normalizeServiceTab(searchParams.get("tab")) ??
+      normalizeServiceTab(searchParams.get("service"));
     if (requested) {
       if (requested !== activeTab) {
         setActiveTab(requested);
@@ -366,6 +381,20 @@ function SystemServicesPageContent() {
     }
   };
 
+  const loadDhcpServerData = async (refresh: boolean = false) => {
+    setDhcpServerLoading(true);
+    setError(null);
+
+    try {
+      const data = await dhcpService.getConfig(refresh);
+      setDhcpServerConfig(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load DHCP server data.");
+    } finally {
+      setDhcpServerLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadInterfaces();
     loadNtpData(false);
@@ -378,7 +407,18 @@ function SystemServicesPageContent() {
     if (activeTab === "mdns" && !mdnsConfig && !mdnsLoading) {
       loadMdnsData(false);
     }
-  }, [activeTab, lldpConfig, lldpLoading, mdnsConfig, mdnsLoading]);
+    if (activeTab === "dhcp-server" && !dhcpServerConfig && !dhcpServerLoading) {
+      loadDhcpServerData(false);
+    }
+  }, [
+    activeTab,
+    dhcpServerConfig,
+    dhcpServerLoading,
+    lldpConfig,
+    lldpLoading,
+    mdnsConfig,
+    mdnsLoading,
+  ]);
 
   const handleRefresh = async () => {
     setSuccess(null);
@@ -392,6 +432,10 @@ function SystemServicesPageContent() {
     }
     if (activeTab === "mdns") {
       await loadMdnsData(true);
+      return;
+    }
+    if (activeTab === "dhcp-server") {
+      await loadDhcpServerData(true);
       return;
     }
     setServiceRefreshNonce((previous) => previous + 1);
@@ -777,6 +821,7 @@ function SystemServicesPageContent() {
               <TabsTrigger value="config-sync">Config Sync</TabsTrigger>
               <TabsTrigger value="console-server">Console Server</TabsTrigger>
               <TabsTrigger value="conntrack-sync">Conntrack Sync</TabsTrigger>
+              <TabsTrigger value="dhcp-server">DHCP Server</TabsTrigger>
               <TabsTrigger value="dhcp-relay">DHCP Relay</TabsTrigger>
               <TabsTrigger value="dns-forwarder">DNS Forwarder</TabsTrigger>
               <TabsTrigger value="dns-resolver">DNS Resolver</TabsTrigger>
@@ -1740,6 +1785,46 @@ function SystemServicesPageContent() {
               interfaceLabels={interfaceDisplayLabels}
               interfacesLoading={interfacesLoading}
             />
+          </TabsContent>
+
+          <TabsContent value="dhcp-server" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>DHCP Server</CardTitle>
+                <CardDescription>
+                  DHCP server management is handled on the dedicated page with full subnet, range, and mapping controls.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {dhcpServerLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading DHCP server summary...</p>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-md border p-3">
+                      <p className="text-xs text-muted-foreground">Shared Networks</p>
+                      <p className="mt-1 text-lg font-semibold">
+                        {dhcpServerConfig?.shared_networks.length ?? 0}
+                      </p>
+                    </div>
+                    <div className="rounded-md border p-3">
+                      <p className="text-xs text-muted-foreground">Configured Subnets</p>
+                      <p className="mt-1 text-lg font-semibold">
+                        {dhcpServerConfig?.total_subnets ?? 0}
+                      </p>
+                    </div>
+                    <div className="rounded-md border p-3">
+                      <p className="text-xs text-muted-foreground">Static Mappings</p>
+                      <p className="mt-1 text-lg font-semibold">
+                        {dhcpServerConfig?.total_static_mappings ?? 0}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <Button asChild>
+                  <Link href="/network/dhcp">Open DHCP Server</Link>
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="tftp-server" className="space-y-6">

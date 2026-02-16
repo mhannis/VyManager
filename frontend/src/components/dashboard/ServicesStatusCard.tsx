@@ -117,7 +117,7 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
                 ? "Not synchronized"
                 : "Sync status unknown"
             : "Time service disabled",
-          href: "/system/services?view=single&service=ntp",
+          href: "/system/services?tab=ntp&view=single",
         });
       } else {
         failedCalls += 1;
@@ -126,7 +126,7 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
           name: "NTP",
           state: "unknown",
           detail: "Status unavailable",
-          href: "/system/services?view=single&service=ntp",
+          href: "/system/services?tab=ntp&view=single",
         });
       }
 
@@ -139,7 +139,7 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
           detail: lldpResult.value.enabled
             ? `${neighborCount} neighbor${neighborCount === 1 ? "" : "s"}`
             : "Discovery disabled",
-          href: "/system/services?view=single&service=lldp",
+          href: "/system/services?tab=lldp&view=single",
         });
       } else {
         failedCalls += 1;
@@ -148,7 +148,7 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
           name: "LLDP",
           state: "unknown",
           detail: "Status unavailable",
-          href: "/system/services?view=single&service=lldp",
+          href: "/system/services?tab=lldp&view=single",
         });
       }
 
@@ -158,7 +158,7 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
           name: "mDNS Repeater",
           state: mdnsResult.value.enabled ? "enabled" : "disabled",
           detail: mdnsResult.value.enabled ? "Forwarding active" : "Forwarding disabled",
-          href: "/system/services?view=single&service=mdns-repeater",
+          href: "/system/services?tab=mdns&view=single",
         });
       } else {
         failedCalls += 1;
@@ -167,7 +167,7 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
           name: "mDNS Repeater",
           state: "unknown",
           detail: "Status unavailable",
-          href: "/system/services?view=single&service=mdns-repeater",
+          href: "/system/services?tab=mdns&view=single",
         });
       }
 
@@ -180,7 +180,7 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
           detail: dnsResult.value.enabled
             ? `${resolverCount} upstream resolver${resolverCount === 1 ? "" : "s"}`
             : "Service disabled",
-          href: "/system/services?view=single&service=dns-forwarder",
+          href: "/system/services?tab=dns-forwarder&view=single",
         });
       } else {
         failedCalls += 1;
@@ -189,7 +189,7 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
           name: "DNS Forwarder",
           state: "unknown",
           detail: "Status unavailable",
-          href: "/system/services?view=single&service=dns-forwarder",
+          href: "/system/services?tab=dns-forwarder&view=single",
         });
       }
 
@@ -202,7 +202,7 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
           detail: subnetCount > 0
             ? `${subnetCount} active subnet${subnetCount === 1 ? "" : "s"}`
             : "No subnet scopes configured",
-          href: "/system/services?view=single&service=dhcp-server",
+          href: "/system/services?tab=dhcp-server&view=single",
         });
       } else {
         failedCalls += 1;
@@ -211,7 +211,7 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
           name: "DHCP Server",
           state: "unknown",
           detail: "Status unavailable",
-          href: "/system/services?view=single&service=dhcp-server",
+          href: "/system/services?tab=dhcp-server&view=single",
         });
       }
 
