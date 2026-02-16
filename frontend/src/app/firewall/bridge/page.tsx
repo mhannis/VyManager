@@ -66,6 +66,9 @@ import { BridgeRuleRow } from "@/components/firewall/BridgeRuleRow";
 import { BridgeReorderBanner } from "@/components/firewall/BridgeReorderBanner";
 import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { pageGuides } from "@/lib/help/pageGuides";
+import { showService } from "@/lib/api/show";
+import { ethernetService } from "@/lib/api/ethernet";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 
 export default function BridgeFirewallPage() {
   const [config, setConfig] = useState<BridgeConfigResponse | null>(null);
@@ -76,6 +79,7 @@ export default function BridgeFirewallPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [interfaceLabelByName, setInterfaceLabelByName] = useState<Record<string, string>>({});
 
   // Modal states
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -110,12 +114,36 @@ export default function BridgeFirewallPage() {
     try {
       setLoading(true);
       setError(null);
-      const [configData, capabilitiesData] = await Promise.all([
+      const [configData, capabilitiesData, allInterfacesResponse, ethernetConfig] = await Promise.all([
         bridgeFirewallService.getConfig(refresh),
         bridgeFirewallService.getCapabilities(),
+        showService.getAllInterfaces().catch(() => ({ interfaces: [], total: 0 })),
+        ethernetService.getConfig().catch(() => ({ interfaces: [] })),
       ]);
+
+      const descriptionByName = (ethernetConfig.interfaces || []).reduce<Record<string, string | null>>(
+        (acc, iface) => {
+          acc[iface.name] = iface.description ?? null;
+          return acc;
+        },
+        {}
+      );
+      const interfaceNames = new Set<string>();
+      (allInterfacesResponse.interfaces || []).forEach((iface) => interfaceNames.add(iface.name));
+      [...configData.chains, ...configData.custom_chains].forEach((chain) => {
+        chain.rules.forEach((rule) => {
+          if (rule.inbound_interface) interfaceNames.add(rule.inbound_interface);
+          if (rule.outbound_interface) interfaceNames.add(rule.outbound_interface);
+        });
+      });
+      const labels = [...interfaceNames].reduce<Record<string, string>>((acc, name) => {
+        acc[name] = formatInterfaceDisplayName(name, descriptionByName[name] ?? null);
+        return acc;
+      }, {});
+
       setConfig(configData);
       setCapabilities(capabilitiesData);
+      setInterfaceLabelByName(labels);
       // Reset reorder state when data is loaded
       setHasChanges(false);
       setReorderedRules([]);
@@ -723,6 +751,7 @@ export default function BridgeFirewallPage() {
                             key={rule.rule_number}
                             rule={rule}
                             isV15={isV15}
+                            interfaceLabelByName={interfaceLabelByName}
                             onEdit={(r) => setEditingRule({ chain: selectedChain, rule: r, openedAt: Date.now() })}
                             onDelete={(r) => setDeletingRule({ chain: selectedChain, rule: r })}
                           />

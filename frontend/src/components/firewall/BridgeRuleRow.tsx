@@ -19,9 +19,16 @@ interface BridgeRuleRowProps {
   isV15: boolean;
   onEdit: (rule: BridgeRule) => void;
   onDelete: (rule: BridgeRule) => void;
+  interfaceLabelByName?: Record<string, string>;
 }
 
-export function BridgeRuleRow({ rule, isV15, onEdit, onDelete }: BridgeRuleRowProps) {
+export function BridgeRuleRow({
+  rule,
+  isV15,
+  onEdit,
+  onDelete,
+  interfaceLabelByName = {},
+}: BridgeRuleRowProps) {
   const {
     attributes,
     listeners,
@@ -154,15 +161,20 @@ export function BridgeRuleRow({ rule, isV15, onEdit, onDelete }: BridgeRuleRowPr
 
   // Format interfaces
   const formatInterfaces = () => {
+    const formatInterface = (name: string | null | undefined): string => {
+      if (!name) return "*";
+      return interfaceLabelByName[name] || name;
+    };
+
     if (!rule.inbound_interface && !rule.outbound_interface) {
       return <span className="text-muted-foreground text-sm">Any</span>;
     }
 
     return (
       <div className="flex items-center gap-1 text-xs">
-        <span className="font-mono">{rule.inbound_interface || "*"}</span>
+        <span>{formatInterface(rule.inbound_interface)}</span>
         <ArrowRight className="h-3 w-3 text-muted-foreground" />
-        <span className="font-mono">{rule.outbound_interface || "*"}</span>
+        <span>{formatInterface(rule.outbound_interface)}</span>
       </div>
     );
   };
