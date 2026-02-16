@@ -35,6 +35,7 @@ notes:
   - Family `Open` actions now stay on `/network/interfaces` by launching an in-page advanced workspace panel (right-side sheet) for the selected family editor.
   - Embedded family editors now run with `?embedded=1` and render via a stripped AppLayout mode (no nested sidebar), so content is fully visible in the side panel.
   - Workspace panel now uses full viewport width (`w-screen max-w-none`) to remove remaining right-edge clipping.
+  - Family cards now provide both `Inline` and `Open Page` actions so dedicated pages remain easy to access when inline flow feels too buried.
   - Interface family cards now show `Current` (disabled) when a card targets the exact view already open, so `Open` no longer appears broken on the current page.
   - Setup wizard remains available on the Interfaces page via `Open Setup Wizard`.
   - Validation for this increment:

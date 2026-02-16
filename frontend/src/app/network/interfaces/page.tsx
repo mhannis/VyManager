@@ -1054,8 +1054,11 @@ function InterfacesPageContent() {
                             className="shrink-0"
                             onClick={() => openFamilyWorkspace(family)}
                           >
-                            {isActiveFamilyLink ? "Current" : "Open"}
+                            {isActiveFamilyLink ? "Current" : "Inline"}
                             {!isActiveFamilyLink && <ArrowUpRight className="ml-1 h-3.5 w-3.5" />}
+                          </Button>
+                          <Button asChild variant="outline" size="sm" className="h-8 text-xs">
+                            <Link href={family.href}>Open Page</Link>
                           </Button>
                         </div>
                       </div>
