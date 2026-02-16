@@ -83,7 +83,7 @@
       "id": "F-06",
       "domain": "firewall",
       "status": "partial",
-      "title": "Zone workflow hardening (cross-zone validation hardening complete; onboarding/UX depth pending)"
+      "title": "Zone workflow hardening (cross-zone validation + policy-textarea pre-validation added; onboarding/UX depth pending)"
     },
     {
       "id": "HA-01",

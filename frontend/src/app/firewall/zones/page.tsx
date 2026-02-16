@@ -60,6 +60,11 @@ interface InterfaceOption {
   label: string;
 }
 
+interface ParsedZonePolicies {
+  policies: ZonePolicyUpdate[];
+  errors: string[];
+}
+
 function parseCsvList(value: string): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
@@ -241,22 +246,39 @@ export default function FirewallZonesPage() {
     }
   }, []);
 
-  const parsePolicyTextarea = (raw: string): ZonePolicyUpdate[] => {
+  const parsePolicyTextarea = (raw: string): ParsedZonePolicies => {
     const lines = raw
       .split("\n")
       .map((line) => line.trim())
       .filter((line) => line.length > 0);
+
+    const errors: string[] = [];
     const parsed: ZonePolicyUpdate[] = [];
-    const seen = new Set<string>();
-    for (const line of lines) {
-      const [from_zone, firewall_ruleset] = line.split(":").map((item) => item?.trim() || "");
-      if (!from_zone || !firewall_ruleset) continue;
-      const key = `${from_zone}->${firewall_ruleset}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
+    const seenFromZones = new Set<string>();
+    for (const [index, line] of lines.entries()) {
+      const parts = line.split(":");
+      if (parts.length !== 2) {
+        errors.push(`Line ${index + 1}: use FROM_ZONE:FIREWALL_NAME format.`);
+        continue;
+      }
+
+      const from_zone = parts[0]?.trim() || "";
+      const firewall_ruleset = parts[1]?.trim() || "";
+      if (!from_zone || !firewall_ruleset) {
+        errors.push(`Line ${index + 1}: both FROM_ZONE and FIREWALL_NAME are required.`);
+        continue;
+      }
+
+      const normalizedFromZone = from_zone.toUpperCase();
+      if (seenFromZones.has(normalizedFromZone)) {
+        errors.push(`Line ${index + 1}: duplicate from-zone '${from_zone}'.`);
+        continue;
+      }
+      seenFromZones.add(normalizedFromZone);
+
       parsed.push({ from_zone, firewall_ruleset });
     }
-    return parsed;
+    return { policies: parsed, errors };
   };
 
   const createZone = async () => {
@@ -264,6 +286,11 @@ export default function FirewallZonesPage() {
     const zoneName = createZoneName.trim();
     if (!zoneName) {
       setError("Zone name is required.");
+      return;
+    }
+    const parsedPolicies = parsePolicyTextarea(createPolicies);
+    if (parsedPolicies.errors.length > 0) {
+      setError(parsedPolicies.errors.slice(0, 3).join(" "));
       return;
     }
 
@@ -276,7 +303,7 @@ export default function FirewallZonesPage() {
         default_action: createDefaultAction,
         local_zone: createLocalZone,
         interfaces: parseCsvList(createInterfaces),
-        from_policies: parsePolicyTextarea(createPolicies),
+        from_policies: parsedPolicies.policies,
       });
       setSuccess(`Zone '${zoneName}' created/updated.`);
       setCreateZoneName("");
@@ -296,6 +323,11 @@ export default function FirewallZonesPage() {
 
   const saveSelectedZone = async () => {
     if (!canEdit || !selectedZoneName) return;
+    const parsedPolicies = parsePolicyTextarea(editPolicies);
+    if (parsedPolicies.errors.length > 0) {
+      setError(parsedPolicies.errors.slice(0, 3).join(" "));
+      return;
+    }
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -305,7 +337,7 @@ export default function FirewallZonesPage() {
         default_action: editDefaultAction,
         local_zone: editLocalZone,
         interfaces: parseCsvList(editInterfaces),
-        from_policies: parsePolicyTextarea(editPolicies),
+        from_policies: parsedPolicies.policies,
       });
       setSuccess(`Zone '${selectedZoneName}' updated.`);
       await loadData();
@@ -694,6 +726,9 @@ export default function FirewallZonesPage() {
                   className="min-h-[120px] font-mono text-xs"
                   disabled={!canEdit || saving}
                 />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Use one mapping per from-zone. `LOCAL` is supported.
+                </p>
               </div>
               <Button onClick={createZone} disabled={!canEdit || saving}>
                 <Plus className="mr-2 h-4 w-4" />
@@ -801,6 +836,9 @@ export default function FirewallZonesPage() {
                       className="min-h-[120px] font-mono text-xs"
                       disabled={!canEdit || saving}
                     />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Use one mapping per from-zone. `LOCAL` is supported.
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <Button onClick={saveSelectedZone} disabled={!canEdit || saving}>

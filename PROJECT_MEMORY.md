@@ -62,33 +62,30 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Firewall IPv4/IPv6 batch argument validation hardening (`F-01`/`F-02` depth pass)**
+Feature: **Firewall zones policy-textarea UX hardening (`F-06` depth pass)**
 
 Acceptance criteria:
-- Validate chain names against base/custom chain context with explicit `400` errors.
-- Reject missing `rule_number` for operations that require a rule index.
-- Reject missing values on value-required operations and reject provided values on no-value operations.
-- Build method arguments in signature order and reject unsupported parameter shapes with explicit `400`.
-- Convert dynamic invocation `TypeError` failures into explicit `400` responses.
-- Add backend tests covering invalid/valid argument-shape flows across IPv4 and IPv6 batch endpoints.
+- Enforce strict `FROM_ZONE:FIREWALL_NAME` parsing for non-empty policy textarea lines.
+- Reject duplicate `from_zone` mappings in create/edit forms before API submission.
+- Block create/save submission when policy textarea contains malformed entries.
+- Surface concise, actionable policy parsing errors to the operator.
+- Add inline helper copy clarifying one mapping per from-zone and `LOCAL` support.
 - Pass backend+frontend validation gates.
 
 Assumptions:
-- Existing GUI/API clients continue to call known builder method operation names.
-- IPv6 legacy operation aliases must remain supported for backward compatibility.
+- Most operator errors in policy text entry are line-format and duplicate-zone issues.
+- Aligning UI validation to backend constraints reduces failed writes and operator confusion without API changes.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: firewall IPv4/IPv6 batch argument validation hardening slice completed locally and queued for commit/push.
-- Backlog audit (2026-02-16, strict option-level tracker): `F-01`/`F-02` progressed with strict chain/rule/value validation and dedicated argument-shape tests.
+- Status: firewall zones policy-textarea UX hardening slice completed locally and queued for commit/push.
+- Backlog audit (2026-02-16, strict option-level tracker): `F-06` progressed with frontend pre-submit policy validation and clearer operator guidance.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `backend/routers/firewall/ipv4.py`
-- `backend/routers/firewall/ipv6.py`
-- `backend/tests/test_firewall_rule_batch_validation.py`
-- `AGENT_REPORTS/2026-02-16-firewall-ipv4-ipv6-batch-argument-hardening.md`
+- `frontend/src/app/firewall/zones/page.tsx`
+- `AGENT_REPORTS/2026-02-16-firewall-zones-policy-textarea-ux-hardening.md`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
@@ -97,9 +94,8 @@ Assumptions:
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_rule_batch_validation.py tests/test_firewall_batch_semantics.py tests/test_firewall_global_options_batch_validation.py tests/test_firewall_global_options_validation.py tests/test_firewall_zones_validation.py tests/test_firewall_zones_local_zone.py tests/test_firewall_flowtables_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py` passed.
-- `cd frontend && npx tsc --noEmit --pretty false` passed.
-- Frontend build/runtime smoke were not rerun in this backend-only slice (last known from prior cycle: build + runtime smoke passed; lint had warnings only and 0 errors).
+- `cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime` passed.
+- Backend suites were not rerun in this UI-only slice (latest backend gate run from prior slice is green).
 - `cd frontend && npm run -s smoke:ui` still blocked on host dependency (`libnspr4.so` missing).
 
 ## Risks / Open Questions
@@ -121,6 +117,8 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Firewall zones create/edit flows now pre-validate policy textarea rows (`FROM_ZONE:FIREWALL_NAME`) and block submit for malformed lines or duplicate from-zones, reducing backend round-trip failures.
+- Firewall zones policy textareas now include guidance for one mapping per from-zone and explicit `LOCAL` pseudo-zone usage.
 - Firewall IPv4/IPv6 batch endpoints now validate chain context, rule-number requirements, and operation value arity before method invocation; invalid argument shapes now return explicit `400` errors.
 - Added backend regression coverage `backend/tests/test_firewall_rule_batch_validation.py` for chain/rule/value validation semantics and valid normalized batch execution.
 - Firewall global-options `/batch` now enforces strict value semantics (required/no-arg checks), enum validation for operation families, timeout integer/range validation, and canonical lowercase normalization before command generation.
