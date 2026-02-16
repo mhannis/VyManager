@@ -1418,8 +1418,10 @@ function SystemServicesPageContent() {
                             <TableBody>
                               {lldpStatus.neighbors.slice(0, 25).map((neighbor, index) => (
                                 <TableRow key={`${neighbor.raw}-${index}`}>
-                                  <TableCell className="font-mono text-xs">
-                                    {displayOrDash(neighbor.local_interface)}
+                                  <TableCell className="text-xs">
+                                    {neighbor.local_interface
+                                      ? (interfaceDisplayLabels[neighbor.local_interface] ?? neighbor.local_interface)
+                                      : "-"}
                                   </TableCell>
                                   <TableCell className="text-xs">
                                     {displayOrDash(neighbor.system_name || neighbor.platform || neighbor.chassis_id)}
