@@ -157,7 +157,253 @@
       "delete_operations": [
         "delete system frr profile"
       ]
+    },
+    {
+      "id": "LOOP-13",
+      "name": "PKI loop",
+      "config_endpoint": "/vyos/pki/config",
+      "batch_endpoint": "/vyos/pki/batch",
+      "response_key": "pki",
+      "set_operations": [
+        "set pki ca LAB-CA certificate -----BEGIN_CERT-----"
+      ],
+      "delete_operations": [
+        "delete pki ca LAB-CA certificate"
+      ]
+    },
+    {
+      "id": "LOOP-14",
+      "name": "QoS loop",
+      "config_endpoint": "/vyos/qos/config",
+      "batch_endpoint": "/vyos/qos/batch",
+      "response_key": "qos",
+      "set_operations": [
+        "set qos policy shaper WAN-QOS bandwidth 1gbit"
+      ],
+      "delete_operations": [
+        "delete qos policy shaper WAN-QOS bandwidth"
+      ]
+    },
+    {
+      "id": "LOOP-15",
+      "name": "System Proxy loop",
+      "config_endpoint": "/vyos/system-proxy/config",
+      "batch_endpoint": "/vyos/system-proxy/batch",
+      "response_key": "proxy",
+      "set_operations": [
+        "set system proxy url http://proxy.lab:3128"
+      ],
+      "delete_operations": [
+        "delete system proxy url"
+      ]
+    },
+    {
+      "id": "LOOP-16",
+      "name": "System Sysctl loop",
+      "config_endpoint": "/vyos/system-sysctl/config",
+      "batch_endpoint": "/vyos/system-sysctl/batch",
+      "response_key": "sysctl",
+      "set_operations": [
+        "set system sysctl parameter net.ipv4.ip_forward value 1"
+      ],
+      "delete_operations": [
+        "delete system sysctl parameter net.ipv4.ip_forward"
+      ]
+    },
+    {
+      "id": "LOOP-17",
+      "name": "System Flow Accounting loop",
+      "config_endpoint": "/vyos/system-flow-accounting/config",
+      "batch_endpoint": "/vyos/system-flow-accounting/batch",
+      "response_key": "flow_accounting",
+      "set_operations": [
+        "set system flow-accounting interface eth0"
+      ],
+      "delete_operations": [
+        "delete system flow-accounting interface eth0"
+      ]
+    },
+    {
+      "id": "LOOP-18",
+      "name": "System IPv6 loop",
+      "config_endpoint": "/vyos/system-ipv6/config",
+      "batch_endpoint": "/vyos/system-ipv6/batch",
+      "response_key": "ipv6",
+      "set_operations": [
+        "set system ipv6 disable-forwarding"
+      ],
+      "delete_operations": [
+        "delete system ipv6 disable-forwarding"
+      ]
+    },
+    {
+      "id": "LOOP-19",
+      "name": "System LCD loop",
+      "config_endpoint": "/vyos/system-lcd/config",
+      "batch_endpoint": "/vyos/system-lcd/batch",
+      "response_key": "lcd",
+      "set_operations": [
+        "set system lcd model CFA635"
+      ],
+      "delete_operations": [
+        "delete system lcd model"
+      ]
+    },
+    {
+      "id": "LOOP-20",
+      "name": "System sFlow loop",
+      "config_endpoint": "/vyos/system-sflow/config",
+      "batch_endpoint": "/vyos/system-sflow/batch",
+      "response_key": "sflow",
+      "set_operations": [
+        "set system sflow sampling-rate 1000"
+      ],
+      "delete_operations": [
+        "delete system sflow sampling-rate"
+      ]
+    },
+    {
+      "id": "LOOP-21",
+      "name": "System Task Scheduler loop",
+      "config_endpoint": "/vyos/system-task-scheduler/config",
+      "batch_endpoint": "/vyos/system-task-scheduler/batch",
+      "response_key": "task_scheduler",
+      "set_operations": [
+        "set system task-scheduler task backup executable path /config/scripts/backup.sh"
+      ],
+      "delete_operations": [
+        "delete system task-scheduler task backup"
+      ]
+    },
+    {
+      "id": "LOOP-22",
+      "name": "Service DNS loop",
+      "config_endpoint": "/vyos/service-dns/config",
+      "batch_endpoint": "/vyos/service-dns/batch",
+      "response_key": "service",
+      "set_operations": [
+        "set service dns forwarding listen-address 192.168.1.1"
+      ],
+      "delete_operations": [
+        "delete service dns forwarding listen-address 192.168.1.1"
+      ]
+    },
+    {
+      "id": "LOOP-23",
+      "name": "Service NTP loop",
+      "config_endpoint": "/vyos/service-ntp/config",
+      "batch_endpoint": "/vyos/service-ntp/batch",
+      "response_key": "service",
+      "set_operations": [
+        "set service ntp server time.cloudflare.com"
+      ],
+      "delete_operations": [
+        "delete service ntp server time.cloudflare.com"
+      ]
+    },
+    {
+      "id": "LOOP-24",
+      "name": "Service LLDP loop",
+      "config_endpoint": "/vyos/service-lldp/config",
+      "batch_endpoint": "/vyos/service-lldp/batch",
+      "response_key": "service",
+      "set_operations": [
+        "set service lldp interface eth0"
+      ],
+      "delete_operations": [
+        "delete service lldp interface eth0"
+      ]
+    },
+    {
+      "id": "LOOP-25",
+      "name": "Service Router Advert loop",
+      "config_endpoint": "/vyos/service-router-advert/config",
+      "batch_endpoint": "/vyos/service-router-advert/batch",
+      "response_key": "service",
+      "set_operations": [
+        "set service router-advert interface eth0 managed-flag"
+      ],
+      "delete_operations": [
+        "delete service router-advert interface eth0 managed-flag"
+      ]
+    },
+    {
+      "id": "LOOP-26",
+      "name": "VPN L2TP loop",
+      "config_endpoint": "/vyos/vpn-l2tp/config",
+      "batch_endpoint": "/vyos/vpn-l2tp/batch",
+      "response_key": "vpn",
+      "set_operations": [
+        "set vpn l2tp remote-access outside-address 192.0.2.2"
+      ],
+      "delete_operations": [
+        "delete vpn l2tp remote-access outside-address"
+      ]
+    },
+    {
+      "id": "LOOP-27",
+      "name": "VPN OpenConnect loop",
+      "config_endpoint": "/vyos/vpn-openconnect/config",
+      "batch_endpoint": "/vyos/vpn-openconnect/batch",
+      "response_key": "vpn",
+      "set_operations": [
+        "set vpn openconnect authentication mode local"
+      ],
+      "delete_operations": [
+        "delete vpn openconnect authentication mode"
+      ]
+    },
+    {
+      "id": "LOOP-28",
+      "name": "VPN PPTP loop",
+      "config_endpoint": "/vyos/vpn-pptp/config",
+      "batch_endpoint": "/vyos/vpn-pptp/batch",
+      "response_key": "vpn",
+      "set_operations": [
+        "set vpn pptp remote-access default-pool PPTP-POOL"
+      ],
+      "delete_operations": [
+        "delete vpn pptp remote-access default-pool"
+      ]
+    },
+    {
+      "id": "LOOP-29",
+      "name": "VPN SSTP loop",
+      "config_endpoint": "/vyos/vpn-sstp/config",
+      "batch_endpoint": "/vyos/vpn-sstp/batch",
+      "response_key": "vpn",
+      "set_operations": [
+        "set vpn sstp authentication mode local"
+      ],
+      "delete_operations": [
+        "delete vpn sstp authentication mode"
+      ]
+    },
+    {
+      "id": "LOOP-30",
+      "name": "VPN RSA keys loop",
+      "config_endpoint": "/vyos/vpn-rsa-keys/config",
+      "batch_endpoint": "/vyos/vpn-rsa-keys/batch",
+      "response_key": "vpn",
+      "set_operations": [
+        "set vpn rsa-keys LAB-PEER key ssh-rsa AAAAB3Nza"
+      ],
+      "delete_operations": [
+        "delete vpn rsa-keys LAB-PEER"
+      ]
+    },
+    {
+      "id": "LOOP-31",
+      "name": "VPN DMVPN loop",
+      "config_endpoint": "/vyos/vpn-dmvpn/config",
+      "batch_endpoint": "/vyos/vpn-dmvpn/batch",
+      "response_key": "ipsec",
+      "set_operations": [
+        "set vpn ipsec profile NHRPVPN bind tunnel tun100"
+      ],
+      "delete_operations": [
+        "delete vpn ipsec profile NHRPVPN bind tunnel"
+      ]
     }
   ]
 }
-

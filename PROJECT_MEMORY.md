@@ -58,26 +58,25 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
 - Continue reducing strict backlog by implementing partial domains in robust form-first UX.
-- Close the strict missing cross-cutting backlog items and strengthen regression gates for partial domains.
+- Expand cross-cutting regression gates (`X-02`, `X-03`) into more partial domains before next feature-depth passes.
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Cross-cutting robustness batch (`X-02`, `X-03`, `X-05`)**
+Feature: **Cross-cutting robustness expansion (`X-02`, `X-03`)**
 
 Acceptance criteria:
-- Move strict missing items `X-02`, `X-03`, and `X-05` out of `missing`.
-- Add fixture-based save/apply/reload loops for 12 high-impact domains.
-- Add config snapshot tests for 15 domain endpoints.
-- Add reproducible robustness relook runner and persisted report artifact.
-- Pass backend loop/snapshot tests and frontend runtime gates.
+- Expand fixture-based save/apply/reload loops across service, VPN, PKI, QoS, and additional system wrappers.
+- Expand domain snapshot tests to match the widened loop domain set.
+- Keep save/apply/reload tracking as one cross-cutting item while increasing breadth counts.
+- Pass expanded backend loop/snapshot tests and robustness relook gates.
 
 Assumptions:
-- This batch closes baseline implementation for cross-cutting missing items; final parity completion still requires deeper domain-by-domain option coverage and live verification.
+- This cycle deepens regression breadth, but final parity completion still requires domain option-depth implementation and live verification.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: completed baseline implementation of `X-02`, `X-03`, and `X-05`, plus a 15-item robustness completion batch.
+- Status: expanded `X-02`/`X-03` from baseline into broader partial-domain coverage.
 - Backlog audit (2026-02-16, strict option-level tracker): `85` total tasks remain (`0 missing`, `76 partial`, `9 verify`) after updating cross-cutting statuses.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
@@ -86,10 +85,7 @@ Assumptions:
 - `backend/tests/snapshots/domain_config_snapshots.json`
 - `backend/tests/test_fixture_save_apply_reload_loops.py`
 - `backend/tests/test_domain_config_snapshots.py`
-- `scripts/run_robustness_relook.py`
 - `ROBUSTNESS_RELOOK_REPORT.md`
-- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
-- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
@@ -97,11 +93,8 @@ Assumptions:
 
 ### Validation This Cycle
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py` passed.
-- `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npm run -s build` passed.
-- `cd frontend && npm run -s smoke:runtime` passed.
 - `python3 scripts/run_robustness_relook.py --skip-ui-smoke` passed (`ROBUSTNESS_RELOOK_REPORT.md` updated).
-- `cd frontend && npm run -s smoke:ui` failed on host dependency (`libnspr4.so` missing).
+- `cd frontend && npm run -s smoke:ui` still blocked on host dependency (`libnspr4.so` missing).
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
@@ -115,15 +108,17 @@ Assumptions:
 - Next.js app-router pages that use `useSearchParams` can trigger prerender errors if not wrapped in Suspense; for top-level pages prefer window-query parsing in `useEffect` when practical.
 
 ## TODO Backlog (next queue)
-- Deepen cross-cutting quality gates from baseline to parity-level depth:
-  - Expand `X-02` loops into Firewall, NAT, Services, VPN, and PKI trees.
+- Deepen cross-cutting quality gates from current breadth to parity-level depth:
+  - Expand `X-02` loops into Firewall and NAT custom routers.
   - Expand `X-03` snapshots into command-delta comparisons against expected CLI output.
-  - Extend `X-05` robustness runner to include full parity-domain live verification workflow.
+  - Extend `X-05` robustness runner with live parity-domain verification workflow.
 - Start option-depth parity sweep for high-impact partial domains (Firewall, Interfaces, Protocols, Services, VPN, System).
 - Improve option-level parity scorer precision and add CI thresholds (`X-01` hardening).
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Expanded cross-cutting regression gates in this cycle: fixture loops increased from 12 to 31 and snapshots from 15 to 34 endpoints across protocols/system/services/vpn/pki/qos + DMVPN.
+- Tracking convention adjusted per operator direction: save/apply/reload fixture loop is treated as one cross-cutting backlog item; breadth is tracked as loop count, not separate backlog items.
 - Local command policy can reject destructive cleanup commands (`rm -rf`) even for transient artifacts; this is non-blocking for feature/test work but leaves temporary untracked folders unless removed manually.
 - Added thin system wrappers `system_lcd`, `system_sflow`, and `system_task_scheduler` via `build_config_tree_router(...)`, preserving existing service/session architecture and API contract style.
 - Added dedicated form-first pages `/system/lcd`, `/system/sflow`, and `/system/task-scheduler` with diff-based set/delete batch operations and in-page help dialogs.

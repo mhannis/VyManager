@@ -1,6 +1,6 @@
 # ROBUSTNESS_RELOOK_REPORT.md
 
-Generated: 2026-02-16T14:05:54+00:00
+Generated: 2026-02-16T14:32:54+00:00
 
 - `skip_ui_smoke`: `true`
 
@@ -16,10 +16,10 @@ Generated: 2026-02-16T14:05:54+00:00
 - Return code: `0`
 
 ```text
-........................................................................ [ 42%]
-........................................................................ [ 85%]
-........................                                                 [100%]
-168 passed in 6.46s
+........................................................................ [ 34%]
+........................................................................ [ 69%]
+..............................................................           [100%]
+206 passed in 8.98s
 ```
 
 ### Frontend TypeScript [PASS]
@@ -130,12 +130,12 @@ ve
  Detected additional lockfiles: 
    * /home/redhot/VyOS/VyManager/frontend/package-lock.json
 
-2026-02-16T14:05:52.638Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx @better-auth/cli secret` or `openssl rand -base64 32`.
-2026-02-16T14:05:52.639Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
-2026-02-16T14:05:52.650Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx @better-auth/cli secret` or `openssl rand -base64 32`.
-2026-02-16T14:05:52.651Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
-2026-02-16T14:05:52.792Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx @better-auth/cli secret` or `openssl rand -base64 32`.
-2026-02-16T14:05:52.793Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
+2026-02-16T14:32:52.445Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx @better-auth/cli secret` or `openssl rand -base64 32`.
+2026-02-16T14:32:52.446Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
+2026-02-16T14:32:52.462Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx @better-auth/cli secret` or `openssl rand -base64 32`.
+2026-02-16T14:32:52.463Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
+2026-02-16T14:32:52.614Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx @better-auth/cli secret` or `openssl rand -base64 32`.
+2026-02-16T14:32:52.615Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
 ```
 
 ### Frontend runtime smoke [PASS]

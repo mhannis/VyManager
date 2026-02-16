@@ -1,169 +1,67 @@
 {
-  "feature_id": "cross-cutting-robustness-batch-v1-2026-02-16",
-  "title": "Close strict missing cross-cutting items and harden partial domains with fixture/snapshot/relook gates",
+  "feature_id": "cross-cutting-robustness-expansion-v2-2026-02-16",
+  "title": "Expand X-02 and X-03 depth across partial domains",
   "status": "in_review",
   "acceptance_criteria": [
-    "Backlog items X-02, X-03, and X-05 are no longer marked missing in strict backlog artifacts.",
-    "Fixture-driven save/apply/reload tests exist and pass for at least 12 high-impact domains.",
-    "Config snapshot tests exist and pass for at least 15 domain endpoints.",
-    "A reproducible robustness relook runner exists and emits a report artifact.",
-    "Backend protocol/wrapper tests, frontend build, and runtime smoke pass for this slice."
+    "Fixture save/apply/reload coverage expands beyond protocols/system baseline into service, VPN, PKI, and QoS wrappers.",
+    "Domain snapshot coverage expands to include matching endpoints for the new fixture domains.",
+    "Expanded backend tests pass and robustness relook runner passes with the larger suite.",
+    "Tracking reflects save/apply/reload as one cross-cutting item with expanded breadth counts."
   ],
   "assumptions": [
-    "This batch closes missing-status baseline for X-02/X-03/X-05 but does not claim final parity completion across all domains.",
-    "Playwright UI smoke remains host-blocked until required system library dependencies are installed."
+    "This cycle deepens regression coverage and does not by itself complete option-level parity for all domains.",
+    "Playwright browser smoke remains blocked by host dependency and is intentionally skipped in robustness runner."
   ],
   "tasks": [
     {
-      "id": "T01",
+      "id": "T1",
       "owner_role": "Backend|Test",
       "status": "done",
       "files": [
         "backend/tests/fixtures/config_apply_loops.json",
         "backend/tests/test_fixture_save_apply_reload_loops.py"
       ],
-      "notes": "Implemented X-02 baseline with fixture-driven save/apply/reload loops."
+      "notes": "Expanded loop fixtures from 12 to 31 and extended harness wiring for service/vpn/wrapper domains."
     },
     {
-      "id": "T02",
+      "id": "T2",
       "owner_role": "Backend|Test",
       "status": "done",
       "files": [
         "backend/tests/snapshots/domain_config_snapshots.json",
         "backend/tests/test_domain_config_snapshots.py"
       ],
-      "notes": "Implemented X-03 baseline with 15-endpoint snapshot checks."
+      "notes": "Expanded snapshot matrix from 15 to 34 endpoints with matching router coverage."
     },
     {
-      "id": "T03",
+      "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "scripts/run_robustness_relook.py",
         "ROBUSTNESS_RELOOK_REPORT.md"
       ],
-      "notes": "Implemented X-05 baseline runner/report for deterministic robustness passes."
+      "notes": "Re-ran robustness runner after expansion and confirmed all configured gates pass."
     },
     {
-      "id": "T04",
-      "owner_role": "Test",
+      "id": "T4",
+      "owner_role": "Analyst",
       "status": "done",
       "files": [
-        "backend/tests/fixtures/config_apply_loops.json"
+        "CURRENT_FEATURE.md"
       ],
-      "notes": "Loop coverage: OSPF save/apply/reload."
+      "notes": "Tracking now treats save/apply/reload as one cross-cutting item and reports breadth separately."
     },
     {
-      "id": "T05",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/fixtures/config_apply_loops.json"
-      ],
-      "notes": "Loop coverage: RIP save/apply/reload."
-    },
-    {
-      "id": "T06",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/fixtures/config_apply_loops.json"
-      ],
-      "notes": "Loop coverage: IS-IS save/apply/reload."
-    },
-    {
-      "id": "T07",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/fixtures/config_apply_loops.json"
-      ],
-      "notes": "Loop coverage: MPLS save/apply/reload."
-    },
-    {
-      "id": "T08",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/fixtures/config_apply_loops.json"
-      ],
-      "notes": "Loop coverage: Segment Routing save/apply/reload."
-    },
-    {
-      "id": "T09",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/fixtures/config_apply_loops.json"
-      ],
-      "notes": "Loop coverage: VRF save/apply/reload."
-    },
-    {
-      "id": "T10",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/fixtures/config_apply_loops.json"
-      ],
-      "notes": "Loop coverage: Load Balancing save/apply/reload."
-    },
-    {
-      "id": "T11",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/fixtures/config_apply_loops.json"
-      ],
-      "notes": "Loop coverage: High Availability save/apply/reload."
-    },
-    {
-      "id": "T12",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/fixtures/config_apply_loops.json"
-      ],
-      "notes": "Loop coverage: Traffic Policy save/apply/reload."
-    },
-    {
-      "id": "T13",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/fixtures/config_apply_loops.json"
-      ],
-      "notes": "Loop coverage: System IP save/apply/reload."
-    },
-    {
-      "id": "T14",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/fixtures/config_apply_loops.json"
-      ],
-      "notes": "Loop coverage: System Conntrack save/apply/reload."
-    },
-    {
-      "id": "T15",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "backend/tests/fixtures/config_apply_loops.json"
-      ],
-      "notes": "Loop coverage: System FRR save/apply/reload."
-    },
-    {
-      "id": "T16",
+      "id": "T5",
       "owner_role": "Reviewer",
       "status": "doing",
       "files": [
-        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
-        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
         "backend/tests/test_fixture_save_apply_reload_loops.py",
         "backend/tests/test_domain_config_snapshots.py",
-        "scripts/run_robustness_relook.py"
+        "backend/tests/fixtures/config_apply_loops.json",
+        "backend/tests/snapshots/domain_config_snapshots.json"
       ],
-      "notes": "Pending final human review pass and next domain-depth expansion selection."
+      "notes": "Pending manual review and next extension into firewall/NAT custom routers."
     }
   ],
   "commands": {
@@ -174,7 +72,7 @@
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Strict backlog closure + robustness hardening",
+      "purpose": "Backlog robustness depth expansion",
       "status": "active"
     }
   ]

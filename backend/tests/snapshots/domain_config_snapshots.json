@@ -144,6 +144,174 @@
     "frr": {
       "profile": "traditional"
     }
+  },
+  "/vyos/pki/config": {
+    "pki": {
+      "ca": {
+        "LAB-CA": {
+          "certificate": "-----BEGIN CERTIFICATE-----..."
+        }
+      },
+      "certificate": {
+        "LAB-PEER": {
+          "description": "Site peer cert"
+        }
+      }
+    }
+  },
+  "/vyos/qos/config": {
+    "qos": {
+      "policy": {
+        "shaper": {
+          "WAN-QOS": {
+            "bandwidth": "1gbit"
+          }
+        }
+      }
+    }
+  },
+  "/vyos/system-proxy/config": {
+    "proxy": {
+      "url": "http://proxy.lab:3128"
+    }
+  },
+  "/vyos/system-sysctl/config": {
+    "sysctl": {
+      "parameter": {
+        "net.ipv4.ip_forward": {
+          "value": "1"
+        }
+      }
+    }
+  },
+  "/vyos/system-flow-accounting/config": {
+    "flow_accounting": {
+      "interface": {
+        "eth0": {}
+      }
+    }
+  },
+  "/vyos/system-ipv6/config": {
+    "ipv6": {
+      "disable-forwarding": {}
+    }
+  },
+  "/vyos/system-lcd/config": {
+    "lcd": {
+      "model": "CFA635"
+    }
+  },
+  "/vyos/system-sflow/config": {
+    "sflow": {
+      "sampling-rate": "1000"
+    }
+  },
+  "/vyos/system-task-scheduler/config": {
+    "task_scheduler": {
+      "task": {
+        "backup": {
+          "interval": "daily"
+        }
+      }
+    }
+  },
+  "/vyos/service-dns/config": {
+    "service": {
+      "forwarding": {
+        "listen-address": {
+          "192.168.1.1": {}
+        }
+      }
+    }
+  },
+  "/vyos/service-ntp/config": {
+    "service": {
+      "server": {
+        "time.cloudflare.com": {}
+      }
+    }
+  },
+  "/vyos/service-lldp/config": {
+    "service": {
+      "interface": {
+        "eth0": {}
+      }
+    }
+  },
+  "/vyos/service-router-advert/config": {
+    "service": {
+      "interface": {
+        "eth0": {
+          "prefix": {
+            "2001:db8:2::/64": {}
+          }
+        }
+      }
+    }
+  },
+  "/vyos/vpn-l2tp/config": {
+    "vpn": {
+      "remote-access": {
+        "outside-address": "192.0.2.2"
+      }
+    }
+  },
+  "/vyos/vpn-openconnect/config": {
+    "vpn": {
+      "authentication": {
+        "mode": {
+          "local": {
+            "password": {}
+          }
+        }
+      }
+    }
+  },
+  "/vyos/vpn-pptp/config": {
+    "vpn": {
+      "remote-access": {
+        "default-pool": "PPTP-POOL"
+      }
+    }
+  },
+  "/vyos/vpn-sstp/config": {
+    "vpn": {
+      "authentication": {
+        "mode": "local"
+      }
+    }
+  },
+  "/vyos/vpn-rsa-keys/config": {
+    "vpn": {
+      "LAB-PEER": {
+        "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC..."
+      }
+    }
+  },
+  "/vyos/vpn-dmvpn/config": {
+    "interfaces_tunnel": {
+      "tun100": {
+        "address": {
+          "10.0.0.1/32": {}
+        },
+        "source-interface": "eth0",
+        "encapsulation": "gre"
+      }
+    },
+    "nhrp_tunnel": {
+      "tun100": {
+        "network-id": "1",
+        "shortcut": {}
+      }
+    },
+    "ipsec": {
+      "profile": {
+        "NHRPVPN": {
+          "bind": {
+            "tunnel": "tun100"
+          }
+        }
+      }
+    }
   }
 }
-

@@ -2,6 +2,8 @@
 
 ## Decision Log
 
+- 2026-02-16: Per operator correction, save/apply/reload fixture coverage is tracked as one cross-cutting backlog item (`X-02`) with breadth measured by covered domain loops, not as multiple backlog items.
+- 2026-02-16: Expanded `X-02`/`X-03` regression depth by extending loop/snapshot suites to service wrappers, VPN wrappers, DMVPN, PKI, QoS, and additional system wrappers while preserving existing API contracts.
 - 2026-02-16: Closed strict cross-cutting `missing` backlog baseline by implementing `X-02` fixture save/apply/reload loops, `X-03` domain snapshot tests, and `X-05` reproducible robustness relook runner/report without changing existing backend API contracts.
 - 2026-02-16: Standardized loop/snapshot hardening around thin test harness routers and mutable dummy VyOS service so regression tests remain deterministic and fast in local CI.
 - 2026-02-16: Kept `X-02`/`X-03`/`X-05` statuses at `partial` (not `verify`) after baseline completion, because full-domain option-depth and live-instance parity verification are still pending.
