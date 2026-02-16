@@ -58,20 +58,20 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
 - Continue System-domain parity work with dedicated form-first pages and scoped backend wrappers.
-- Complete remaining missing System pages (`SYS-05`, `SYS-06`, `SYS-07`, `SYS-08`, `SYS-12`, `SYS-15`) after this baseline slice.
+- Complete remaining missing System pages (`SYS-08`, `SYS-12`, `SYS-15`) after the FRR/IP/IPv6 baseline slice.
 
 ## Current Feature Spec
-Feature: **System baseline parity slice (`SYS-01`, `SYS-02`, `SYS-03`)**
+Feature: **System baseline parity slice (`SYS-05`, `SYS-06`, `SYS-07`)**
 
 Acceptance criteria:
 - Add scoped backend wrappers for:
-  - `system conntrack` (`/vyos/system-conntrack/*`)
-  - `system console` (`/vyos/system-console/*`)
-  - `protocols static route 0.0.0.0/0` (`/vyos/system-default-route/*`)
+  - `system frr` (`/vyos/system-frr/*`)
+  - `system ip` (`/vyos/system-ip/*`)
+  - `system ipv6` (`/vyos/system-ipv6/*`)
 - Add dedicated form-first pages:
-  - `/system/conntrack`
-  - `/system/serial-console`
-  - `/system/default-route`
+  - `/system/frr`
+  - `/system/ip`
+  - `/system/ipv6`
 - Register routes in backend app and wrapper capability tests.
 - Expose the new pages in `System` sidebar navigation.
 - Include new routes in runtime/browser smoke defaults.
@@ -83,23 +83,24 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: completed baseline implementation + wiring for `System Conntrack`, `Serial Console`, and `Default Route` pages with backend wrappers, tests, and sidebar/smoke integration.
-- Backlog audit (2026-02-16, strict option-level tracker): `85` total tasks remain in backlog artifacts (`12 missing`, `64 partial`, `9 verify`); route-detection parity artifacts are intentionally treated as insufficient for completion status.
+- Status: completed baseline implementation + wiring for `System FRR`, `System IP`, and `System IPv6` pages with backend wrappers, tests, and sidebar/smoke integration.
+- Backlog audit (2026-02-16, strict option-level tracker): `85` total tasks remain in backlog artifacts (`9 missing`, `67 partial`, `9 verify`); route-detection parity artifacts are intentionally treated as insufficient for completion status.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `backend/routers/system_conntrack.py`
-- `backend/routers/system_console.py`
-- `backend/routers/system_default_route.py`
+- `backend/routers/system_frr.py`
+- `backend/routers/system_ip.py`
+- `backend/routers/system_ipv6.py`
 - `backend/app.py`
 - `backend/tests/test_config_tree_wrapper_capabilities.py`
-- `frontend/src/app/system/conntrack/page.tsx`
-- `frontend/src/app/system/serial-console/page.tsx`
-- `frontend/src/app/system/default-route/page.tsx`
-- `frontend/src/lib/api/system-conntrack.ts`
-- `frontend/src/lib/api/system-console.ts`
-- `frontend/src/lib/api/system-default-route.ts`
+- `frontend/src/app/system/frr/page.tsx`
+- `frontend/src/app/system/ip/page.tsx`
+- `frontend/src/app/system/ipv6/page.tsx`
+- `frontend/src/lib/api/system-frr.ts`
+- `frontend/src/lib/api/system-ip.ts`
+- `frontend/src/lib/api/system-ipv6.ts`
 - `frontend/src/components/layout/Sidebar.tsx`
+- `frontend/src/lib/help/pageGuides.ts`
 - `frontend/scripts/check-runtime.sh`
 - `frontend/scripts/smoke-ui.mjs`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
@@ -112,7 +113,7 @@ Assumptions:
 ### Validation This Cycle
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0` passed.
+- `cd frontend && npx eslint src/app/system/frr/page.tsx src/app/system/ip/page.tsx src/app/system/ipv6/page.tsx src/lib/api/system-frr.ts src/lib/api/system-ip.ts src/lib/api/system-ipv6.ts src/lib/help/pageGuides.ts src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
 
@@ -128,9 +129,6 @@ Assumptions:
 
 ## TODO Backlog (next queue)
 - Continue remaining System missing pages in guide order:
-  - `SYS-05` FRR
-  - `SYS-06` IP
-  - `SYS-07` IPv6
   - `SYS-08` LCD
   - `SYS-12` sFlow
   - `SYS-15` Task Scheduler
@@ -139,6 +137,10 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Added thin system wrappers `system_frr`, `system_ip`, and `system_ipv6` via `build_config_tree_router(...)`, preserving existing service/session architecture and API contract style.
+- Added dedicated form-first pages `/system/frr`, `/system/ip`, and `/system/ipv6` with diff-based set/delete batch operations and in-page help dialogs.
+- Added `System` sidebar entries and smoke coverage for the new routes so runtime regressions are caught by default.
+- Updated strict option-level backlog artifacts: `SYS-05`, `SYS-06`, and `SYS-07` moved from `missing` to `partial`.
 - Added thin system wrappers `system_conntrack`, `system_console`, and `system_default_route` via `build_config_tree_router(...)`, preserving existing service/session architecture and API contract style.
 - Added dedicated form-first pages `/system/conntrack`, `/system/serial-console`, and `/system/default-route` with diff-based set/delete batch operations and in-page help dialogs.
 - Added `System` sidebar entries and smoke coverage for the new routes so runtime regressions are caught by default.

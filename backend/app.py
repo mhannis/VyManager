@@ -120,6 +120,9 @@ from routers.system_flow_accounting import system_flow_accounting as system_flow
 from routers.system_conntrack import system_conntrack as system_conntrack_router
 from routers.system_console import system_console as system_console_router
 from routers.system_default_route import system_default_route as system_default_route_router
+from routers.system_frr import system_frr as system_frr_router
+from routers.system_ip import system_ip as system_ip_router
+from routers.system_ipv6 import system_ipv6 as system_ipv6_router
 
 # Load backend/.env when uvicorn is started without exported shell vars.
 load_dotenv(Path(__file__).resolve().parent / ".env")
@@ -427,6 +430,9 @@ app.include_router(system_flow_accounting_router)
 app.include_router(system_conntrack_router)
 app.include_router(system_console_router)
 app.include_router(system_default_route_router)
+app.include_router(system_frr_router)
+app.include_router(system_ip_router)
+app.include_router(system_ipv6_router)
 app.include_router(system.router)
 app.include_router(power_router.router)
 app.include_router(config_router.router)

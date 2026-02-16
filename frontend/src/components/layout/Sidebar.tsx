@@ -395,6 +395,21 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
+        title: "FRR",
+        href: "/system/frr",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "IP",
+        href: "/system/ip",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "IPv6",
+        href: "/system/ipv6",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
         title: "Proxy",
         href: "/system/proxy",
         requiredPermission: FeatureGroup.SYSTEM,

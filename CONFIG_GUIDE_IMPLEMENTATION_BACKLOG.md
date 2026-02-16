@@ -135,9 +135,9 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `SYS-02` (`partial`): Serial Console page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-03` (`partial`): Default Route/Gateway page + backend wrapper are implemented; option-depth parity and multi-path validation remain.
 - `SYS-04` (`partial`): Build Flow Accounting page. Baseline form-first page + backend wrapper are implemented; option-depth parity and live telemetry validation remain.
-- `SYS-05` (`missing`): Build FRR system page.
-- `SYS-06` (`missing`): Build IP system options page.
-- `SYS-07` (`missing`): Build IPv6 system options page.
+- `SYS-05` (`partial`): FRR system page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
+- `SYS-06` (`partial`): IP system options page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
+- `SYS-07` (`partial`): IPv6 system options page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-08` (`missing`): Build LCD page (if platform supports).
 - `SYS-09` (`partial`): Login/user management parity deepening.
 - `SYS-10` (`partial`): Name-server ownership and resolver integration cleanup.

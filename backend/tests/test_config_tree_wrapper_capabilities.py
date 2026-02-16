@@ -27,6 +27,9 @@ import routers.system_flow_accounting as system_flow_accounting_router
 import routers.system_conntrack as system_conntrack_router
 import routers.system_console as system_console_router
 import routers.system_default_route as system_default_route_router
+import routers.system_frr as system_frr_router
+import routers.system_ip as system_ip_router
+import routers.system_ipv6 as system_ipv6_router
 import routers.load_balancing.load_balancing as load_balancing_router
 import routers.pki.pki as pki_router
 import routers.traffic_policy.traffic_policy as traffic_policy_router
@@ -239,6 +242,57 @@ class DummyService:
                         }
                     }
                 },
+                "frr": {
+                    "bmp": {},
+                    "descriptors": "2048",
+                    "profile": "traditional",
+                    "snmp": {
+                        "bgpd": {},
+                        "zebra": {},
+                    },
+                },
+                "ip": {
+                    "arp": {
+                        "table-size": "8192",
+                    },
+                    "disable-forwarding": {},
+                    "disable-directed-broadcast": {},
+                    "import-table": {
+                        "100": {
+                            "distance": "220",
+                            "route-map": "IMPORT-100",
+                        }
+                    },
+                    "multipath": {
+                        "layer4-hashing": {},
+                    },
+                    "nht": {
+                        "no-resolve-via-default": {},
+                    },
+                    "protocol": {
+                        "connected": {
+                            "route-map": "CONNECTED-IN",
+                        }
+                    },
+                },
+                "ipv6": {
+                    "disable-forwarding": {},
+                    "multipath": {
+                        "layer4-hashing": {},
+                    },
+                    "neighbor": {
+                        "table-size": "4096",
+                    },
+                    "nht": {
+                        "no-resolve-via-default": {},
+                    },
+                    "protocol": {
+                        "bgp": {
+                            "route-map": "BGP6-IN",
+                        }
+                    },
+                    "strict-dad": {},
+                },
                 "proxy": {
                     "url": "http://proxy.lab.local",
                     "port": "3128",
@@ -313,6 +367,9 @@ def app():
     app.include_router(system_conntrack_router.system_conntrack)
     app.include_router(system_console_router.system_console)
     app.include_router(system_default_route_router.system_default_route)
+    app.include_router(system_frr_router.system_frr)
+    app.include_router(system_ip_router.system_ip)
+    app.include_router(system_ipv6_router.system_ipv6)
     return app
 
 
@@ -369,6 +426,9 @@ def mock_service(monkeypatch):
         "/vyos/system-conntrack/capabilities",
         "/vyos/system-console/capabilities",
         "/vyos/system-default-route/capabilities",
+        "/vyos/system-frr/capabilities",
+        "/vyos/system-ip/capabilities",
+        "/vyos/system-ipv6/capabilities",
     ],
 )
 def test_config_tree_wrapper_capabilities_payload(app, allow_permissions, mock_service, path):
@@ -412,6 +472,9 @@ def test_config_tree_wrapper_capabilities_payload(app, allow_permissions, mock_s
         ("/vyos/system-conntrack/config", "conntrack", "table-size"),
         ("/vyos/system-console/config", "console", "device"),
         ("/vyos/system-default-route/config", "default_route", "next-hop"),
+        ("/vyos/system-frr/config", "frr", "profile"),
+        ("/vyos/system-ip/config", "ip", "protocol"),
+        ("/vyos/system-ipv6/config", "ipv6", "strict-dad"),
     ],
 )
 def test_config_tree_wrapper_config_payload(
@@ -577,6 +640,21 @@ def test_wireless_config_includes_country_code(app, allow_permissions, mock_serv
             "/vyos/system-default-route/batch",
             "set protocols static route 0.0.0.0/0 next-hop 192.0.2.1",
             "set system conntrack table-size 262144",
+        ),
+        (
+            "/vyos/system-frr/batch",
+            "set system frr profile traditional",
+            "set system ip disable-forwarding",
+        ),
+        (
+            "/vyos/system-ip/batch",
+            "set system ip disable-forwarding",
+            "set system ipv6 disable-forwarding",
+        ),
+        (
+            "/vyos/system-ipv6/batch",
+            "set system ipv6 disable-forwarding",
+            "set system frr profile datacenter",
         ),
     ],
 )

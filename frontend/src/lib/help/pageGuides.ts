@@ -29,6 +29,9 @@ export const pageGuides: Record<
   | "systemConntrack"
   | "systemSerialConsole"
   | "systemDefaultRoute"
+  | "systemFrr"
+  | "systemIp"
+  | "systemIpv6"
   | "systemProxy"
   | "systemSysctl"
   | "containers"
@@ -885,6 +888,96 @@ export const pageGuides: Record<
         items: [
           "Route installation issues are commonly caused by unreachable gateway addresses.",
           "Unexpected failover behavior usually indicates distance values are equal or inverted.",
+        ],
+      },
+    ],
+  },
+  systemFrr: {
+    title: "System FRR How-To",
+    summary:
+      "Tune FRR process profile, descriptor limits, and optional daemon integrations under `system frr`.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/system/frr.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Pick the FRR profile (`traditional` or `datacenter`) first.",
+          "Set descriptors only when your route scale requires higher limits.",
+          "Enable BMP/IRDP and SNMP daemon hooks only when your design needs those integrations.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save and refresh to confirm profile and daemon settings persist.",
+          "Verify protocol processes remain healthy after descriptor/profile changes.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Unexpected protocol behavior after profile changes should be tested by rolling back to the previous profile.",
+          "If integrations fail, verify daemon names and dependent service availability.",
+        ],
+      },
+    ],
+  },
+  systemIp: {
+    title: "System IP How-To",
+    summary:
+      "Manage IPv4 forwarding behavior, import-table controls, and protocol route-map hooks from a form-first workflow.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/system/ip.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Set global IPv4 behavior flags first (forwarding, directed-broadcast, multipath, NHT).",
+          "Configure ARP table size if scale tuning is required.",
+          "Add import-table entries and protocol route-map hooks last.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save and refresh to confirm all IPv4 system controls persist.",
+          "Validate route-map effects using routing/policy status views in the GUI.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Incorrect table IDs or route-map names are common causes of import-policy mismatches.",
+          "Only enable forwarding-disable in designs that intentionally suppress transit behavior.",
+        ],
+      },
+    ],
+  },
+  systemIpv6: {
+    title: "System IPv6 How-To",
+    summary:
+      "Manage IPv6 forwarding behavior, neighbor table sizing, and protocol route-map hooks under `system ipv6`.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/system/ipv6.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "Set global IPv6 behavior flags first (forwarding, strict DAD, multipath, NHT).",
+          "Tune neighbor table size based on host scale expectations.",
+          "Apply protocol route-map hooks after base forwarding behavior is validated.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Save and refresh to confirm IPv6 controls persist.",
+          "Verify expected IPv6 routing behavior through existing routing/neighbor pages.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Neighbor issues are often table-size or duplicate-address related; review strict DAD behavior carefully.",
+          "Protocol route-map mismatches are commonly due to wrong protocol token or route-map name.",
         ],
       },
     ],

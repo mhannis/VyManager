@@ -430,20 +430,20 @@
     {
       "id": "SYS-05",
       "domain": "system",
-      "status": "missing",
-      "title": "FRR system page"
+      "status": "partial",
+      "title": "FRR system page (baseline page+wrapper implemented; option-depth validation pending)"
     },
     {
       "id": "SYS-06",
       "domain": "system",
-      "status": "missing",
-      "title": "IP system options page"
+      "status": "partial",
+      "title": "IP system options page (baseline page+wrapper implemented; option-depth validation pending)"
     },
     {
       "id": "SYS-07",
       "domain": "system",
-      "status": "missing",
-      "title": "IPv6 system options page"
+      "status": "partial",
+      "title": "IPv6 system options page (baseline page+wrapper implemented; option-depth validation pending)"
     },
     {
       "id": "SYS-08",

@@ -1,13 +1,13 @@
 {
-  "feature_id": "system-baseline-pages-v1-2026-02-16",
-  "title": "System baseline pages: Conntrack, Serial Console, Default Route",
+  "feature_id": "system-frr-ip-ipv6-baseline-v1-2026-02-16",
+  "title": "System baseline pages: FRR, IP, IPv6",
   "status": "in_progress",
   "acceptance_criteria": [
-    "System Conntrack page exists at /system/conntrack with scoped batch operations.",
-    "Serial Console page exists at /system/serial-console with scoped batch operations.",
-    "Default Route page exists at /system/default-route with scoped batch operations for 0.0.0.0/0 next-hops.",
-    "Backend exposes wrappers /vyos/system-conntrack/*, /vyos/system-console/*, and /vyos/system-default-route/*.",
-    "System sidebar includes links for Conntrack, Serial Console, and Default Route.",
+    "System FRR page exists at /system/frr with scoped batch operations.",
+    "System IP page exists at /system/ip with scoped batch operations and structured forms.",
+    "System IPv6 page exists at /system/ipv6 with scoped batch operations and structured forms.",
+    "Backend exposes wrappers /vyos/system-frr/*, /vyos/system-ip/*, and /vyos/system-ipv6/*.",
+    "System sidebar includes links for FRR, IP, and IPv6 pages.",
     "Runtime/browser smoke default routes include all three pages.",
     "Targeted backend wrapper tests, frontend typecheck/lint/build/runtime smoke pass."
   ],
@@ -17,34 +17,35 @@
   ],
   "tasks": [
     {
-      "id": "SYSBASE-01",
+      "id": "SYSMOD-01",
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/system_conntrack.py",
-        "backend/routers/system_console.py",
-        "backend/routers/system_default_route.py",
+        "backend/routers/system_frr.py",
+        "backend/routers/system_ip.py",
+        "backend/routers/system_ipv6.py",
         "backend/app.py"
       ],
       "notes": "Added and registered thin config-tree wrappers preserving existing API/session contracts."
     },
     {
-      "id": "SYSBASE-02",
+      "id": "SYSMOD-02",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/system/conntrack/page.tsx",
-        "frontend/src/app/system/serial-console/page.tsx",
-        "frontend/src/app/system/default-route/page.tsx",
-        "frontend/src/lib/api/system-conntrack.ts",
-        "frontend/src/lib/api/system-console.ts",
-        "frontend/src/lib/api/system-default-route.ts",
+        "frontend/src/app/system/frr/page.tsx",
+        "frontend/src/app/system/ip/page.tsx",
+        "frontend/src/app/system/ipv6/page.tsx",
+        "frontend/src/lib/api/system-frr.ts",
+        "frontend/src/lib/api/system-ip.ts",
+        "frontend/src/lib/api/system-ipv6.ts",
+        "frontend/src/lib/help/pageGuides.ts",
         "frontend/src/components/layout/Sidebar.tsx"
       ],
       "notes": "Implemented dedicated form-first pages and added System nav links."
     },
     {
-      "id": "SYSBASE-03",
+      "id": "SYSMOD-03",
       "owner_role": "Test",
       "status": "done",
       "files": [
@@ -55,50 +56,50 @@
       "notes": "Extended wrapper tests and smoke route probes for new pages."
     },
     {
-      "id": "SYSBASE-04",
+      "id": "SYSMOD-04",
       "owner_role": "Analyst|Planner",
       "status": "done",
       "files": [
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
       ],
-      "notes": "Moved SYS-01/SYS-02/SYS-03 from missing to partial in strict parity backlog."
+      "notes": "Moved SYS-05/SYS-06/SYS-07 from missing to partial in strict parity backlog."
     },
     {
-      "id": "SYSNEXT-01",
+      "id": "SYSNEXT-04",
       "owner_role": "Backend|UI|Test",
       "status": "todo",
       "files": [
-        "backend/routers/system_frr.py",
-        "frontend/src/app/system/frr/page.tsx"
+        "backend/routers/system_lcd.py",
+        "frontend/src/app/system/lcd/page.tsx"
       ],
-      "notes": "Implement SYS-05 FRR as next missing item."
+      "notes": "Implement SYS-08 LCD page."
     },
     {
-      "id": "SYSNEXT-02",
+      "id": "SYSNEXT-05",
       "owner_role": "Backend|UI|Test",
       "status": "todo",
       "files": [
-        "backend/routers/system_ip.py",
-        "frontend/src/app/system/ip/page.tsx"
+        "backend/routers/system_sflow.py",
+        "frontend/src/app/system/sflow/page.tsx"
       ],
-      "notes": "Implement SYS-06 IP options page."
+      "notes": "Implement SYS-12 sFlow page."
     },
     {
-      "id": "SYSNEXT-03",
+      "id": "SYSNEXT-06",
       "owner_role": "Backend|UI|Test",
       "status": "todo",
       "files": [
-        "backend/routers/system_ipv6.py",
-        "frontend/src/app/system/ipv6/page.tsx"
+        "backend/routers/system_task_scheduler.py",
+        "frontend/src/app/system/task-scheduler/page.tsx"
       ],
-      "notes": "Implement SYS-07 IPv6 options page."
+      "notes": "Implement SYS-15 task scheduler page."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
     "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
-    "lint": "cd frontend && npx eslint src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0"
+    "lint": "cd frontend && npx eslint src/app/system/frr/page.tsx src/app/system/ip/page.tsx src/app/system/ipv6/page.tsx src/lib/api/system-frr.ts src/lib/api/system-ip.ts src/lib/api/system-ipv6.ts src/lib/help/pageGuides.ts src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0"
   },
   "worktrees_or_threads": [
     {
