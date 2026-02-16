@@ -100,6 +100,7 @@ critical_routes=(
   "/system/acceleration"
   "/system/identification"
   "/system/options"
+  "/system/syslog"
   "/system/logs"
   "/system/users"
   "/system/containers"

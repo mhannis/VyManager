@@ -1,14 +1,15 @@
-timestamp: 2026-02-16T17:03:21Z
-failing_command: cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py
-error_summary: One LLDP parser regression test failed after the first structured-payload fallback implementation because `systemName` camelCase keys were not included in alias normalization. The parser returned `system_name=None` for that shape.
+timestamp: 2026-02-16T19:28:36Z
+failing_command: cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py
+error_summary: The new `system-syslog` config wrapper test failed because the dummy test fixture did not include any `system.syslog` subtree data, so the marker assertion (`preserve-fqdn`) had an empty payload.
 last_output:
-...F                                                                     [100%]
 =================================== FAILURES ===================================
-____ test_parse_lldp_neighbors_structured_output_nested_with_interface_hint ____
-E       assert None == 'edge-switch'
-E        +  where None = LldpNeighbor(...).system_name
+_ test_config_tree_wrapper_config_payload[/vyos/system-syslog/config-syslog-preserve-fqdn] _
+...
+>       assert marker in payload[response_key]
+E       AssertionError: assert 'preserve-fqdn' in {}
+tests/test_config_tree_wrapper_capabilities.py:542: AssertionError
 =========================== short test summary info ============================
-FAILED tests/test_system_lldp_parsing.py::test_parse_lldp_neighbors_structured_output_nested_with_interface_hint
-1 failed, 3 passed in 0.49s
-suspected_cause: Alias map covered `system_name` and `sysname` but not normalized `systemname` from camelCase source keys.
-next_step: Include `systemname` alias in structured parser, rerun LLDP tests and then system/frontend validation gates.
+FAILED tests/test_config_tree_wrapper_capabilities.py::test_config_tree_wrapper_config_payload[/vyos/system-syslog/config-syslog-preserve-fqdn]
+1 failed, 102 passed in 5.55s
+suspected_cause: `DummyService.get_full_config()` lacked `system: { syslog: ... }` sample data for the new wrapper endpoint.
+next_step: Add representative `system.syslog` fixture data in `backend/tests/test_config_tree_wrapper_capabilities.py` and rerun the test file; this was completed with `103 passed`.

@@ -412,3 +412,6 @@ Assumptions:
 - 2026-02-16: `System -> Containers` now also shows an inline editing-state hint under action buttons (`Editing <name> ... New Container ...`) so the New Container intent is explicit when exiting edit mode.
 - 2026-02-16: Removed the duplicate top-bar `New Container` action from `System -> Containers`; operators now use the existing in-form `Reset` action, reducing redundant controls.
 - 2026-02-16: Expanded runtime/browser smoke route coverage to include additional routing/firewall/system/VPN pages (`BGP`, `BFD`, `ARP`, `failover`, `NAT/routes`, `groups/flowtables`, `system logs/users/options`, `WireGuard`) to harden pre-handoff crash detection.
+- 2026-02-16: Added dedicated `system syslog` thin wrapper router (`/vyos/system-syslog/*`) and registered it in backend app routing without changing existing service-layer contracts.
+- 2026-02-16: Added `System -> Syslog` page with structured global/console/file/remote destination editing (including remote protocol/port/format/TLS baseline fields), plus sidebar entry and smoke-route coverage for `/system/syslog`.
+- 2026-02-16 validation snapshot (syslog slice): backend `tests/test_config_tree_wrapper_capabilities.py` passed (`103 passed`), frontend typecheck/build/runtime smoke passed.

@@ -25,6 +25,10 @@ completed_in_cycle:
   - Runtime/browser smoke route sets were expanded to probe additional high-risk pages (`firewall/policies`, `firewall/bridge`, `firewall/global-options`, `policies/route`, `policies/local-route`, `system/acceleration`) so regressions are caught earlier.
   - Removed the duplicate top-bar `New Container` control in `System -> Containers`; operators now use the existing in-form controls (`Install`, `Save`, `Reset`) for a cleaner workflow.
   - Expanded runtime/browser smoke route probes to cover more high-risk pages (`/routing/unicast-protocols/bgp`, `/routing/infrastructure/bfd`, `/routing/infrastructure/arp`, `/routing/static-failover/failover`, `/network/nat`, `/network/routes`, `/firewall/groups`, `/firewall/flowtables`, `/system/options`, `/system/logs`, `/system/users`, `/vpn/wireguard`).
+  - Added backend `system-syslog` config-tree wrapper (`/vyos/system-syslog/*`) and registered it in app routing.
+  - Added `System -> Syslog` GUI with structured global options plus console/file/remote destination rule editing (remote includes protocol/port/format/TLS baseline controls).
+  - Added `Syslog` entry to System sidebar and extended smoke route probes to include `/system/syslog`.
+  - Added config-tree wrapper regression coverage for `system-syslog` capabilities/config/batch scope validation.
   - `VPN -> WireGuard` interface list/header now use description-first interface labels for consistency with the global naming pattern.
 validation:
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py
@@ -32,6 +36,7 @@ validation:
   - cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime
   - cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime  # post load-balancing + bridge label sweep
   - node --check frontend/scripts/smoke-ui.mjs
+  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py
 known_limitations:
   - Browser smoke (Playwright) remains blocked on host dependency (`libnspr4.so`) and is outside this slice’s pass gate.
 next_queue:

@@ -144,7 +144,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `SYS-11` (`partial`): Build System Proxy page. Baseline form-first page + backend wrapper are implemented; option-depth parity and live validation remain.
 - `SYS-12` (`partial`): sFlow page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-13` (`partial`): Build Sysctl page. Baseline parameter CRUD page + backend wrapper are implemented; option-depth parity and live validation remain.
-- `SYS-14` (`partial`): Syslog page parity completion (destinations/templates/severity controls).
+- `SYS-14` (`partial`): System Syslog page + backend wrapper now implemented with global marker/FQDN/source controls and structured console/file/remote destination rule editing (including remote protocol/port/format/TLS baseline). Remaining depth: advanced archive/template leaves and exhaustive interop validation.
 - `SYS-15` (`partial`): Task Scheduler page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-16` (`partial`): Time-zone/update/watchdog option parity completion.
 

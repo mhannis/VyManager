@@ -32,6 +32,7 @@ import routers.system_ip as system_ip_router
 import routers.system_ipv6 as system_ipv6_router
 import routers.system_lcd as system_lcd_router
 import routers.system_sflow as system_sflow_router
+import routers.system_syslog as system_syslog_router
 import routers.system_task_scheduler as system_task_scheduler_router
 import routers.load_balancing.load_balancing as load_balancing_router
 import routers.pki.pki as pki_router
@@ -317,6 +318,30 @@ class DummyService:
                         }
                     },
                 },
+                "syslog": {
+                    "preserve-fqdn": {},
+                    "marker": {
+                        "interval": "300",
+                    },
+                    "console": {
+                        "facility": {
+                            "all": {
+                                "level": "notice",
+                            }
+                        }
+                    },
+                    "remote": {
+                        "192.0.2.90": {
+                            "protocol": "tcp",
+                            "port": "514",
+                            "facility": {
+                                "all": {
+                                    "level": "info",
+                                }
+                            },
+                        }
+                    },
+                },
                 "task-scheduler": {
                     "task": {
                         "backup-config": {
@@ -407,6 +432,7 @@ def app():
     app.include_router(system_ipv6_router.system_ipv6)
     app.include_router(system_lcd_router.system_lcd)
     app.include_router(system_sflow_router.system_sflow)
+    app.include_router(system_syslog_router.system_syslog)
     app.include_router(system_task_scheduler_router.system_task_scheduler)
     return app
 
@@ -469,6 +495,7 @@ def mock_service(monkeypatch):
         "/vyos/system-ipv6/capabilities",
         "/vyos/system-lcd/capabilities",
         "/vyos/system-sflow/capabilities",
+        "/vyos/system-syslog/capabilities",
         "/vyos/system-task-scheduler/capabilities",
     ],
 )
@@ -518,6 +545,7 @@ def test_config_tree_wrapper_capabilities_payload(app, allow_permissions, mock_s
         ("/vyos/system-ipv6/config", "ipv6", "strict-dad"),
         ("/vyos/system-lcd/config", "lcd", "model"),
         ("/vyos/system-sflow/config", "sflow", "server"),
+        ("/vyos/system-syslog/config", "syslog", "preserve-fqdn"),
         ("/vyos/system-task-scheduler/config", "task_scheduler", "task"),
     ],
 )
@@ -708,6 +736,11 @@ def test_wireless_config_includes_country_code(app, allow_permissions, mock_serv
         (
             "/vyos/system-sflow/batch",
             "set system sflow polling 30",
+            "set system syslog preserve-fqdn",
+        ),
+        (
+            "/vyos/system-syslog/batch",
+            "set system syslog preserve-fqdn",
             "set system task-scheduler task backup-config interval 300",
         ),
         (

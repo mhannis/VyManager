@@ -329,3 +329,6 @@
 - 2026-02-16: Added inline edit-state helper copy on `System -> Containers` so `New Container` behavior is explicit while editing (`reset + switch to create`) instead of appearing as a no-op.
 - 2026-02-16: Removed the duplicate top-level `New Container` button from `System -> Containers`; the in-form `Reset` action already covered this behavior and keeping both controls introduced unnecessary UX noise.
 - 2026-02-16: Expanded `smoke:runtime` and browser smoke route lists with additional routing/firewall/system/VPN pages to catch route-level regressions earlier (`BGP`, `BFD`, `ARP`, static failover, NAT/routes, firewall groups/flowtables, system logs/users/options, WireGuard).
+- 2026-02-16: Implemented `system syslog` via a thin config-tree wrapper (`/vyos/system-syslog/*`) instead of changing backend core services, maintaining existing API architecture while enabling dedicated GUI parity work.
+- 2026-02-16: Added a dedicated `System -> Syslog` form-first page with structured global marker/source/FQDN options plus console/file/remote destination editing (including remote protocol/port/format and TLS baseline settings).
+- 2026-02-16: Added `system-syslog` coverage to wrapper regression tests (`capabilities`, `config`, and `batch` scope validation) and added `/system/syslog` to runtime/browser smoke routes.

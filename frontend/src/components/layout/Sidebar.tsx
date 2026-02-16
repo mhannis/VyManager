@@ -433,6 +433,11 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
+        title: "Syslog",
+        href: "/system/syslog",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
         title: "Logs",
         href: "/system/logs",
         requiredPermission: FeatureGroup.SYSTEM,

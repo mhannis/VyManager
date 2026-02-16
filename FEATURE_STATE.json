@@ -22,6 +22,8 @@
     "Runtime smoke probes include recently touched policy/firewall/system routes to reduce false green builds.",
     "Runtime/browser smoke probes cover expanded high-risk routing/firewall/system/VPN pages touched in backlog slices.",
     "Containers page removes the duplicate top-level New Container action and relies on the in-form controls for create/edit/reset.",
+    "System Syslog has dedicated backend wrapper and frontend page with structured global, console, file, and remote destination controls.",
+    "System Syslog route is available in sidebar and smoke probes, and wrapper capability/config/batch tests pass.",
     "WireGuard interface list/header display description-first labels when metadata is available.",
     "Backend and frontend validation gates pass for touched surfaces."
   ],
@@ -181,6 +183,38 @@
         "frontend/scripts/smoke-ui.mjs"
       ],
       "notes": "Expanded runtime/browser smoke route coverage for additional routing/firewall/system/VPN pages and reran build/runtime gates."
+    },
+    {
+      "id": "T16",
+      "owner_role": "Backend",
+      "status": "done",
+      "files": [
+        "backend/routers/system_syslog.py",
+        "backend/app.py"
+      ],
+      "notes": "Added thin config-tree wrapper for `system syslog` and registered `/vyos/system-syslog/*` endpoints."
+    },
+    {
+      "id": "T17",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/lib/api/system-syslog.ts",
+        "frontend/src/app/system/syslog/page.tsx",
+        "frontend/src/components/layout/Sidebar.tsx",
+        "frontend/scripts/check-runtime.sh",
+        "frontend/scripts/smoke-ui.mjs"
+      ],
+      "notes": "Implemented structured System Syslog page (global/console/file/remote with TLS baseline), added sidebar navigation, and extended smoke route probes with `/system/syslog`."
+    },
+    {
+      "id": "T18",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/test_config_tree_wrapper_capabilities.py"
+      ],
+      "notes": "Extended wrapper regression suite for `/vyos/system-syslog/{capabilities,config,batch}` and validated scope filtering."
     }
   ],
   "commands": {
