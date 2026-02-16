@@ -1,27 +1,26 @@
-feature_id: container-option-depth-c0204-2026-02-16
-title: Container workflows parity sweep (image lifecycle, network validation, inspect UX)
+feature_id: firewall-groups-backend-hardening-f03-2026-02-16
+title: Firewall groups backend validation hardening and error semantics fix
 status: in_review
 branch: feature/containers-automation-v1
 completed_in_cycle:
-  - Added backend guardrails for container networking:
-    - reject overlapping container network prefixes across `container network <name> prefix`
-    - validate container attachment addresses are within configured network prefixes
-    - reject network/broadcast IPv4 host assignments for static container addresses
-  - Added container network overlap pre-check in UI before save so operators get immediate feedback.
-  - Expanded image lifecycle UX with row-level quick actions (`Use`, `Pull`, `Update`, `Delete`) from configured/runtime image lists.
-  - Expanded inspect UX with parsed summary fields (JSON + key/value fallback) above raw inspect output.
-  - Added firewall group type-aware member validation in create/edit flows, including strict remote-group single-URL behavior and format validation per group type.
-  - Added interface-group member suggestions in firewall group modals using description-first interface labels (`Description (ethX)`), while submitting canonical interface IDs.
-  - Added backend tests for overlap and address validation helper paths.
+  - Added backend server-side validation for firewall group batch values:
+    - group name format guardrails
+    - type-aware value validation (IPv4/IPv6 address/range, CIDR, port/service, interface, MAC, domain, URL)
+    - include-self prevention for include operations
+  - Fixed API error semantics in firewall groups batch:
+    - preserved `HTTPException` status codes (previously swallowed by generic exception handler and returned as `500`)
+  - Added backend tests covering new validation/error behavior:
+    - invalid group name -> `400`
+    - invalid remote URL -> `400`
+    - invalid MAC -> `400`
+    - valid remote-group create -> success path
 validation:
-  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_containers_automation_v1.py
+  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_groups_validation.py tests/test_containers_automation_v1.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py
   - cd frontend && npx tsc --noEmit --pretty false
   - cd frontend && npm run -s build
   - cd frontend && npm run -s smoke:runtime
 known_limitations:
-  - Container address validation is strict for explicit static addresses; non-addressed attachments are still allowed for pre-stage workflows.
   - Browser smoke (Playwright) remains blocked on host dependency (`libnspr4.so`) and is not part of this cycle’s pass gate.
 next_queue:
-  - Continue container parity depth on registry/image workflows (bulk cleanup/import and clearer status/health signals).
-  - Continue firewall option-depth parity (F-01..F-06) with advanced match/action and validation passes.
-  - Continue interface depth sweep on advanced per-family leaves and verification.
+  - Continue firewall option-depth parity (`F-01`, `F-02`, `F-04`, `F-05`, `F-06`).
+  - Continue interface advanced-leaf parity (`IF-15`) with robust validation patterns similar to this slice.

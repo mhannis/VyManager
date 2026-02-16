@@ -292,3 +292,4 @@
 - 2026-02-16: Expanded container UX with row-level image lifecycle actions (Use/Pull/Update/Delete) and inspect output summary parsing so common runtime operations are faster without dropping raw output access.
 - 2026-02-16: Added typed member-value validation to firewall group create/edit flows and constrained remote groups to a single HTTP/HTTPS URL member to reduce invalid commits and clarify remote-group semantics.
 - 2026-02-16: Firewall interface-group inputs now fetch ethernet config and show description-first suggestions (`Description (ethX)`) while writing raw interface IDs, aligning with global interface labeling direction.
+- 2026-02-16: Hardened `/vyos/firewall/groups/batch` with typed server-side value validation and explicit `except HTTPException: raise` handling; this prevents invalid group operations from being converted to generic `500` responses and returns accurate `400` diagnostics.

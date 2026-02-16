@@ -58,38 +58,32 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
 - Continue reducing strict backlog by implementing partial domains in robust form-first UX.
-- Continue container option-depth parity (image lifecycle + network model validation + operational UX details).
+- Continue firewall option-depth parity with robust backend validation and predictable API error behavior.
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Container parity depth sweep (`C-02`, `C-03`, `C-04`)**
+Feature: **Firewall groups backend hardening (`F-03` depth pass)**
 
 Acceptance criteria:
-- Reject overlapping `container network <name> prefix` definitions in backend network upsert.
-- Validate static container network attachment addresses against configured prefixes before upsert/install apply.
-- Reject invalid IPv4 network/broadcast static assignments in container attachments.
-- Improve image lifecycle UX with direct row-level actions from image catalogs.
-- Improve inspect UX with parsed summary fields while retaining raw output.
-- Add firewall-group member validation by type in create/edit flows, with strict remote-group URL constraints.
-- Pass backend container tests and frontend build/runtime checks.
+- Validate firewall-group batch `group_name` server-side.
+- Validate batch operation values by type server-side (address/range, CIDR, MAC, ports/services, interface, domain, URL).
+- Preserve `HTTPException` status codes in batch endpoint (stop converting `400` to `500`).
+- Add backend tests for invalid-name/URL/MAC and valid remote-group success path.
+- Pass backend+frontend validation gates.
 
 Assumptions:
-- Unknown network names without explicit static addresses remain allowed for pre-stage/template flows.
+- Existing valid clients continue to work; only malformed values should now be rejected earlier.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: container parity slice in review after backend validation hardening and UI workflow upgrades.
-- Backlog audit (2026-02-16, strict option-level tracker): container `C-02`, `C-03`, and `C-04` moved from `partial` to `verify` (pending live-instance verification).
+- Status: firewall groups backend hardening slice in review.
+- Backlog audit (2026-02-16, strict option-level tracker): `F-03` remains `partial` with new typed validation and backend error-path hardening.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `backend/routers/containers.py`
-- `backend/tests/test_containers_automation_v1.py`
-- `frontend/src/app/system/containers/page.tsx`
-- `frontend/src/components/firewall/CreateGroupModal.tsx`
-- `frontend/src/components/firewall/EditGroupModal.tsx`
-- `frontend/src/lib/validation/firewall-groups.ts`
+- `backend/routers/firewall/groups.py`
+- `backend/tests/test_firewall_groups_validation.py`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CURRENT_FEATURE.md`
@@ -98,7 +92,7 @@ Assumptions:
 - `DECISIONS.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_containers_automation_v1.py` passed.
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_groups_validation.py tests/test_containers_automation_v1.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
@@ -118,10 +112,13 @@ Assumptions:
 ## TODO Backlog (next queue)
 - Continue option-depth parity sweep for high-impact partial domains (Firewall, Interfaces, Protocols, Services, VPN, System).
 - Continue container live verification pass on clean instance (`C-02/03/04` -> done).
+- Continue firewall parity depth beyond groups (`F-01`, `F-02`, `F-04`, `F-05`, `F-06`).
 - Improve option-level parity scorer precision and add CI thresholds (`X-01` hardening).
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Firewall groups batch endpoint now performs typed server-side validation and preserves HTTPException status codes; invalid values return `400` instead of being wrapped into `500`.
+- Added backend API tests for firewall groups validation (`test_firewall_groups_validation.py`) covering invalid group name, remote URL, MAC, and valid remote-group success path.
 - Container network safety validation now enforces prefix overlap checks (`upsert /networks`) and static-address/subnet checks (`upsert/install /{container_name}`) in backend before apply.
 - Containers UI now supports row-level image lifecycle actions directly from catalog lists and provides inspect summary parsing (JSON-first, key-value fallback) above raw output.
 - Container backlog statuses were advanced: `C-02`, `C-03`, `C-04` moved to `verify` pending live-instance verification.

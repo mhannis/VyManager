@@ -1,17 +1,16 @@
 {
-  "feature_id": "container-option-depth-c0204-2026-02-16",
-  "title": "Container parity depth: lifecycle workflows, network safety validation, inspect UX",
+  "feature_id": "firewall-groups-backend-hardening-f03-2026-02-16",
+  "title": "Firewall groups backend validation hardening and HTTP status fix",
   "status": "in_review",
   "acceptance_criteria": [
-    "Container network create/update rejects overlapping prefixes against existing networks.",
-    "Container upsert/install rejects static attachment addresses outside configured network prefixes.",
-    "Container upsert/install rejects IPv4 network or broadcast addresses for static assignments.",
-    "Container image lifecycle UI supports direct row-level actions from configured/runtime image lists.",
-    "Container inspect panel exposes parsed summary rows while retaining raw output.",
-    "Backend and frontend validation commands pass for the changed slice."
+    "Firewall groups batch API validates group names server-side.",
+    "Firewall groups batch API validates value payloads by operation type server-side.",
+    "Firewall groups batch API preserves HTTPException status codes instead of converting them to 500.",
+    "Backend tests cover invalid group name, invalid remote URL, invalid MAC, and valid remote-group success paths.",
+    "Backend and frontend validation commands pass for this slice."
   ],
   "assumptions": [
-    "Unknown network names without explicit static addresses remain allowed for pre-stage workflows.",
+    "Validation is intentionally strict for malformed values and should block invalid writes before commit.",
     "Playwright browser smoke remains out-of-gate due host dependency and is intentionally excluded this cycle."
   ],
   "tasks": [
@@ -20,60 +19,39 @@
       "owner_role": "Backend|Integration",
       "status": "done",
       "files": [
-        "backend/routers/containers.py"
+        "backend/routers/firewall/groups.py"
       ],
-      "notes": "Added container network overlap validation and static attachment address/prefix safety checks for upsert/install and network upsert flows."
+      "notes": "Added typed validation helpers for group names and operation values; fixed HTTPException passthrough in batch endpoint."
     },
     {
       "id": "T2",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/system/containers/page.tsx"
-      ],
-      "notes": "Added image quick actions from catalog rows, inspect parsed-summary view, and client-side overlap pre-check before network save."
-    },
-    {
-      "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_containers_automation_v1.py"
+        "backend/tests/test_firewall_groups_validation.py"
       ],
-      "notes": "Added tests for overlap rejection, invalid static address rejection, and valid static address acceptance."
+      "notes": "Added API tests for invalid-name/URL/MAC 400 responses and valid remote-group success path."
     },
     {
-      "id": "T4",
+      "id": "T3",
       "owner_role": "Reviewer",
       "status": "doing",
       "files": [
-        "backend/routers/containers.py",
-        "frontend/src/app/system/containers/page.tsx",
-        "backend/tests/test_containers_automation_v1.py"
+        "backend/routers/firewall/groups.py",
+        "backend/tests/test_firewall_groups_validation.py"
       ],
-      "notes": "Manual review pass pending before next backlog tranche."
-    },
-    {
-      "id": "T5",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/components/firewall/CreateGroupModal.tsx",
-        "frontend/src/components/firewall/EditGroupModal.tsx",
-        "frontend/src/lib/validation/firewall-groups.ts"
-      ],
-      "notes": "Added typed member-value validation and remote-group URL constraints to firewall group create/edit workflows, plus interface-group datalist suggestions with description-first labels (F-03 depth pass)."
+      "notes": "Manual review pass pending before moving to next firewall-depth slice."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_containers_automation_v1.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_groups_validation.py tests/test_containers_automation_v1.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Container parity depth + backlog continuation",
+      "purpose": "Firewall groups hardening + backlog continuation",
       "status": "active"
     }
   ]

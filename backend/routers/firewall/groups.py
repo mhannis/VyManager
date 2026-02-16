@@ -5,6 +5,10 @@ API endpoints for managing VyOS firewall groups.
 Supports version-aware configuration for VyOS 1.4 and 1.5.
 """
 
+import ipaddress
+import re
+from urllib.parse import urlparse
+
 from fastapi import APIRouter, HTTPException, Request
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
@@ -14,6 +18,161 @@ from vyos_builders import FirewallGroupsBatchBuilder
 from fastapi_permissions import require_read_permission, require_write_permission, FeatureGroup
 
 router = APIRouter(prefix="/vyos/firewall/groups", tags=["firewall-groups"])
+
+RE_GROUP_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,62}$")
+RE_INTERFACE_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9._:-]{0,63}$")
+RE_MAC = re.compile(r"^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$")
+RE_DOMAIN = re.compile(
+    r"^(?=.{1,253}$)(?:\*\.)?(?!-)(?:[A-Za-z0-9-]{1,63}\.)+[A-Za-z]{2,63}$"
+)
+RE_PORT_SERVICE = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,31}$")
+
+VALUE_REQUIRED_OP_SUFFIXES = (
+    "_description",
+    "_address",
+    "_network",
+    "_port",
+    "_interface",
+    "_mac",
+    "_url",
+    "_include",
+)
+
+
+def _normalize_group_name_or_400(group_name: str) -> str:
+    name = str(group_name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="group_name is required")
+    if not RE_GROUP_NAME.match(name):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Invalid group_name. Use letters/numbers and optional . _ - "
+                "(max 63 chars, must start with alphanumeric)."
+            ),
+        )
+    return name
+
+
+def _is_valid_ip_or_range(value: str, version: int) -> bool:
+    candidate = value.strip()
+    if "-" in candidate:
+        start, end = [part.strip() for part in candidate.split("-", 1)]
+        try:
+            left = ipaddress.ip_address(start)
+            right = ipaddress.ip_address(end)
+        except ValueError:
+            return False
+        if left.version != version or right.version != version:
+            return False
+        return int(left) <= int(right)
+
+    try:
+        ip = ipaddress.ip_address(candidate)
+    except ValueError:
+        return False
+    return ip.version == version
+
+
+def _is_valid_cidr(value: str, version: int) -> bool:
+    try:
+        network = ipaddress.ip_network(value.strip(), strict=False)
+    except ValueError:
+        return False
+    return network.version == version
+
+
+def _is_valid_port_or_range_or_service(value: str) -> bool:
+    candidate = value.strip()
+    if not candidate:
+        return False
+
+    if candidate.isdigit():
+        port = int(candidate)
+        return 1 <= port <= 65535
+
+    if "-" in candidate:
+        left, right = [part.strip() for part in candidate.split("-", 1)]
+        if left.isdigit() and right.isdigit():
+            start = int(left)
+            end = int(right)
+            return 1 <= start <= 65535 and 1 <= end <= 65535 and start <= end
+        return False
+
+    return bool(RE_PORT_SERVICE.match(candidate))
+
+
+def _is_valid_remote_url(value: str) -> bool:
+    parsed = urlparse(value.strip())
+    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+
+def _validate_group_operation_value_or_400(group_name: str, op_type: str, value: Optional[str]) -> str:
+    cleaned_value = (value or "").strip()
+    requires_value = any(op_type.endswith(suffix) for suffix in VALUE_REQUIRED_OP_SUFFIXES)
+    if requires_value and not cleaned_value:
+        raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
+
+    if not cleaned_value:
+        return cleaned_value
+
+    if op_type.endswith("_description"):
+        if len(cleaned_value) > 512:
+            raise HTTPException(status_code=400, detail="Description must be <= 512 characters")
+        return cleaned_value
+
+    if op_type.endswith("_include"):
+        included_group = _normalize_group_name_or_400(cleaned_value)
+        if included_group == group_name:
+            raise HTTPException(status_code=400, detail="Group cannot include itself")
+        return included_group
+
+    if op_type.endswith("address_group_address"):
+        if not _is_valid_ip_or_range(cleaned_value, version=4):
+            raise HTTPException(status_code=400, detail="Invalid IPv4 address or range value")
+        return cleaned_value
+
+    if op_type.endswith("ipv6_address_group_address"):
+        if not _is_valid_ip_or_range(cleaned_value, version=6):
+            raise HTTPException(status_code=400, detail="Invalid IPv6 address or range value")
+        return cleaned_value
+
+    if op_type.endswith("network_group_network"):
+        if not _is_valid_cidr(cleaned_value, version=4):
+            raise HTTPException(status_code=400, detail="Invalid IPv4 CIDR network value")
+        return cleaned_value
+
+    if op_type.endswith("ipv6_network_group_network"):
+        if not _is_valid_cidr(cleaned_value, version=6):
+            raise HTTPException(status_code=400, detail="Invalid IPv6 CIDR network value")
+        return cleaned_value
+
+    if op_type.endswith("port_group_port"):
+        if not _is_valid_port_or_range_or_service(cleaned_value):
+            raise HTTPException(status_code=400, detail="Invalid port value")
+        return cleaned_value
+
+    if op_type.endswith("interface_group_interface"):
+        if not RE_INTERFACE_NAME.match(cleaned_value):
+            raise HTTPException(status_code=400, detail="Invalid interface name value")
+        return cleaned_value
+
+    if op_type.endswith("mac_group_mac"):
+        if not RE_MAC.match(cleaned_value):
+            raise HTTPException(status_code=400, detail="Invalid MAC address value")
+        return cleaned_value
+
+    if op_type.endswith("domain_group_address"):
+        if not RE_DOMAIN.match(cleaned_value):
+            raise HTTPException(status_code=400, detail="Invalid domain value")
+        return cleaned_value
+
+    if op_type.endswith("remote_group_url"):
+        if not _is_valid_remote_url(cleaned_value):
+            raise HTTPException(status_code=400, detail="Invalid remote-group URL (http/https required)")
+        return cleaned_value
+
+    return cleaned_value
 
 
 # Stub functions for backwards compatibility with app.py
@@ -443,13 +602,18 @@ async def configure_group_batch(http_request: Request, request: GroupBatchReques
     await require_write_permission(http_request, FeatureGroup.FIREWALL_GROUPS)
 
     try:
+        request.group_name = _normalize_group_name_or_400(request.group_name)
         service = get_session_vyos_service(http_request)
         batch = service.create_firewall_groups_batch()
 
         # Process each operation
         for operation in request.operations:
             op_type = operation.op
-            value = operation.value
+            value = _validate_group_operation_value_or_400(
+                request.group_name,
+                op_type,
+                operation.value,
+            )
 
             if not op_type:
                 raise HTTPException(
@@ -717,6 +881,8 @@ async def configure_group_batch(http_request: Request, request: GroupBatchReques
             error=response.error if response.error else None
         )
 
+    except HTTPException:
+        raise
     except KeyError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ValueError as e:

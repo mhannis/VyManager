@@ -50,7 +50,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 ### Firewall (`firewall/*`)
 - `F-01` (`partial`): IPv4 rule coverage parity pass (advanced match conditions, state behaviors, action sub-options).
 - `F-02` (`partial`): IPv6 rule coverage parity pass with equivalent advanced controls.
-- `F-03` (`partial`): Firewall groups type parity in progress (added type-aware member validation + remote-group URL constraints; remaining advanced/reference depth pending).
+- `F-03` (`partial`): Firewall groups type parity in progress (added typed create/edit validation + backend server-side value validation + HTTP status hardening; remaining advanced/reference depth pending).
 - `F-04` (`partial`): Global options parity pass (timeouts/defaults/perf/safety options from guide).
 - `F-05` (`partial`): Flowtables parity pass (all tunables + constraints + verification).
 - `F-06` (`partial`): Zone workflow hardening (cross-zone policy mapping, validation, and guide-quality onboarding).

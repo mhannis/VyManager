@@ -65,7 +65,7 @@
       "id": "F-03",
       "domain": "firewall",
       "status": "partial",
-      "title": "Firewall groups parity in progress (type-aware member validation + remote URL constraints added)"
+      "title": "Firewall groups parity in progress (typed create/edit validation + backend value validation and HTTP status hardening added)"
     },
     {
       "id": "F-04",
