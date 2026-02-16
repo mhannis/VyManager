@@ -268,3 +268,6 @@
 - 2026-02-16: To keep Services navigation consistent while preserving DHCP discoverability, added `DHCP Server` as a tab within `/system/services` (including single-view routing) instead of adding a separate sidebar shortcut; tab includes a summary and direct jump to `/network/dhcp`.
 - 2026-02-16: Updated Services Status dashboard links to use canonical `tab=` query parameters (`service=` legacy links were not selecting the intended tabs reliably).
 - 2026-02-16: Replaced the DHCP summary/link stopgap in Services with a shared embeddable DHCP workspace (`DhcpServerWorkspace`) and reused the same component for `/network/dhcp`, so both surfaces render the full DHCP UX consistently.
+- 2026-02-16: Implemented `SYS-01`, `SYS-02`, and `SYS-03` as thin wrapper + dedicated form-first pages (`/system/conntrack`, `/system/serial-console`, `/system/default-route`) to reduce system-domain missing backlog without changing core backend abstractions.
+- 2026-02-16: Added the three new System routes to both runtime and browser smoke defaults so page-level crashes in these new surfaces are caught by mandatory pre-handoff validation.
+- 2026-02-16: Strict parity backlog (`CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.*`) is treated as authoritative for option-depth progress; updated `SYS-01/02/03` from `missing` to `partial` after baseline implementation.

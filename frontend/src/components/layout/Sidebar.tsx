@@ -380,6 +380,16 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {
+        title: "Conntrack",
+        href: "/system/conntrack",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "Default Route",
+        href: "/system/default-route",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
         title: "Flow Accounting",
         href: "/system/flow-accounting",
         requiredPermission: FeatureGroup.SYSTEM,
@@ -387,6 +397,11 @@ const navigation: NavItem[] = [
       {
         title: "Proxy",
         href: "/system/proxy",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "Serial Console",
+        href: "/system/serial-console",
         requiredPermission: FeatureGroup.SYSTEM,
       },
       {

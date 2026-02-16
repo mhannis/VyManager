@@ -1,267 +1,109 @@
 {
-  "feature_id": "interface-ia-consolidation-v1-2026-02-16",
-  "title": "Interfaces IA consolidation v2 (grouped manager + inline quick add)",
+  "feature_id": "system-baseline-pages-v1-2026-02-16",
+  "title": "System baseline pages: Conntrack, Serial Console, Default Route",
   "status": "in_progress",
   "acceptance_criteria": [
-    "Interfaces navigation keeps a dedicated `Interfaces` sidebar section with only high-level entries (`Setup Wizard`, `All Interfaces`).",
-    "`/network/interfaces` acts as the primary ethernet/VLAN manager with quick-add actions and without duplicating full family-link navigation.",
-    "`Create Interface` opens a single wizard-style flow with a type selector spanning all interface families.",
-    "Main Interfaces page shows non-Ethernet family instances in a consolidated additional-families inventory section.",
-    "`Common Interface Actions` panel is removed from `/network/interfaces` because actions are handled by the wizard type selector.",
-    "Family actions route to dedicated per-interface pages.",
-    "Interfaces page includes a clear Setup Wizard button.",
-    "Existing detailed interface pages remain reachable for advanced settings and compatibility.",
-    "Sidebar label for `/network/interfaces` is restored to `All Interfaces`.",
-    "Inline PPPoE quick-add supports source interface selection with description-first labels.",
-    "Inline VTI and VXLAN quick-add flows are available from Interface Manager for common setup.",
-    "Inline Tunnel quick-add flow is available with required source/remote validation.",
-    "Sidebar no longer shows the redundant `Configuration Guide` entry.",
-    "Navigation visibility is managed on a dedicated `Settings -> Navigation` page and supports top-level plus child links.",
-    "Settings and the `Navigation` settings link are always visible and cannot be hidden.",
-    "System navigation replaces `Options & Coverage` with `System Identification` and `Guided Setup` entries.",
-    "`/system/options` is a dedicated Guided Setup launcher page with the 3 baseline setup actions.",
-    "Services sidebar is consolidated to a single `All Services` child entry while detailed service tabs remain inside the Services page.",
-    "`All Services` opens with a deterministic first tab instead of defaulting to NTP.",
-    "DHCP Server is available as an explicit tab inside `All Services` and renders the embedded DHCP management workspace directly.",
-    "Build/typecheck/runtime smoke pass after IA changes."
+    "System Conntrack page exists at /system/conntrack with scoped batch operations.",
+    "Serial Console page exists at /system/serial-console with scoped batch operations.",
+    "Default Route page exists at /system/default-route with scoped batch operations for 0.0.0.0/0 next-hops.",
+    "Backend exposes wrappers /vyos/system-conntrack/*, /vyos/system-console/*, and /vyos/system-default-route/*.",
+    "System sidebar includes links for Conntrack, Serial Console, and Default Route.",
+    "Runtime/browser smoke default routes include all three pages.",
+    "Targeted backend wrapper tests, frontend typecheck/lint/build/runtime smoke pass."
   ],
   "assumptions": [
-    "Per-type detailed editors remain the source of truth for advanced protocol-specific fields in v1.",
-    "A later slice will add shared inline create/edit drawer modules in the unified manager.",
-    "Playwright browser smoke remains blocked on this host due missing `libnspr4.so`."
+    "This slice delivers baseline robust workflows; option-depth parity remains for later hardening.",
+    "Playwright browser smoke remains blocked on this host due missing libnspr4.so."
   ],
   "tasks": [
     {
-      "id": "IF-IA-01",
-      "owner_role": "Analyst|Planner",
+      "id": "SYSBASE-01",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/src/app/network/interfaces/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx"
+        "backend/routers/system_conntrack.py",
+        "backend/routers/system_console.py",
+        "backend/routers/system_default_route.py",
+        "backend/app.py"
       ],
-      "notes": "Audited overlap and grouped families into Core & L2, Overlay & Secure, and Access & WAN."
+      "notes": "Added and registered thin config-tree wrappers preserving existing API/session contracts."
     },
     {
-      "id": "IF-IA-02",
+      "id": "SYSBASE-02",
       "owner_role": "UI",
       "status": "done",
       "files": [
+        "frontend/src/app/system/conntrack/page.tsx",
+        "frontend/src/app/system/serial-console/page.tsx",
+        "frontend/src/app/system/default-route/page.tsx",
+        "frontend/src/lib/api/system-conntrack.ts",
+        "frontend/src/lib/api/system-console.ts",
+        "frontend/src/lib/api/system-default-route.ts",
         "frontend/src/components/layout/Sidebar.tsx"
       ],
-      "notes": "Interfaces sidebar now includes direct family entries under the `Interfaces` section for dedicated page navigation."
+      "notes": "Implemented dedicated form-first pages and added System nav links."
     },
     {
-      "id": "IF-IA-03",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/network/interfaces/page.tsx"
-      ],
-      "notes": "Implemented unified interface family hub with grouped filters and family cards."
-    },
-    {
-      "id": "IF-IA-04",
+      "id": "SYSBASE-03",
       "owner_role": "Test",
       "status": "done",
       "files": [
+        "backend/tests/test_config_tree_wrapper_capabilities.py",
         "frontend/scripts/check-runtime.sh",
         "frontend/scripts/smoke-ui.mjs"
       ],
-      "notes": "Added grouped interfaces routes to smoke probes."
+      "notes": "Extended wrapper tests and smoke route probes for new pages."
     },
     {
-      "id": "IF-IA-05",
-      "owner_role": "UI|Backend|Test",
+      "id": "SYSBASE-04",
+      "owner_role": "Analyst|Planner",
       "status": "done",
       "files": [
-        "frontend/src/app/network/interfaces/page.tsx"
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
       ],
-      "notes": "Added inline quick-add modal flows in unified manager for Dummy, Loopback, and PPPoE families using existing APIs, including description-first source-interface selection for PPPoE."
+      "notes": "Moved SYS-01/SYS-02/SYS-03 from missing to partial in strict parity backlog."
     },
     {
-      "id": "IF-IA-06",
-      "owner_role": "UI|Backend|Test",
-      "status": "done",
+      "id": "SYSNEXT-01",
+      "owner_role": "Backend|UI|Test",
+      "status": "todo",
       "files": [
-        "frontend/src/app/network/interfaces/page.tsx",
-        "frontend/src/lib/api/*interface*.ts"
+        "backend/routers/system_frr.py",
+        "frontend/src/app/system/frr/page.tsx"
       ],
-      "notes": "Extended inline quick-add coverage to VTI and VXLAN families while preserving advanced pages."
+      "notes": "Implement SYS-05 FRR as next missing item."
     },
     {
-      "id": "IF-IA-07",
-      "owner_role": "UI|Backend|Test",
-      "status": "done",
+      "id": "SYSNEXT-02",
+      "owner_role": "Backend|UI|Test",
+      "status": "todo",
       "files": [
-        "frontend/src/app/network/interfaces/page.tsx",
-        "frontend/src/lib/api/tunnel-interface.ts"
+        "backend/routers/system_ip.py",
+        "frontend/src/app/system/ip/page.tsx"
       ],
-      "notes": "Added tunnel-family quick-add flow to unified manager with required source/remote validation."
+      "notes": "Implement SYS-06 IP options page."
     },
     {
-      "id": "IF-IA-08",
-      "owner_role": "UI|Backend|Test",
-      "status": "doing",
+      "id": "SYSNEXT-03",
+      "owner_role": "Backend|UI|Test",
+      "status": "todo",
       "files": [
-        "frontend/src/app/network/interfaces/page.tsx"
+        "backend/routers/system_ipv6.py",
+        "frontend/src/app/system/ipv6/page.tsx"
       ],
-      "notes": "Add inline quick-edit (existing-value prefill) for quick-add-enabled families; preserve sidebar as a single Interfaces entry with setup-wizard access on page."
-    },
-    {
-      "id": "IF-IA-09",
-      "owner_role": "UI|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/app/network/interfaces/page.tsx"
-      ],
-      "notes": "Family card action now renders `Current` for the exact active view so no-op open actions are explicit."
-    },
-    {
-      "id": "IF-IA-10",
-      "owner_role": "UI|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/app/network/interfaces/page.tsx",
-        "frontend/src/components/layout/AppLayout.tsx"
-      ],
-      "notes": "Reverted interface-family navigation to dedicated page actions only and removed inline workspace/embed panel behavior."
-    },
-    {
-      "id": "IF-IA-14",
-      "owner_role": "UI|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/components/layout/Sidebar.tsx"
-      ],
-      "notes": "Restored interface family links in the left sidebar under `Interfaces` while preserving dedicated family pages."
-    },
-    {
-      "id": "IF-IA-15",
-      "owner_role": "UI|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/app/network/interfaces/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx"
-      ],
-      "notes": "Removed full family-link duplication from Interface Manager and renamed sidebar child entry back to `All Interfaces`."
-    },
-    {
-      "id": "IF-IA-16",
-      "owner_role": "UI|Backend|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/app/network/interfaces/page.tsx"
-      ],
-      "notes": "Unified `Create Interface` flow now supports all interface families with type-specific fields and existing API wrappers; Ethernet/VLAN launch dedicated modals from the same wizard. Main Interfaces page now aggregates non-Ethernet family instances in an additional inventory section."
-    },
-    {
-      "id": "IF-IA-17",
-      "owner_role": "UI|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/components/layout/Sidebar.tsx",
-        "frontend/src/app/network/interfaces/page.tsx"
-      ],
-      "notes": "Removed interface-family bulk links from sidebar and removed `Common Interface Actions` card from Interfaces page, keeping one wizard-driven create workflow."
-    },
-    {
-      "id": "IF-IA-18",
-      "owner_role": "UI|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/components/layout/Sidebar.tsx",
-        "frontend/src/app/settings/page.tsx",
-        "frontend/src/lib/sidebar-visibility.ts"
-      ],
-      "notes": "Removed `Configuration Guide` from sidebar navigation and added persistent Settings-based controls to hide/show top-level sidebar items."
-    },
-    {
-      "id": "IF-IA-19",
-      "owner_role": "UI|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/app/settings/page.tsx",
-        "frontend/src/app/settings/navigation/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx",
-        "frontend/src/lib/sidebar-visibility.ts"
-      ],
-      "notes": "Moved visibility controls to a dedicated navigation settings page, expanded controls to full tree levels, and made Settings/Navigation non-hideable."
-    },
-    {
-      "id": "IF-IA-20",
-      "owner_role": "UI|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/app/system/options/page.tsx",
-        "frontend/src/app/system/identification/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx",
-        "frontend/src/lib/sidebar-visibility.ts",
-        "frontend/src/app/configuration/page.tsx"
-      ],
-      "notes": "Split system identity into `/system/identification`, converted `/system/options` to Guided Setup, and updated System sidebar labels/links."
-    },
-    {
-      "id": "IF-IA-21",
-      "owner_role": "UI|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/components/layout/Sidebar.tsx",
-        "frontend/src/lib/sidebar-visibility.ts"
-      ],
-      "notes": "Consolidated Services sidebar navigation to a minimal set centered on `All Services` while keeping internal tabbed service coverage on `/system/services`."
-    },
-    {
-      "id": "IF-IA-22",
-      "owner_role": "UI|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/components/layout/Sidebar.tsx",
-        "frontend/src/lib/sidebar-visibility.ts"
-      ],
-      "notes": "Restored a direct `DHCP Server` child link under `Services` after consolidation so DHCP remains discoverable without opening the Services hub first."
-    },
-    {
-      "id": "IF-IA-23",
-      "owner_role": "UI|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/components/layout/Sidebar.tsx",
-        "frontend/src/lib/sidebar-visibility.ts",
-        "frontend/src/app/system/services/page.tsx"
-      ],
-      "notes": "Reverted Services back to a single `All Services` child and set services-page default tab to the first ordered tab so `/system/services` no longer opens on NTP by default."
-    },
-    {
-      "id": "IF-IA-24",
-      "owner_role": "UI|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/app/system/services/page.tsx",
-        "frontend/src/components/dashboard/ServicesStatusCard.tsx"
-      ],
-      "notes": "Added `DHCP Server` as a first-class services tab (including single-view query handling and summary card), while keeping sidebar consolidated to `All Services`."
-    },
-    {
-      "id": "IF-IA-25",
-      "owner_role": "UI|Test",
-      "status": "done",
-      "files": [
-        "frontend/src/components/services/DhcpServerWorkspace.tsx",
-        "frontend/src/app/network/dhcp/page.tsx",
-        "frontend/src/app/system/services/page.tsx"
-      ],
-      "notes": "Extracted DHCP UI into a reusable workspace component and embedded that full workspace directly in the Services DHCP tab while reusing it for the dedicated `/network/dhcp` page."
+      "notes": "Implement SYS-07 IPv6 options page."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
-    "lint": "cd frontend && npx eslint src/components/layout/Sidebar.tsx src/lib/sidebar-visibility.ts src/app/settings/page.tsx src/app/settings/navigation/page.tsx src/app/system/options/page.tsx src/app/system/identification/page.tsx src/app/configuration/page.tsx src/components/dashboard/ServicesStatusCard.tsx src/app/system/services/page.tsx --max-warnings=0"
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
+    "lint": "cd frontend && npx eslint src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Guide parity + IA consolidation execution",
+      "purpose": "Configuration-guide parity implementation",
       "status": "active"
     }
   ]

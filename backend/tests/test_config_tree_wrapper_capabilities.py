@@ -24,6 +24,9 @@ import routers.interfaces.pppoe as pppoe_router
 import routers.system_proxy as system_proxy_router
 import routers.system_sysctl as system_sysctl_router
 import routers.system_flow_accounting as system_flow_accounting_router
+import routers.system_conntrack as system_conntrack_router
+import routers.system_console as system_console_router
+import routers.system_default_route as system_default_route_router
 import routers.load_balancing.load_balancing as load_balancing_router
 import routers.pki.pki as pki_router
 import routers.traffic_policy.traffic_policy as traffic_policy_router
@@ -198,9 +201,43 @@ class DummyService:
                     }
                 }
             },
+            "protocols": {
+                "static": {
+                    "route": {
+                        "0.0.0.0/0": {
+                            "next-hop": {
+                                "192.0.2.1": {
+                                    "distance": "10",
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "system": {
                 "wireless": {
                     "country-code": "us",
+                },
+                "conntrack": {
+                    "table-size": "262144",
+                    "expect-table-size": "4096",
+                    "hash-size": "32768",
+                    "modules": {
+                        "ftp": {},
+                        "h323": {},
+                    },
+                    "tcp": {
+                        "half-open-connections": "512",
+                        "loose": "enable",
+                        "max-retrans": "3",
+                    },
+                },
+                "console": {
+                    "device": {
+                        "ttyS0": {
+                            "speed": "115200",
+                        }
+                    }
                 },
                 "proxy": {
                     "url": "http://proxy.lab.local",
@@ -273,6 +310,9 @@ def app():
     app.include_router(system_proxy_router.system_proxy)
     app.include_router(system_sysctl_router.system_sysctl)
     app.include_router(system_flow_accounting_router.system_flow_accounting)
+    app.include_router(system_conntrack_router.system_conntrack)
+    app.include_router(system_console_router.system_console)
+    app.include_router(system_default_route_router.system_default_route)
     return app
 
 
@@ -326,6 +366,9 @@ def mock_service(monkeypatch):
         "/vyos/system-proxy/capabilities",
         "/vyos/system-sysctl/capabilities",
         "/vyos/system-flow-accounting/capabilities",
+        "/vyos/system-conntrack/capabilities",
+        "/vyos/system-console/capabilities",
+        "/vyos/system-default-route/capabilities",
     ],
 )
 def test_config_tree_wrapper_capabilities_payload(app, allow_permissions, mock_service, path):
@@ -366,6 +409,9 @@ def test_config_tree_wrapper_capabilities_payload(app, allow_permissions, mock_s
         ("/vyos/system-proxy/config", "proxy", "url"),
         ("/vyos/system-sysctl/config", "sysctl", "parameter"),
         ("/vyos/system-flow-accounting/config", "flow_accounting", "interface"),
+        ("/vyos/system-conntrack/config", "conntrack", "table-size"),
+        ("/vyos/system-console/config", "console", "device"),
+        ("/vyos/system-default-route/config", "default_route", "next-hop"),
     ],
 )
 def test_config_tree_wrapper_config_payload(
@@ -516,6 +562,21 @@ def test_wireless_config_includes_country_code(app, allow_permissions, mock_serv
             "/vyos/system-flow-accounting/batch",
             "set system flow-accounting netflow version 9",
             "set system proxy url http://proxy.lab.local:3128",
+        ),
+        (
+            "/vyos/system-conntrack/batch",
+            "set system conntrack table-size 262144",
+            "set system console device ttyS0 speed 115200",
+        ),
+        (
+            "/vyos/system-console/batch",
+            "set system console device ttyS0 speed 115200",
+            "set protocols static route 0.0.0.0/0 next-hop 192.0.2.1",
+        ),
+        (
+            "/vyos/system-default-route/batch",
+            "set protocols static route 0.0.0.0/0 next-hop 192.0.2.1",
+            "set system conntrack table-size 262144",
         ),
     ],
 )

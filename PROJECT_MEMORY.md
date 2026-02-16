@@ -57,64 +57,62 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 ## Current Objective
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
-- Deliver interface IA consolidation so operators can navigate interface configuration from one unified hub and a small set of logical groups.
-- Provide a single `Create Interface` flow that supports all interface families with type-specific fields from one modal.
-- Add operator-level sidebar personalization so basic users can hide irrelevant top-level navigation items without permission changes.
-- Refine System IA: separate identity controls from guided setup and remove ambiguous “Options & Coverage” naming.
-- Consolidate Services sidebar navigation where practical while keeping full service controls inside the Services page.
+- Continue System-domain parity work with dedicated form-first pages and scoped backend wrappers.
+- Complete remaining missing System pages (`SYS-05`, `SYS-06`, `SYS-07`, `SYS-08`, `SYS-12`, `SYS-15`) after this baseline slice.
 
 ## Current Feature Spec
-Feature: **Interfaces IA Consolidation v2**
+Feature: **System baseline parity slice (`SYS-01`, `SYS-02`, `SYS-03`)**
 
 Acceptance criteria:
-- Interfaces sidebar keeps a dedicated `Interfaces` section with only high-level entries (`Setup Wizard`, `All Interfaces`).
-- `/network/interfaces` keeps core ethernet/VLAN management plus quick-create actions, without duplicating full family-link navigation.
-- Interfaces page includes a clear `Open Setup Wizard` button.
-- Existing detailed interface pages remain reachable for compatibility and advanced settings.
-- `Create Interface` opens a single wizard-style modal with interface-type selector covering all family types.
-- The wizard shows type-specific fields and applies creation via existing per-family APIs without backend contract changes.
-- Main Interfaces page includes a consolidated inventory section for non-Ethernet/VLAN interface families.
-- Common Interface Actions card is removed from `/network/interfaces` (covered by the wizard type selector).
-- Sidebar label for `/network/interfaces` remains `All Interfaces`.
-- Redundant `Configuration Guide` entry is removed from the left sidebar.
-- `Settings -> Navigation` provides persistent controls to show/hide top-level and child sidebar items.
-- `Settings` and `Navigation` controls are fixed-visible and cannot be hidden.
-- `System` navigation now exposes `System Identification` and `Guided Setup` as separate pages.
-- Services sidebar is consolidated to a single `All Services` child entry.
-- `/system/services` defaults to the first ordered tab when no explicit `tab=` query is provided.
-- `DHCP Server` is exposed within `/system/services` as an explicit tab that embeds the full DHCP workspace UI.
-- Build/typecheck/runtime smoke pass after the IA changes.
+- Add scoped backend wrappers for:
+  - `system conntrack` (`/vyos/system-conntrack/*`)
+  - `system console` (`/vyos/system-console/*`)
+  - `protocols static route 0.0.0.0/0` (`/vyos/system-default-route/*`)
+- Add dedicated form-first pages:
+  - `/system/conntrack`
+  - `/system/serial-console`
+  - `/system/default-route`
+- Register routes in backend app and wrapper capability tests.
+- Expose the new pages in `System` sidebar navigation.
+- Include new routes in runtime/browser smoke defaults.
+- Build/typecheck/lint/runtime smoke and targeted backend tests pass.
 
 Assumptions:
-- Interface-family advanced editing remains on detailed pages for now; inline drawer coverage is being added incrementally.
+- Baseline forms cover core workflows first; option-depth parity for these pages remains in backlog as `partial`.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v2 cleanup applied per operator UX feedback; sidebar visibility moved to a dedicated settings page with full tree control, System IA split into identification + guided setup, Services sidebar consolidated to a single entry, and DHCP fully embedded within the Services tab set via shared workspace component.
+- Status: completed baseline implementation + wiring for `System Conntrack`, `Serial Console`, and `Default Route` pages with backend wrappers, tests, and sidebar/smoke integration.
+- Backlog audit (2026-02-16, strict option-level tracker): `85` total tasks remain in backlog artifacts (`12 missing`, `64 partial`, `9 verify`); route-detection parity artifacts are intentionally treated as insufficient for completion status.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
+- `backend/routers/system_conntrack.py`
+- `backend/routers/system_console.py`
+- `backend/routers/system_default_route.py`
+- `backend/app.py`
+- `backend/tests/test_config_tree_wrapper_capabilities.py`
+- `frontend/src/app/system/conntrack/page.tsx`
+- `frontend/src/app/system/serial-console/page.tsx`
+- `frontend/src/app/system/default-route/page.tsx`
+- `frontend/src/lib/api/system-conntrack.ts`
+- `frontend/src/lib/api/system-console.ts`
+- `frontend/src/lib/api/system-default-route.ts`
 - `frontend/src/components/layout/Sidebar.tsx`
-- `frontend/src/app/settings/page.tsx`
-- `frontend/src/app/settings/navigation/page.tsx`
-- `frontend/src/lib/sidebar-visibility.ts`
-- `frontend/src/app/system/options/page.tsx`
-- `frontend/src/app/system/identification/page.tsx`
-- `frontend/src/app/system/services/page.tsx`
-- `frontend/src/components/services/DhcpServerWorkspace.tsx`
-- `frontend/src/app/network/dhcp/page.tsx`
-- `frontend/src/app/configuration/page.tsx`
-- `frontend/src/components/dashboard/ServicesStatusCard.tsx`
+- `frontend/scripts/check-runtime.sh`
+- `frontend/scripts/smoke-ui.mjs`
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
 - `DECISIONS.md`
-- `LAST_FAILURE.txt`
 
 ### Validation This Cycle
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/components/layout/Sidebar.tsx src/lib/sidebar-visibility.ts src/app/settings/page.tsx src/app/settings/navigation/page.tsx src/app/system/options/page.tsx src/app/system/identification/page.tsx src/app/configuration/page.tsx src/components/dashboard/ServicesStatusCard.tsx --max-warnings=0` passed.
+- `cd frontend && npx eslint src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
 
@@ -129,15 +127,7 @@ Assumptions:
 - Reviewer sub-agent dispatch can fail when thread cap is saturated; manual review fallback is required in that case.
 
 ## TODO Backlog (next queue)
-- Interface IA consolidation (new UX track):
-  - Build a unified `Network -> Interfaces` manager with type grouping + one edit drawer.
-  - Collapse sidebar interface children into logical groups (Core, Overlay/Secure, Access/WAN) instead of one route per type.
-  - Reuse existing type-specific form sections as modular panels inside a shared create/edit scaffold.
-  - Keep deep-link compatibility by redirecting existing interface routes to filtered views in unified manager.
 - Continue remaining System missing pages in guide order:
-  - `SYS-01` Conntrack
-  - `SYS-02` Serial Console
-  - `SYS-03` Default Route/Gateway
   - `SYS-05` FRR
   - `SYS-06` IP
   - `SYS-07` IPv6
@@ -149,6 +139,10 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Added thin system wrappers `system_conntrack`, `system_console`, and `system_default_route` via `build_config_tree_router(...)`, preserving existing service/session architecture and API contract style.
+- Added dedicated form-first pages `/system/conntrack`, `/system/serial-console`, and `/system/default-route` with diff-based set/delete batch operations and in-page help dialogs.
+- Added `System` sidebar entries and smoke coverage for the new routes so runtime regressions are caught by default.
+- Updated strict option-level backlog artifacts: `SYS-01`, `SYS-02`, and `SYS-03` moved from `missing` to `partial`.
 - System IA update applied: `System Identification` now lives at `/system/identification`, and `/system/options` is a dedicated Guided Setup launcher for the three baseline setup actions.
 - Services sidebar IA update applied: reduced to `All Services`, with detailed per-service navigation handled inside `/system/services`.
 - Services landing behavior update applied: `/system/services` now opens the first ordered tab by default instead of starting at NTP.

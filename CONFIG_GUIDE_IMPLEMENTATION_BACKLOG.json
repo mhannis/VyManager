@@ -406,20 +406,20 @@
     {
       "id": "SYS-01",
       "domain": "system",
-      "status": "missing",
-      "title": "System Conntrack page"
+      "status": "partial",
+      "title": "System Conntrack page (baseline page+wrapper implemented; option-depth validation pending)"
     },
     {
       "id": "SYS-02",
       "domain": "system",
-      "status": "missing",
-      "title": "Serial Console page"
+      "status": "partial",
+      "title": "Serial Console page (baseline page+wrapper implemented; option-depth validation pending)"
     },
     {
       "id": "SYS-03",
       "domain": "system",
-      "status": "missing",
-      "title": "Default Route/Gateway page"
+      "status": "partial",
+      "title": "Default Route/Gateway page (baseline page+wrapper implemented; option-depth validation pending)"
     },
     {
       "id": "SYS-04",

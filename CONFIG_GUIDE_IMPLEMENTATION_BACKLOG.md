@@ -131,9 +131,9 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `VRF-03` (`verify`): Interactions with policy, interfaces, and routing protocols.
 
 ### System (`system/*`) — **last by request**
-- `SYS-01` (`missing`): Build System Conntrack page.
-- `SYS-02` (`missing`): Build Serial Console page.
-- `SYS-03` (`missing`): Build Default Route/Gateway controls page.
+- `SYS-01` (`partial`): System Conntrack page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
+- `SYS-02` (`partial`): Serial Console page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
+- `SYS-03` (`partial`): Default Route/Gateway page + backend wrapper are implemented; option-depth parity and multi-path validation remain.
 - `SYS-04` (`partial`): Build Flow Accounting page. Baseline form-first page + backend wrapper are implemented; option-depth parity and live telemetry validation remain.
 - `SYS-05` (`missing`): Build FRR system page.
 - `SYS-06` (`missing`): Build IP system options page.
