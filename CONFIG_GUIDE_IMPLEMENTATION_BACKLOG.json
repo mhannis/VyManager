@@ -191,7 +191,7 @@
       "id": "IF-15",
       "domain": "interfaces",
       "status": "partial",
-      "title": "Deepen existing interface-type parity (PPPoE DHCPv6-PD complete; ethernet/loopback/wireguard depth pending)"
+      "title": "Deepen existing interface-type parity (PPPoE DHCPv6-PD and ethernet DHCP/DHCPv6/IPv6 depth complete; loopback/wireguard depth pending)"
     },
     {
       "id": "LB-01",

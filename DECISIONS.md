@@ -2,6 +2,9 @@
 
 ## Decision Log
 
+- 2026-02-16: Prioritized an Ethernet option-depth slice next in `IF-15` (after PPPoE/WWAN) because the docs-backed missing leaves were concentrated in one high-impact editor and could be implemented as additive changes across mapper/builder/router/modal without architecture churn.
+- 2026-02-16: Implemented delete semantics for Ethernet boolean leaves in both explicit `delete_*` operations and backward-compatible `set_* value=false` handling to prevent stale toggles and preserve compatibility with existing frontend payload patterns.
+- 2026-02-16: Modeled DHCP reject routes in the Ethernet modal as a comma-delimited list with deterministic set/delete diffing against current config to keep UX compact while still emitting precise CLI operations.
 - 2026-02-16: Prioritized IF-15 parity depth on PPPoE DHCPv6 Prefix Delegation first, because the guide documents it as a core PPPoE configuration subtree and it was missing from the form-first UI.
 - 2026-02-16: Implemented PPPoE DHCPv6-PD using additive parser + page-level command generation under existing `/vyos/pppoe-interface/*` contracts, avoiding backend API refactors.
 - 2026-02-16: Reused row-normalization semantics from WWAN for PPPoE PD (`id|interface` uniqueness, consistent length enforcement, deterministic delete/rebuild) to reduce duplicate logic drift and apply errors.

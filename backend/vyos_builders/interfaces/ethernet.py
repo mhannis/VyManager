@@ -298,30 +298,60 @@ class EthernetInterfaceBuilderMixin:
         path = self.mappers[self.interface_mapper_key].get_ip_disable_arp_filter(interface)
         return self.add_set(path)
 
+    def delete_ip_disable_arp_filter(self, interface: str) -> "EthernetInterfaceBuilderMixin":
+        """Enable ARP filter (remove disable flag)."""
+        path = self.mappers[self.interface_mapper_key].get_ip_disable_arp_filter(interface)
+        return self.add_delete(path)
+
     def set_ip_enable_arp_accept(self, interface: str) -> "EthernetInterfaceBuilderMixin":
         """Enable ARP accept"""
         path = self.mappers[self.interface_mapper_key].get_ip_enable_arp_accept(interface)
         return self.add_set(path)
+
+    def delete_ip_enable_arp_accept(self, interface: str) -> "EthernetInterfaceBuilderMixin":
+        """Disable ARP accept."""
+        path = self.mappers[self.interface_mapper_key].get_ip_enable_arp_accept(interface)
+        return self.add_delete(path)
 
     def set_ip_enable_arp_announce(self, interface: str) -> "EthernetInterfaceBuilderMixin":
         """Enable ARP announce"""
         path = self.mappers[self.interface_mapper_key].get_ip_enable_arp_announce(interface)
         return self.add_set(path)
 
+    def delete_ip_enable_arp_announce(self, interface: str) -> "EthernetInterfaceBuilderMixin":
+        """Disable ARP announce."""
+        path = self.mappers[self.interface_mapper_key].get_ip_enable_arp_announce(interface)
+        return self.add_delete(path)
+
     def set_ip_enable_arp_ignore(self, interface: str) -> "EthernetInterfaceBuilderMixin":
         """Enable ARP ignore"""
         path = self.mappers[self.interface_mapper_key].get_ip_enable_arp_ignore(interface)
         return self.add_set(path)
+
+    def delete_ip_enable_arp_ignore(self, interface: str) -> "EthernetInterfaceBuilderMixin":
+        """Disable ARP ignore."""
+        path = self.mappers[self.interface_mapper_key].get_ip_enable_arp_ignore(interface)
+        return self.add_delete(path)
 
     def set_ip_enable_proxy_arp(self, interface: str) -> "EthernetInterfaceBuilderMixin":
         """Enable proxy ARP"""
         path = self.mappers[self.interface_mapper_key].get_ip_enable_proxy_arp(interface)
         return self.add_set(path)
 
+    def delete_ip_enable_proxy_arp(self, interface: str) -> "EthernetInterfaceBuilderMixin":
+        """Disable proxy ARP."""
+        path = self.mappers[self.interface_mapper_key].get_ip_enable_proxy_arp(interface)
+        return self.add_delete(path)
+
     def set_ip_proxy_arp_pvlan(self, interface: str) -> "EthernetInterfaceBuilderMixin":
         """Enable private VLAN proxy ARP"""
         path = self.mappers[self.interface_mapper_key].get_ip_proxy_arp_pvlan(interface)
         return self.add_set(path)
+
+    def delete_ip_proxy_arp_pvlan(self, interface: str) -> "EthernetInterfaceBuilderMixin":
+        """Disable private VLAN proxy ARP."""
+        path = self.mappers[self.interface_mapper_key].get_ip_proxy_arp_pvlan(interface)
+        return self.add_delete(path)
 
     # ========================================================================
     # Source Validation Operations
@@ -350,6 +380,13 @@ class EthernetInterfaceBuilderMixin:
         path = self.mappers[self.interface_mapper_key].get_ip_enable_directed_broadcast(interface)
         return self.add_set(path)
 
+    def delete_ip_enable_directed_broadcast(
+        self, interface: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Disable directed broadcast (1.5+ only)."""
+        path = self.mappers[self.interface_mapper_key].get_ip_enable_directed_broadcast(interface)
+        return self.add_delete(path)
+
     # ========================================================================
     # IPv6 Operations
     # ========================================================================
@@ -359,6 +396,11 @@ class EthernetInterfaceBuilderMixin:
         path = self.mappers[self.interface_mapper_key].get_ipv6_address_autoconf(interface)
         return self.add_set(path)
 
+    def delete_ipv6_address_autoconf(self, interface: str) -> "EthernetInterfaceBuilderMixin":
+        """Disable IPv6 SLAAC autoconfiguration."""
+        path = self.mappers[self.interface_mapper_key].get_ipv6_address_autoconf(interface)
+        return self.add_delete(path)
+
     def set_ipv6_address_eui64(
         self, interface: str, prefix: str
     ) -> "EthernetInterfaceBuilderMixin":
@@ -366,10 +408,36 @@ class EthernetInterfaceBuilderMixin:
         path = self.mappers[self.interface_mapper_key].get_ipv6_address_eui64(interface, prefix)
         return self.add_set(path)
 
+    def delete_ipv6_address_eui64(
+        self, interface: str, prefix: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Delete IPv6 EUI-64 address."""
+        path = self.mappers[self.interface_mapper_key].get_ipv6_address_eui64_path(interface, prefix)
+        return self.add_delete(path)
+
+    def set_ipv6_address_no_default_link_local(
+        self, interface: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Disable default IPv6 link-local address generation."""
+        path = self.mappers[self.interface_mapper_key].get_ipv6_address_no_default_link_local(interface)
+        return self.add_set(path)
+
+    def delete_ipv6_address_no_default_link_local(
+        self, interface: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Enable default IPv6 link-local address generation."""
+        path = self.mappers[self.interface_mapper_key].get_ipv6_address_no_default_link_local(interface)
+        return self.add_delete(path)
+
     def set_ipv6_disable_forwarding(self, interface: str) -> "EthernetInterfaceBuilderMixin":
         """Disable IPv6 forwarding"""
         path = self.mappers[self.interface_mapper_key].get_ipv6_disable_forwarding(interface)
         return self.add_set(path)
+
+    def delete_ipv6_disable_forwarding(self, interface: str) -> "EthernetInterfaceBuilderMixin":
+        """Enable IPv6 forwarding."""
+        path = self.mappers[self.interface_mapper_key].get_ipv6_disable_forwarding(interface)
+        return self.add_delete(path)
 
     def set_ipv6_dup_addr_detect_transmits(
         self, interface: str, count: str
@@ -377,6 +445,18 @@ class EthernetInterfaceBuilderMixin:
         """Set IPv6 DAD transmits"""
         path = self.mappers[self.interface_mapper_key].get_ipv6_dup_addr_detect_transmits(interface, count)
         return self.add_set(path)
+
+    def set_ipv6_accept_dad(
+        self, interface: str, mode: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Set IPv6 Accept-DAD mode."""
+        path = self.mappers[self.interface_mapper_key].get_ipv6_accept_dad(interface, mode)
+        return self.add_set(path)
+
+    def delete_ipv6_accept_dad(self, interface: str) -> "EthernetInterfaceBuilderMixin":
+        """Delete IPv6 Accept-DAD mode."""
+        path = self.mappers[self.interface_mapper_key].get_ipv6_accept_dad_path(interface)
+        return self.add_delete(path)
 
     # ========================================================================
     # Flow Control Operations
@@ -438,12 +518,47 @@ class EthernetInterfaceBuilderMixin:
         path = self.mappers[self.interface_mapper_key].get_dhcp_options_no_default_route(interface)
         return self.add_set(path)
 
+    def delete_dhcp_options_no_default_route(
+        self, interface: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Accept DHCP default route."""
+        path = self.mappers[self.interface_mapper_key].get_dhcp_options_no_default_route(interface)
+        return self.add_delete(path)
+
     def set_dhcp_options_default_route_distance(
         self, interface: str, distance: str
     ) -> "EthernetInterfaceBuilderMixin":
         """Set DHCP default route distance"""
         path = self.mappers[self.interface_mapper_key].get_dhcp_options_default_route_distance(interface, distance)
         return self.add_set(path)
+
+    def set_dhcp_options_reject(
+        self, interface: str, address: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Set DHCP reject route entry."""
+        path = self.mappers[self.interface_mapper_key].get_dhcp_options_reject(interface, address)
+        return self.add_set(path)
+
+    def delete_dhcp_options_reject(
+        self, interface: str, address: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Delete DHCP reject route entry."""
+        path = self.mappers[self.interface_mapper_key].get_dhcp_options_reject(interface, address)
+        return self.add_delete(path)
+
+    def set_dhcp_options_user_class(
+        self, interface: str, user_class: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Set DHCP user-class."""
+        path = self.mappers[self.interface_mapper_key].get_dhcp_options_user_class(interface, user_class)
+        return self.add_set(path)
+
+    def delete_dhcp_options_user_class(
+        self, interface: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Delete DHCP user-class."""
+        path = self.mappers[self.interface_mapper_key].get_dhcp_options_user_class_path(interface)
+        return self.add_delete(path)
 
     # ========================================================================
     # DHCPv6 Options Operations
@@ -463,12 +578,61 @@ class EthernetInterfaceBuilderMixin:
         path = self.mappers[self.interface_mapper_key].get_dhcpv6_options_rapid_commit(interface)
         return self.add_set(path)
 
+    def delete_dhcpv6_options_rapid_commit(
+        self, interface: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Disable DHCPv6 rapid commit."""
+        path = self.mappers[self.interface_mapper_key].get_dhcpv6_options_rapid_commit(interface)
+        return self.add_delete(path)
+
     def set_dhcpv6_options_pd(
         self, interface: str, pd_id: str, prefix: str
     ) -> "EthernetInterfaceBuilderMixin":
         """Set DHCPv6 prefix delegation"""
         path = self.mappers[self.interface_mapper_key].get_dhcpv6_options_pd(interface, pd_id, prefix)
         return self.add_set(path)
+
+    def set_dhcpv6_options_no_release(
+        self, interface: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Enable DHCPv6 no-release."""
+        path = self.mappers[self.interface_mapper_key].get_dhcpv6_options_no_release(interface)
+        return self.add_set(path)
+
+    def delete_dhcpv6_options_no_release(
+        self, interface: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Disable DHCPv6 no-release."""
+        path = self.mappers[self.interface_mapper_key].get_dhcpv6_options_no_release(interface)
+        return self.add_delete(path)
+
+    def set_dhcpv6_options_parameters_only(
+        self, interface: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Enable DHCPv6 parameters-only."""
+        path = self.mappers[self.interface_mapper_key].get_dhcpv6_options_parameters_only(interface)
+        return self.add_set(path)
+
+    def delete_dhcpv6_options_parameters_only(
+        self, interface: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Disable DHCPv6 parameters-only."""
+        path = self.mappers[self.interface_mapper_key].get_dhcpv6_options_parameters_only(interface)
+        return self.add_delete(path)
+
+    def set_dhcpv6_options_temporary(
+        self, interface: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Enable DHCPv6 temporary address option."""
+        path = self.mappers[self.interface_mapper_key].get_dhcpv6_options_temporary(interface)
+        return self.add_set(path)
+
+    def delete_dhcpv6_options_temporary(
+        self, interface: str
+    ) -> "EthernetInterfaceBuilderMixin":
+        """Disable DHCPv6 temporary address option."""
+        path = self.mappers[self.interface_mapper_key].get_dhcpv6_options_temporary(interface)
+        return self.add_delete(path)
 
     # ========================================================================
     # VLAN Operations - Basic VLAN Creation

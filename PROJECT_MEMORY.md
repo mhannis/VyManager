@@ -61,29 +61,32 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Interfaces PPPoE parity depth (`IF-15` subset)**.
+Feature: **Interfaces Ethernet parity depth (`IF-15` subset)**.
 
 Acceptance criteria:
-- PPPoE GUI supports DHCPv6 Prefix Delegation row CRUD (`pd id`, `length`, delegated interface `address` + `sla-id`).
-- PPPoE parser/model round-trips DHCPv6-PD data from config-tree payloads.
-- PPPoE save flow validates invalid PD row data and returns deterministic form errors.
-- PPPoE operation generation emits deterministic set/delete commands for DHCPv6-PD changes.
-- Frontend gates pass (`tsc`, targeted `eslint`, `build`, `smoke:runtime`, `smoke:ui`).
-- Preserve thin-wrapper backend/API architecture.
+- Ethernet GUI supports `dhcp-options reject` and `dhcp-options user-class` with deterministic set/delete command generation.
+- Ethernet GUI supports `dhcpv6-options no-release`, `parameters-only`, and `temporary` flag controls.
+- Ethernet GUI supports `ipv6 accept-dad` and `ipv6 address no-default-link-local`, and correctly round-trips `autoconf`/`eui64`.
+- Backend router/builder/mapper support the same option set and preserve existing endpoint contracts.
+- Validation gates pass (`backend targeted pytest`, `tsc`, targeted `eslint`, `build`, `smoke:runtime`, `smoke:ui`).
 
 Assumptions:
-- `IF-15` remains `partial` after this slice because ethernet/loopback/wireguard advanced leaves are still pending.
-- PPPoE op-mode connect/disconnect controls are deferred; this slice targets config-tree parity depth.
+- `IF-15` remains `partial` after this slice because loopback/wireguard advanced leaves are still pending.
+- This slice remains additive on existing `/vyos/ethernet/*` endpoints and avoids backend architecture refactors.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: PPPoE DHCPv6-PD depth slice implemented and validated; next queue continues IF-15 on ethernet/loopback/wireguard.
+- Status: Ethernet DHCP/DHCPv6/IPv6 depth slice implemented and validated; next queue continues IF-15 on loopback/wireguard.
 - Runtime smoke process stabilized by restarting `vm-ui` after each production build before UI smoke checks.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `frontend/src/lib/api/pppoe.ts`
-- `frontend/src/app/network/interfaces/pppoe/page.tsx`
+- `backend/vyos_mappers/interfaces/ethernet.py`
+- `backend/vyos_builders/interfaces/ethernet.py`
+- `backend/routers/interfaces/ethernet.py`
+- `backend/tests/test_ethernet_batch_parity_options.py`
+- `frontend/src/components/network/ComprehensiveEthernetModal.tsx`
+- `frontend/src/lib/api/types/ethernet.ts`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CURRENT_FEATURE.md`
@@ -91,8 +94,9 @@ Assumptions:
 - `PROJECT_MEMORY.md`
 
 ### Validation This Cycle
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_ethernet_batch_parity_options.py tests/test_ethernet_vlan_batch_ops.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/lib/api/pppoe.ts src/app/network/interfaces/pppoe/page.tsx` passed.
+- `cd frontend && npx eslint src/components/network/ComprehensiveEthernetModal.tsx src/lib/api/types/ethernet.ts` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
 - `cd frontend && npm run -s smoke:ui` passed.
@@ -117,6 +121,10 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui` where deps permit).
 
 ## Agent Handoff Notes
+- Ethernet parity depth pass added end-to-end support for these guide leaves: `dhcp-options reject`, `dhcp-options user-class`, `dhcpv6-options no-release`, `dhcpv6-options parameters-only`, `dhcpv6-options temporary`, `ipv6 accept-dad`, and `ipv6 address no-default-link-local`.
+- Ethernet batch handlers now support delete semantics for legacy boolean payloads (`set_*` with `value=false`) and explicit delete operations, preventing stale-on toggles during UI edits.
+- `ComprehensiveEthernetModal` now round-trips `ipv6 address autoconf` and `ipv6 address eui64` correctly and includes deterministic reject-route diffing for DHCP options.
+- Added backend regression tests in `backend/tests/test_ethernet_batch_parity_options.py` to lock new operations and bool false->delete mapping behavior.
 - PPPoE page now supports guide-aligned DHCPv6 Prefix Delegation row CRUD (`pd id/length/interface/address/sla-id`) with deterministic validation + command generation.
 - PPPoE API parser/model now exposes `dhcpv6PdRows` and parses delegated interface subtrees from `dhcpv6-options pd`.
 - WWAN parity depth pass (`IF-14`) now includes advanced IPv4/IPv6 leaves, DHCPv4 extras, DHCPv6 core flags, and DHCPv6-PD row CRUD in `frontend/src/app/network/interfaces/wwan/page.tsx` + `frontend/src/lib/api/wwan.ts`.

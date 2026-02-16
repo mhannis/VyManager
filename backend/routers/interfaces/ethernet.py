@@ -136,6 +136,8 @@ class IPv6Config(BaseModel):
     """IPv6 configuration settings"""
     address: Optional[List[str]] = None
     adjust_mss: Optional[str] = None
+    accept_dad: Optional[str] = None
+    no_default_link_local: Optional[bool] = None
     disable_forwarding: Optional[bool] = None
     dup_addr_detect_transmits: Optional[str] = None
 
@@ -146,11 +148,16 @@ class DHCPOptionsConfig(BaseModel):
     vendor_class_id: Optional[str] = None
     no_default_route: Optional[bool] = None
     default_route_distance: Optional[str] = None
+    reject: Optional[List[str]] = None
+    user_class: Optional[str] = None
 
 class DHCPv6OptionsConfig(BaseModel):
     """DHCPv6 options"""
     duid: Optional[str] = None
     rapid_commit: Optional[bool] = None
+    no_release: Optional[bool] = None
+    parameters_only: Optional[bool] = None
+    temporary: Optional[bool] = None
     pd: Optional[Dict] = None
 
 class VIFConfig(BaseModel):
@@ -385,6 +392,8 @@ async def get_ethernet_capabilities(request: Request) -> Dict[str, Any]:
                 "ipv6": {
                     "autoconf": True,
                     "eui64": True,
+                    "accept_dad": True,
+                    "no_default_link_local": True,
                     "disable_forwarding": True,
                     "dup_addr_detect_transmits": True,
                 },
@@ -400,6 +409,8 @@ async def get_ethernet_capabilities(request: Request) -> Dict[str, Any]:
                     "vendor_class_id": True,
                     "no_default_route": True,
                     "default_route_distance": True,
+                    "reject": True,
+                    "user_class": True,
                 },
 
                 # DHCPv6 (all versions)
@@ -407,6 +418,9 @@ async def get_ethernet_capabilities(request: Request) -> Dict[str, Any]:
                     "duid": True,
                     "rapid_commit": True,
                     "prefix_delegation": True,
+                    "no_release": True,
+                    "parameters_only": True,
+                    "temporary": True,
                 },
 
                 # VLANs (all versions)
@@ -495,20 +509,33 @@ async def get_ethernet_capabilities(request: Request) -> Dict[str, Any]:
                 "arp": [
                     "set_ip_arp_cache_timeout",
                     "set_ip_disable_arp_filter",
+                    "delete_ip_disable_arp_filter",
                     "set_ip_enable_arp_accept",
+                    "delete_ip_enable_arp_accept",
                     "set_ip_enable_arp_announce",
+                    "delete_ip_enable_arp_announce",
                     "set_ip_enable_arp_ignore",
+                    "delete_ip_enable_arp_ignore",
                     "set_ip_enable_proxy_arp",
+                    "delete_ip_enable_proxy_arp",
                     "set_ip_proxy_arp_pvlan",
+                    "delete_ip_proxy_arp_pvlan",
                 ],
                 "ip": [
                     "set_ip_source_validation",
                     "delete_ip_source_validation",
-                ] + (["set_ip_enable_directed_broadcast"] if version_float >= 1.5 else []),
+                ] + (["set_ip_enable_directed_broadcast", "delete_ip_enable_directed_broadcast"] if version_float >= 1.5 else []),
                 "ipv6": [
                     "set_ipv6_address_autoconf",
+                    "delete_ipv6_address_autoconf",
                     "set_ipv6_address_eui64",
+                    "delete_ipv6_address_eui64",
+                    "set_ipv6_address_no_default_link_local",
+                    "delete_ipv6_address_no_default_link_local",
+                    "set_ipv6_accept_dad",
+                    "delete_ipv6_accept_dad",
                     "set_ipv6_disable_forwarding",
+                    "delete_ipv6_disable_forwarding",
                     "set_ipv6_dup_addr_detect_transmits",
                 ],
                 "flow_link": [
@@ -522,12 +549,24 @@ async def get_ethernet_capabilities(request: Request) -> Dict[str, Any]:
                     "set_dhcp_options_host_name",
                     "set_dhcp_options_vendor_class_id",
                     "set_dhcp_options_no_default_route",
+                    "delete_dhcp_options_no_default_route",
                     "set_dhcp_options_default_route_distance",
+                    "set_dhcp_options_reject",
+                    "delete_dhcp_options_reject",
+                    "set_dhcp_options_user_class",
+                    "delete_dhcp_options_user_class",
                 ],
                 "dhcpv6": [
                     "set_dhcpv6_options_duid",
                     "set_dhcpv6_options_rapid_commit",
+                    "delete_dhcpv6_options_rapid_commit",
                     "set_dhcpv6_options_pd",
+                    "set_dhcpv6_options_no_release",
+                    "delete_dhcpv6_options_no_release",
+                    "set_dhcpv6_options_parameters_only",
+                    "delete_dhcpv6_options_parameters_only",
+                    "set_dhcpv6_options_temporary",
+                    "delete_dhcpv6_options_temporary",
                 ],
                 "vlan_vif": [
                     "set_vif",
@@ -682,6 +721,13 @@ async def get_ethernet_config(http_request: Request) -> EthernetInterfacesConfig
 # ============================================================================
 # Ethernet Interface Batch Endpoint
 # ============================================================================
+
+
+def _is_truthy_flag(value: Optional[str]) -> bool:
+    """Interpret optional string boolean flags used by legacy frontend payloads."""
+    if value is None:
+        return True
+    return str(value).strip().lower() in {"1", "true", "yes", "on", "enable", "enabled"}
 
 
 @router.post("/batch")
@@ -1001,17 +1047,47 @@ async def configure_interface_batch(http_request: Request, request: InterfaceBat
                     raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
                 batch.set_ip_arp_cache_timeout(request.interface, value)
             elif op_type == "set_ip_disable_arp_filter":
-                batch.set_ip_disable_arp_filter(request.interface)
+                if _is_truthy_flag(value):
+                    batch.set_ip_disable_arp_filter(request.interface)
+                else:
+                    batch.delete_ip_disable_arp_filter(request.interface)
+            elif op_type == "delete_ip_disable_arp_filter":
+                batch.delete_ip_disable_arp_filter(request.interface)
             elif op_type == "set_ip_enable_arp_accept":
-                batch.set_ip_enable_arp_accept(request.interface)
+                if _is_truthy_flag(value):
+                    batch.set_ip_enable_arp_accept(request.interface)
+                else:
+                    batch.delete_ip_enable_arp_accept(request.interface)
+            elif op_type == "delete_ip_enable_arp_accept":
+                batch.delete_ip_enable_arp_accept(request.interface)
             elif op_type == "set_ip_enable_arp_announce":
-                batch.set_ip_enable_arp_announce(request.interface)
+                if _is_truthy_flag(value):
+                    batch.set_ip_enable_arp_announce(request.interface)
+                else:
+                    batch.delete_ip_enable_arp_announce(request.interface)
+            elif op_type == "delete_ip_enable_arp_announce":
+                batch.delete_ip_enable_arp_announce(request.interface)
             elif op_type == "set_ip_enable_arp_ignore":
-                batch.set_ip_enable_arp_ignore(request.interface)
+                if _is_truthy_flag(value):
+                    batch.set_ip_enable_arp_ignore(request.interface)
+                else:
+                    batch.delete_ip_enable_arp_ignore(request.interface)
+            elif op_type == "delete_ip_enable_arp_ignore":
+                batch.delete_ip_enable_arp_ignore(request.interface)
             elif op_type == "set_ip_enable_proxy_arp":
-                batch.set_ip_enable_proxy_arp(request.interface)
+                if _is_truthy_flag(value):
+                    batch.set_ip_enable_proxy_arp(request.interface)
+                else:
+                    batch.delete_ip_enable_proxy_arp(request.interface)
+            elif op_type == "delete_ip_enable_proxy_arp":
+                batch.delete_ip_enable_proxy_arp(request.interface)
             elif op_type == "set_ip_proxy_arp_pvlan":
-                batch.set_ip_proxy_arp_pvlan(request.interface)
+                if _is_truthy_flag(value):
+                    batch.set_ip_proxy_arp_pvlan(request.interface)
+                else:
+                    batch.delete_ip_proxy_arp_pvlan(request.interface)
+            elif op_type == "delete_ip_proxy_arp_pvlan":
+                batch.delete_ip_proxy_arp_pvlan(request.interface)
             # Source Validation
             elif op_type == "set_ip_source_validation":
                 if not value:
@@ -1021,20 +1097,52 @@ async def configure_interface_batch(http_request: Request, request: InterfaceBat
                 batch.delete_ip_source_validation(request.interface)
             # Directed Broadcast (1.5+)
             elif op_type == "set_ip_enable_directed_broadcast":
-                batch.set_ip_enable_directed_broadcast(request.interface)
+                if _is_truthy_flag(value):
+                    batch.set_ip_enable_directed_broadcast(request.interface)
+                else:
+                    batch.delete_ip_enable_directed_broadcast(request.interface)
+            elif op_type == "delete_ip_enable_directed_broadcast":
+                batch.delete_ip_enable_directed_broadcast(request.interface)
             # IPv6 Settings
             elif op_type == "set_ipv6_address_autoconf":
-                batch.set_ipv6_address_autoconf(request.interface)
+                if _is_truthy_flag(value):
+                    batch.set_ipv6_address_autoconf(request.interface)
+                else:
+                    batch.delete_ipv6_address_autoconf(request.interface)
+            elif op_type == "delete_ipv6_address_autoconf":
+                batch.delete_ipv6_address_autoconf(request.interface)
             elif op_type == "set_ipv6_address_eui64":
                 if not value:
                     raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
                 batch.set_ipv6_address_eui64(request.interface, value)
+            elif op_type == "delete_ipv6_address_eui64":
+                if not value:
+                    raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
+                batch.delete_ipv6_address_eui64(request.interface, value)
+            elif op_type == "set_ipv6_address_no_default_link_local":
+                if _is_truthy_flag(value):
+                    batch.set_ipv6_address_no_default_link_local(request.interface)
+                else:
+                    batch.delete_ipv6_address_no_default_link_local(request.interface)
+            elif op_type == "delete_ipv6_address_no_default_link_local":
+                batch.delete_ipv6_address_no_default_link_local(request.interface)
             elif op_type == "set_ipv6_disable_forwarding":
-                batch.set_ipv6_disable_forwarding(request.interface)
+                if _is_truthy_flag(value):
+                    batch.set_ipv6_disable_forwarding(request.interface)
+                else:
+                    batch.delete_ipv6_disable_forwarding(request.interface)
+            elif op_type == "delete_ipv6_disable_forwarding":
+                batch.delete_ipv6_disable_forwarding(request.interface)
             elif op_type == "set_ipv6_dup_addr_detect_transmits":
                 if not value:
                     raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
                 batch.set_ipv6_dup_addr_detect_transmits(request.interface, value)
+            elif op_type == "set_ipv6_accept_dad":
+                if not value:
+                    raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
+                batch.set_ipv6_accept_dad(request.interface, value)
+            elif op_type == "delete_ipv6_accept_dad":
+                batch.delete_ipv6_accept_dad(request.interface)
             # Flow Control
             elif op_type == "set_disable_flow_control":
                 batch.set_disable_flow_control(request.interface)
@@ -1059,18 +1167,42 @@ async def configure_interface_batch(http_request: Request, request: InterfaceBat
                     raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
                 batch.set_dhcp_options_vendor_class_id(request.interface, value)
             elif op_type == "set_dhcp_options_no_default_route":
-                batch.set_dhcp_options_no_default_route(request.interface)
+                if _is_truthy_flag(value):
+                    batch.set_dhcp_options_no_default_route(request.interface)
+                else:
+                    batch.delete_dhcp_options_no_default_route(request.interface)
+            elif op_type == "delete_dhcp_options_no_default_route":
+                batch.delete_dhcp_options_no_default_route(request.interface)
             elif op_type == "set_dhcp_options_default_route_distance":
                 if not value:
                     raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
                 batch.set_dhcp_options_default_route_distance(request.interface, value)
+            elif op_type == "set_dhcp_options_reject":
+                if not value:
+                    raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
+                batch.set_dhcp_options_reject(request.interface, value)
+            elif op_type == "delete_dhcp_options_reject":
+                if not value:
+                    raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
+                batch.delete_dhcp_options_reject(request.interface, value)
+            elif op_type == "set_dhcp_options_user_class":
+                if not value:
+                    raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
+                batch.set_dhcp_options_user_class(request.interface, value)
+            elif op_type == "delete_dhcp_options_user_class":
+                batch.delete_dhcp_options_user_class(request.interface)
             # DHCPv6 Options
             elif op_type == "set_dhcpv6_options_duid":
                 if not value:
                     raise HTTPException(status_code=400, detail=f"{op_type} requires a value")
                 batch.set_dhcpv6_options_duid(request.interface, value)
             elif op_type == "set_dhcpv6_options_rapid_commit":
-                batch.set_dhcpv6_options_rapid_commit(request.interface)
+                if _is_truthy_flag(value):
+                    batch.set_dhcpv6_options_rapid_commit(request.interface)
+                else:
+                    batch.delete_dhcpv6_options_rapid_commit(request.interface)
+            elif op_type == "delete_dhcpv6_options_rapid_commit":
+                batch.delete_dhcpv6_options_rapid_commit(request.interface)
             elif op_type == "set_dhcpv6_options_pd":
                 if not value:
                     raise HTTPException(status_code=400, detail=f"{op_type} requires a value (pd_id,prefix)")
@@ -1079,6 +1211,27 @@ async def configure_interface_batch(http_request: Request, request: InterfaceBat
                 if len(parts) != 2:
                     raise HTTPException(status_code=400, detail=f"{op_type} value must be 'pd_id,prefix'")
                 batch.set_dhcpv6_options_pd(request.interface, parts[0], parts[1])
+            elif op_type == "set_dhcpv6_options_no_release":
+                if _is_truthy_flag(value):
+                    batch.set_dhcpv6_options_no_release(request.interface)
+                else:
+                    batch.delete_dhcpv6_options_no_release(request.interface)
+            elif op_type == "delete_dhcpv6_options_no_release":
+                batch.delete_dhcpv6_options_no_release(request.interface)
+            elif op_type == "set_dhcpv6_options_parameters_only":
+                if _is_truthy_flag(value):
+                    batch.set_dhcpv6_options_parameters_only(request.interface)
+                else:
+                    batch.delete_dhcpv6_options_parameters_only(request.interface)
+            elif op_type == "delete_dhcpv6_options_parameters_only":
+                batch.delete_dhcpv6_options_parameters_only(request.interface)
+            elif op_type == "set_dhcpv6_options_temporary":
+                if _is_truthy_flag(value):
+                    batch.set_dhcpv6_options_temporary(request.interface)
+                else:
+                    batch.delete_dhcpv6_options_temporary(request.interface)
+            elif op_type == "delete_dhcpv6_options_temporary":
+                batch.delete_dhcpv6_options_temporary(request.interface)
             # VLANs
             elif op_type == "set_vif":
                 if not value:

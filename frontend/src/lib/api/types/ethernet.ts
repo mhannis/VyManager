@@ -10,11 +10,16 @@ export interface DHCPOptionsConfig {
   vendor_class_id?: string | null;
   no_default_route?: boolean | null;
   default_route_distance?: string | null;
+  reject?: string[] | null;
+  user_class?: string | null;
 }
 
 export interface DHCPv6OptionsConfig {
   duid?: string | null;
   rapid_commit?: boolean | null;
+  no_release?: boolean | null;
+  parameters_only?: boolean | null;
+  temporary?: boolean | null;
   pd?: Record<string, unknown> | null;
 }
 
@@ -48,6 +53,8 @@ export interface IPConfig {
 export interface IPv6Config {
   address?: string[] | null;
   adjust_mss?: string | null;
+  accept_dad?: string | null;
+  no_default_link_local?: boolean | null;
   disable_forwarding?: boolean | null;
   dup_addr_detect_transmits?: string | null;
 }

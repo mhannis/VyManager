@@ -185,6 +185,14 @@ class EthernetInterfaceMapper(BaseFeatureMapper):
         """Get command path for IPv6 EUI-64 address."""
         return ["interfaces", self.interface_type, interface, "ipv6", "address", "eui64", prefix]
 
+    def get_ipv6_address_no_default_link_local(self, interface: str) -> List[str]:
+        """Get command path for disabling default IPv6 link-local address generation."""
+        return ["interfaces", self.interface_type, interface, "ipv6", "address", "no-default-link-local"]
+
+    def get_ipv6_address_eui64_path(self, interface: str, prefix: str) -> List[str]:
+        """Get command path for IPv6 EUI-64 address entry (for deletion)."""
+        return ["interfaces", self.interface_type, interface, "ipv6", "address", "eui64", prefix]
+
     def get_ipv6_disable_forwarding(self, interface: str) -> List[str]:
         """Get command path for disabling IPv6 forwarding."""
         return ["interfaces", self.interface_type, interface, "ipv6", "disable-forwarding"]
@@ -192,6 +200,14 @@ class EthernetInterfaceMapper(BaseFeatureMapper):
     def get_ipv6_dup_addr_detect_transmits(self, interface: str, count: str) -> List[str]:
         """Get command path for IPv6 DAD transmits."""
         return ["interfaces", self.interface_type, interface, "ipv6", "dup-addr-detect-transmits", count]
+
+    def get_ipv6_accept_dad(self, interface: str, mode: str) -> List[str]:
+        """Get command path for IPv6 Accept-DAD mode."""
+        return ["interfaces", self.interface_type, interface, "ipv6", "accept-dad", mode]
+
+    def get_ipv6_accept_dad_path(self, interface: str) -> List[str]:
+        """Get command path for IPv6 Accept-DAD setting (for deletion)."""
+        return ["interfaces", self.interface_type, interface, "ipv6", "accept-dad"]
 
     # Flow Control
     def get_disable_flow_control(self, interface: str) -> List[str]:
@@ -224,6 +240,18 @@ class EthernetInterfaceMapper(BaseFeatureMapper):
         """Get command path for DHCP default route distance."""
         return ["interfaces", self.interface_type, interface, "dhcp-options", "default-route-distance", distance]
 
+    def get_dhcp_options_reject(self, interface: str, address: str) -> List[str]:
+        """Get command path for DHCP reject route entries."""
+        return ["interfaces", self.interface_type, interface, "dhcp-options", "reject", address]
+
+    def get_dhcp_options_user_class(self, interface: str, user_class: str) -> List[str]:
+        """Get command path for DHCP user class."""
+        return ["interfaces", self.interface_type, interface, "dhcp-options", "user-class", user_class]
+
+    def get_dhcp_options_user_class_path(self, interface: str) -> List[str]:
+        """Get command path for DHCP user class (for deletion)."""
+        return ["interfaces", self.interface_type, interface, "dhcp-options", "user-class"]
+
     # DHCPv6 Options
     def get_dhcpv6_options_duid(self, interface: str, duid: str) -> List[str]:
         """Get command path for DHCPv6 DUID."""
@@ -236,6 +264,18 @@ class EthernetInterfaceMapper(BaseFeatureMapper):
     def get_dhcpv6_options_pd(self, interface: str, pd_id: str, prefix: str) -> List[str]:
         """Get command path for DHCPv6 prefix delegation."""
         return ["interfaces", self.interface_type, interface, "dhcpv6-options", "pd", pd_id, "length", prefix]
+
+    def get_dhcpv6_options_no_release(self, interface: str) -> List[str]:
+        """Get command path for DHCPv6 no-release option."""
+        return ["interfaces", self.interface_type, interface, "dhcpv6-options", "no-release"]
+
+    def get_dhcpv6_options_parameters_only(self, interface: str) -> List[str]:
+        """Get command path for DHCPv6 parameters-only option."""
+        return ["interfaces", self.interface_type, interface, "dhcpv6-options", "parameters-only"]
+
+    def get_dhcpv6_options_temporary(self, interface: str) -> List[str]:
+        """Get command path for DHCPv6 temporary address option."""
+        return ["interfaces", self.interface_type, interface, "dhcpv6-options", "temporary"]
 
     # VLANs - Basic VLAN creation
     def get_vif(self, interface: str, vlan_id: str) -> List[str]:
@@ -578,11 +618,14 @@ class EthernetInterfaceMapper(BaseFeatureMapper):
 
         # Parse IPv6 addresses (autoconf, eui64)
         ipv6_addresses = []
+        no_default_link_local = False
         if "ipv6" in config and "address" in config["ipv6"]:
             ipv6_addr = config["ipv6"]["address"]
             if isinstance(ipv6_addr, dict):
                 if "autoconf" in ipv6_addr:
                     ipv6_addresses.append("autoconf")
+                if "no-default-link-local" in ipv6_addr:
+                    no_default_link_local = True
                 if "eui64" in ipv6_addr:
                     eui64_addrs = ipv6_addr["eui64"]
                     if isinstance(eui64_addrs, list):
@@ -590,7 +633,7 @@ class EthernetInterfaceMapper(BaseFeatureMapper):
                     elif isinstance(eui64_addrs, str):
                         ipv6_addresses.append(f"eui64:{eui64_addrs}")
 
-        if not ipv6_config and not ipv6_addresses:
+        if not ipv6_config and not ipv6_addresses and not no_default_link_local:
             return None
 
         return {
@@ -598,6 +641,8 @@ class EthernetInterfaceMapper(BaseFeatureMapper):
             "adjust_mss": ipv6_config.get("adjust-mss"),
             "disable_forwarding": "disable-forwarding" in ipv6_config,
             "dup_addr_detect_transmits": ipv6_config.get("dup-addr-detect-transmits"),
+            "accept_dad": ipv6_config.get("accept-dad"),
+            "no_default_link_local": no_default_link_local,
         }
 
     def _parse_dhcp_options(self, config: Dict[str, Any]) -> Dict[str, Any]:
@@ -605,12 +650,24 @@ class EthernetInterfaceMapper(BaseFeatureMapper):
         dhcp_options = config.get("dhcp-options", {})
         if not dhcp_options:
             return None
+
+        reject_values: List[str] = []
+        reject_raw = dhcp_options.get("reject")
+        if isinstance(reject_raw, dict):
+            reject_values = [str(key) for key in reject_raw.keys()]
+        elif isinstance(reject_raw, list):
+            reject_values = [str(value) for value in reject_raw]
+        elif isinstance(reject_raw, str):
+            reject_values = [reject_raw]
+
         return {
             "client_id": dhcp_options.get("client-id"),
             "host_name": dhcp_options.get("host-name"),
             "vendor_class_id": dhcp_options.get("vendor-class-id"),
             "no_default_route": "no-default-route" in dhcp_options,
             "default_route_distance": dhcp_options.get("default-route-distance"),
+            "reject": reject_values if reject_values else None,
+            "user_class": dhcp_options.get("user-class"),
         }
 
     def _parse_dhcpv6_options(self, config: Dict[str, Any]) -> Dict[str, Any]:
@@ -621,6 +678,9 @@ class EthernetInterfaceMapper(BaseFeatureMapper):
         return {
             "duid": dhcpv6_options.get("duid"),
             "rapid_commit": "rapid-commit" in dhcpv6_options,
+            "no_release": "no-release" in dhcpv6_options,
+            "parameters_only": "parameters-only" in dhcpv6_options,
+            "temporary": "temporary" in dhcpv6_options,
             "pd": dhcpv6_options.get("pd"),
         }
 

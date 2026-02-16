@@ -1,17 +1,17 @@
 {
-  "feature_id": "interfaces-pppoe-pd-depth-2026-02-16",
-  "title": "Interfaces PPPoE parity depth pass (IF-15 subset)",
+  "feature_id": "interfaces-ethernet-dhcp-ipv6-depth-2026-02-16",
+  "title": "Interfaces Ethernet DHCP/DHCPv6/IPv6 parity depth pass (IF-15 subset)",
   "status": "in_progress",
   "acceptance_criteria": [
-    "PPPoE GUI supports DHCPv6 Prefix Delegation row CRUD (pd id/length/interface/address/sla-id).",
-    "PPPoE parser/model round-trips DHCPv6-PD rows from config-tree payloads.",
-    "PPPoE save flow validates malformed PD rows and returns deterministic UI errors.",
-    "PPPoE operation generation emits deterministic set/delete commands for DHCPv6-PD changes.",
-    "Frontend gates pass (typecheck, targeted eslint, build, runtime smoke, UI smoke)."
+    "Ethernet GUI supports DHCP options reject routes and user-class with deterministic set/delete semantics.",
+    "Ethernet GUI supports DHCPv6 options no-release, parameters-only, and temporary flags with robust toggle handling.",
+    "Ethernet GUI supports IPv6 accept-dad and no-default-link-local options plus correct autoconf/eui64 round-trip behavior.",
+    "Backend router/builder/mapper support all newly exposed ethernet operations and preserve legacy set_* value=false compatibility via delete mapping.",
+    "Validation gates pass: backend targeted pytest, frontend tsc, targeted eslint, build, runtime smoke, UI smoke."
   ],
   "assumptions": [
-    "IF-15 remains partial after this slice because ethernet/loopback/wireguard advanced leaves are still pending.",
-    "PPPoE operation-mode connect/disconnect controls are deferred; this slice targets configuration-tree parity depth."
+    "IF-15 remains partial after this slice because loopback and wireguard option-depth work is still pending.",
+    "This slice intentionally extends existing ethernet endpoints/contracts rather than introducing new interface APIs."
   ],
   "tasks": [
     {
@@ -19,36 +19,40 @@
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/pppoe.ts"
+        "backend/vyos_mappers/interfaces/ethernet.py",
+        "backend/vyos_builders/interfaces/ethernet.py",
+        "backend/routers/interfaces/ethernet.py"
       ],
-      "notes": "Extended PPPoE parser/model with DHCPv6-PD rows and robust IPv6 autoconf parsing."
+      "notes": "Added mapper paths, builder methods, response model fields, capabilities entries, and batch operation handlers for new DHCP/DHCPv6/IPv6 leaves and delete semantics."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/network/interfaces/pppoe/page.tsx"
+        "frontend/src/components/network/ComprehensiveEthernetModal.tsx",
+        "frontend/src/lib/api/types/ethernet.ts"
       ],
-      "notes": "Added DHCPv6-PD editor and command generation in PPPoE create/edit workflows."
+      "notes": "Added Ethernet modal controls and operation generation for reject/user-class/no-release/parameters-only/temporary/accept-dad/no-default-link-local; fixed autoconf/eui64 diff logic."
     },
     {
       "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/pppoe.ts",
-        "frontend/src/app/network/interfaces/pppoe/page.tsx"
+        "backend/tests/test_ethernet_batch_parity_options.py"
       ],
-      "notes": "Validated with tsc, targeted eslint, build, runtime smoke, and UI smoke after vm-ui restart."
+      "notes": "Added router regression coverage for new ops and legacy false->delete behavior; full validation gates passed."
     },
     {
       "id": "T4",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/pppoe.ts",
-        "frontend/src/app/network/interfaces/pppoe/page.tsx"
+        "backend/routers/interfaces/ethernet.py",
+        "backend/vyos_builders/interfaces/ethernet.py",
+        "backend/vyos_mappers/interfaces/ethernet.py",
+        "frontend/src/components/network/ComprehensiveEthernetModal.tsx"
       ],
       "notes": "Manual in-process review complete. APPROVED."
     },
@@ -60,18 +64,18 @@
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
       ],
-      "notes": "Proceed with next IF-15 parity slices for ethernet/loopback/wireguard option depth."
+      "notes": "Execute next IF-15 depth slices for loopback and wireguard in guide order."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd frontend && npx tsc --noEmit --pretty false && npx eslint src/lib/api/pppoe.ts src/app/network/interfaces/pppoe/page.tsx && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_ethernet_batch_parity_options.py tests/test_ethernet_vlan_batch_ops.py && cd ../frontend && npx tsc --noEmit --pretty false && npx eslint src/components/network/ComprehensiveEthernetModal.tsx src/lib/api/types/ethernet.ts && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "PPPoE DHCPv6-PD parity depth implementation and validation",
+      "purpose": "IF-15 ethernet DHCP/DHCPv6/IPv6 parity depth implementation and validation",
       "status": "active"
     }
   ]
