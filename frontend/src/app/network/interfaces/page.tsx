@@ -5,6 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Plus, RefreshCw, AlertCircle, Search, Cable, Pencil, Trash2, Network, ArrowUpRight } from "lucide-react";
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -19,10 +30,13 @@ import { ComprehensiveEthernetModal } from "@/components/network/ComprehensiveEt
 import { ComprehensiveVLANModal } from "@/components/network/ComprehensiveVLANModal";
 import { DeleteEthernetModal } from "@/components/network/DeleteEthernetModal";
 import { DeleteVLANModal } from "@/components/network/DeleteVLANModal";
+import { dummyService, type DummyBatchOperation } from "@/lib/api/dummy";
+import { loopbackService } from "@/lib/api/loopback";
 
 type InterfaceType = "all" | "ethernet" | "vlan";
 type InterfaceFamilyGroup = "core-l2" | "overlay-secure" | "access-wan";
 type InterfaceFamilyFilter = "all" | InterfaceFamilyGroup;
+type QuickFamily = "dummy" | "loopback";
 
 interface InterfaceFamily {
   key: string;
@@ -207,6 +221,24 @@ const isFamilyFilter = (value: string | null): value is InterfaceFamilyFilter =>
   return INTERFACE_GROUPS.some((group) => group.id === value);
 };
 
+function parseMultilineUnique(raw: string): string[] {
+  return Array.from(
+    new Set(
+      raw
+        .split("\n")
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0),
+    ),
+  );
+}
+
+function quoteCliValue(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "''";
+  if (/^[A-Za-z0-9._:/@%+=[\]-]+$/.test(trimmed)) return trimmed;
+  return `'${trimmed.replace(/'/g, `'\"'\"'`)}'`;
+}
+
 function InterfacesPageContent() {
   const searchParams = useSearchParams();
   const [interfaces, setInterfaces] = useState<EthernetInterface[]>([]);
@@ -226,6 +258,23 @@ function InterfacesPageContent() {
   const [isCreateVLANModalOpen, setIsCreateVLANModalOpen] = useState(false);
   const [editingVLAN, setEditingVLAN] = useState<VLANWithParent | null>(null);
   const [deletingVLAN, setDeletingVLAN] = useState<VLANWithParent | null>(null);
+  const [quickFamily, setQuickFamily] = useState<QuickFamily | null>(null);
+  const [quickSaving, setQuickSaving] = useState(false);
+  const [quickError, setQuickError] = useState<string | null>(null);
+  const [quickSuccess, setQuickSuccess] = useState<string | null>(null);
+  const [quickDummyForm, setQuickDummyForm] = useState({
+    name: "",
+    description: "",
+    addressesText: "",
+    mtu: "",
+    vrf: "",
+    disabled: false,
+  });
+  const [quickLoopbackForm, setQuickLoopbackForm] = useState({
+    name: "",
+    description: "",
+    addressesText: "",
+  });
   const groupParam = searchParams.get("group");
   const familyFilter: InterfaceFamilyFilter = isFamilyFilter(groupParam) ? groupParam : "all";
 
@@ -342,6 +391,101 @@ function InterfacesPageContent() {
     [familyFilter],
   );
 
+  const openQuickEditor = (family: QuickFamily) => {
+    setQuickFamily(family);
+    setQuickError(null);
+    setQuickSuccess(null);
+    if (family === "dummy") {
+      setQuickDummyForm({
+        name: "",
+        description: "",
+        addressesText: "",
+        mtu: "",
+        vrf: "",
+        disabled: false,
+      });
+      return;
+    }
+    setQuickLoopbackForm({
+      name: "",
+      description: "",
+      addressesText: "",
+    });
+  };
+
+  const saveQuickEditor = async () => {
+    if (!quickFamily) return;
+
+    setQuickSaving(true);
+    setQuickError(null);
+    setQuickSuccess(null);
+
+    try {
+      if (quickFamily === "dummy") {
+        const name = quickDummyForm.name.trim();
+        if (!name) {
+          throw new Error("Dummy interface name is required.");
+        }
+
+        const operations: DummyBatchOperation[] = [];
+        const description = quickDummyForm.description.trim();
+        const mtu = quickDummyForm.mtu.trim();
+        const vrf = quickDummyForm.vrf.trim();
+
+        if (description) operations.push({ op: "set_description", value: description });
+        for (const address of parseMultilineUnique(quickDummyForm.addressesText)) {
+          operations.push({ op: "set_address", value: address });
+        }
+        if (mtu) operations.push({ op: "set_mtu", value: mtu });
+        if (vrf) operations.push({ op: "set_vrf", value: vrf });
+        operations.push({ op: quickDummyForm.disabled ? "disable" : "enable" });
+
+        if (operations.length === 1 && operations[0].op === "enable") {
+          throw new Error("Provide at least one value (address, description, MTU, or VRF).");
+        }
+
+        const response = await dummyService.batchConfigure({
+          interface: name,
+          operations,
+        });
+        if (!response.success) {
+          throw new Error(response.error || "VyOS rejected dummy interface configuration.");
+        }
+        setQuickSuccess(`Dummy interface '${name}' created from Interface Manager.`);
+      } else {
+        const name = quickLoopbackForm.name.trim();
+        if (!name) {
+          throw new Error("Loopback interface name is required.");
+        }
+
+        const operations: string[] = [];
+        const base = `interfaces loopback ${quoteCliValue(name)}`;
+        const description = quickLoopbackForm.description.trim();
+        if (description) {
+          operations.push(`set ${base} description ${quoteCliValue(description)}`);
+        }
+        for (const address of parseMultilineUnique(quickLoopbackForm.addressesText)) {
+          operations.push(`set ${base} address ${quoteCliValue(address)}`);
+        }
+        if (operations.length === 0) {
+          throw new Error("Provide at least one value (description or address).");
+        }
+
+        const response = await loopbackService.batchConfigure(operations);
+        if (!response.success) {
+          throw new Error(response.error || "VyOS rejected loopback interface configuration.");
+        }
+        setQuickSuccess(`Loopback interface '${name}' created from Interface Manager.`);
+      }
+
+      setQuickFamily(null);
+    } catch (err) {
+      setQuickError(err instanceof Error ? err.message : "Failed to apply quick interface change.");
+    } finally {
+      setQuickSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <AppLayout>
@@ -426,6 +570,22 @@ function InterfacesPageContent() {
           </div>
         )}
 
+        {quickError && !error && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-destructive">Quick Configure Failed</h3>
+              <p className="text-sm text-destructive/90 mt-1">{quickError}</p>
+            </div>
+          </div>
+        )}
+
+        {quickSuccess && !error && (
+          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
+            {quickSuccess}
+          </div>
+        )}
+
         {/* Consolidated Controls */}
         {!error && (
           <div className="space-y-4">
@@ -502,7 +662,9 @@ function InterfacesPageContent() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {visibleFamilies.map((family) => (
+                  {visibleFamilies.map((family) => {
+                    const supportsQuickConfigure = family.key === "dummy" || family.key === "loopback";
+                    return (
                     <div
                       key={family.key}
                       className="rounded-lg border border-border bg-card/40 p-3 transition-colors hover:border-primary/40"
@@ -512,12 +674,25 @@ function InterfacesPageContent() {
                           <h3 className="font-semibold text-foreground">{family.title}</h3>
                           <p className="text-xs text-muted-foreground">{family.summary}</p>
                         </div>
-                        <Button asChild variant="ghost" size="sm" className="shrink-0">
-                          <Link href={family.href}>
-                            Open
-                            <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                          </Link>
-                        </Button>
+                        <div className="flex items-center gap-1.5">
+                          {supportsQuickConfigure && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs"
+                              onClick={() => openQuickEditor(family.key as QuickFamily)}
+                            >
+                              Quick Add
+                            </Button>
+                          )}
+                          <Button asChild variant="ghost" size="sm" className="shrink-0">
+                            <Link href={family.href}>
+                              Open
+                              <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                            </Link>
+                          </Button>
+                        </div>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-1.5">
                         {family.commonFields.map((field) => (
@@ -527,7 +702,8 @@ function InterfacesPageContent() {
                         ))}
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -812,6 +988,173 @@ function InterfacesPageContent() {
           </div>
         )}
       </div>
+
+      {/* Quick Configure Modal */}
+      <Dialog
+        open={Boolean(quickFamily)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setQuickFamily(null);
+            setQuickError(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {quickFamily === "dummy"
+                ? "Quick Add Dummy Interface"
+                : quickFamily === "loopback"
+                  ? "Quick Add Loopback Interface"
+                  : "Quick Configure Interface"}
+            </DialogTitle>
+            <DialogDescription>
+              Quick configure from the unified manager. Use the full page for advanced options.
+            </DialogDescription>
+          </DialogHeader>
+
+          {quickFamily === "dummy" && (
+            <div className="grid gap-4 py-1">
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-dummy-name">Interface Name</Label>
+                  <Input
+                    id="quick-dummy-name"
+                    value={quickDummyForm.name}
+                    onChange={(event) =>
+                      setQuickDummyForm((previous) => ({ ...previous, name: event.target.value }))
+                    }
+                    placeholder="dum0"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-dummy-description">Description</Label>
+                  <Input
+                    id="quick-dummy-description"
+                    value={quickDummyForm.description}
+                    onChange={(event) =>
+                      setQuickDummyForm((previous) => ({ ...previous, description: event.target.value }))
+                    }
+                    placeholder="Service loopback"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-dummy-mtu">MTU (optional)</Label>
+                  <Input
+                    id="quick-dummy-mtu"
+                    value={quickDummyForm.mtu}
+                    onChange={(event) =>
+                      setQuickDummyForm((previous) => ({ ...previous, mtu: event.target.value }))
+                    }
+                    placeholder="1500"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-dummy-vrf">VRF (optional)</Label>
+                  <Input
+                    id="quick-dummy-vrf"
+                    value={quickDummyForm.vrf}
+                    onChange={(event) =>
+                      setQuickDummyForm((previous) => ({ ...previous, vrf: event.target.value }))
+                    }
+                    placeholder="blue"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quick-dummy-addresses">Addresses (one CIDR per line)</Label>
+                <Textarea
+                  id="quick-dummy-addresses"
+                  rows={4}
+                  value={quickDummyForm.addressesText}
+                  onChange={(event) =>
+                    setQuickDummyForm((previous) => ({ ...previous, addressesText: event.target.value }))
+                  }
+                  placeholder={"10.10.10.1/32\nfd00:10:10::1/128"}
+                  disabled={quickSaving}
+                />
+              </div>
+              <div className="flex items-center gap-2 rounded-md border border-border p-2">
+                <Checkbox
+                  id="quick-dummy-disable"
+                  checked={quickDummyForm.disabled}
+                  onCheckedChange={(checked) =>
+                    setQuickDummyForm((previous) => ({ ...previous, disabled: checked === true }))
+                  }
+                  disabled={quickSaving}
+                />
+                <Label htmlFor="quick-dummy-disable" className="text-sm font-normal">
+                  Create interface in disabled state
+                </Label>
+              </div>
+            </div>
+          )}
+
+          {quickFamily === "loopback" && (
+            <div className="grid gap-4 py-1">
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-loopback-name">Interface Name</Label>
+                  <Input
+                    id="quick-loopback-name"
+                    value={quickLoopbackForm.name}
+                    onChange={(event) =>
+                      setQuickLoopbackForm((previous) => ({ ...previous, name: event.target.value }))
+                    }
+                    placeholder="lo10"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-loopback-description">Description</Label>
+                  <Input
+                    id="quick-loopback-description"
+                    value={quickLoopbackForm.description}
+                    onChange={(event) =>
+                      setQuickLoopbackForm((previous) => ({ ...previous, description: event.target.value }))
+                    }
+                    placeholder="Router ID"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quick-loopback-addresses">Addresses (one CIDR per line)</Label>
+                <Textarea
+                  id="quick-loopback-addresses"
+                  rows={4}
+                  value={quickLoopbackForm.addressesText}
+                  onChange={(event) =>
+                    setQuickLoopbackForm((previous) => ({ ...previous, addressesText: event.target.value }))
+                  }
+                  placeholder={"10.255.255.1/32\nfd00:255:255::1/128"}
+                  disabled={quickSaving}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setQuickFamily(null)}
+              disabled={quickSaving}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={saveQuickEditor} disabled={quickSaving || !quickFamily}>
+              {quickSaving ? "Saving..." : "Apply"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Ethernet Modals */}
       <ComprehensiveEthernetModal

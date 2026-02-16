@@ -1,6 +1,6 @@
 {
   "feature_id": "interface-ia-consolidation-v1-2026-02-16",
-  "title": "Interfaces IA consolidation v1 (unified manager + grouped navigation)",
+  "title": "Interfaces IA consolidation v2 (grouped manager + inline quick add)",
   "status": "in_progress",
   "acceptance_criteria": [
     "Interfaces navigation is consolidated to logical groups instead of long per-type sidebar sprawl.",
@@ -55,12 +55,21 @@
     {
       "id": "IF-IA-05",
       "owner_role": "UI|Backend|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/app/network/interfaces/page.tsx"
+      ],
+      "notes": "Added inline quick-add modal flows in unified manager for Dummy and Loopback families using existing APIs."
+    },
+    {
+      "id": "IF-IA-06",
+      "owner_role": "UI|Backend|Test",
       "status": "todo",
       "files": [
         "frontend/src/app/network/interfaces/page.tsx",
         "frontend/src/lib/api/*interface*.ts"
       ],
-      "notes": "Add shared inline create/edit drawer modules so family editing can happen directly from the unified manager."
+      "notes": "Extend inline quick-add/edit coverage to additional families (PPPoE, Tunnel/VTI, VXLAN) while preserving advanced pages."
     }
   ],
   "commands": {

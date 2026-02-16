@@ -58,10 +58,10 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
 - Deliver interface IA consolidation so operators can navigate interface configuration from one unified hub and a small set of logical groups.
-- Preserve existing per-type advanced editors and API contracts while reducing navigation sprawl.
+- Add inline quick-add on the unified hub for high-overlap families while preserving detailed per-type advanced editors and API contracts.
 
 ## Current Feature Spec
-Feature: **Interfaces IA Consolidation v1**
+Feature: **Interfaces IA Consolidation v2**
 
 Acceptance criteria:
 - Interfaces sidebar is condensed to:
@@ -71,15 +71,16 @@ Acceptance criteria:
   - `Access & WAN`
 - `/network/interfaces` presents grouped interface-family cards with direct `Open` links to each detailed editor.
 - Existing detailed interface pages remain reachable for compatibility and advanced settings.
+- Unified manager provides inline quick-add for `Dummy` and `Loopback` families.
 - Build/typecheck/runtime smoke pass after the IA changes.
 
 Assumptions:
-- Interface-family advanced editing remains on detailed pages in v1; inline shared drawer unification is a follow-up slice.
+- Interface-family advanced editing remains on detailed pages for now; inline drawer coverage is being added incrementally.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v1 implemented and validated locally.
+- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback is implemented and validated locally.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle

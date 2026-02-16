@@ -1,29 +1,28 @@
 feature_id: interface-ia-consolidation-v1-2026-02-16
 status: in_progress
-title: Interfaces IA consolidation v1 (unified manager + grouped navigation)
+title: Interfaces IA consolidation v2 (grouped manager + inline quick add)
 branch: feature/containers-automation-v1
 commits:
-  - ed63528 (system page-guide runtime hotfix)
-  - pending (interfaces IA consolidation v1)
+  - b3ea5d5 (interfaces IA grouped manager hub)
+  - pending (interfaces inline quick add for dummy/loopback)
 notes:
-  - Replaced the large per-type Interfaces sidebar list with logical entries:
-    - `Interface Manager` (`/network/interfaces`)
-    - `Core & L2` (`/network/interfaces?group=core-l2`)
-    - `Overlay & Secure` (`/network/interfaces?group=overlay-secure`)
-    - `Access & WAN` (`/network/interfaces?group=access-wan`)
-  - Refactored `Network -> Interfaces` into a unified hub:
-    - Group filter buttons for families
-    - Family cards with concise scope and common-field badges
-    - Direct `Open` links to each detailed editor for advanced settings
-    - Retained existing Ethernet/VLAN management in-place on the same hub page
-  - Added consolidated route probes to smoke scripts:
-    - `/network/interfaces?group=core-l2`
-    - `/network/interfaces?group=overlay-secure`
-    - `/network/interfaces?group=access-wan`
-  - Build/runtime validation for this slice:
+  - Interfaces sidebar remains consolidated to:
+    - `Interface Manager`
+    - `Core & L2`
+    - `Overlay & Secure`
+    - `Access & WAN`
+  - Unified manager (`/network/interfaces`) now includes inline quick-add for:
+    - Dummy interfaces
+    - Loopback interfaces
+  - Quick-add uses existing API contracts:
+    - `POST /vyos/dummy/batch`
+    - `POST /vyos/loopback-interface/configure`
+  - Family cards still link to dedicated advanced pages for full feature depth.
+  - Validation for this increment:
     - `cd frontend && npx tsc --noEmit --pretty false`
+    - `cd frontend && npx eslint src/app/network/interfaces/page.tsx src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0`
     - `cd frontend && npm run -s build`
     - `cd frontend && npm run -s smoke:runtime`
-  - Browser smoke remains host-blocked on missing `libnspr4.so`.
+  - Browser smoke (`npm run -s smoke:ui`) remains blocked by host dependency `libnspr4.so`.
   - Next queue:
-    - Implement shared create/edit drawer modules so additional interface families can be edited inline from unified manager (without leaving page).
+    - Extend inline quick-add/edit to PPPoE and tunnel families (while keeping advanced pages).

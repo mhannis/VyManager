@@ -236,3 +236,4 @@
 - 2026-02-16: Implemented Interfaces IA consolidation v1 by replacing the 17-entry Interfaces sidebar submenu with logical groups (`Interface Manager`, `Core & L2`, `Overlay & Secure`, `Access & WAN`) while keeping legacy per-type routes reachable through the unified manager cards.
 - 2026-02-16: `Network -> Interfaces` now acts as a unified hub with family cards and grouped filters; per-type editors remain as the execution surfaces for advanced settings to avoid backend/API refactors.
 - 2026-02-16: `useSearchParams` on `/network/interfaces` required a Suspense boundary for static build; wrapped page content in `<Suspense>` to resolve prerender failure without changing route behavior.
+- 2026-02-16: Added inline quick-add flows for `Dummy` and `Loopback` directly in the unified Interfaces manager using existing APIs (`/vyos/dummy/batch` and `/vyos/loopback-interface/configure`) to increase single-page usability without changing backend contracts.
