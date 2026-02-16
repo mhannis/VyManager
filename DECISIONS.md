@@ -249,3 +249,4 @@
 - 2026-02-16: Increased workspace panel width to full viewport (`w-screen max-w-none`) because operators still observed ~1.5in clipping after nested-layout removal.
 - 2026-02-16: Added dual family navigation actions (`Inline` and `Open Page`) to keep same-page workflow while preserving fast access to dedicated family pages.
 - 2026-02-16: Reverted interface family navigation to dedicated pages only and removed inline workspace/embed behavior based on operator preference for clear, non-buried per-family views.
+- 2026-02-16: Restored interface family entries in the left sidebar under `Interfaces` so operators can jump directly to each dedicated interface page.

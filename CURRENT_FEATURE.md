@@ -11,7 +11,8 @@ commits:
   - f078934 (interfaces embedded layout mode for panel workspace)
   - 2c39ce4 (interfaces workspace panel full-width tuning)
   - 3afb5ba (interfaces family dual actions inline + open page)
-  - pending (revert to dedicated separate interface family pages only)
+  - 134fd11 (revert to dedicated separate interface family pages only)
+  - pending (restore interface family entries in left sidebar)
 notes:
   - Interfaces sidebar remains consolidated to:
     - `Interfaces`
@@ -36,6 +37,7 @@ notes:
     - `POST /vyos/vxlan-interface/configure`
     - `POST /vyos/tunnel-interface/configure`
   - Family actions now use dedicated page navigation only (`Open`) for each interface type; inline workspace panel has been removed.
+  - Interface family entries are restored under the left sidebar `Interfaces` section for direct navigation.
   - Interface family cards now show `Current` (disabled) when a card targets the exact view already open, so `Open` no longer appears broken on the current page.
   - Setup wizard remains available on the Interfaces page via `Open Setup Wizard`.
   - Validation for this increment:

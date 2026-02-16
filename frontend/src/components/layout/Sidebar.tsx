@@ -86,9 +86,104 @@ const navigation: NavItem[] = [
   },
   {
     title: "Interfaces",
-    href: "/network/interfaces",
     icon: Network,
-    requiredPermission: FeatureGroup.INTERFACES,
+    children: [
+      {
+        title: "Setup Wizard",
+        href: "/network/setup-wizard",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "Interface Manager",
+        href: "/network/interfaces",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "Bonding",
+        href: "/network/interfaces/bonding",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "Bridge",
+        href: "/network/interfaces/bridge",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "Dummy",
+        href: "/network/interfaces/dummy",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "Geneve",
+        href: "/network/interfaces/geneve",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "L2TPv3",
+        href: "/network/interfaces/l2tpv3",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "Loopback",
+        href: "/network/interfaces/loopback",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "MACsec",
+        href: "/network/interfaces/macsec",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "OpenVPN",
+        href: "/network/interfaces/openvpn",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "PPPoE Client",
+        href: "/network/interfaces/pppoe",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "Pseudo-Ethernet",
+        href: "/network/interfaces/pseudo-ethernet",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "SSTP Client",
+        href: "/network/interfaces/sstp-client",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "Tunnel",
+        href: "/network/interfaces/tunnel",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "Virtual-Ethernet",
+        href: "/network/interfaces/virtual-ethernet",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "VTI",
+        href: "/network/interfaces/vti",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "VXLAN",
+        href: "/network/interfaces/vxlan",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "Wireless",
+        href: "/network/interfaces/wireless",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+      {
+        title: "WWAN",
+        href: "/network/interfaces/wwan",
+        requiredPermission: FeatureGroup.INTERFACES,
+      },
+    ],
   },
   {
     title: "Load Balancing",

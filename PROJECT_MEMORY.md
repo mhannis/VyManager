@@ -64,7 +64,7 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 Feature: **Interfaces IA Consolidation v2**
 
 Acceptance criteria:
-- Interfaces sidebar is condensed to a single `Interfaces` entry.
+- Interfaces sidebar keeps a dedicated `Interfaces` section with family links.
 - `/network/interfaces` presents grouped interface-family cards that route to dedicated per-family pages.
 - Interfaces page includes a clear `Open Setup Wizard` button.
 - Existing detailed interface pages remain reachable for compatibility and advanced settings.
@@ -78,10 +78,11 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback/PPPoE/VTI/VXLAN/Tunnel is implemented, sidebar is collapsed to single `Interfaces`, and family actions now use dedicated pages only.
+- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback/PPPoE/VTI/VXLAN/Tunnel is implemented, family actions use dedicated pages, and sidebar family links are restored under `Interfaces`.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
+- `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/src/app/network/interfaces/page.tsx`
 - `frontend/src/components/layout/AppLayout.tsx`
 - `CURRENT_FEATURE.md`
@@ -303,7 +304,7 @@ Assumptions:
 - Interface Manager quick-add now also supports VTI and VXLAN creation inline using existing `/vyos/vti-interface/configure` and `/vyos/vxlan-interface/configure` batch APIs.
 - Interface Manager quick-add now also supports Tunnel creation inline using existing `/vyos/tunnel-interface/configure` batch API with required `source-address` and `remote` validation.
 - Next IA target is inline quick-edit for these families so operators can patch common fields without navigating to full per-family editors.
-- Sidebar Interfaces navigation was simplified from grouped submenu entries to a single `Interfaces` item, with setup access retained on the Interfaces page via `Open Setup Wizard`.
+- Sidebar `Interfaces` now includes direct family links again (Setup Wizard, Interface Manager, and family-specific pages) for quicker page-based navigation.
 - Interface family cards now show `Current` when already on the target view, preventing perceived no-op behavior from `Open` on the active page.
 - Interface family `Open` now launches an in-page advanced workspace (right-side sheet with embedded editor) so operators stay on `/network/interfaces`.
 - Added embedded AppLayout mode (`?embedded=1`) so editors rendered inside the workspace sheet do not include nested sidebar chrome, fixing clipped/cut-off content.

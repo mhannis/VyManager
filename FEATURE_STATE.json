@@ -3,7 +3,7 @@
   "title": "Interfaces IA consolidation v2 (grouped manager + inline quick add)",
   "status": "in_progress",
   "acceptance_criteria": [
-    "Interfaces navigation is consolidated to a single `Interfaces` sidebar entry.",
+    "Interfaces navigation keeps a dedicated `Interfaces` sidebar section with family entries.",
     "`/network/interfaces` acts as the primary hub with family grouping and direct access to all detailed editors.",
     "Family actions route to dedicated per-interface pages.",
     "Interfaces page includes a clear Setup Wizard button.",
@@ -36,7 +36,7 @@
       "files": [
         "frontend/src/components/layout/Sidebar.tsx"
       ],
-      "notes": "Collapsed Interfaces sidebar from grouped submenu entries to a single `Interfaces` nav item."
+      "notes": "Interfaces sidebar now includes direct family entries under the `Interfaces` section for dedicated page navigation."
     },
     {
       "id": "IF-IA-03",
@@ -113,6 +113,15 @@
         "frontend/src/components/layout/AppLayout.tsx"
       ],
       "notes": "Reverted interface-family navigation to dedicated page actions only and removed inline workspace/embed panel behavior."
+    },
+    {
+      "id": "IF-IA-14",
+      "owner_role": "UI|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/components/layout/Sidebar.tsx"
+      ],
+      "notes": "Restored interface family links in the left sidebar under `Interfaces` while preserving dedicated family pages."
     }
   ],
   "commands": {
