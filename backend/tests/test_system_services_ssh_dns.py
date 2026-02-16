@@ -437,3 +437,100 @@ def test_update_dhcp_relay_disable_ignores_invalid_payload(monkeypatch, app, all
     operations = service.device.configure_calls[-1]
     op_paths = [tuple(op.get("path") or []) for op in operations]
     assert ("service", "dhcp-relay") in op_paths
+
+
+def test_get_lldp_status_parses_structured_neighbors_payload(monkeypatch, app, allow_permissions):
+    service = DummyService(
+        full_config={
+            "service": {
+                "lldp": {
+                    "interface": {
+                        "all": {}
+                    }
+                }
+            }
+        }
+    )
+
+    def show(path=None):
+        if path == ["lldp", "neighbors"]:
+            return DummyVyOSResponse(
+                status=200,
+                result={
+                    "data": [
+                        {
+                            "interface": "eth5",
+                            "chassis-id": "00:11:22:33:44:55",
+                            "port-id": "Gi1/0/1",
+                            "systemName": "core-switch",
+                        }
+                    ]
+                },
+            )
+        if path == ["lldp", "neighbors", "detail"]:
+            return DummyVyOSResponse(status=200, result={"data": ""})
+        return DummyVyOSResponse(status=200, result={"data": ""})
+
+    service.device.show = show
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    resp = client.get("/vyos/system/lldp-status")
+    assert resp.status_code == 200
+    data = resp.json()
+
+    assert data["enabled"] is True
+    assert len(data["neighbors"]) == 1
+    assert data["neighbors"][0]["local_interface"] == "eth5"
+    assert data["neighbors"][0]["chassis_id"] == "00:11:22:33:44:55"
+    assert data["neighbors"][0]["port_id"] == "Gi1/0/1"
+    assert data["neighbors"][0]["system_name"] == "core-switch"
+    assert not data.get("error")
+
+
+def test_get_lldp_status_falls_back_to_structured_detail_payload(monkeypatch, app, allow_permissions):
+    service = DummyService(
+        full_config={
+            "service": {
+                "lldp": {
+                    "interface": {
+                        "all": {}
+                    }
+                }
+            }
+        }
+    )
+
+    def show(path=None):
+        if path == ["lldp", "neighbors"]:
+            return DummyVyOSResponse(status=200, result={"data": ""})
+        if path == ["lldp", "neighbors", "detail"]:
+            return DummyVyOSResponse(
+                status=200,
+                result={
+                    "data": {
+                        "eth6": {
+                            "chassisId": "66:77:88:99:aa:bb",
+                            "portId": "Gi1/0/2",
+                            "systemName": "edge-switch",
+                        }
+                    }
+                },
+            )
+        return DummyVyOSResponse(status=200, result={"data": ""})
+
+    service.device.show = show
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    resp = client.get("/vyos/system/lldp-status")
+    assert resp.status_code == 200
+    data = resp.json()
+
+    assert data["enabled"] is True
+    assert len(data["neighbors"]) == 1
+    assert data["neighbors"][0]["local_interface"] == "eth6"
+    assert data["neighbors"][0]["chassis_id"] == "66:77:88:99:aa:bb"
+    assert data["neighbors"][0]["port_id"] == "Gi1/0/2"
+    assert data["neighbors"][0]["system_name"] == "edge-switch"
+    assert not data.get("error")
