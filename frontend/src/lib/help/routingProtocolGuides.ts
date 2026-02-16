@@ -1,7 +1,17 @@
 import type { PageGuide } from "@/components/common/PageGuideDialog";
 
 export const routingProtocolGuides: Record<
-  "ospf" | "isis" | "openfabric" | "rip" | "mpls" | "bfd" | "rpki" | "igmpProxy" | "pim" | "pim6",
+  | "ospf"
+  | "isis"
+  | "openfabric"
+  | "rip"
+  | "mpls"
+  | "segmentRouting"
+  | "bfd"
+  | "rpki"
+  | "igmpProxy"
+  | "pim"
+  | "pim6",
   PageGuide
 > = {
   ospf: {
@@ -158,6 +168,39 @@ export const routingProtocolGuides: Record<
         items: [
           "No labels usually means missing MPLS/LDP interface assignment or IGP reachability gaps.",
           "Static neighbor issues often come from source-address and transport-address mismatch.",
+        ],
+      },
+    ],
+  },
+  segmentRouting: {
+    title: "Segment Routing How-To",
+    summary:
+      "Enable OSPF/IS-IS Segment Routing with label blocks and Prefix SID entries while keeping OSPF opaque-LSA prerequisites aligned.",
+    docsUrl: "https://docs.vyos.io/en/latest/configuration/protocols/segment-routing.html",
+    sections: [
+      {
+        title: "Recommended Setup Order",
+        items: [
+          "For OSPF, enable Opaque LSA first so Segment Routing extensions can be advertised.",
+          "Set global and local label blocks for each protocol before creating Prefix SID mappings.",
+          "Add Prefix SID entries for loopback/router prefixes with index value and required flags.",
+          "Apply and validate that both sides use compatible SRGB/SRLB ranges.",
+        ],
+      },
+      {
+        title: "Validation",
+        items: [
+          "Confirm OSPF Opaque LSA and Segment Routing values remain present after reload.",
+          "Verify Prefix SID rows reflect expected index/flag values for each protocol.",
+          "Check route installation and label behavior from the related routing dashboards/pages.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        items: [
+          "Missing SR behavior on OSPF usually indicates Opaque LSA is disabled on one side.",
+          "Label conflicts are often caused by mismatched SRGB/SRLB ranges between neighbors.",
+          "If Prefix SID labels are absent, confirm prefix format and per-protocol index values.",
         ],
       },
     ],

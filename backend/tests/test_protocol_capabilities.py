@@ -11,6 +11,7 @@ import routers.igmp_proxy.igmp_proxy as igmp_proxy_router
 import routers.static.static as static_router
 import routers.failover.failover as failover_router
 import routers.mpls.mpls as mpls_router
+import routers.segment_routing.segment_routing as segment_routing_router
 import routers.openfabric.openfabric as openfabric_router
 import routers.rpki.rpki as rpki_router
 import routers.pim.pim as pim_router
@@ -27,6 +28,7 @@ ROUTER_MODULES = (
     static_router,
     failover_router,
     mpls_router,
+    segment_routing_router,
     openfabric_router,
     rpki_router,
     pim_router,
@@ -56,9 +58,28 @@ class DummyService:
                     },
                     "route": {"0.0.0.0/0": {"next-hop": {"192.0.2.1": {}}}},
                 },
-                "ospf": {"parameters": {"router-id": "1.1.1.1"}},
+                "ospf": {
+                    "parameters": {"router-id": "1.1.1.1", "opaque-lsa": {}},
+                    "segment-routing": {
+                        "global-block": {
+                            "low-label-value": "1000",
+                            "high-label-value": "1100",
+                        }
+                    },
+                },
                 "rip": {"network": {"10.0.0.0/8": {}}},
-                "isis": {"interface": {"eth0": {}}},
+                "isis": {
+                    "interface": {"eth0": {}},
+                    "segment-routing": {
+                        "prefix": {
+                            "10.255.255.1/32": {
+                                "index": {
+                                    "value": "100",
+                                }
+                            }
+                        }
+                    },
+                },
                 "igmp-proxy": {"interface": {"eth1": {"role": "upstream"}}},
                 "failover": {"route": {"0.0.0.0/0": {"next-hop": {"192.0.2.1": {}}}}},
                 "mpls": {"interface": {"eth2": {}}},
@@ -88,6 +109,7 @@ def app():
     app.include_router(static_router.router)
     app.include_router(failover_router.router)
     app.include_router(mpls_router.router)
+    app.include_router(segment_routing_router.router)
     app.include_router(openfabric_router.router)
     app.include_router(rpki_router.router)
     app.include_router(pim_router.router)
@@ -131,6 +153,7 @@ def mock_service(monkeypatch):
         ("/vyos/static-protocol/capabilities", ("protocol", "version", "features")),
         ("/vyos/failover/capabilities", ("protocol", "version", "features")),
         ("/vyos/mpls/capabilities", ("protocol", "version", "features")),
+        ("/vyos/segment-routing/capabilities", ("protocol", "version", "features")),
         ("/vyos/openfabric/capabilities", ("protocol", "version", "features")),
         ("/vyos/rpki/capabilities", ("protocol", "version", "features")),
         ("/vyos/pim/capabilities", ("protocol", "version", "features")),
@@ -165,6 +188,7 @@ def test_protocol_capabilities_endpoints_return_expected_payload(
         ("/vyos/static-protocol/config", "static"),
         ("/vyos/failover/config", "failover"),
         ("/vyos/mpls/config", "mpls"),
+        ("/vyos/segment-routing/config", "segment_routing"),
         ("/vyos/openfabric/config", "openfabric"),
         ("/vyos/rpki/config", "rpki"),
         ("/vyos/pim/config", "pim"),
@@ -230,6 +254,11 @@ def test_protocol_config_endpoints_return_expected_payload(
             "/vyos/mpls/batch",
             "set protocols mpls interface eth2",
             "set interfaces ethernet eth2 description TEST",
+        ),
+        (
+            "/vyos/segment-routing/batch",
+            "set protocols ospf segment-routing global-block low-label-value 1000",
+            "set protocols mpls interface eth2",
         ),
         (
             "/vyos/openfabric/batch",

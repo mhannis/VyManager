@@ -277,3 +277,6 @@
 - 2026-02-16: Implemented `SYS-08`, `SYS-12`, and `SYS-15` as thin wrapper + dedicated form-first pages (`/system/lcd`, `/system/sflow`, `/system/task-scheduler`) to clear remaining missing System pages in the strict backlog.
 - 2026-02-16: For this System slice, sFlow and Task Scheduler UIs were modeled as structured CRUD forms (collectors/tasks) with diff-based command generation and no free-form CLI entry.
 - 2026-02-16: Updated strict parity backlog (`CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.*`) moving `SYS-08/12/15` from `missing` to `partial` after baseline implementation.
+- 2026-02-16: Implemented `Segment Routing` as its own scoped backend/router/UI slice (`/vyos/segment-routing/*`, `/routing/infrastructure/segment-routing`) with strict batch scope limited to `protocols isis segment-routing`, `protocols ospf segment-routing`, and `protocols ospf parameters opaque-lsa`.
+- 2026-02-16: Consolidated navigation by removing separate `L3VPN VRFs` left-panel item; `VRF` remains a single nav destination and the page now provides `VRF Core` + `L3VPN` tabs.
+- 2026-02-16: `useSearchParams()` in `/network/vrf` caused prerender failure in this build pipeline; switched to `window.location.search` parsing in `useEffect` to keep static build compatibility without Suspense wrapper changes.

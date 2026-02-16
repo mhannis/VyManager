@@ -68,6 +68,7 @@ from routers.igmp_proxy import igmp_proxy
 from routers.static import static as static_protocol
 from routers.failover import failover
 from routers.mpls import mpls
+from routers.segment_routing import segment_routing
 from routers.openfabric import openfabric
 from routers.rpki import rpki
 from routers.pim import pim
@@ -389,6 +390,7 @@ app.include_router(igmp_proxy.router)
 app.include_router(static_protocol.router)
 app.include_router(failover.router)
 app.include_router(mpls.router)
+app.include_router(segment_routing.router)
 app.include_router(openfabric.router)
 app.include_router(rpki.router)
 app.include_router(pim.router)

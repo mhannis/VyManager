@@ -1,12 +1,8 @@
-timestamp: 2026-02-16T02:59:13Z
-failing_command: cd frontend && npx eslint src/components/layout/Sidebar.tsx src/app/settings/page.tsx src/lib/sidebar-visibility.ts --max-warnings=0
-error_summary: ESLint failed with `react-hooks/set-state-in-effect` in `src/app/settings/page.tsx` after initial sidebar-settings implementation.
+timestamp: 2026-02-16T13:44:28Z
+failing_command: cd frontend && npm run -s smoke:ui
+error_summary: Browser smoke test could not launch Playwright Chromium because required shared library libnspr4.so is missing on the host.
 last_output:
-/home/redhot/VyOS/VyManager/frontend/src/app/settings/page.tsx
-  27:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders  react-hooks/set-state-in-effect
-
-✖ 1 problem (0 errors, 1 warning)
-
-ESLint found too many warnings (maximum: 0).
-suspected_cause: Initial state sync used `setHiddenSidebarIds(...)` directly inside `useEffect`.
-next_step: Initialize sidebar visibility state lazily with `useState(() => loadHiddenSidebarIds())` and rerun lint/build/runtime smoke.
+UI smoke test failed to execute: browserType.launch: Target page, context or browser has been closed
+/home/redhot/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
+suspected_cause: Playwright Chromium system dependencies are not installed in this environment.
+next_step: Install browser deps (e.g. sudo npx playwright install-deps) or keep using runtime smoke as gate on this host.

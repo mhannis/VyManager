@@ -286,7 +286,7 @@
     {
       "id": "PR-03",
       "domain": "protocols",
-      "status": "missing",
+      "status": "partial",
       "title": "Segment Routing implementation"
     },
     {
@@ -394,7 +394,7 @@
     {
       "id": "VRF-02",
       "domain": "vrf",
-      "status": "missing",
+      "status": "partial",
       "title": "L3VPN VRF workflow"
     },
     {

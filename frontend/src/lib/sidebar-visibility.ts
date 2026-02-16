@@ -244,7 +244,6 @@ export const SIDEBAR_VISIBILITY_ITEMS: SidebarVisibilityItem[] = [
     ],
   },
   { id: "vrf", label: "VRF", canHide: true },
-  { id: "l3vpn-vrfs", label: "L3VPN VRFs", canHide: true },
   {
     id: "settings",
     label: "Settings",

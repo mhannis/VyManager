@@ -1,106 +1,93 @@
 {
-  "feature_id": "system-lcd-sflow-task-scheduler-baseline-v1-2026-02-16",
-  "title": "System baseline pages: LCD, sFlow, Task Scheduler",
+  "feature_id": "segment-routing-and-vrf-l3vpn-v1-2026-02-16",
+  "title": "Segment Routing page + VRF L3VPN workflow",
   "status": "in_progress",
   "acceptance_criteria": [
-    "System LCD page exists at /system/lcd with scoped batch operations.",
-    "System sFlow page exists at /system/sflow with scoped batch operations and structured forms.",
-    "System Task Scheduler page exists at /system/task-scheduler with scoped batch operations and structured forms.",
-    "Backend exposes wrappers /vyos/system-lcd/*, /vyos/system-sflow/*, and /vyos/system-task-scheduler/*.",
-    "System sidebar includes links for LCD, sFlow, and Task Scheduler pages.",
-    "Runtime/browser smoke default routes include all three pages.",
-    "Targeted backend wrapper tests, frontend typecheck/lint/build/runtime smoke pass."
+    "Backend exposes /vyos/segment-routing capabilities/config/batch with strict command scope validation.",
+    "Routing UI includes dedicated Segment Routing page with OSPF/IS-IS SR block and Prefix-SID management.",
+    "VRF page includes dedicated L3VPN workflow for RD/RT/label/route-leaking/route-map controls and BGP MPLS forwarding interfaces.",
+    "Left navigation is consolidated to a single VRF item; L3VPN is represented as an in-page tab.",
+    "Strict backlog tasks PR-03 and VRF-02 are moved out of missing status.",
+    "Backend tests and frontend typecheck/lint/build/runtime smoke pass."
   ],
   "assumptions": [
-    "This slice delivers baseline robust workflows; option-depth parity remains for later hardening.",
-    "Playwright browser smoke remains blocked on this host due missing libnspr4.so."
+    "L3VPN workflow models high-value documented leaves first; advanced live interop validation remains in partial backlog.",
+    "Playwright browser smoke remains environment-blocked until libnspr4.so is installed on host."
   ],
   "tasks": [
     {
-      "id": "SYSSVC-01",
+      "id": "PR03-ANALYST",
+      "owner_role": "Analyst",
+      "status": "done",
+      "files": [
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
+      ],
+      "notes": "Mapped Segment Routing and VRF L3VPN command trees from docs.vyos.io and aligned slice scope."
+    },
+    {
+      "id": "PR03-BACKEND",
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/system_lcd.py",
-        "backend/routers/system_sflow.py",
-        "backend/routers/system_task_scheduler.py",
-        "backend/app.py"
+        "backend/routers/segment_routing/segment_routing.py",
+        "backend/routers/segment_routing/__init__.py",
+        "backend/app.py",
+        "backend/tests/test_protocol_capabilities.py"
       ],
-      "notes": "Added and registered thin config-tree wrappers preserving existing API/session contracts."
+      "notes": "Added thin segment-routing router and command scope tests."
     },
     {
-      "id": "SYSSVC-02",
+      "id": "PR03-UI",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/system/lcd/page.tsx",
-        "frontend/src/app/system/sflow/page.tsx",
-        "frontend/src/app/system/task-scheduler/page.tsx",
-        "frontend/src/lib/api/system-lcd.ts",
-        "frontend/src/lib/api/system-sflow.ts",
-        "frontend/src/lib/api/system-task-scheduler.ts",
-        "frontend/src/lib/help/pageGuides.ts",
-        "frontend/src/components/layout/Sidebar.tsx"
+        "frontend/src/components/routing/SegmentRoutingContent.tsx",
+        "frontend/src/app/routing/infrastructure/page.tsx",
+        "frontend/src/app/routing/infrastructure/segment-routing/page.tsx",
+        "frontend/src/lib/api/segment-routing.ts",
+        "frontend/src/lib/help/routingProtocolGuides.ts"
       ],
-      "notes": "Implemented dedicated form-first pages and added System nav links."
+      "notes": "Built form-first Segment Routing editor and integrated in routing infrastructure pages."
     },
     {
-      "id": "SYSSVC-03",
+      "id": "VRF02-UI-BACKEND",
+      "owner_role": "UI|Backend",
+      "status": "done",
+      "files": [
+        "frontend/src/lib/api/vrf.ts",
+        "frontend/src/app/network/vrf/page.tsx",
+        "frontend/src/components/layout/Sidebar.tsx",
+        "frontend/src/lib/sidebar-visibility.ts"
+      ],
+      "notes": "Extended VRF model and UI for L3VPN workflows; consolidated navigation to a single VRF item."
+    },
+    {
+      "id": "TEST-VALIDATION",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_config_tree_wrapper_capabilities.py",
         "frontend/scripts/check-runtime.sh",
         "frontend/scripts/smoke-ui.mjs"
       ],
-      "notes": "Extended wrapper tests and smoke route probes for new pages."
+      "notes": "Added segment-routing and vrf-l3vpn routes to smoke probes; runtime smoke passes."
     },
     {
-      "id": "SYSSVC-04",
-      "owner_role": "Analyst|Planner",
-      "status": "done",
+      "id": "REVIEW",
+      "owner_role": "Reviewer",
+      "status": "doing",
       "files": [
-        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
-        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+        "backend/tests/test_protocol_capabilities.py",
+        "frontend/src/app/network/vrf/page.tsx",
+        "frontend/src/components/routing/SegmentRoutingContent.tsx"
       ],
-      "notes": "Moved SYS-08/SYS-12/SYS-15 from missing to partial in strict parity backlog."
-    },
-    {
-      "id": "NEXT-PR-03",
-      "owner_role": "Backend|UI|Test",
-      "status": "todo",
-      "files": [
-        "backend/routers/segment_routing.py",
-        "frontend/src/app/routing/unicast-protocols/segment-routing/page.tsx"
-      ],
-      "notes": "Implement protocols segment routing page with robust form workflow."
-    },
-    {
-      "id": "NEXT-VRF-02",
-      "owner_role": "Backend|UI|Test",
-      "status": "todo",
-      "files": [
-        "backend/routers/vrf/vrf.py",
-        "frontend/src/app/network/vrf/page.tsx"
-      ],
-      "notes": "Add dedicated L3VPN VRF workflow beyond baseline VRF options."
-    },
-    {
-      "id": "NEXT-X",
-      "owner_role": "Test|Reviewer",
-      "status": "todo",
-      "files": [
-        "scripts/generate_phase1_backlog.py",
-        "backend/tests/",
-        "frontend/scripts/"
-      ],
-      "notes": "Implement X-01/X-02/X-03/X-05 cross-cutting parity and robustness gates."
+      "notes": "Manual in-process review complete for regression/contract checks; follow-up deep live validation remains."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
-    "lint": "cd frontend && npx eslint src/app/system/lcd/page.tsx src/app/system/sflow/page.tsx src/app/system/task-scheduler/page.tsx src/lib/api/system-lcd.ts src/lib/api/system-sflow.ts src/lib/api/system-task-scheduler.ts src/lib/help/pageGuides.ts src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0"
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_config_tree_wrapper_capabilities.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
+    "lint": "cd frontend && npx eslint src/app/network/vrf/page.tsx src/app/routing/infrastructure/page.tsx src/app/routing/infrastructure/segment-routing/page.tsx src/components/layout/Sidebar.tsx src/components/routing/SegmentRoutingContent.tsx src/lib/api/vrf.ts src/lib/api/segment-routing.ts src/lib/help/routingProtocolGuides.ts src/lib/sidebar-visibility.ts scripts/smoke-ui.mjs --max-warnings=0"
   },
   "worktrees_or_threads": [
     {

@@ -1,21 +1,42 @@
 import { ConfigTreeApi } from "./config-tree";
 
-export interface VRFRouteInterface {
+export interface VrfRouteInterface {
   vrf: string;
 }
 
-export interface VRFRoute {
+export interface VrfRoute {
   destination: string;
-  interface: Record<string, VRFRouteInterface>;
+  interface: Record<string, VrfRouteInterface>;
   "next-hop": string | null;
 }
 
-export interface VRFProtocolsStatic {
-  routes: Record<string, VRFRoute>;
+export interface VrfProtocolsStatic {
+  routes: Record<string, VrfRoute>;
+}
+
+export interface VrfBgpAddressFamilyConfig {
+  rd_vpn_export: string | null;
+  route_target_import: string[];
+  route_target_export: string[];
+  route_target_both: string[];
+  label_vpn_export: string | null;
+  label_vpn_allocation_mode_per_nexthop: boolean;
+  import_vpn: boolean;
+  export_vpn: boolean;
+  import_vrf: string[];
+  route_map_vpn_import: string | null;
+  route_map_vpn_export: string | null;
+  route_map_vrf_import: string | null;
+}
+
+export interface VrfL3vpnConfig {
+  ipv4_unicast: VrfBgpAddressFamilyConfig;
+  ipv6_unicast: VrfBgpAddressFamilyConfig;
+  mpls_forwarding_interfaces: string[];
 }
 
 export interface VRFProtocols {
-  static: VRFProtocolsStatic;
+  static: VrfProtocolsStatic;
 }
 
 export interface VRF {
@@ -23,6 +44,7 @@ export interface VRF {
   table: string;
   description: string | null;
   protocols: VRFProtocols;
+  l3vpn: VrfL3vpnConfig;
 }
 
 export interface VRFConfig {
@@ -49,6 +71,87 @@ function asString(value: unknown): string {
   return String(value).trim();
 }
 
+function parseObjectKeys(value: unknown): string[] {
+  return Object.keys(asObject(value))
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
+}
+
+function parseStringList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return [...new Set(value.map((entry) => asString(entry)).filter(Boolean))].sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true })
+    );
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed] : [];
+  }
+  return parseObjectKeys(value);
+}
+
+function parseRouteMapValue(value: unknown): string | null {
+  const direct = asString(value);
+  if (direct) {
+    return direct;
+  }
+  const root = asObject(value);
+  const embedded = asString(root["route-map"] ?? root.route_map);
+  if (embedded) {
+    return embedded;
+  }
+  const first = Object.keys(root)[0];
+  return first ? first.trim() : null;
+}
+
+function parseAddressFamilyConfig(rawRoot: unknown): VrfBgpAddressFamilyConfig {
+  const root = asObject(rawRoot);
+  const rd = asObject(root.rd);
+  const rdVpn = asObject(rd.vpn);
+  const routeTarget = asObject(root["route-target"] ?? root.route_target);
+  const routeTargetVpn = asObject(routeTarget.vpn);
+  const label = asObject(root.label);
+  const labelVpn = asObject(label.vpn);
+  const importRoot = asObject(root.import);
+  const exportRoot = asObject(root.export);
+  const routeMap = asObject(root["route-map"] ?? root.route_map);
+  const routeMapVpn = asObject(routeMap.vpn);
+  const routeMapVrf = asObject(routeMap.vrf);
+
+  return {
+    rd_vpn_export: asString(rdVpn.export) || null,
+    route_target_import: parseStringList(routeTargetVpn.import),
+    route_target_export: parseStringList(routeTargetVpn.export),
+    route_target_both: parseStringList(routeTargetVpn.both),
+    label_vpn_export: asString(labelVpn.export) || null,
+    label_vpn_allocation_mode_per_nexthop: asString(labelVpn["allocation-mode"] ?? labelVpn.allocation_mode) === "per-nexthop" || Object.prototype.hasOwnProperty.call(asObject(labelVpn["allocation-mode"] ?? labelVpn.allocation_mode), "per-nexthop"),
+    import_vpn: Object.prototype.hasOwnProperty.call(importRoot, "vpn"),
+    export_vpn: Object.prototype.hasOwnProperty.call(exportRoot, "vpn"),
+    import_vrf: parseStringList(importRoot.vrf),
+    route_map_vpn_import: parseRouteMapValue(routeMapVpn.import),
+    route_map_vpn_export: parseRouteMapValue(routeMapVpn.export),
+    route_map_vrf_import: parseRouteMapValue(routeMapVrf.import),
+  };
+}
+
+function emptyAddressFamilyConfig(): VrfBgpAddressFamilyConfig {
+  return {
+    rd_vpn_export: null,
+    route_target_import: [],
+    route_target_export: [],
+    route_target_both: [],
+    label_vpn_export: null,
+    label_vpn_allocation_mode_per_nexthop: false,
+    import_vpn: false,
+    export_vpn: false,
+    import_vrf: [],
+    route_map_vpn_import: null,
+    route_map_vpn_export: null,
+    route_map_vrf_import: null,
+  };
+}
+
 class VRFService {
   private readonly api = new ConfigTreeApi("vrf", "vrf");
 
@@ -70,11 +173,11 @@ class VRFService {
       const staticRoot = asObject(protocolsRoot.static);
       const routeRoot = asObject(staticRoot.route);
 
-      const routes: Record<string, VRFRoute> = {};
+      const routes: Record<string, VrfRoute> = {};
       for (const [destination, routeValue] of Object.entries(routeRoot)) {
         const routeConfig = asObject(routeValue);
         const interfaceRoot = asObject(routeConfig.interface);
-        const normalizedInterface: Record<string, VRFRouteInterface> = {};
+        const normalizedInterface: Record<string, VrfRouteInterface> = {};
 
         for (const [iface, ifaceValue] of Object.entries(interfaceRoot)) {
           const ifaceConfig = asObject(ifaceValue);
@@ -90,6 +193,23 @@ class VRFService {
         };
       }
 
+      const bgpRoot = asObject(protocolsRoot.bgp);
+      const addressFamilyRoot = asObject(bgpRoot["address-family"] ?? bgpRoot.address_family);
+      const bgpInterfaceRoot = asObject(bgpRoot.interface);
+      const mplsForwardingInterfaces: string[] = [];
+
+      for (const [interfaceName, interfaceValue] of Object.entries(bgpInterfaceRoot)) {
+        const interfaceConfig = asObject(interfaceValue);
+        const mplsRoot = asObject(interfaceConfig.mpls);
+        if (Object.prototype.hasOwnProperty.call(mplsRoot, "forwarding")) {
+          mplsForwardingInterfaces.push(interfaceName);
+        }
+      }
+
+      mplsForwardingInterfaces.sort((left, right) =>
+        left.localeCompare(right, undefined, { numeric: true })
+      );
+
       vrfs[name] = {
         name,
         table: asString(root.table),
@@ -98,6 +218,15 @@ class VRFService {
           static: {
             routes,
           },
+        },
+        l3vpn: {
+          ipv4_unicast: Object.prototype.hasOwnProperty.call(addressFamilyRoot, "ipv4-unicast")
+            ? parseAddressFamilyConfig(addressFamilyRoot["ipv4-unicast"])
+            : emptyAddressFamilyConfig(),
+          ipv6_unicast: Object.prototype.hasOwnProperty.call(addressFamilyRoot, "ipv6-unicast")
+            ? parseAddressFamilyConfig(addressFamilyRoot["ipv6-unicast"])
+            : emptyAddressFamilyConfig(),
+          mpls_forwarding_interfaces: mplsForwardingInterfaces,
         },
       };
     }
@@ -139,3 +268,4 @@ class VRFService {
 }
 
 export const vrfService = new VRFService();
+

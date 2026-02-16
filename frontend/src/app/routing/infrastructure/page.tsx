@@ -5,20 +5,22 @@ import { BfdContent } from "@/components/bfd/BfdContent";
 import { ArpProtocolContent } from "@/components/routing/ArpProtocolContent";
 import { MplsContent } from "@/components/routing/MplsContent";
 import { RpkiContent } from "@/components/routing/RpkiContent";
+import { SegmentRoutingContent } from "@/components/routing/SegmentRoutingContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Settings, ChevronRight, Activity, Box, Globe, Shield } from "lucide-react";
+import { Settings, ChevronRight, Activity, Box, Globe, Network, Shield } from "lucide-react";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 
-type InfraType = "arp" | "bfd" | "mpls" | "rpki";
+type InfraType = "arp" | "bfd" | "mpls" | "rpki" | "segment-routing";
 
 const allInfrastructure = [
   { id: "arp" as InfraType, name: "ARP", description: "Address Resolution Protocol entries", icon: Globe, permission: FeatureGroup.STATIC_ROUTES },
   { id: "bfd" as InfraType, name: "BFD", description: "Bidirectional Forwarding Detection", icon: Activity, permission: FeatureGroup.BFD },
   { id: "mpls" as InfraType, name: "MPLS", description: "Multiprotocol Label Switching", icon: Box, permission: FeatureGroup.MPLS },
+  { id: "segment-routing" as InfraType, name: "Segment Routing", description: "Segment Routing (OSPF/IS-IS)", icon: Network, permission: FeatureGroup.SEGMENT_ROUTING },
   { id: "rpki" as InfraType, name: "RPKI", description: "Resource Public Key Infrastructure", icon: Shield, permission: FeatureGroup.RPKI },
 ];
 
@@ -128,6 +130,8 @@ export default function InfrastructurePage() {
             <ArpProtocolContent />
           ) : selectedInfra === "mpls" ? (
             <MplsContent />
+          ) : selectedInfra === "segment-routing" ? (
+            <SegmentRoutingContent />
           ) : selectedInfra === "rpki" ? (
             <RpkiContent />
           ) : (

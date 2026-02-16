@@ -249,6 +249,11 @@ const navigation: NavItem[] = [
         requiredPermission: FeatureGroup.ROUTING_INFRASTRUCTURE,
       },
       {
+        title: "Segment Routing",
+        href: "/routing/infrastructure/segment-routing",
+        requiredPermission: FeatureGroup.SEGMENT_ROUTING,
+      },
+      {
         title: "Multicast",
         href: "/routing/multicast",
         requiredPermission: FeatureGroup.MULTICAST,
@@ -330,13 +335,6 @@ const navigation: NavItem[] = [
     id: "vrf",
     title: "VRF",
     href: "/network/vrf",
-    icon: Route,
-    requiredPermission: FeatureGroup.VRF,
-  },
-  {
-    id: "l3vpn-vrfs",
-    title: "L3VPN VRFs",
-    href: "/network/vrf?section=l3vpn",
     icon: Route,
     requiredPermission: FeatureGroup.VRF,
   },

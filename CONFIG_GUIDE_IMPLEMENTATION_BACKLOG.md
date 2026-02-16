@@ -101,7 +101,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 ### Protocols (`protocols/*`)
 - `PR-01` (`partial`): BGP full-depth parity pass (neighbors/AFI-SAFI/policy hooks/advanced timers/features).
 - `PR-02` (`partial`): OSPF/IS-IS/OpenFabric/RIP depth parity audit and missing leaves implementation.
-- `PR-03` (`missing`): Segment Routing page + backend parity implementation.
+- `PR-03` (`partial`): Segment Routing page + backend parity implemented; option-depth validation and live interop verification remain.
 - `PR-04` (`partial`): Static/failover advanced options parity completion.
 - `PR-05` (`partial`): Multicast stack depth parity (IGMP Proxy/PIM/PIM6 advanced leaves).
 - `PR-06` (`partial`): RPKI and MPLS option-level parity completion.
@@ -127,7 +127,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 
 ### VRF (`vrf/index.html`)
 - `VRF-01` (`partial`): Full VRF static and control-plane option-depth parity.
-- `VRF-02` (`missing`): L3VPN/VRF operational UX section (separate workflow and guide mapping).
+- `VRF-02` (`partial`): L3VPN/VRF operational workflow implemented on the VRF page; live interop and deep option validation remain.
 - `VRF-03` (`verify`): Interactions with policy, interfaces, and routing protocols.
 
 ### System (`system/*`) — **last by request**
