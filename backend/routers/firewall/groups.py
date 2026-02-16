@@ -175,6 +175,62 @@ def _validate_group_operation_value_or_400(group_name: str, op_type: str, value:
     return cleaned_value
 
 
+def _validate_group_batch_consistency_or_400(
+    group_name: str, operations: List["GroupBatchOperation"]
+) -> None:
+    if not operations:
+        raise HTTPException(status_code=400, detail="At least one operation is required")
+
+    seen_actions: Dict[tuple[str, str], str] = {}
+    remote_urls: List[str] = []
+
+    for operation in operations:
+        op_type = (operation.op or "").strip()
+        if not op_type:
+            raise HTTPException(status_code=400, detail="Invalid operation: missing op value")
+
+        value = (operation.value or "").strip()
+        if op_type.endswith("_include") and value:
+            included_group = _normalize_group_name_or_400(value)
+            if included_group == group_name:
+                raise HTTPException(status_code=400, detail="Group cannot include itself")
+
+        action: Optional[str] = None
+        member_scope: Optional[str] = None
+        if op_type.startswith("set_"):
+            action = "set"
+            member_scope = op_type[len("set_") :]
+        elif op_type.startswith("delete_"):
+            action = "delete"
+            member_scope = op_type[len("delete_") :]
+
+        if action and member_scope and value:
+            key = (member_scope, value)
+            previous = seen_actions.get(key)
+            if previous and previous != action:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Conflicting operations for '{value}': both set and delete requested",
+                )
+            if previous == action:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Duplicate {action} operation for '{value}'",
+                )
+            seen_actions[key] = action
+
+        if op_type == "set_remote_group_url" and value:
+            remote_urls.append(value)
+
+    if remote_urls:
+        normalized_urls = {url for url in remote_urls}
+        if len(normalized_urls) > 1:
+            raise HTTPException(
+                status_code=400,
+                detail="Remote groups support only one URL value per batch request",
+            )
+
+
 # Stub functions for backwards compatibility with app.py
 # These are no longer used since we use session-based services
 def set_device_registry(registry):
@@ -603,6 +659,7 @@ async def configure_group_batch(http_request: Request, request: GroupBatchReques
 
     try:
         request.group_name = _normalize_group_name_or_400(request.group_name)
+        _validate_group_batch_consistency_or_400(request.group_name, request.operations)
         service = get_session_vyos_service(http_request)
         batch = service.create_firewall_groups_batch()
 

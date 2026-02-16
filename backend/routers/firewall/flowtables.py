@@ -134,6 +134,39 @@ def _validate_operation_or_400(operation: FlowtableBatchOperation) -> None:
         _normalize_interface_name_or_400(operation.value)
 
 
+def _validate_batch_consistency_or_400(batch_request: FlowtableBatchRequest) -> None:
+    if not batch_request.operations:
+        raise HTTPException(status_code=400, detail="At least one operation is required")
+
+    seen_set_interfaces = set()
+    offload_values = set()
+
+    for operation in batch_request.operations:
+        _validate_operation_or_400(operation)
+        normalized_value = operation.value.strip() if operation.value is not None else ""
+
+        if operation.op == "set_flowtable_description" and normalized_value and len(normalized_value) > 512:
+            raise HTTPException(status_code=400, detail="Description must be <= 512 characters")
+
+        if operation.op == "set_flowtable_interface" and normalized_value:
+            interface_name = _normalize_interface_name_or_400(normalized_value).lower()
+            if interface_name in seen_set_interfaces:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Duplicate interface in batch: {normalized_value}",
+                )
+            seen_set_interfaces.add(interface_name)
+
+        if operation.op == "set_flowtable_offload" and normalized_value:
+            offload_values.add(normalized_value.lower())
+
+    if len(offload_values) > 1:
+        raise HTTPException(
+            status_code=400,
+            detail="Conflicting offload values in one batch request",
+        )
+
+
 # ============================================================================
 # Endpoints
 # ============================================================================
@@ -268,13 +301,13 @@ async def batch_configure_flowtable(request: Request, batch_request: FlowtableBa
         service = get_session_vyos_service(request)
         version = service.get_version()
         flowtable_name = _normalize_flowtable_name_or_400(batch_request.flowtable_name)
+        _validate_batch_consistency_or_400(batch_request)
 
         # Create flowtables batch builder
         batch = FlowtablesBatchBuilder(version=version)
 
         # Map operations to batch builder methods
         for operation in batch_request.operations:
-            _validate_operation_or_400(operation)
             op_name = operation.op
             op_value = operation.value
             if op_value is not None:

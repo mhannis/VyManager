@@ -53,19 +53,19 @@
       "id": "F-01",
       "domain": "firewall",
       "status": "partial",
-      "title": "IPv4 rule advanced match/action parity (batch chain/rule/value hardening + modal action-target validation added)"
+      "title": "IPv4 rule advanced parity: protocol/action semantic checks + reorder preservation for geoip/mac/domain/remote groups + remote-group API mapping"
     },
     {
       "id": "F-02",
       "domain": "firewall",
       "status": "partial",
-      "title": "IPv6 rule advanced match/action parity (canonical icmpv6/hop-limit + strict batch chain/rule/value hardening + modal action-target validation)"
+      "title": "IPv6 rule advanced parity: protocol/action semantic checks + reorder preservation for geoip/mac/domain/remote groups + remote-group API mapping"
     },
     {
       "id": "F-03",
       "domain": "firewall",
       "status": "partial",
-      "title": "Firewall groups parity in progress (typed create/edit validation + backend value validation and HTTP status hardening added)"
+      "title": "Firewall groups parity: typed validation + batch consistency checks (conflicting set/delete, duplicate ops, single remote URL)"
     },
     {
       "id": "F-04",
@@ -77,7 +77,7 @@
       "id": "F-05",
       "domain": "firewall",
       "status": "partial",
-      "title": "Flowtables parity pass (validation hardening complete; tunable-depth UX/verification pending)"
+      "title": "Flowtables parity pass: validation hardening + batch consistency checks (duplicate interfaces, conflicting offload, description length)"
     },
     {
       "id": "F-06",

@@ -294,6 +294,8 @@ class FirewallIPv6Service {
             operations.push({ op: "set_rule_source_group_mac", value: groupName });
           } else if (groupType.includes("domain")) {
             operations.push({ op: "set_rule_source_group_domain", value: groupName });
+          } else if (groupType.includes("remote")) {
+            operations.push({ op: "set_rule_source_group_remote", value: groupName });
           }
         }
       }
@@ -331,6 +333,8 @@ class FirewallIPv6Service {
             operations.push({ op: "set_rule_destination_group_mac", value: groupName });
           } else if (groupType.includes("domain")) {
             operations.push({ op: "set_rule_destination_group_domain", value: groupName });
+          } else if (groupType.includes("remote")) {
+            operations.push({ op: "set_rule_destination_group_remote", value: groupName });
           }
         }
       }
@@ -508,6 +512,8 @@ class FirewallIPv6Service {
               operations.push({ op: "delete_rule_source_group_mac" });
             } else if (groupType.includes("domain")) {
               operations.push({ op: "delete_rule_source_group_domain" });
+            } else if (groupType.includes("remote")) {
+              operations.push({ op: "delete_rule_source_group_remote" });
             }
           }
         }
@@ -548,6 +554,8 @@ class FirewallIPv6Service {
               operations.push({ op: "set_rule_source_group_mac", value: groupName });
             } else if (groupType.includes("domain")) {
               operations.push({ op: "set_rule_source_group_domain", value: groupName });
+            } else if (groupType.includes("remote")) {
+              operations.push({ op: "set_rule_source_group_remote", value: groupName });
             }
           }
         }
@@ -587,6 +595,8 @@ class FirewallIPv6Service {
               operations.push({ op: "delete_rule_destination_group_mac" });
             } else if (groupType.includes("domain")) {
               operations.push({ op: "delete_rule_destination_group_domain" });
+            } else if (groupType.includes("remote")) {
+              operations.push({ op: "delete_rule_destination_group_remote" });
             }
           }
         }
@@ -624,6 +634,8 @@ class FirewallIPv6Service {
               operations.push({ op: "set_rule_destination_group_mac", value: groupName });
             } else if (groupType.includes("domain")) {
               operations.push({ op: "set_rule_destination_group_domain", value: groupName });
+            } else if (groupType.includes("remote")) {
+              operations.push({ op: "set_rule_destination_group_remote", value: groupName });
             }
           }
         }

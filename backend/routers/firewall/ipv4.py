@@ -38,6 +38,14 @@ VALUE_PARAM_NAMES = {
     "mac_address",
     "country_code",
 }
+PORT_SET_OPS = {
+    "set_rule_source_port",
+    "set_rule_destination_port",
+    "set_rule_source_group_port",
+    "set_rule_destination_group_port",
+}
+TCP_FLAGS_SET_OPS = {"set_rule_tcp_flags"}
+ICMP_SET_OPS = {"set_rule_icmp_type_name"}
 
 
 # Stub functions for backwards compatibility with app.py
@@ -203,6 +211,73 @@ def _normalize_chain_or_400(chain: str, is_custom_chain: bool) -> str:
             detail=f"Invalid base chain '{chain_value}'. Allowed values: {allowed}",
         )
     return chain_lower
+
+
+def _normalize_protocol_value(raw_value: str) -> tuple[str, bool]:
+    value = raw_value.strip().lower()
+    is_inverted = False
+    if value.startswith("!"):
+        is_inverted = True
+        value = value[1:].strip()
+    return value, is_inverted
+
+
+def _validate_batch_semantics_or_400(operations: List["FirewallBatchOperation"]) -> None:
+    op_names = {operation.op for operation in operations}
+    action_value: Optional[str] = None
+    protocol_value: Optional[str] = None
+    protocol_inverted = False
+
+    for operation in operations:
+        if operation.op == "set_rule_action" and operation.value is not None and operation.value.strip():
+            action_value = operation.value.strip().lower()
+        if operation.op == "set_rule_protocol" and operation.value is not None and operation.value.strip():
+            protocol_value, protocol_inverted = _normalize_protocol_value(operation.value)
+
+    if action_value == "jump" and "set_rule_jump_target" not in op_names:
+        raise HTTPException(status_code=400, detail="Jump action requires set_rule_jump_target in the same batch")
+    if action_value and action_value != "jump" and "set_rule_jump_target" in op_names:
+        raise HTTPException(
+            status_code=400,
+            detail="set_rule_jump_target can only be used when action is set to jump in the same batch",
+        )
+
+    if action_value == "offload" and "set_rule_offload_target" not in op_names:
+        raise HTTPException(
+            status_code=400,
+            detail="Offload action requires set_rule_offload_target in the same batch",
+        )
+    if action_value and action_value != "offload" and "set_rule_offload_target" in op_names:
+        raise HTTPException(
+            status_code=400,
+            detail="set_rule_offload_target can only be used when action is set to offload in the same batch",
+        )
+
+    if "set_rule_tcp_flags" in op_names and "set_rule_icmp_type_name" in op_names:
+        raise HTTPException(status_code=400, detail="TCP flags and ICMP type matching cannot be set in the same batch")
+
+    if protocol_value is None:
+        return
+
+    if protocol_inverted and (
+        bool(op_names.intersection(PORT_SET_OPS | TCP_FLAGS_SET_OPS | ICMP_SET_OPS))
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Inverted protocol matching cannot be combined with port/TCP/ICMP set operations in the same batch",
+        )
+
+    if op_names.intersection(PORT_SET_OPS) and protocol_value not in {"tcp", "udp", "tcp_udp"}:
+        raise HTTPException(
+            status_code=400,
+            detail="Port matching operations require protocol tcp, udp, or tcp_udp",
+        )
+
+    if op_names.intersection(TCP_FLAGS_SET_OPS) and protocol_value != "tcp":
+        raise HTTPException(status_code=400, detail="TCP flag matching requires protocol tcp")
+
+    if op_names.intersection(ICMP_SET_OPS) and protocol_value != "icmp":
+        raise HTTPException(status_code=400, detail="ICMP type matching requires protocol icmp")
 
 
 # ========================================================================
@@ -525,6 +600,7 @@ async def firewall_ipv4_batch_configure(http_request: Request, request: Firewall
         builder = FirewallIPv4BatchBuilder(version=version)
         chain = _normalize_chain_or_400(request.chain, request.is_custom_chain)
         rule_number = request.rule_number
+        _validate_batch_semantics_or_400(request.operations)
 
         # Process operations using inspect for dynamic method calls
         for operation in request.operations:
@@ -657,7 +733,13 @@ async def firewall_ipv4_reorder_rules(http_request: Request, request: ReorderFir
                 if source.get("port"):
                     builder.set_rule_source_port(request.chain, new_number, source["port"], request.is_custom_chain)
                 if source.get("mac_address"):
-                    builder.set_rule_source_mac(request.chain, new_number, source["mac_address"], request.is_custom_chain)
+                    builder.set_rule_source_mac_address(request.chain, new_number, source["mac_address"], request.is_custom_chain)
+                if source.get("geoip"):
+                    geoip = source["geoip"]
+                    for country in geoip.get("country_code", []) or []:
+                        builder.set_rule_source_geoip_country(request.chain, new_number, str(country).lower(), request.is_custom_chain)
+                    if geoip.get("inverse_match"):
+                        builder.set_rule_source_geoip_inverse(request.chain, new_number, request.is_custom_chain)
                 if source.get("group"):
                     group = source["group"]
                     for group_type, group_name in group.items():
@@ -667,6 +749,12 @@ async def firewall_ipv4_reorder_rules(http_request: Request, request: ReorderFir
                             builder.set_rule_source_group_network(request.chain, new_number, group_name, request.is_custom_chain)
                         elif "port" in group_type:
                             builder.set_rule_source_group_port(request.chain, new_number, group_name, request.is_custom_chain)
+                        elif "mac" in group_type:
+                            builder.set_rule_source_group_mac(request.chain, new_number, group_name, request.is_custom_chain)
+                        elif "domain" in group_type:
+                            builder.set_rule_source_group_domain(request.chain, new_number, group_name, request.is_custom_chain)
+                        elif "remote" in group_type:
+                            builder.set_rule_source_group_remote(request.chain, new_number, group_name, request.is_custom_chain)
 
             # Destination
             if rule_data.get("destination"):
@@ -675,6 +763,12 @@ async def firewall_ipv4_reorder_rules(http_request: Request, request: ReorderFir
                     builder.set_rule_destination_address(request.chain, new_number, dest["address"], request.is_custom_chain)
                 if dest.get("port"):
                     builder.set_rule_destination_port(request.chain, new_number, dest["port"], request.is_custom_chain)
+                if dest.get("geoip"):
+                    geoip = dest["geoip"]
+                    for country in geoip.get("country_code", []) or []:
+                        builder.set_rule_destination_geoip_country(request.chain, new_number, str(country).lower(), request.is_custom_chain)
+                    if geoip.get("inverse_match"):
+                        builder.set_rule_destination_geoip_inverse(request.chain, new_number, request.is_custom_chain)
                 if dest.get("group"):
                     group = dest["group"]
                     for group_type, group_name in group.items():
@@ -684,6 +778,12 @@ async def firewall_ipv4_reorder_rules(http_request: Request, request: ReorderFir
                             builder.set_rule_destination_group_network(request.chain, new_number, group_name, request.is_custom_chain)
                         elif "port" in group_type:
                             builder.set_rule_destination_group_port(request.chain, new_number, group_name, request.is_custom_chain)
+                        elif "mac" in group_type:
+                            builder.set_rule_destination_group_mac(request.chain, new_number, group_name, request.is_custom_chain)
+                        elif "domain" in group_type:
+                            builder.set_rule_destination_group_domain(request.chain, new_number, group_name, request.is_custom_chain)
+                        elif "remote" in group_type:
+                            builder.set_rule_destination_group_remote(request.chain, new_number, group_name, request.is_custom_chain)
 
             # State
             if rule_data.get("state"):

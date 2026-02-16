@@ -1,17 +1,18 @@
 {
-  "feature_id": "interfaces-wireguard-peer-validation-depth-2026-02-16",
-  "title": "Interfaces WireGuard peer validation/safety parity depth pass (IF-15 subset)",
+  "feature_id": "firewall-parity-hardening-2026-02-16",
+  "title": "Firewall parity hardening batch (F-01/F-02/F-03/F-05 depth + remote-group mapping)",
   "status": "in_progress",
   "acceptance_criteria": [
-    "WireGuard peer batch API validates endpoint semantics (address vs host-name exclusivity, port dependency, keepalive range).",
-    "WireGuard peer batch API rejects duplicate allowed-ips within a peer and collisions against other peers on the same interface.",
-    "Create/Edit WireGuard peer modals enforce the same validation constraints client-side before submit.",
-    "Backend regression tests cover the new peer validation logic and pass locally.",
-    "Frontend gates pass (tsc, targeted eslint, build, runtime smoke, UI smoke)."
+    "IPv4/IPv6 firewall batch endpoints enforce protocol/action semantic coupling with deterministic 400 errors.",
+    "IPv4/IPv6 firewall reorder paths preserve GeoIP and mac/domain/remote group leaves.",
+    "Frontend firewall rule API mappers emit remote-group source/destination operations for create/update.",
+    "Firewall groups batch rejects conflicting set/delete member operations and multiple remote URL values.",
+    "Flowtables batch rejects duplicate interface entries and conflicting offload selections.",
+    "Validation gates pass: targeted backend pytest, frontend tsc/eslint, build, runtime smoke, UI smoke."
   ],
   "assumptions": [
-    "WireGuard option-depth work remains partial after this slice; this pass focuses on peer safety/validation behavior.",
-    "Existing /vyos/vpn/wireguard endpoints remain authoritative and unchanged in contract surface."
+    "This slice advances but does not fully complete F-01/F-02/F-03/F-05 parity items.",
+    "Global options parity item F-04 is unchanged in this cycle."
   ],
   "tasks": [
     {
@@ -19,61 +20,76 @@
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/wireguard/wireguard.py"
+        "backend/routers/firewall/ipv4.py",
+        "backend/routers/firewall/ipv6.py"
       ],
-      "notes": "Added peer batch validation helpers for endpoint semantics, allowed-IP validation, and collision checks."
+      "notes": "Added semantic batch validation and expanded reorder handling for advanced source/destination fields."
     },
     {
       "id": "T2",
-      "owner_role": "UI",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/src/components/vpn/CreatePeerModal.tsx",
-        "frontend/src/components/vpn/EditPeerModal.tsx",
-        "frontend/src/app/vpn/wireguard/page.tsx"
+        "backend/routers/firewall/groups.py",
+        "backend/routers/firewall/flowtables.py"
       ],
-      "notes": "Added matching client-side validation guardrails and passed interface context to EditPeer modal for cross-peer collision checks."
+      "notes": "Added batch consistency guardrails for groups and flowtables."
     },
     {
       "id": "T3",
-      "owner_role": "Test",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "backend/tests/test_wireguard_peer_validation.py"
+        "frontend/src/lib/api/firewall-ipv4.ts",
+        "frontend/src/lib/api/firewall-ipv6.ts"
       ],
-      "notes": "Added endpoint regression coverage for endpoint exclusivity, duplicate allowed-ips, missing endpoint port, keepalive range, and successful valid path."
+      "notes": "Added remote-group source/destination mapping for create and update operations."
     },
     {
       "id": "T4",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/test_firewall_rule_batch_validation.py",
+        "backend/tests/test_firewall_groups_validation.py",
+        "backend/tests/test_firewall_flowtables_validation.py"
+      ],
+      "notes": "Added regression coverage for new semantic/batch consistency validations and reorder parity."
+    },
+    {
+      "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/routers/wireguard/wireguard.py",
-        "frontend/src/components/vpn/CreatePeerModal.tsx",
-        "frontend/src/components/vpn/EditPeerModal.tsx"
+        "backend/routers/firewall/ipv4.py",
+        "backend/routers/firewall/ipv6.py",
+        "backend/routers/firewall/groups.py",
+        "backend/routers/firewall/flowtables.py",
+        "frontend/src/lib/api/firewall-ipv4.ts",
+        "frontend/src/lib/api/firewall-ipv6.ts"
       ],
       "notes": "Manual in-process review complete. APPROVED."
     },
     {
-      "id": "T5",
+      "id": "T6",
       "owner_role": "Planner",
       "status": "todo",
       "files": [
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
       ],
-      "notes": "Close remaining IF-15 loopback edge-depth gaps, then continue next backlog domain."
+      "notes": "Continue remaining firewall partial backlog items (including F-04/F-06 depth and live verification)."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_wireguard_peer_validation.py tests/test_ethernet_batch_parity_options.py && cd ../frontend && npx tsc --noEmit --pretty false && npx eslint src/components/vpn/CreatePeerModal.tsx src/components/vpn/EditPeerModal.tsx src/app/vpn/wireguard/page.tsx src/components/network/ComprehensiveEthernetModal.tsx src/lib/api/types/ethernet.ts && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_rule_batch_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_flowtables_validation.py && cd ../frontend && npx tsc --noEmit --pretty false && npx eslint src/lib/api/firewall-ipv4.ts src/lib/api/firewall-ipv6.ts && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "IF-15 wireguard peer validation depth and runtime verification",
+      "purpose": "Firewall parity hardening batch and validation gates",
       "status": "active"
     }
   ]

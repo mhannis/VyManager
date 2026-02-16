@@ -132,3 +132,49 @@ def test_valid_remote_group_batch_returns_success(monkeypatch, app):
     assert response.json()["success"] is True
     assert ("set_remote_group", ("REMOTE_FEED",)) in service.batch.calls
     assert ("set_remote_group_url", ("REMOTE_FEED", "https://example.com/list.txt")) in service.batch.calls
+
+
+def test_rejects_conflicting_set_and_delete_for_same_member(monkeypatch, app):
+    async def allow_write(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(groups_router, "require_write_permission", allow_write)
+    monkeypatch.setattr(groups_router, "get_session_vyos_service", lambda _request: DummyService())
+
+    client = TestClient(app)
+    response = client.post(
+        "/vyos/firewall/groups/batch",
+        json={
+            "group_name": "INTERNAL_NETS",
+            "operations": [
+                {"op": "set_network_group"},
+                {"op": "set_network_group_network", "value": "10.0.0.0/24"},
+                {"op": "delete_network_group_network", "value": "10.0.0.0/24"},
+            ],
+        },
+    )
+    assert response.status_code == 400
+    assert "Conflicting operations" in response.json()["detail"]
+
+
+def test_rejects_multiple_remote_urls_in_single_batch(monkeypatch, app):
+    async def allow_write(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(groups_router, "require_write_permission", allow_write)
+    monkeypatch.setattr(groups_router, "get_session_vyos_service", lambda _request: DummyService())
+
+    client = TestClient(app)
+    response = client.post(
+        "/vyos/firewall/groups/batch",
+        json={
+            "group_name": "REMOTE_FEED",
+            "operations": [
+                {"op": "set_remote_group"},
+                {"op": "set_remote_group_url", "value": "https://example.com/one.txt"},
+                {"op": "set_remote_group_url", "value": "https://example.com/two.txt"},
+            ],
+        },
+    )
+    assert response.status_code == 400
+    assert "only one URL value per batch" in response.json()["detail"]

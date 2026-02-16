@@ -218,6 +218,11 @@
 - 2026-02-15: Added `Services Status` dashboard card to provide at-a-glance operational state for core services (SSH, DNS Forwarder, DHCP Server, NTP, LLDP, mDNS) with best-effort multi-endpoint loading.
 - 2026-02-15: Expanded all dashboard card width menus to include `Full (4 columns)` so card controls align with dashboard layouts configured for four columns.
 - 2026-02-15: Updated dashboard drag/drop placement to clamp active card span by current layout column count, preventing out-of-range placement math after column-count changes.
+- 2026-02-16: Added firewall batch semantic guardrails in IPv4/IPv6 routers to couple action/protocol-dependent operations (`jump/offload` targets, ports/TCP flags/ICMP fields) and fail early with deterministic `400` responses.
+- 2026-02-16: Expanded IPv4/IPv6 reorder reconstruction to include GeoIP and `mac-group`/`domain-group`/`remote-group` leaves so rule drag-reorder no longer drops advanced match state.
+- 2026-02-16: Updated frontend IPv4/IPv6 firewall API mappers to emit `*_group_remote` operations for create/update flows, closing a parity gap where remote-group selections in rule modals were ignored.
+- 2026-02-16: Added groups/flowtables batch consistency validation (conflicting set/delete member ops, duplicate member ops, multiple remote URLs, duplicate interfaces, conflicting offload values, description bounds) to reduce invalid commit attempts.
+- 2026-02-16: Browser smoke failure after build (`ChunkLoadError`) was treated as stale runtime process drift; the fix path remains restarting `vm-ui` before rerunning runtime/UI smoke.
 - 2026-02-15: Firewall Create/Edit rule modals now hydrate interface descriptions from ethernet config and display interface selectors as `Description (ethX)` while continuing to store canonical interface-name values in rule payloads.
 - 2026-02-15: NAT Create/Edit modals (source/destination/static) now use description-first interface labels (including VLAN subinterfaces) based on config snapshot metadata while preserving raw interface-name writes.
 - 2026-02-15: `System -> Containers` create/edit UX now uses progressive disclosure (collapsible LAN helper, runtime overrides, environment, ports, and volumes) so common tasks stay simple while advanced controls remain available.

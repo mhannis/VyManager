@@ -55,37 +55,41 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Execute backlog slices in guide order with full GUI-first coverage and validation.
-- Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
-- Continue reducing the largest partial domains (`system`, `interfaces`) with guide-backed option-depth work.
-- Maintain thin-wrapper backend contracts while expanding reproducible verification.
+- Continue guide-order backlog execution with firewall parity depth and robust validation.
+- Keep changes additive to existing wrappers/services while improving correctness of batch APIs and GUI-generated operations.
+- Maintain deterministic gates on each slice (`pytest` + `tsc` + targeted `eslint` + `build` + runtime/browser smoke).
 
 ## Current Feature Spec
-Feature: **Interfaces WireGuard peer validation depth (`IF-15` subset)**.
+Feature: **Firewall parity hardening batch (`F-01`, `F-02`, `F-03`, `F-05` depth slices plus remote-group rule mapping support)**.
 
 Acceptance criteria:
-- WireGuard peer batch API enforces endpoint semantics (`address` XOR `host-name`, and endpoint port dependency).
-- WireGuard peer batch API enforces safe allowed-IP behavior (valid network syntax, no duplicates per peer, no collisions across peers on the same interface).
-- Create/Edit WireGuard peer modals enforce the same rules client-side.
-- Backend regression tests cover the peer validation paths and pass.
-- Validation gates pass (`backend targeted pytest`, `tsc`, targeted `eslint`, `build`, `smoke:runtime`, `smoke:ui`).
+- Firewall IPv4/IPv6 batch endpoints enforce protocol/action semantic coupling (ports/TCP/ICMP vs protocol, jump/offload target coupling).
+- Firewall rule reorder endpoints preserve advanced rule leaves (GeoIP and mac/domain/remote groups) for both IPv4 and IPv6.
+- Firewall groups batch endpoint rejects conflicting set/delete member ops, duplicate member ops, and multiple remote URL values in one request.
+- Flowtables batch endpoint rejects duplicate interface additions, conflicting offload values, and oversized descriptions.
+- Frontend firewall rule API mappers emit remote-group source/destination operations for create/update in both IPv4 and IPv6 services.
+- Validation gates pass (`pytest` targeted suites, `tsc`, targeted `eslint`, `build`, `smoke:runtime`, `smoke:ui`).
 
 Assumptions:
-- `IF-15` remains `partial` after this slice because loopback edge-depth work is still pending.
-- This slice remains additive on existing `/vyos/vpn/wireguard/*` endpoints and avoids backend architecture refactors.
+- These slices advance parity status but do not fully close `F-01`/`F-02`/`F-03`/`F-05`; remaining advanced option-depth and live device verification still required.
+- `F-04` (global options) remains unchanged this cycle.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: WireGuard peer validation/safety depth slice implemented and validated; next queue continues IF-15 on loopback edge-depth.
-- Runtime smoke process stabilized by restarting `vm-ui` after each production build before UI smoke checks.
-- Working tree is dirty with unrelated pre-existing changes outside this slice.
+- Status: firewall hardening batch implemented and validated; next queue continues remaining firewall partials and guide-order backlog.
+- Runtime smoke process still requires `vm-ui` restart after `next build` to avoid stale chunk manifest failures.
+- Working tree remains dirty with unrelated pre-existing files outside this slice (`CONFIG_COVERAGE_PHASE1.*`, existing untracked artifacts).
 
 ### Files Touched This Cycle
-- `backend/routers/wireguard/wireguard.py`
-- `backend/tests/test_wireguard_peer_validation.py`
-- `frontend/src/components/vpn/CreatePeerModal.tsx`
-- `frontend/src/components/vpn/EditPeerModal.tsx`
-- `frontend/src/app/vpn/wireguard/page.tsx`
+- `backend/routers/firewall/ipv4.py`
+- `backend/routers/firewall/ipv6.py`
+- `backend/routers/firewall/groups.py`
+- `backend/routers/firewall/flowtables.py`
+- `backend/tests/test_firewall_rule_batch_validation.py`
+- `backend/tests/test_firewall_groups_validation.py`
+- `backend/tests/test_firewall_flowtables_validation.py`
+- `frontend/src/lib/api/firewall-ipv4.ts`
+- `frontend/src/lib/api/firewall-ipv6.ts`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CURRENT_FEATURE.md`
@@ -93,12 +97,12 @@ Assumptions:
 - `PROJECT_MEMORY.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_wireguard_peer_validation.py tests/test_ethernet_batch_parity_options.py` passed.
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_rule_batch_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_flowtables_validation.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/components/vpn/CreatePeerModal.tsx src/components/vpn/EditPeerModal.tsx src/app/vpn/wireguard/page.tsx src/components/network/ComprehensiveEthernetModal.tsx src/lib/api/types/ethernet.ts` passed (`0 errors`, warnings only).
+- `cd frontend && npx eslint src/lib/api/firewall-ipv4.ts src/lib/api/firewall-ipv6.ts` passed (`0 errors`, warnings only).
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
-- `cd frontend && npm run -s smoke:ui` passed.
+- `cd frontend && npm run -s smoke:ui` passed after restarting `vm-ui` on the fresh build.
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
@@ -165,6 +169,9 @@ Assumptions:
 - Firewall zones policy textareas now include guidance for one mapping per from-zone and explicit `LOCAL` pseudo-zone usage.
 - Firewall zones guided setup now runs a local interface-ownership preflight and blocks preset apply when interfaces are still bound to other zones, with conflict details shown in the UI error banner.
 - Firewall IPv4/IPv6 batch endpoints now validate chain context, rule-number requirements, and operation value arity before method invocation; invalid argument shapes now return explicit `400` errors.
+- Firewall IPv4/IPv6 batch endpoints now also enforce protocol/action semantic coupling in-request (`ports/TCP flags/ICMP` vs protocol, `jump/offload` vs required targets) with deterministic `400` responses.
+- Firewall IPv4/IPv6 reorder flows now preserve advanced rule leaves during reconstruction, including GeoIP country/inverse and source/destination `mac-group`, `domain-group`, and `remote-group` references.
+- Frontend firewall IPv4/IPv6 API mappers now emit remote-group source/destination rule operations (`set/delete_rule_*_group_remote`) in create/update flows.
 - Added backend regression coverage `backend/tests/test_firewall_rule_batch_validation.py` for chain/rule/value validation semantics and valid normalized batch execution.
 - Firewall global-options `/batch` now enforces strict value semantics (required/no-arg checks), enum validation for operation families, timeout integer/range validation, and canonical lowercase normalization before command generation.
 - Added backend regression coverage `backend/tests/test_firewall_global_options_batch_validation.py` for invalid batch payload rejection and valid normalized execution.
@@ -172,6 +179,7 @@ Assumptions:
 - Firewall zones `from_zone` handling now canonicalizes case-insensitive matches to existing zone names, supports `LOCAL`, and rejects unknown references before apply.
 - Added backend regression coverage `backend/tests/test_firewall_zones_validation.py` for interface-overlap rejection, unknown from-zone rejection, canonicalized LOCAL mapping, and duplicate detection after canonicalization.
 - Firewall flowtables router now enforces strict server-side validation for flowtable names, operation allowlist, required values, interface-name values, and offload enum values before invoking builder methods.
+- Firewall flowtables batch now also enforces consistency checks for duplicate interface additions, conflicting offload selections, and description length bounds before builder execution.
 - Flowtables offload writes now normalize accepted mixed-case input to lowercase canonical values before builder invocation, ensuring consistent command output (`hardware|software`).
 - Added backend regression coverage `backend/tests/test_firewall_flowtables_validation.py` for invalid flowtable name/offload/interface/missing-value paths plus valid batch and delete validation behavior.
 - Firewall IPv4 and IPv6 batch/reorder endpoints now preserve `HTTPException` statuses; unknown operations return `400` instead of being wrapped into `500`.
@@ -183,6 +191,7 @@ Assumptions:
   - `test_firewall_batch_semantics.py` (HTTP error semantics + IPv6 legacy alias compatibility)
   - `test_firewall_global_options_validation.py` (global-options value and timeout validation)
 - Firewall groups batch endpoint now performs typed server-side validation and preserves HTTPException status codes; invalid values return `400` instead of being wrapped into `500`.
+- Firewall groups batch now enforces consistency checks for conflicting set/delete member operations, duplicate member operations, and multiple `set_remote_group_url` values in a single request.
 - Added backend API tests for firewall groups validation (`test_firewall_groups_validation.py`) covering invalid group name, remote URL, MAC, and valid remote-group success path.
 - Container network safety validation now enforces prefix overlap checks (`upsert /networks`) and static-address/subnet checks (`upsert/install /{container_name}`) in backend before apply.
 - Containers UI now supports row-level image lifecycle actions directly from catalog lists and provides inspect summary parsing (JSON-first, key-value fallback) above raw output.

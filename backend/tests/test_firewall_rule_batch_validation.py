@@ -97,6 +97,49 @@ def test_ipv4_rejects_missing_required_value(monkeypatch, app):
     assert "requires a value" in response.json()["detail"]
 
 
+def test_ipv4_rejects_port_match_with_non_port_protocol(monkeypatch, app):
+    _patch_permissions(monkeypatch)
+    monkeypatch.setattr(ipv4_router, "get_session_vyos_service", lambda _request: DummyService())
+
+    client = TestClient(app)
+    response = client.post(
+        "/vyos/firewall/ipv4/batch",
+        json={
+            "chain": "forward",
+            "rule_number": 10,
+            "is_custom_chain": False,
+            "operations": [
+                {"op": "set_rule_protocol", "value": "icmp"},
+                {"op": "set_rule_source_port", "value": "443"},
+            ],
+        },
+    )
+
+    assert response.status_code == 400
+    assert "Port matching operations require protocol" in response.json()["detail"]
+
+
+def test_ipv4_rejects_jump_action_without_target(monkeypatch, app):
+    _patch_permissions(monkeypatch)
+    monkeypatch.setattr(ipv4_router, "get_session_vyos_service", lambda _request: DummyService())
+
+    client = TestClient(app)
+    response = client.post(
+        "/vyos/firewall/ipv4/batch",
+        json={
+            "chain": "forward",
+            "rule_number": 10,
+            "is_custom_chain": False,
+            "operations": [
+                {"op": "set_rule_action", "value": "jump"},
+            ],
+        },
+    )
+
+    assert response.status_code == 400
+    assert "requires set_rule_jump_target" in response.json()["detail"]
+
+
 def test_ipv6_rejects_value_for_no_value_operation(monkeypatch, app):
     _patch_permissions(monkeypatch)
     monkeypatch.setattr(ipv6_router, "get_session_vyos_service", lambda _request: DummyService())
@@ -138,6 +181,50 @@ def test_ipv6_legacy_alias_requires_value(monkeypatch, app):
     assert "requires a value" in response.json()["detail"]
 
 
+def test_ipv6_rejects_icmpv6_type_with_non_icmpv6_protocol(monkeypatch, app):
+    _patch_permissions(monkeypatch)
+    monkeypatch.setattr(ipv6_router, "get_session_vyos_service", lambda _request: DummyService())
+
+    client = TestClient(app)
+    response = client.post(
+        "/vyos/firewall/ipv6/batch",
+        json={
+            "chain": "forward",
+            "rule_number": 10,
+            "is_custom_chain": False,
+            "operations": [
+                {"op": "set_rule_protocol", "value": "tcp"},
+                {"op": "set_rule_icmpv6_type_name", "value": "echo-request"},
+            ],
+        },
+    )
+
+    assert response.status_code == 400
+    assert "ICMPv6 type matching requires protocol ipv6-icmp" in response.json()["detail"]
+
+
+def test_ipv6_rejects_jump_target_when_action_not_jump(monkeypatch, app):
+    _patch_permissions(monkeypatch)
+    monkeypatch.setattr(ipv6_router, "get_session_vyos_service", lambda _request: DummyService())
+
+    client = TestClient(app)
+    response = client.post(
+        "/vyos/firewall/ipv6/batch",
+        json={
+            "chain": "forward",
+            "rule_number": 10,
+            "is_custom_chain": False,
+            "operations": [
+                {"op": "set_rule_action", "value": "drop"},
+                {"op": "set_rule_jump_target", "value": "MY_CHAIN"},
+            ],
+        },
+    )
+
+    assert response.status_code == 400
+    assert "set_rule_jump_target can only be used" in response.json()["detail"]
+
+
 def test_ipv6_accepts_uppercase_base_chain_and_executes(monkeypatch, app):
     _patch_permissions(monkeypatch)
     service = DummyService()
@@ -162,3 +249,83 @@ def test_ipv6_accepts_uppercase_base_chain_and_executes(monkeypatch, app):
     paths = [" ".join(item.get("path", [])) for item in service.last_operations]
     assert any("firewall ipv6 forward" in path for path in paths)
     assert any("action accept" in path for path in paths)
+
+
+def test_ipv4_reorder_preserves_geoip_and_remote_groups(monkeypatch, app):
+    _patch_permissions(monkeypatch)
+    service = DummyService()
+    monkeypatch.setattr(ipv4_router, "get_session_vyos_service", lambda _request: service)
+
+    client = TestClient(app)
+    response = client.post(
+        "/vyos/firewall/ipv4/reorder",
+        json={
+            "chain": "forward",
+            "is_custom_chain": False,
+            "rules": [
+                {
+                    "old_number": 10,
+                    "new_number": 20,
+                    "rule_data": {
+                        "action": "accept",
+                        "source": {
+                            "geoip": {"country_code": ["US"], "inverse_match": True},
+                            "group": {"remote-group": "REMOTE_FEED", "mac-group": "MAC_SRC"},
+                        },
+                        "destination": {
+                            "geoip": {"country_code": ["DE"]},
+                            "group": {"remote-group": "REMOTE_FEED", "domain-group": "DOM_DST"},
+                        },
+                    },
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+    paths = [" ".join(item.get("path", [])) for item in service.last_operations]
+    assert any("source geoip country-code us" in path for path in paths)
+    assert any("source geoip inverse-match" in path for path in paths)
+    assert any("source group remote-group REMOTE_FEED" in path for path in paths)
+    assert any("destination group remote-group REMOTE_FEED" in path for path in paths)
+
+
+def test_ipv6_reorder_preserves_geoip_and_remote_groups(monkeypatch, app):
+    _patch_permissions(monkeypatch)
+    service = DummyService()
+    monkeypatch.setattr(ipv6_router, "get_session_vyos_service", lambda _request: service)
+
+    client = TestClient(app)
+    response = client.post(
+        "/vyos/firewall/ipv6/reorder",
+        json={
+            "chain": "forward",
+            "is_custom_chain": False,
+            "rules": [
+                {
+                    "old_number": 10,
+                    "new_number": 20,
+                    "rule_data": {
+                        "action": "accept",
+                        "source": {
+                            "geoip": {"country_code": ["US"], "inverse_match": True},
+                            "group": {"remote-group": "REMOTE_FEED", "mac-group": "MAC_SRC"},
+                        },
+                        "destination": {
+                            "geoip": {"country_code": ["DE"]},
+                            "group": {"remote-group": "REMOTE_FEED", "domain-group": "DOM_DST"},
+                        },
+                    },
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+    paths = [" ".join(item.get("path", [])) for item in service.last_operations]
+    assert any("source geoip country-code us" in path for path in paths)
+    assert any("source geoip inverse-match" in path for path in paths)
+    assert any("source group remote-group REMOTE_FEED" in path for path in paths)
+    assert any("destination group remote-group REMOTE_FEED" in path for path in paths)

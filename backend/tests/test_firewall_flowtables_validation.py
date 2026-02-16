@@ -155,3 +155,49 @@ def test_delete_invalid_flowtable_name_returns_400(monkeypatch, app):
     response = client.delete("/vyos/firewall/flowtables/bad name")
     assert response.status_code == 400
     assert "Invalid flowtable name" in response.json()["detail"]
+
+
+def test_rejects_duplicate_interface_entries_in_batch(monkeypatch, app):
+    async def allow_write(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(flowtables_router, "require_write_permission", allow_write)
+    monkeypatch.setattr(flowtables_router, "get_session_vyos_service", lambda _request: DummyService())
+
+    client = TestClient(app)
+    response = client.post(
+        "/vyos/firewall/flowtables/batch",
+        json={
+            "flowtable_name": "FT_DUP",
+            "operations": [
+                {"op": "set_flowtable"},
+                {"op": "set_flowtable_interface", "value": "eth0"},
+                {"op": "set_flowtable_interface", "value": "eth0"},
+            ],
+        },
+    )
+    assert response.status_code == 400
+    assert "Duplicate interface in batch" in response.json()["detail"]
+
+
+def test_rejects_conflicting_offload_values_in_batch(monkeypatch, app):
+    async def allow_write(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(flowtables_router, "require_write_permission", allow_write)
+    monkeypatch.setattr(flowtables_router, "get_session_vyos_service", lambda _request: DummyService())
+
+    client = TestClient(app)
+    response = client.post(
+        "/vyos/firewall/flowtables/batch",
+        json={
+            "flowtable_name": "FT_DUP",
+            "operations": [
+                {"op": "set_flowtable"},
+                {"op": "set_flowtable_offload", "value": "hardware"},
+                {"op": "set_flowtable_offload", "value": "software"},
+            ],
+        },
+    )
+    assert response.status_code == 400
+    assert "Conflicting offload values" in response.json()["detail"]
