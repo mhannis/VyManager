@@ -393,4 +393,9 @@ Assumptions:
   - `5455f33` Improve load-balancing interface labeling and outbound validation
   - `2f68bd7` Show bridge firewall interfaces with description-first labels
   - `371933c` Use description-first interface labels in acceleration page
+- 2026-02-16: `Policies -> Route` applied interfaces now render `Description (ethX)` labels when descriptions are present (`frontend/src/app/policies/route/page.tsx`).
+- 2026-02-16: `Network -> Load Balancing` outbound quick-select checkboxes now disable in read-only mode to align with RBAC expectations.
+- Additional commits pushed this cycle:
+  - `08bbe7c` Show route policy applied interfaces with display labels
+  - `0dd1656` Disable load-balancing quick-select when user lacks edit access
 - 2026-02-16: `System -> Acceleration` now builds interface options from counters + ethernet descriptions and renders both selector + VPP assignment rows with `Description (ethX)` labels.

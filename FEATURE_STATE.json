@@ -15,6 +15,8 @@
     "Load Balancing WAN rules provide guided outbound interface selection and reject unknown interface names before add/apply.",
     "Bridge firewall rule rows display interface labels as Description (ethX) when metadata is available.",
     "System acceleration interface selectors/tables display description-first labels when metadata is available.",
+    "Policy Route applied-interface badges display description-first labels when metadata is available.",
+    "Load Balancing quick-select controls respect RBAC write permissions (disabled in read-only mode).",
     "Backend and frontend validation gates pass for touched surfaces."
   ],
   "assumptions": [
@@ -96,6 +98,24 @@
         "frontend/src/app/system/acceleration/page.tsx"
       ],
       "notes": "Added description-first interface labels to VPP interface selector and assignment table in System Acceleration."
+    },
+    {
+      "id": "T8",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/policies/route/page.tsx"
+      ],
+      "notes": "Policy Route applied-interface badges now render description-first interface labels."
+    },
+    {
+      "id": "T9",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/network/load-balancing/page.tsx"
+      ],
+      "notes": "Outbound quick-select controls now disable cleanly in read-only mode to align with RBAC expectations."
     }
   ],
   "commands": {
