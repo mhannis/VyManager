@@ -28,6 +28,7 @@ import {
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 import { showService } from "@/lib/api/show";
+import { ethernetService } from "@/lib/api/ethernet";
 import {
   systemService,
   type QatConfig,
@@ -36,6 +37,7 @@ import {
   type VppInterfaceDriver,
   type VppStatus,
 } from "@/lib/api/system";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 import { AlertCircle, CheckCircle2, Cpu, RefreshCw, Save, Server, Trash2, Zap } from "lucide-react";
 
 function normalizeString(value: string): string {
@@ -48,7 +50,7 @@ export default function SystemAccelerationPage() {
 
   const [activeTab, setActiveTab] = useState<"qat" | "vpp">("qat");
 
-  const [availableInterfaces, setAvailableInterfaces] = useState<string[]>([]);
+  const [interfaceOptions, setInterfaceOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [interfacesLoading, setInterfacesLoading] = useState(true);
 
   const [qatConfig, setQatConfig] = useState<QatConfig | null>(null);
@@ -70,17 +72,40 @@ export default function SystemAccelerationPage() {
     if (activeTab === "qat") return qatLoading;
     return vppLoading;
   }, [activeTab, qatLoading, vppLoading]);
+  const interfaceLabelByName = useMemo(
+    () =>
+      interfaceOptions.reduce<Record<string, string>>((acc, option) => {
+        acc[option.value] = option.label;
+        return acc;
+      }, {}),
+    [interfaceOptions]
+  );
 
   const loadInterfaces = async () => {
     setInterfacesLoading(true);
     try {
-      const counters = await showService.getInterfaceCounters();
+      const [counters, ethernetConfig] = await Promise.all([
+        showService.getInterfaceCounters(),
+        ethernetService.getConfig().catch(() => ({ interfaces: [] })),
+      ]);
+      const descriptionByName = (ethernetConfig.interfaces || []).reduce<Record<string, string | null>>(
+        (acc, entry) => {
+          acc[entry.name] = entry.description ?? null;
+          return acc;
+        },
+        {}
+      );
       const names = Array.from(new Set(counters.interfaces.map((item) => item.interface)))
         .filter((name) => !!name && name !== "lo")
         .sort((left, right) => left.localeCompare(right));
-      setAvailableInterfaces(names);
+      setInterfaceOptions(
+        names.map((name) => ({
+          value: name,
+          label: formatInterfaceDisplayName(name, descriptionByName[name] ?? null),
+        }))
+      );
     } catch {
-      setAvailableInterfaces([]);
+      setInterfaceOptions([]);
     } finally {
       setInterfacesLoading(false);
     }
@@ -422,9 +447,9 @@ export default function SystemAccelerationPage() {
                               <SelectValue placeholder={interfacesLoading ? "Loading interfaces..." : "Select interface"} />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableInterfaces.map((iface) => (
-                                <SelectItem key={iface} value={iface}>
-                                  {iface}
+                              {interfaceOptions.map((iface) => (
+                                <SelectItem key={iface.value} value={iface.value}>
+                                  {iface.label}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -468,7 +493,7 @@ export default function SystemAccelerationPage() {
                               <TableBody>
                                 {vppConfig.interfaces.map((entry) => (
                                   <TableRow key={entry.interface}>
-                                    <TableCell className="font-mono text-xs">{entry.interface}</TableCell>
+                                    <TableCell>{interfaceLabelByName[entry.interface] || entry.interface}</TableCell>
                                     <TableCell>
                                       <Select
                                         value={entry.driver}
