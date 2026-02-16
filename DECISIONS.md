@@ -313,3 +313,4 @@
 - 2026-02-16: Added LLDP endpoint regression coverage for structured `neighbors` and structured `detail` fallback paths so `/vyos/system/lldp-status` behavior is locked at API level (not only helper-parser unit tests).
 - 2026-02-16: LLDP structured parser was extended to decode JSON-text payloads from show `data` strings, because some environments return stringified neighbor objects instead of direct dict/list payloads.
 - 2026-02-16: DNS services UI now errors on partial override rows (domain-without-servers or hostname-without-addresses) to avoid silent data loss; backend `/vyos/system/dns-config` now validates listen/allow-from/name-server/domain tokens for deterministic 400 responses.
+- 2026-02-16: Added DNS endpoint regression tests to ensure stricter validation remains compatible with hostname-based upstream resolvers and to lock in `400` behavior for invalid local domain names.

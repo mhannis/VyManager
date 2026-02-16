@@ -135,6 +135,7 @@ Assumptions:
 - DHCP create modal existing-network mode now preloads gateway/domain/lease/DNS defaults from selected shared-network configuration.
 - Router Advertisements service tab now fetches interface inventory and provides description-first datalist suggestions (`Description (ethX)`), while preserving free-text interface input.
 - DNS service tab now validates override rows strictly (no silent drop of partial/invalid rows), and backend `/vyos/system/dns-config` update now validates listen-address/allow-from/name-server/domain inputs before apply.
+- DNS backend regression suite now includes compatibility/guard tests proving hostname upstream resolvers remain supported and invalid local domain values return deterministic `400` errors.
 - Firewall rule create/edit modals now enforce action-dependent targets (`jump` requires jump target chain, `offload` requires flowtable) and block submit with explicit UI errors when missing.
 - Firewall rule modals now disable jump/offload target selectors when no custom chains/flowtables are available and keep submit disabled for those blocked action states.
 - Firewall zones create/edit flows now pre-validate policy textarea rows (`FROM_ZONE:FIREWALL_NAME`) and block submit for malformed lines or duplicate from-zones, reducing backend round-trip failures.

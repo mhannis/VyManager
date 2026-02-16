@@ -12,6 +12,7 @@ completed_in_cycle:
   - Router Advertisements service tab now provides description-first interface suggestions while preserving free-form interface entry.
   - DNS service tab now blocks partial/invalid domain and host override rows (with explicit row-level error messages) instead of silently dropping malformed entries.
   - DNS backend update endpoint now validates `listen-address`, `allow-from`, `name-server`, `authoritative-domain`, and `local_domain_name` inputs before apply.
+  - Expanded DNS backend regression coverage to verify hostname upstream nameservers still work and invalid local domain names return HTTP 400.
 validation:
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py
