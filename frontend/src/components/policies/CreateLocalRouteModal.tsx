@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertCircle } from "lucide-react";
 import { localRouteService, type LocalRouteCapabilitiesResponse } from "@/lib/api/local-route";
 import { apiClient } from "@/lib/api/client";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 
 interface CreateLocalRouteModalProps {
   open: boolean;
@@ -25,7 +26,7 @@ export function CreateLocalRouteModal({
 }: CreateLocalRouteModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [interfaces, setInterfaces] = useState<string[]>([]);
+  const [interfaceOptions, setInterfaceOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [capabilities, setCapabilities] = useState<LocalRouteCapabilitiesResponse | null>(null);
 
   // Form fields
@@ -56,12 +57,16 @@ export function CreateLocalRouteModal({
   };
 
   const loadInterfaces = async () => {
-    const interfaceNames: string[] = [];
+    const options = new Map<string, string>();
 
     // Fetch ethernet interfaces
     try {
-      const ethernetConfig = await apiClient.get<{ interfaces: Array<{ name: string }> }>("/vyos/ethernet/config");
-      interfaceNames.push(...ethernetConfig.interfaces.map(iface => iface.name));
+      const ethernetConfig = await apiClient.get<{ interfaces: Array<{ name: string; description?: string | null }> }>(
+        "/vyos/ethernet/config"
+      );
+      ethernetConfig.interfaces.forEach((iface) => {
+        options.set(iface.name, formatInterfaceDisplayName(iface.name, iface.description ?? null));
+      });
     } catch (err) {
       console.error("Failed to load ethernet interfaces:", err);
     }
@@ -69,7 +74,9 @@ export function CreateLocalRouteModal({
     // Fetch dummy interfaces
     try {
       const dummyConfig = await apiClient.get<{ interfaces: Array<{ name: string }> }>("/vyos/dummy/config");
-      interfaceNames.push(...dummyConfig.interfaces.map(iface => iface.name));
+      dummyConfig.interfaces.forEach((iface) => {
+        if (!options.has(iface.name)) options.set(iface.name, iface.name);
+      });
     } catch (err) {
       console.error("Failed to load dummy interfaces:", err);
     }
@@ -81,7 +88,11 @@ export function CreateLocalRouteModal({
     // - WireGuard: /vyos/wireguard/config
     // etc.
 
-    setInterfaces(interfaceNames);
+    setInterfaceOptions(
+      Array.from(options.entries())
+        .map(([value, label]) => ({ value, label }))
+        .sort((left, right) => left.label.localeCompare(right.label, undefined, { numeric: true }))
+    );
   };
 
   const calculateNextRuleNumber = async () => {
@@ -309,9 +320,9 @@ export function CreateLocalRouteModal({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">None</SelectItem>
-                {interfaces.map((iface) => (
-                  <SelectItem key={iface} value={iface}>
-                    {iface}
+                {interfaceOptions.map((iface) => (
+                  <SelectItem key={iface.value} value={iface.value}>
+                    {iface.label}
                   </SelectItem>
                 ))}
               </SelectContent>
