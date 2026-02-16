@@ -310,3 +310,4 @@
 - 2026-02-16: LLDP status endpoint now includes a structured-payload fallback parser for `show lldp neighbors`/`detail` responses when table parsing returns zero neighbors, so dashboard/service views still populate on builds returning JSON-like show payloads.
 - 2026-02-16: DHCP create/edit modals now keep DNS defaults aligned with gateway intent in-form (not only at submit-time): empty DNS lists auto-seed from default router, and existing-network create mode preloads gateway/domain/lease/DNS defaults from current shared-network state.
 - 2026-02-16: Router Advertisements interface rows now expose description-first interface suggestions sourced from runtime/config data while preserving free-text input for advanced/non-discovered interfaces.
+- 2026-02-16: Added LLDP endpoint regression coverage for structured `neighbors` and structured `detail` fallback paths so `/vyos/system/lldp-status` behavior is locked at API level (not only helper-parser unit tests).

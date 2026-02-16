@@ -5,6 +5,7 @@ branch: feature/containers-automation-v1
 completed_in_cycle:
   - Added backend LLDP structured-payload fallback parsing for runtime neighbor status when table output is empty.
   - Added LLDP parser regression coverage for list-style and nested interface-key structured payloads.
+  - Added LLDP `/vyos/system/lldp-status` endpoint tests to verify structured neighbor/detail payload fallback behavior end-to-end.
   - DHCP create/edit modals now default DNS servers to the gateway IP in form state when DNS is empty.
   - DHCP create modal now auto-prefills gateway/domain/lease/DNS defaults when adding a subnet into an existing shared network.
   - Router Advertisements service tab now provides description-first interface suggestions while preserving free-form interface entry.

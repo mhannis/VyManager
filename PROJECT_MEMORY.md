@@ -124,6 +124,7 @@ Assumptions:
 ## Agent Handoff Notes
 - LLDP runtime neighbor parsing now includes a structured-payload fallback path in `backend/routers/system.py` (`_parse_lldp_neighbors_structured_output`) when text parsing returns no neighbors.
 - Added LLDP structured parser regression tests in `backend/tests/test_system_lldp_parsing.py` for both list-style and nested interface-key payload shapes.
+- Added endpoint-level LLDP status tests in `backend/tests/test_system_services_ssh_dns.py` to verify structured `neighbors` and structured `detail` fallback parsing through `/vyos/system/lldp-status`.
 - DHCP create/edit modals now auto-seed DNS servers with gateway IP when DNS entries are blank in-form, aligning visible defaults with submit-time behavior.
 - DHCP create modal existing-network mode now preloads gateway/domain/lease/DNS defaults from selected shared-network configuration.
 - Router Advertisements service tab now fetches interface inventory and provides description-first datalist suggestions (`Description (ethX)`), while preserving free-text interface input.

@@ -49,9 +49,10 @@
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_system_lldp_parsing.py"
+        "backend/tests/test_system_lldp_parsing.py",
+        "backend/tests/test_system_services_ssh_dns.py"
       ],
-      "notes": "Ran backend LLDP/system service suites and frontend runtime/build gates."
+      "notes": "Ran backend LLDP/system service suites and added endpoint-level LLDP status fallback tests alongside frontend runtime/build gates."
     },
     {
       "id": "T5",
