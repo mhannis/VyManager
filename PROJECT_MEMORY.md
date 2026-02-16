@@ -1,6 +1,6 @@
 # PROJECT_MEMORY.md
 
-Last updated: 2026-02-15
+Last updated: 2026-02-16
 Repo: https://github.com/mhannis/VyManager/tree/dev
 
 ## Repo Facts
@@ -15,7 +15,8 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Backend: `pip` + venv (`backend/.venv`)
 
 ### Build / Test / Lint Commands
-- Backend dev: `cd backend && python3 -m uvicorn app:app --reload --host 0.0.0.0 --port 8000 --proxy-headers`
+- Backend dev (stable): `cd backend && .venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --proxy-headers`
+- Backend dev (hot reload): `cd backend && .venv/bin/uvicorn app:app --reload --host 0.0.0.0 --port 8000 --proxy-headers`
 - Frontend dev: `cd frontend && npm run dev`
 - Frontend prod start: `cd frontend && npm run -s start -- --hostname 0.0.0.0 --port 3000`
 - Backend tests: `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q`
@@ -56,60 +57,44 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 ## Current Objective
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
-- Continue system-domain missing-page reduction after delivering loopback/pppoe and begin option-depth parity pass.
+- Deliver interface IA consolidation so operators can navigate interface configuration from one unified hub and a small set of logical groups.
+- Preserve existing per-type advanced editors and API contracts while reducing navigation sprawl.
 
 ## Current Feature Spec
-Feature: **System SYS-04 + SYS-11 + SYS-13 baseline parity**
+Feature: **Interfaces IA Consolidation v1**
 
 Acceptance criteria:
-- Backend exposes scoped read/batch wrappers for:
-  - `system flow-accounting`
-  - `system proxy`
-  - `system sysctl`
-- UI includes dedicated form-first pages:
-  - `/system/flow-accounting`
-  - `/system/proxy`
-  - `/system/sysctl`
-- All pages support GUI create/read/update/delete flows with validation and diff-based command generation.
-- System navigation, options shortcuts, page guides, and runtime smoke route coverage include all new pages.
+- Interfaces sidebar is condensed to:
+  - `Interface Manager`
+  - `Core & L2`
+  - `Overlay & Secure`
+  - `Access & WAN`
+- `/network/interfaces` presents grouped interface-family cards with direct `Open` links to each detailed editor.
+- Existing detailed interface pages remain reachable for compatibility and advanced settings.
+- Build/typecheck/runtime smoke pass after the IA changes.
 
 Assumptions:
-- Some advanced leaf options for these system trees are platform/version-specific and remain a follow-up option-depth pass.
+- Interface-family advanced editing remains on detailed pages in v1; inline shared drawer unification is a follow-up slice.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: loopback/pppoe slice is committed and pushed; system flow-accounting/proxy/sysctl baseline slice is implemented and validated locally.
+- Status: interface IA consolidation v1 implemented and validated locally.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
-### Files Touched This Cycle (hotfix-owned)
-- `backend/app.py`
-- `backend/routers/system_flow_accounting.py`
-- `backend/routers/system_proxy.py`
-- `backend/routers/system_sysctl.py`
-- `backend/tests/test_config_tree_wrapper_capabilities.py`
-- `frontend/src/lib/api/system-flow-accounting.ts`
-- `frontend/src/lib/api/system-proxy.ts`
-- `frontend/src/lib/api/system-sysctl.ts`
-- `frontend/src/app/system/flow-accounting/page.tsx`
-- `frontend/src/app/system/proxy/page.tsx`
-- `frontend/src/app/system/sysctl/page.tsx`
-- `frontend/src/app/system/options/page.tsx`
-- `frontend/src/lib/help/pageGuides.ts`
+### Files Touched This Cycle
+- `frontend/src/app/network/interfaces/page.tsx`
 - `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/scripts/check-runtime.sh`
 - `frontend/scripts/smoke-ui.mjs`
-- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
-- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `DECISIONS.md`
 - `LAST_FAILURE.txt`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py tests/test_service_wrapper_capabilities.py tests/test_containers_automation_v1.py` passed (`140 passed`).
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint ... --max-warnings=0` passed for all changed TS/JS files in this slice.
+- `cd frontend && npx eslint src/app/network/interfaces/page.tsx src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
 - `cd frontend && npm run -s smoke:ui` remains blocked by missing host library `libnspr4.so` (recorded in `LAST_FAILURE.txt`).
@@ -117,10 +102,16 @@ Assumptions:
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
 - Browser smoke depends on host-specific Playwright shared libs path.
+- `uvicorn --reload` showed intermittent local connect hangs on `:8000` after restart; stable session should run non-reload mode for operator testing.
 - Some command semantics in HA/Traffic Policy/PKI still need live VyOS operational validation across more versions/hardware.
 - Reviewer sub-agent dispatch can fail when thread cap is saturated; manual review fallback is required in that case.
 
 ## TODO Backlog (next queue)
+- Interface IA consolidation (new UX track):
+  - Build a unified `Network -> Interfaces` manager with type grouping + one edit drawer.
+  - Collapse sidebar interface children into logical groups (Core, Overlay/Secure, Access/WAN) instead of one route per type.
+  - Reuse existing type-specific form sections as modular panels inside a shared create/edit scaffold.
+  - Keep deep-link compatibility by redirecting existing interface routes to filtered views in unified manager.
 - Continue remaining System missing pages in guide order:
   - `SYS-01` Conntrack
   - `SYS-02` Serial Console
@@ -175,6 +166,7 @@ Assumptions:
 - `/network/traffic-policy` now also supports QoS interface assignment (`qos interface <if> ingress|egress`) with interface selectors labeled as `Description (ethX)` and policy-name validation before save.
 - Runtime smoke can fail with transient connection errors if startup and smoke probes run in parallel; run runtime smoke sequentially after listener checks on `:3000`.
 - Added shared backend `build_config_tree_router(...)` wrapper for non-service, non-VPN top-level config trees while preserving existing session/VyOS service contracts.
+- Incident hotfix (2026-02-16): frontend build failed and user saw "Application error" because `PageGuideDialog` keys were referenced for `systemConntrack`, `systemSerialConsole`, and `systemDefaultRoute` before those keys existed in `pageGuides`; added the missing guide entries and type keys in `frontend/src/lib/help/pageGuides.ts`.
 - Added scoped backend routers for `vrf`, `load-balancing`, `high-availability`, `traffic-policy`, and `pki`; each router exposes `capabilities`, `config`, and `batch` endpoints with strict subtree command validation.
 - Implemented form-first GUI pages for `/network/vrf`, `/network/load-balancing`, `/network/high-availability`, `/network/traffic-policy`, and `/system/pki` (no free-form CLI text boxes).
 - Added `/configuration` index page to represent docs-root coverage and provide a single navigation entry point across all major config domains.
@@ -218,6 +210,8 @@ Assumptions:
 - Coverage/backlog generation must run sequentially (`generate_config_coverage_matrix.py` then `generate_phase1_backlog.py`); running them in parallel can produce stale phase1 raw statuses.
 - Added scoped VPN routers for `openconnect`, `pptp`, and `sstp` using the shared `_vpn_wrapper` abstraction.
 - Added DMVPN router/page with constrained command support for `interfaces tunnel`, `protocols nhrp`, and `vpn ipsec profile` workflows.
+- Interface overlap scan (2026-02-16) across `src/app/network/interfaces/*/page.tsx` shows repeated common fields (`Description`, `MTU`, `VRF`, address lists, source/remote endpoints, MSS/default-route controls), supporting consolidation into a shared base form plus type-specific advanced panels.
+- Recommended IA model: one `Network -> Interfaces` route with category tabs (`Core & L2`, `Overlay & Secure`, `Access & WAN`) and a single create/edit drawer that conditionally renders type modules; retain legacy URLs as redirects to pre-filtered tabs.
 - Added VPN overview API/page (`/vyos/vpn`, `/vpn`) to complete docs index parity and expose protocol cards.
 - VPN smoke coverage now includes `/vpn`, `/vpn/dmvpn`, `/vpn/openconnect`, `/vpn/pptp`, and `/vpn/sstp`.
 - VPN domain parity now reports complete (`12 implemented / 0 partial / 0 not_started`) in `CONFIG_COVERAGE_PHASE1.json`.

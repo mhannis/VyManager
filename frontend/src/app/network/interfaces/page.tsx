@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageGuideDialog } from "@/components/common/PageGuideDialog";
-import { Plus, RefreshCw, AlertCircle, Search, Cable, Pencil, Trash2, Network } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Plus, RefreshCw, AlertCircle, Search, Cable, Pencil, Trash2, Network, ArrowUpRight } from "lucide-react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ethernetService } from "@/lib/api/ethernet";
 import { showService } from "@/lib/api/show";
 import type { InterfacePhysical } from "@/lib/api/show";
@@ -20,6 +21,171 @@ import { DeleteEthernetModal } from "@/components/network/DeleteEthernetModal";
 import { DeleteVLANModal } from "@/components/network/DeleteVLANModal";
 
 type InterfaceType = "all" | "ethernet" | "vlan";
+type InterfaceFamilyGroup = "core-l2" | "overlay-secure" | "access-wan";
+type InterfaceFamilyFilter = "all" | InterfaceFamilyGroup;
+
+interface InterfaceFamily {
+  key: string;
+  title: string;
+  href: string;
+  group: InterfaceFamilyGroup;
+  summary: string;
+  commonFields: string[];
+}
+
+const INTERFACE_GROUPS: Array<{ id: InterfaceFamilyFilter; label: string }> = [
+  { id: "all", label: "All Families" },
+  { id: "core-l2", label: "Core & L2" },
+  { id: "overlay-secure", label: "Overlay & Secure" },
+  { id: "access-wan", label: "Access & WAN" },
+];
+
+const INTERFACE_FAMILIES: InterfaceFamily[] = [
+  {
+    key: "ethernet-vlan",
+    title: "Ethernet & VLAN",
+    href: "/network/interfaces",
+    group: "core-l2",
+    summary: "Physical interfaces plus VLAN/QinQ tagging and addressing.",
+    commonFields: ["Description", "Addresses", "VRF"],
+  },
+  {
+    key: "dummy",
+    title: "Dummy",
+    href: "/network/interfaces/dummy",
+    group: "core-l2",
+    summary: "Software-only interfaces for route/policy testing and anchors.",
+    commonFields: ["Description", "MTU", "VRF"],
+  },
+  {
+    key: "bonding",
+    title: "Bonding",
+    href: "/network/interfaces/bonding",
+    group: "core-l2",
+    summary: "LACP and static link aggregation with member management.",
+    commonFields: ["Description", "MTU", "VRF"],
+  },
+  {
+    key: "bridge",
+    title: "Bridge",
+    href: "/network/interfaces/bridge",
+    group: "core-l2",
+    summary: "Layer-2 switching with STP controls and bridge member tuning.",
+    commonFields: ["Description", "MTU", "VRF"],
+  },
+  {
+    key: "loopback",
+    title: "Loopback",
+    href: "/network/interfaces/loopback",
+    group: "core-l2",
+    summary: "Stable local endpoints for router IDs and control plane use.",
+    commonFields: ["Description", "Addresses"],
+  },
+  {
+    key: "pseudo-ethernet",
+    title: "Pseudo-Ethernet",
+    href: "/network/interfaces/pseudo-ethernet",
+    group: "core-l2",
+    summary: "Interface abstraction with source-interface binding.",
+    commonFields: ["Description", "MTU", "VRF"],
+  },
+  {
+    key: "virtual-ethernet",
+    title: "Virtual-Ethernet",
+    href: "/network/interfaces/virtual-ethernet",
+    group: "core-l2",
+    summary: "Veth pair style interfaces for local interconnect use cases.",
+    commonFields: ["Description", "MTU", "VRF"],
+  },
+  {
+    key: "tunnel",
+    title: "Tunnel",
+    href: "/network/interfaces/tunnel",
+    group: "overlay-secure",
+    summary: "GRE/IPIP-style tunnels with source/remote and MSS controls.",
+    commonFields: ["Source Address", "Remote Endpoint", "MTU"],
+  },
+  {
+    key: "vti",
+    title: "VTI",
+    href: "/network/interfaces/vti",
+    group: "overlay-secure",
+    summary: "Route-based IPsec tunnel interfaces with addressing and VRF.",
+    commonFields: ["Description", "MTU", "VRF"],
+  },
+  {
+    key: "vxlan",
+    title: "VXLAN",
+    href: "/network/interfaces/vxlan",
+    group: "overlay-secure",
+    summary: "Overlay transport with VNI mapping and underlay source controls.",
+    commonFields: ["VNI", "Source Interface", "MTU"],
+  },
+  {
+    key: "geneve",
+    title: "Geneve",
+    href: "/network/interfaces/geneve",
+    group: "overlay-secure",
+    summary: "Geneve overlays with endpoint, VNI, and MSS behavior.",
+    commonFields: ["Remote Endpoint", "Source Interface", "MTU"],
+  },
+  {
+    key: "l2tpv3",
+    title: "L2TPv3",
+    href: "/network/interfaces/l2tpv3",
+    group: "overlay-secure",
+    summary: "Pseudowire transport with tunnel/session identifiers and cookies.",
+    commonFields: ["Remote Endpoint", "Session IDs", "MTU"],
+  },
+  {
+    key: "macsec",
+    title: "MACsec",
+    href: "/network/interfaces/macsec",
+    group: "overlay-secure",
+    summary: "Layer-2 encryption with cipher, MKA/static peers, and replay settings.",
+    commonFields: ["Source Interface", "Cipher", "MTU"],
+  },
+  {
+    key: "openvpn",
+    title: "OpenVPN",
+    href: "/network/interfaces/openvpn",
+    group: "overlay-secure",
+    summary: "OpenVPN interface mode/server/client settings and crypto controls.",
+    commonFields: ["Protocol", "Remote Host", "MTU"],
+  },
+  {
+    key: "pppoe",
+    title: "PPPoE Client",
+    href: "/network/interfaces/pppoe",
+    group: "access-wan",
+    summary: "WAN client dialer with authentication and route behavior controls.",
+    commonFields: ["Source Interface", "Auth", "Default Route Distance"],
+  },
+  {
+    key: "sstp-client",
+    title: "SSTP Client",
+    href: "/network/interfaces/sstp-client",
+    group: "access-wan",
+    summary: "SSTP client tunnels with server/authentication options.",
+    commonFields: ["Server", "Auth", "MTU"],
+  },
+  {
+    key: "wireless",
+    title: "Wireless",
+    href: "/network/interfaces/wireless",
+    group: "access-wan",
+    summary: "WLAN AP/station mode with SSID, WPA, and HT controls.",
+    commonFields: ["SSID", "Mode", "MTU"],
+  },
+  {
+    key: "wwan",
+    title: "WWAN",
+    href: "/network/interfaces/wwan",
+    group: "access-wan",
+    summary: "Cellular modem interfaces with APN, DHCP, and MSS controls.",
+    commonFields: ["APN", "MTU", "Default Route Distance"],
+  },
+];
 
 const VLAN_KIND_LABELS: Record<VLANWithParent["kind"], string> = {
   "vif": "802.1Q",
@@ -36,7 +202,13 @@ const normalizeLinkDetail = (value?: string | null): string | undefined => {
   return trimmed;
 };
 
-export default function InterfacesPage() {
+const isFamilyFilter = (value: string | null): value is InterfaceFamilyFilter => {
+  if (!value) return false;
+  return INTERFACE_GROUPS.some((group) => group.id === value);
+};
+
+function InterfacesPageContent() {
+  const searchParams = useSearchParams();
   const [interfaces, setInterfaces] = useState<EthernetInterface[]>([]);
   const [physicalByInterface, setPhysicalByInterface] = useState<Record<string, InterfacePhysical>>({});
   const [capabilities, setCapabilities] = useState<EthernetCapabilities | null>(null);
@@ -54,6 +226,8 @@ export default function InterfacesPage() {
   const [isCreateVLANModalOpen, setIsCreateVLANModalOpen] = useState(false);
   const [editingVLAN, setEditingVLAN] = useState<VLANWithParent | null>(null);
   const [deletingVLAN, setDeletingVLAN] = useState<VLANWithParent | null>(null);
+  const groupParam = searchParams.get("group");
+  const familyFilter: InterfaceFamilyFilter = isFamilyFilter(groupParam) ? groupParam : "all";
 
   const loadData = async () => {
     try {
@@ -160,6 +334,14 @@ export default function InterfacesPage() {
     );
   });
 
+  const visibleFamilies = useMemo(
+    () =>
+      INTERFACE_FAMILIES.filter((family) =>
+        familyFilter === "all" ? true : family.group === familyFilter,
+      ),
+    [familyFilter],
+  );
+
   if (loading) {
     return (
       <AppLayout>
@@ -244,99 +426,48 @@ export default function InterfacesPage() {
           </div>
         )}
 
-        {/* Filters and Actions */}
+        {/* Consolidated Controls */}
         {!error && (
-          <div className="flex items-center justify-between gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, description, IP address, or VRF..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+          <div className="space-y-4">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, description, IP address, or VRF..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
 
-            <div className="flex gap-2">
-              <Button
-                variant={typeFilter === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setTypeFilter("all")}
-              >
-                All ({totalInterfaces + totalVlans})
-              </Button>
-              <Button
-                variant={typeFilter === "ethernet" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setTypeFilter("ethernet")}
-              >
-                Ethernet ({totalInterfaces})
-              </Button>
-              <Button
-                variant={typeFilter === "vlan" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setTypeFilter("vlan")}
-              >
-                VLAN ({totalVlans})
-              </Button>
-            </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={typeFilter === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTypeFilter("all")}
+                >
+                  All ({totalInterfaces + totalVlans})
+                </Button>
+                <Button
+                  variant={typeFilter === "ethernet" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTypeFilter("ethernet")}
+                >
+                  Ethernet ({totalInterfaces})
+                </Button>
+                <Button
+                  variant={typeFilter === "vlan" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTypeFilter("vlan")}
+                >
+                  VLAN ({totalVlans})
+                </Button>
+              </div>
 
-            <div className="flex items-start gap-2">
-              <Button asChild variant="outline">
-                <Link href="/network/setup-wizard">Setup Wizard</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/dummy">Dummy Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/bonding">Bonding Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/bridge">Bridge Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/geneve">Geneve Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/l2tpv3">L2TPv3 Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/loopback">Loopback Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/macsec">MACsec Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/openvpn">OpenVPN Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/pppoe">PPPoE Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/pseudo-ethernet">Pseudo-Ethernet Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/sstp-client">SSTP Client Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/virtual-ethernet">Virtual-Ethernet Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/tunnel">Tunnel Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/vti">VTI Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/vxlan">VXLAN Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/wireless">Wireless Interfaces</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/network/interfaces/wwan">WWAN Interfaces</Link>
-              </Button>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button asChild variant="outline">
+                  <Link href="/network/setup-wizard">Setup Wizard</Link>
+                </Button>
                 <Button onClick={() => setIsCreateInterfaceModalOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Interface
@@ -347,6 +478,59 @@ export default function InterfacesPage() {
                 </Button>
               </div>
             </div>
+
+            <Card className="border-border">
+              <CardContent className="space-y-4 p-4">
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-base font-semibold text-foreground">Interface Families</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Manage all interface types from one place, grouped by operational role.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {INTERFACE_GROUPS.map((group) => {
+                    const href =
+                      group.id === "all" ? "/network/interfaces" : `/network/interfaces?group=${group.id}`;
+                    const isActive = familyFilter === group.id;
+                    return (
+                      <Button key={group.id} asChild variant={isActive ? "default" : "outline"} size="sm">
+                        <Link href={href}>{group.label}</Link>
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {visibleFamilies.map((family) => (
+                    <div
+                      key={family.key}
+                      className="rounded-lg border border-border bg-card/40 p-3 transition-colors hover:border-primary/40"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <h3 className="font-semibold text-foreground">{family.title}</h3>
+                          <p className="text-xs text-muted-foreground">{family.summary}</p>
+                        </div>
+                        <Button asChild variant="ghost" size="sm" className="shrink-0">
+                          <Link href={family.href}>
+                            Open
+                            <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                          </Link>
+                        </Button>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {family.commonFields.map((field) => (
+                          <Badge key={`${family.key}-${field}`} variant="secondary" className="text-[10px]">
+                            {field}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -699,5 +883,21 @@ export default function InterfacesPage() {
         }}
       />
     </AppLayout>
+  );
+}
+
+export default function InterfacesPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppLayout>
+          <div className="flex h-96 items-center justify-center">
+            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        </AppLayout>
+      }
+    >
+      <InterfacesPageContent />
+    </Suspense>
   );
 }
