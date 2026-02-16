@@ -3,8 +3,9 @@
   "title": "Interfaces IA consolidation v2 (grouped manager + inline quick add)",
   "status": "in_progress",
   "acceptance_criteria": [
-    "Interfaces navigation is consolidated to logical groups instead of long per-type sidebar sprawl.",
+    "Interfaces navigation is consolidated to a single `Interfaces` sidebar entry.",
     "`/network/interfaces` acts as the primary hub with family grouping and direct access to all detailed editors.",
+    "Interfaces page includes a clear Setup Wizard button.",
     "Existing detailed interface pages remain reachable for advanced settings and compatibility.",
     "Inline PPPoE quick-add supports source interface selection with description-first labels.",
     "Inline VTI and VXLAN quick-add flows are available from Interface Manager for common setup.",
@@ -34,7 +35,7 @@
       "files": [
         "frontend/src/components/layout/Sidebar.tsx"
       ],
-      "notes": "Collapsed Interfaces sidebar subtree into logical grouped entries."
+      "notes": "Collapsed Interfaces sidebar from grouped submenu entries to a single `Interfaces` nav item."
     },
     {
       "id": "IF-IA-03",
@@ -87,11 +88,11 @@
     {
       "id": "IF-IA-08",
       "owner_role": "UI|Backend|Test",
-      "status": "todo",
+      "status": "doing",
       "files": [
         "frontend/src/app/network/interfaces/page.tsx"
       ],
-      "notes": "Add inline quick-edit (existing-value prefill) for quick-add-enabled families."
+      "notes": "Add inline quick-edit (existing-value prefill) for quick-add-enabled families; preserve sidebar as a single Interfaces entry with setup-wizard access on page."
     }
   ],
   "commands": {

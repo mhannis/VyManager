@@ -64,12 +64,9 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 Feature: **Interfaces IA Consolidation v2**
 
 Acceptance criteria:
-- Interfaces sidebar is condensed to:
-  - `Interface Manager`
-  - `Core & L2`
-  - `Overlay & Secure`
-  - `Access & WAN`
+- Interfaces sidebar is condensed to a single `Interfaces` entry.
 - `/network/interfaces` presents grouped interface-family cards with direct `Open` links to each detailed editor.
+- Interfaces page includes a clear `Open Setup Wizard` button.
 - Existing detailed interface pages remain reachable for compatibility and advanced settings.
 - Unified manager provides inline quick-add for `Dummy`, `Loopback`, `PPPoE`, `VTI`, `VXLAN`, and `Tunnel` families.
 - PPPoE quick-add source-interface selection uses description-first labels (`Description (ethX)`) when available.
@@ -81,10 +78,11 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback/PPPoE/VTI/VXLAN/Tunnel is implemented and validated locally.
+- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback/PPPoE/VTI/VXLAN/Tunnel is implemented, and sidebar is now collapsed to a single `Interfaces` entry.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
+- `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/src/app/network/interfaces/page.tsx`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
@@ -305,3 +303,4 @@ Assumptions:
 - Interface Manager quick-add now also supports VTI and VXLAN creation inline using existing `/vyos/vti-interface/configure` and `/vyos/vxlan-interface/configure` batch APIs.
 - Interface Manager quick-add now also supports Tunnel creation inline using existing `/vyos/tunnel-interface/configure` batch API with required `source-address` and `remote` validation.
 - Next IA target is inline quick-edit for these families so operators can patch common fields without navigating to full per-family editors.
+- Sidebar Interfaces navigation was simplified from grouped submenu entries to a single `Interfaces` item, with setup access retained on the Interfaces page via `Open Setup Wizard`.

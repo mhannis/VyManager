@@ -86,34 +86,9 @@ const navigation: NavItem[] = [
   },
   {
     title: "Interfaces",
+    href: "/network/interfaces",
     icon: Network,
-    children: [
-      {
-        title: "Setup Wizard",
-        href: "/network/setup-wizard",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "Interface Manager",
-        href: "/network/interfaces",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "Core & L2",
-        href: "/network/interfaces?group=core-l2",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "Overlay & Secure",
-        href: "/network/interfaces?group=overlay-secure",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "Access & WAN",
-        href: "/network/interfaces?group=access-wan",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-    ],
+    requiredPermission: FeatureGroup.INTERFACES,
   },
   {
     title: "Load Balancing",

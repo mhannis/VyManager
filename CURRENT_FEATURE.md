@@ -6,10 +6,13 @@ commits:
   - b3ea5d5 (interfaces IA grouped manager hub)
   - 199cac3 (interfaces inline quick add for dummy/loopback/pppoe + description-first PPPoE source selector)
   - d87861c (interfaces inline quick add for VTI/VXLAN)
-  - pending (interfaces inline quick add for tunnel)
+  - daff875 (interfaces inline quick add for tunnel)
+  - pending (interfaces sidebar collapse to single nav item + setup wizard button polish)
 notes:
   - Interfaces sidebar remains consolidated to:
-    - `Interface Manager`
+    - `Interfaces`
+  - Interfaces page keeps family grouping/filtering:
+    - `All Families`
     - `Core & L2`
     - `Overlay & Secure`
     - `Access & WAN`
@@ -29,6 +32,7 @@ notes:
     - `POST /vyos/vxlan-interface/configure`
     - `POST /vyos/tunnel-interface/configure`
   - Family cards still link to dedicated advanced pages for full feature depth.
+  - Setup wizard remains available on the Interfaces page via `Open Setup Wizard`.
   - Validation for this increment:
     - `cd frontend && npx tsc --noEmit --pretty false`
     - `cd frontend && npx eslint src/app/network/interfaces/page.tsx src/components/layout/Sidebar.tsx scripts/smoke-ui.mjs --max-warnings=0`
