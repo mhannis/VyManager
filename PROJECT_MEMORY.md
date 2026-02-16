@@ -62,41 +62,45 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Firewall rule modal action-target validation (`F-01`/`F-02` UX depth pass)**
+Feature: **Service UX and LLDP parsing hardening (`SVC-03`/`SVC-05` support pass)**
 
 Acceptance criteria:
-- Require a jump target when rule action is `jump` in create/edit modals.
-- Require a flowtable target when rule action is `offload` in create/edit modals.
-- Block action-target selectors and submit when required targets are unavailable.
-- Block submission and display actionable inline error messages for missing action-dependent targets.
-- Preserve existing API contracts and backend behavior (UI-only validation).
+- Parse LLDP neighbors from structured show payloads when text-table parsing is unavailable/empty.
+- Keep DHCP DNS defaults visible in-form by auto-seeding gateway IP when DNS values are blank.
+- Prefill DHCP create form defaults when adding a subnet to an existing shared network.
+- Provide description-first interface suggestions in Router Advertisements service form.
+- Preserve existing API contracts and thin-wrapper architecture.
 - Pass backend+frontend validation gates.
 
 Assumptions:
-- A significant portion of failed rule writes for advanced actions are missing jump/offload targets.
-- Early client-side validation improves operator clarity and reduces avoidable failed API calls.
+- Some VyOS builds return LLDP runtime data as structured payloads instead of parseable table text.
+- Operators expect DHCP default DNS behavior to be visible before submit, not only applied at submit time.
+- Interface suggestion lists should be advisory; free-text entry remains required for advanced/non-discovered interfaces.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: firewall rule modal action-target validation slice completed locally and queued for commit/push.
-- Backlog audit (2026-02-16, strict option-level tracker): `F-01`/`F-02` progressed with frontend action-dependent target enforcement in rule create/edit flows.
+- Status: LLDP parsing + DHCP modal defaults + Router Advertisements interface suggestion slice implemented and pushed.
+- Backlog audit (2026-02-16): service robustness pass in progress for `SVC-03` and `SVC-05`.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `frontend/src/components/firewall/CreateFirewallRuleModal.tsx`
-- `frontend/src/components/firewall/EditFirewallRuleModal.tsx`
-- `AGENT_REPORTS/2026-02-16-firewall-rule-modal-action-target-validation.md`
+- `backend/routers/system.py`
+- `backend/tests/test_system_lldp_parsing.py`
+- `frontend/src/app/firewall/zones/page.tsx`
+- `frontend/src/components/services/CreateDHCPServerModal.tsx`
+- `frontend/src/components/services/EditDHCPServerModal.tsx`
+- `frontend/src/components/system/RouterAdvertServiceTab.tsx`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
 - `DECISIONS.md`
-- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
-- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
+- `LAST_FAILURE.txt`
 
 ### Validation This Cycle
-- `cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime` passed.
-- Backend suites were not rerun in this UI-only slice (latest backend gate run from prior slice is green).
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py` passed.
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py` passed.
+- `cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime` passed (multiple runs during cycle).
 - `cd frontend && npm run -s smoke:ui` still blocked on host dependency (`libnspr4.so` missing).
 
 ## Risks / Open Questions
@@ -118,6 +122,11 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- LLDP runtime neighbor parsing now includes a structured-payload fallback path in `backend/routers/system.py` (`_parse_lldp_neighbors_structured_output`) when text parsing returns no neighbors.
+- Added LLDP structured parser regression tests in `backend/tests/test_system_lldp_parsing.py` for both list-style and nested interface-key payload shapes.
+- DHCP create/edit modals now auto-seed DNS servers with gateway IP when DNS entries are blank in-form, aligning visible defaults with submit-time behavior.
+- DHCP create modal existing-network mode now preloads gateway/domain/lease/DNS defaults from selected shared-network configuration.
+- Router Advertisements service tab now fetches interface inventory and provides description-first datalist suggestions (`Description (ethX)`), while preserving free-text interface input.
 - Firewall rule create/edit modals now enforce action-dependent targets (`jump` requires jump target chain, `offload` requires flowtable) and block submit with explicit UI errors when missing.
 - Firewall rule modals now disable jump/offload target selectors when no custom chains/flowtables are available and keep submit disabled for those blocked action states.
 - Firewall zones create/edit flows now pre-validate policy textarea rows (`FROM_ZONE:FIREWALL_NAME`) and block submit for malformed lines or duplicate from-zones, reducing backend round-trip failures.

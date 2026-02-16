@@ -1,62 +1,80 @@
 {
-  "feature_id": "firewall-rule-modal-action-target-validation-2026-02-16",
-  "title": "Firewall rule modal action-target validation",
-  "status": "done",
+  "feature_id": "service-ux-and-lldp-parsing-hardening-2026-02-16",
+  "title": "Service UX and LLDP parsing hardening",
+  "status": "in_progress",
   "acceptance_criteria": [
-    "Create Rule modal rejects `jump` action submissions without a jump target.",
-    "Create Rule modal rejects `offload` action submissions without a flowtable target.",
-    "Edit Rule modal rejects `jump` action submissions without a jump target.",
-    "Edit Rule modal rejects `offload` action submissions without a flowtable target.",
-    "When action targets are unavailable (no custom chains/flowtables), selectors and submit are blocked with clear guidance.",
-    "UI shows clear error messages for missing action-dependent targets before API calls.",
-    "Frontend typecheck/build/runtime smoke pass after modal validation changes."
+    "LLDP dashboard/service status can populate neighbors when show output is structured instead of table-formatted.",
+    "DHCP create/edit forms default DNS to gateway IP when DNS list is empty while preserving manual override.",
+    "DHCP create existing-network mode preloads sensible defaults from selected shared network.",
+    "Router Advertisements interface entry offers description-first interface suggestions.",
+    "Backend and frontend validation gates pass for touched surfaces."
   ],
   "assumptions": [
-    "Action-specific target requirements should be enforced client-side to prevent avoidable failed writes.",
-    "Backend contract remains unchanged; this slice is UX validation only.",
-    "Browser e2e smoke remains out-of-gate on this host until Playwright shared libraries are installed."
+    "Some VyOS builds return LLDP show payloads in non-table structures.",
+    "Operators expect visible DNS defaults in DHCP forms instead of submit-time-only fallback.",
+    "Interface suggestion lists should remain advisory; free-text must stay available for advanced cases."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "UI",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
-        "frontend/src/components/firewall/EditFirewallRuleModal.tsx"
+        "backend/routers/system.py",
+        "backend/tests/test_system_lldp_parsing.py"
       ],
-      "notes": "Added action-dependent target validation for jump/offload in create/edit submit handlers."
+      "notes": "Added structured LLDP parser fallback and tests."
     },
     {
       "id": "T2",
-      "owner_role": "Test",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
-        "frontend/src/components/firewall/EditFirewallRuleModal.tsx"
+        "frontend/src/components/services/CreateDHCPServerModal.tsx",
+        "frontend/src/components/services/EditDHCPServerModal.tsx"
       ],
-      "notes": "Validated via frontend gates (`tsc`, `build`, `smoke:runtime`) after modal validation changes."
+      "notes": "Added gateway-based DNS defaults and existing-network default prefill behavior."
     },
     {
       "id": "T3",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/components/system/RouterAdvertServiceTab.tsx"
+      ],
+      "notes": "Added description-first interface suggestions."
+    },
+    {
+      "id": "T4",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/test_system_lldp_parsing.py"
+      ],
+      "notes": "Ran backend LLDP/system service suites and frontend runtime/build gates."
+    },
+    {
+      "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
-        "frontend/src/components/firewall/EditFirewallRuleModal.tsx"
+        "backend/routers/system.py",
+        "frontend/src/components/services/CreateDHCPServerModal.tsx",
+        "frontend/src/components/services/EditDHCPServerModal.tsx",
+        "frontend/src/components/system/RouterAdvertServiceTab.tsx"
       ],
-      "notes": "Manual review completed in-process. APPROVED."
+      "notes": "Manual in-process review complete. APPROVED."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Firewall option-depth hardening and backlog continuation",
+      "purpose": "Backlog parity hardening and UX reliability",
       "status": "active"
     }
   ]

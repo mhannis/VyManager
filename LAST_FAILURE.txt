@@ -1,7 +1,14 @@
-timestamp: 2026-02-16T16:29:10Z
-failing_command: jq . FEATURE_STATE.json
-error_summary: Host does not have `jq` installed (`/bin/bash: jq: command not found`). This only affected a convenience validation check.
+timestamp: 2026-02-16T17:03:21Z
+failing_command: cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py
+error_summary: One LLDP parser regression test failed after the first structured-payload fallback implementation because `systemName` camelCase keys were not included in alias normalization. The parser returned `system_name=None` for that shape.
 last_output:
-/bin/bash: line 1: jq: command not found
-suspected_cause: Missing system package (`jq`) in the current environment.
-next_step: Use Python stdlib (`python3 -m json.tool`) for JSON syntax validation and continue.
+...F                                                                     [100%]
+=================================== FAILURES ===================================
+____ test_parse_lldp_neighbors_structured_output_nested_with_interface_hint ____
+E       assert None == 'edge-switch'
+E        +  where None = LldpNeighbor(...).system_name
+=========================== short test summary info ============================
+FAILED tests/test_system_lldp_parsing.py::test_parse_lldp_neighbors_structured_output_nested_with_interface_hint
+1 failed, 3 passed in 0.49s
+suspected_cause: Alias map covered `system_name` and `sysname` but not normalized `systemname` from camelCase source keys.
+next_step: Include `systemname` alias in structured parser, rerun LLDP tests and then system/frontend validation gates.
