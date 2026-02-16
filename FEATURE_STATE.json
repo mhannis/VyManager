@@ -1,19 +1,19 @@
 {
-  "feature_id": "firewall-ipv6-ops-and-global-options-hardening-2026-02-16",
-  "title": "Firewall IPv6 operation parity and global-options validation hardening",
-  "status": "in_review",
+  "feature_id": "firewall-flowtables-validation-hardening-2026-02-16",
+  "title": "Firewall flowtables input validation hardening",
+  "status": "done",
   "acceptance_criteria": [
-    "IPv4 and IPv6 firewall batch/reorder endpoints preserve HTTPException status codes (400-level errors are not converted to 500).",
-    "IPv6 firewall batch endpoint accepts legacy op names for ICMP and TTL while mapping to canonical icmpv6/hop-limit methods.",
-    "Frontend IPv6 firewall rule create/update flows send canonical icmpv6 and hop-limit operation names.",
-    "Firewall rule create/edit UI labels packet modification field as Hop Limit for IPv6.",
-    "Firewall global-options page performs client-side timeout range validation before save.",
-    "Firewall global-options update endpoint validates enum and timeout fields and returns 400 for invalid payloads.",
-    "Regression tests cover new firewall batch semantics and global-options validation behavior."
+    "Flowtable batch endpoint rejects invalid flowtable names with explicit 400 errors.",
+    "Flowtable batch endpoint enforces an operation allowlist and rejects unknown operations with 400.",
+    "Flowtable batch endpoint validates required values per operation and rejects missing/blank values with 400.",
+    "Flowtable batch endpoint validates interface-name values for interface operations and rejects invalid names with 400.",
+    "Flowtable batch endpoint validates offload values and accepts only hardware/software, normalizing mixed-case input to canonical lowercase values.",
+    "Flowtable delete endpoint validates path flowtable name and rejects invalid names with 400.",
+    "Regression tests cover invalid and valid flowtable batch/delete paths."
   ],
   "assumptions": [
-    "TTL field is kept in shared UI model for compatibility, but maps to hop-limit on IPv6 command generation.",
-    "Timeout lower bound is enforced as 1 second to prevent invalid conntrack values from reaching commit.",
+    "Allowed flowtable names follow ^[A-Za-z][A-Za-z0-9_-]{0,62}$ for safe command generation.",
+    "Allowed interface names follow ^[A-Za-z0-9][A-Za-z0-9._:-]{0,62}$ and include common VyOS interface formats.",
     "Browser e2e smoke remains out-of-gate on this host until Playwright shared libraries are installed."
   ],
   "tasks": [
@@ -22,55 +22,33 @@
       "owner_role": "Backend|Integration",
       "status": "done",
       "files": [
-        "backend/routers/firewall/ipv4.py",
-        "backend/routers/firewall/ipv6.py",
-        "backend/routers/firewall_global_options/firewall_global_options.py"
+        "backend/routers/firewall/flowtables.py"
       ],
-      "notes": "Added HTTPException passthrough, IPv6 op aliases, and global-options payload validation."
+      "notes": "Added backend validation helpers and fail-fast 400 responses for flowtable batch/delete inputs."
     },
     {
       "id": "T2",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/lib/api/firewall-ipv6.ts",
-        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
-        "frontend/src/components/firewall/EditFirewallRuleModal.tsx",
-        "frontend/src/app/firewall/global-options/page.tsx"
-      ],
-      "notes": "Updated IPv6 operation names/Hop Limit labeling and added client-side timeout validation in global-options UI."
-    },
-    {
-      "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_firewall_batch_semantics.py",
-        "backend/tests/test_firewall_global_options_validation.py"
+        "backend/tests/test_firewall_flowtables_validation.py"
       ],
-      "notes": "Added regression tests for HTTP error semantics, IPv6 legacy alias compatibility, and global-options validation."
+      "notes": "Added regression tests for invalid names, invalid offload/interface values, missing required values, valid flowtable batch, and invalid delete input."
     },
     {
-      "id": "T4",
+      "id": "T3",
       "owner_role": "Reviewer",
-      "status": "doing",
+      "status": "done",
       "files": [
-        "backend/routers/firewall/ipv4.py",
-        "backend/routers/firewall/ipv6.py",
-        "backend/routers/firewall_global_options/firewall_global_options.py",
-        "frontend/src/lib/api/firewall-ipv6.ts",
-        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
-        "frontend/src/components/firewall/EditFirewallRuleModal.tsx",
-        "frontend/src/app/firewall/global-options/page.tsx",
-        "backend/tests/test_firewall_batch_semantics.py",
-        "backend/tests/test_firewall_global_options_validation.py"
+        "backend/routers/firewall/flowtables.py",
+        "backend/tests/test_firewall_flowtables_validation.py"
       ],
-      "notes": "Manual review pass pending before moving to next backlog slice."
+      "notes": "Manual review completed (reviewer sub-agent unavailable due thread cap). APPROVED with one follow-up fix applied: lowercase normalization for offload values before command generation."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_batch_semantics.py tests/test_firewall_global_options_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_flowtables_validation.py tests/test_firewall_batch_semantics.py tests/test_firewall_global_options_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [

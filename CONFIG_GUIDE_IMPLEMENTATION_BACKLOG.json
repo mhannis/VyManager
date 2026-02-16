@@ -77,7 +77,7 @@
       "id": "F-05",
       "domain": "firewall",
       "status": "partial",
-      "title": "Flowtables parity pass"
+      "title": "Flowtables parity pass (validation hardening complete; tunable-depth UX/verification pending)"
     },
     {
       "id": "F-06",

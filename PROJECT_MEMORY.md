@@ -62,45 +62,41 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Firewall IPv6 operation parity + global-options validation hardening (`F-02`/`F-04` depth pass)**
+Feature: **Firewall flowtables input validation hardening (`F-05` depth pass)**
 
 Acceptance criteria:
-- Preserve `HTTPException` status codes in firewall IPv4/IPv6 batch+reorder endpoints (stop converting `400` to `500`).
-- Correct IPv6 firewall op mapping to canonical command operations (`icmpv6` + `hop-limit`) in frontend API calls.
-- Keep backward compatibility by aliasing legacy IPv6 op names on backend batch endpoint.
-- Validate firewall global-options update payloads server-side (enum checks + timeout bounds) with explicit `400` responses.
-- Add backend tests for batch error semantics, IPv6 legacy op compatibility, and global-options validation.
+- Validate flowtable names in batch/delete APIs and reject invalid values with explicit `400` errors.
+- Validate batch operation names against an allowlist and reject unknown ops with `400`.
+- Validate required values per operation and reject missing/blank values with `400`.
+- Validate offload values to `hardware|software` only.
+- Validate interface names for interface operations before builder invocation.
+- Add backend tests for invalid/valid flowtable batch and delete behavior.
 - Pass backend+frontend validation gates.
 
 Assumptions:
-- Existing valid clients continue to work; malformed values should now fail earlier with `400`.
-- Shared firewall modal model keeps `ttl` field for compatibility while IPv6 maps it to hop-limit command semantics.
+- Existing valid flowtable payloads continue to work; malformed values fail earlier with `400`.
+- Interface-name regex should support current VyOS formats (`eth0`, `bond0.10`, `vti0`, etc.) while rejecting whitespace/unsafe values.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: firewall ipv6/global-options hardening slice in review.
-- Backlog audit (2026-02-16, strict option-level tracker): `F-02`/`F-04` progressed with op semantics fix + global-options input validation.
+- Status: firewall flowtables validation hardening slice completed locally and queued for commit/push.
+- Backlog audit (2026-02-16, strict option-level tracker): `F-05` progressed with backend validation guardrails and dedicated tests.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `backend/routers/firewall/ipv4.py`
-- `backend/routers/firewall/ipv6.py`
-- `backend/routers/firewall_global_options/firewall_global_options.py`
-- `backend/tests/test_firewall_batch_semantics.py`
-- `backend/tests/test_firewall_global_options_validation.py`
-- `frontend/src/lib/api/firewall-ipv6.ts`
-- `frontend/src/components/firewall/CreateFirewallRuleModal.tsx`
-- `frontend/src/components/firewall/EditFirewallRuleModal.tsx`
-- `frontend/src/app/firewall/global-options/page.tsx`
-- `LAST_FAILURE.txt`
+- `backend/routers/firewall/flowtables.py`
+- `backend/tests/test_firewall_flowtables_validation.py`
+- `AGENT_REPORTS/2026-02-16-firewall-flowtables-validation-hardening.md`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
 - `DECISIONS.md`
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_batch_semantics.py tests/test_firewall_global_options_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py` passed.
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_flowtables_validation.py tests/test_firewall_batch_semantics.py tests/test_firewall_global_options_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
@@ -121,11 +117,14 @@ Assumptions:
 ## TODO Backlog (next queue)
 - Continue option-depth parity sweep for high-impact partial domains (Firewall, Interfaces, Protocols, Services, VPN, System).
 - Continue container live verification pass on clean instance (`C-02/03/04` -> done).
-- Continue firewall parity depth beyond groups (`F-01`, `F-02`, `F-04`, `F-05`, `F-06`).
+- Continue firewall parity depth beyond recent hardening (`F-01`, `F-02`, `F-04`, `F-05`, `F-06`).
 - Improve option-level parity scorer precision and add CI thresholds (`X-01` hardening).
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Firewall flowtables router now enforces strict server-side validation for flowtable names, operation allowlist, required values, interface-name values, and offload enum values before invoking builder methods.
+- Flowtables offload writes now normalize accepted mixed-case input to lowercase canonical values before builder invocation, ensuring consistent command output (`hardware|software`).
+- Added backend regression coverage `backend/tests/test_firewall_flowtables_validation.py` for invalid flowtable name/offload/interface/missing-value paths plus valid batch and delete validation behavior.
 - Firewall IPv4 and IPv6 batch/reorder endpoints now preserve `HTTPException` statuses; unknown operations return `400` instead of being wrapped into `500`.
 - Firewall IPv6 batch endpoint now supports legacy operation aliases (`icmp_type_name` and `set_ttl` forms) while executing canonical `icmpv6`/`hop-limit` methods for backward compatibility.
 - Frontend IPv6 firewall API now emits canonical operation names (`set_rule_icmpv6_type_name`, `delete_rule_icmpv6_type_name`, `set_rule_set_hop_limit`, `delete_rule_set_hop_limit`) and create/edit modals label the field as `Hop Limit`.

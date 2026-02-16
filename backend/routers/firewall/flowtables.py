@@ -13,6 +13,7 @@ from session_vyos_service import get_session_vyos_service
 from vyos_builders.firewall import FlowtablesBatchBuilder
 from fastapi_permissions import require_read_permission, require_write_permission
 from rbac_permissions import FeatureGroup
+import re
 
 router = APIRouter(prefix="/vyos/firewall/flowtables", tags=["firewall-flowtables"])
 
@@ -69,6 +70,68 @@ class FlowtablesConfigResponse(BaseModel):
     """Response containing all flowtables."""
     flowtables: List[Flowtable] = []
     total: int = 0
+
+
+RE_FLOWTABLE_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,62}$")
+RE_INTERFACE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,62}$")
+ALLOWED_OFFLOAD_TYPES = {"hardware", "software"}
+ALLOWED_BATCH_OPERATIONS = {
+    "set_flowtable",
+    "delete_flowtable",
+    "set_flowtable_description",
+    "delete_flowtable_description",
+    "set_flowtable_interface",
+    "delete_flowtable_interface",
+    "set_flowtable_offload",
+    "delete_flowtable_offload",
+}
+OPS_REQUIRING_VALUE = {
+    "set_flowtable_description",
+    "set_flowtable_interface",
+    "delete_flowtable_interface",
+    "set_flowtable_offload",
+}
+
+
+def _normalize_flowtable_name_or_400(name: str) -> str:
+    clean = name.strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail="Flowtable name is required")
+    if not RE_FLOWTABLE_NAME.match(clean):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid flowtable name '{clean}'. Use letters, numbers, dash, underscore.",
+        )
+    return clean
+
+
+def _normalize_interface_name_or_400(name: str) -> str:
+    clean = name.strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail="Interface name cannot be empty")
+    if not RE_INTERFACE_NAME.match(clean):
+        raise HTTPException(status_code=400, detail=f"Invalid interface name: {clean}")
+    return clean
+
+
+def _validate_operation_or_400(operation: FlowtableBatchOperation) -> None:
+    if operation.op not in ALLOWED_BATCH_OPERATIONS:
+        raise HTTPException(status_code=400, detail=f"Unknown operation: {operation.op}")
+
+    if operation.op in OPS_REQUIRING_VALUE:
+        if operation.value is None or not operation.value.strip():
+            raise HTTPException(status_code=400, detail=f"Operation {operation.op} requires a value")
+
+    if operation.op == "set_flowtable_offload" and operation.value is not None:
+        offload = operation.value.strip().lower()
+        if offload not in ALLOWED_OFFLOAD_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid offload type '{operation.value}'. Allowed values: hardware, software",
+            )
+
+    if operation.op in {"set_flowtable_interface", "delete_flowtable_interface"} and operation.value is not None:
+        _normalize_interface_name_or_400(operation.value)
 
 
 # ============================================================================
@@ -204,24 +267,26 @@ async def batch_configure_flowtable(request: Request, batch_request: FlowtableBa
 
         service = get_session_vyos_service(request)
         version = service.get_version()
+        flowtable_name = _normalize_flowtable_name_or_400(batch_request.flowtable_name)
 
         # Create flowtables batch builder
         batch = FlowtablesBatchBuilder(version=version)
 
         # Map operations to batch builder methods
         for operation in batch_request.operations:
+            _validate_operation_or_400(operation)
             op_name = operation.op
             op_value = operation.value
+            if op_value is not None:
+                op_value = op_value.strip()
+                if op_name == "set_flowtable_offload":
+                    op_value = op_value.lower()
 
             logger.info(f"Processing operation: {op_name} with value: {op_value}")
 
             # Get the method from batch builder
             if not hasattr(batch, op_name):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Unknown operation: {op_name}"
-                )
-
+                raise HTTPException(status_code=400, detail=f"Unknown operation: {op_name}")
             method = getattr(batch, op_name)
 
             # Inspect method signature to determine parameters
@@ -238,7 +303,7 @@ async def batch_configure_flowtable(request: Request, batch_request: FlowtableBa
                     method()
                 elif len(params) == 1:
                     # Method takes one parameter (flowtable name)
-                    method(batch_request.flowtable_name)
+                    method(flowtable_name)
                 elif len(params) == 2:
                     # Method takes two parameters (flowtable name, value)
                     if op_value is None:
@@ -246,7 +311,7 @@ async def batch_configure_flowtable(request: Request, batch_request: FlowtableBa
                             status_code=400,
                             detail=f"Operation {op_name} requires a value"
                         )
-                    method(batch_request.flowtable_name, op_value)
+                    method(flowtable_name, op_value)
                 else:
                     raise HTTPException(
                         status_code=400,
@@ -297,11 +362,12 @@ async def delete_flowtable(request: Request, flowtable_name: str):
     await require_write_permission(request, FeatureGroup.FIREWALL_FLOWTABLES)
 
     try:
+        flowtable = _normalize_flowtable_name_or_400(flowtable_name)
         service = get_session_vyos_service(request)
         version = service.get_version()
 
         batch = FlowtablesBatchBuilder(version=version)
-        batch.delete_flowtable(flowtable_name)
+        batch.delete_flowtable(flowtable)
 
         response = await run_in_threadpool(service.execute_batch, batch)
 
