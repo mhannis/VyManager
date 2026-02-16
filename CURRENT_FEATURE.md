@@ -23,14 +23,15 @@ completed_in_cycle:
   - Local Route rule rows and delete confirmations now display inbound interfaces with description-first labels when metadata exists.
   - Local Route create/edit modals now use description-first interface labels in inbound-interface selectors.
   - Runtime/browser smoke route sets were expanded to probe additional high-risk pages (`firewall/policies`, `firewall/bridge`, `firewall/global-options`, `policies/route`, `policies/local-route`, `system/acceleration`) so regressions are caught earlier.
-  - `System -> Containers` New Container button now clearly resets/switches to create mode, scrolls to the create form, and focuses the Name input to eliminate no-op behavior.
-  - `System -> Containers` now surfaces an inline editing-state hint so operators can see that `New Container` exits edit mode and resets the create form.
+  - Removed the duplicate top-bar `New Container` control in `System -> Containers`; operators now use the existing in-form controls (`Install`, `Save`, `Reset`) for a cleaner workflow.
+  - Expanded runtime/browser smoke route probes to cover more high-risk pages (`/routing/unicast-protocols/bgp`, `/routing/infrastructure/bfd`, `/routing/infrastructure/arp`, `/routing/static-failover/failover`, `/network/nat`, `/network/routes`, `/firewall/groups`, `/firewall/flowtables`, `/system/options`, `/system/logs`, `/system/users`, `/vpn/wireguard`).
   - `VPN -> WireGuard` interface list/header now use description-first interface labels for consistency with the global naming pattern.
 validation:
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py
   - cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime
   - cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime  # post load-balancing + bridge label sweep
+  - node --check frontend/scripts/smoke-ui.mjs
 known_limitations:
   - Browser smoke (Playwright) remains blocked on host dependency (`libnspr4.so`) and is outside this slice’s pass gate.
 next_queue:

@@ -327,3 +327,5 @@
 - 2026-02-16: Added LLDP/mDNS pre-submit validation in `System Services` tab (LLDP management address IP checks, mDNS browse domain token validation, mDNS service filter whitespace guard, integer cache entries) to prevent avoidable backend rejections.
 - 2026-02-16: Updated LLDP service/runtime UI to display local interfaces using description-first labels for consistency with global interface naming conventions.
 - 2026-02-16: Added inline edit-state helper copy on `System -> Containers` so `New Container` behavior is explicit while editing (`reset + switch to create`) instead of appearing as a no-op.
+- 2026-02-16: Removed the duplicate top-level `New Container` button from `System -> Containers`; the in-form `Reset` action already covered this behavior and keeping both controls introduced unnecessary UX noise.
+- 2026-02-16: Expanded `smoke:runtime` and browser smoke route lists with additional routing/firewall/system/VPN pages to catch route-level regressions earlier (`BGP`, `BFD`, `ARP`, static failover, NAT/routes, firewall groups/flowtables, system logs/users/options, WireGuard).

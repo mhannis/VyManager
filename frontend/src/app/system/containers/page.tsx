@@ -1045,8 +1045,6 @@ export default function SystemContainersPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const createFormRef = useRef<HTMLDivElement | null>(null);
-  const nameInputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedTemplate = useMemo(() => {
     return CONTAINER_TEMPLATES.find((template) => template.id === selectedTemplateId) ?? CONTAINER_TEMPLATES[0];
@@ -1294,20 +1292,6 @@ export default function SystemContainersPage() {
     setVolumeMappingsExpanded(false);
     setSuccess(null);
     setError(null);
-  };
-
-  const startNewContainer = () => {
-    const wasEditing = selectedContainerName !== null;
-    resetDraft();
-    setSuccess(
-      wasEditing
-        ? "Switched to create mode. Configure the new container and click Install."
-        : "Create form reset. Configure the new container and click Install."
-    );
-    requestAnimationFrame(() => {
-      createFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      nameInputRef.current?.focus();
-    });
   };
 
   const resetNetworkDraft = () => {
@@ -2229,8 +2213,7 @@ export default function SystemContainersPage() {
               </div>
             )}
           </div>
-          <div className="space-y-1">
-            <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             <PageGuideDialog guide={pageGuides.containers} />
             <Button
               variant="outline"
@@ -2243,18 +2226,6 @@ export default function SystemContainersPage() {
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
-            <Button variant="outline" onClick={startNewContainer} disabled={saving || installing}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Container
-            </Button>
-            </div>
-            {selectedContainerName && (
-              <p className="text-xs text-muted-foreground">
-                Editing <span className="font-medium text-foreground">{selectedContainerName}</span>. Click{" "}
-                <span className="font-medium text-foreground">New Container</span> to reset the form and switch to
-                create mode.
-              </p>
-            )}
           </div>
         </div>
 
@@ -3126,7 +3097,7 @@ export default function SystemContainersPage() {
             </CardContent>
           </Card>
 
-          <Card ref={createFormRef}>
+          <Card>
             <CardHeader>
               <CardTitle>{selectedContainer ? `Edit: ${selectedContainer.name}` : "Create Container"}</CardTitle>
               <CardDescription>
@@ -3317,7 +3288,6 @@ export default function SystemContainersPage() {
                 <div className="space-y-2">
                   <Label>Name</Label>
                   <Input
-                    ref={nameInputRef}
                     value={draft.name}
                     onChange={(event) => setDraft((previous) => ({ ...previous, name: event.target.value }))}
                     placeholder="pihole"

@@ -20,8 +20,8 @@
     "Local Route rule displays and delete confirmations show description-first interface labels when metadata is available.",
     "Local Route create/edit inbound-interface selectors display description-first labels when metadata is available.",
     "Runtime smoke probes include recently touched policy/firewall/system routes to reduce false green builds.",
-    "Containers New Container action has explicit UX behavior (reset + focus + scroll) and no longer appears to do nothing.",
-    "Containers page shows explicit edit-mode hint text so New Container intent is clear before reset.",
+    "Runtime/browser smoke probes cover expanded high-risk routing/firewall/system/VPN pages touched in backlog slices.",
+    "Containers page removes the duplicate top-level New Container action and relies on the in-form controls for create/edit/reset.",
     "WireGuard interface list/header display description-first labels when metadata is available.",
     "Backend and frontend validation gates pass for touched surfaces."
   ],
@@ -161,7 +161,7 @@
       "files": [
         "frontend/src/app/system/containers/page.tsx"
       ],
-      "notes": "New Container button now resets draft state, switches from edit to create mode, scrolls to create card, focuses name input, and surfaces inline edit-mode hint text for clear operator feedback."
+      "notes": "Removed duplicate top-level New Container action so create/edit operations are handled consistently via in-form Install/Save/Reset controls."
     },
     {
       "id": "T14",
@@ -171,6 +171,16 @@
         "frontend/src/app/vpn/wireguard/page.tsx"
       ],
       "notes": "WireGuard page now renders interface names with description-first display labels in the sidebar list and selected interface header."
+    },
+    {
+      "id": "T15",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "frontend/scripts/check-runtime.sh",
+        "frontend/scripts/smoke-ui.mjs"
+      ],
+      "notes": "Expanded runtime/browser smoke route coverage for additional routing/firewall/system/VPN pages and reran build/runtime gates."
     }
   ],
   "commands": {
