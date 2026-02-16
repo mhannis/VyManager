@@ -64,15 +64,15 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 Feature: **Interfaces IA Consolidation v2**
 
 Acceptance criteria:
-- Interfaces sidebar keeps a dedicated `Interfaces` section with family links.
+- Interfaces sidebar keeps a dedicated `Interfaces` section with only high-level entries (`Setup Wizard`, `All Interfaces`).
 - `/network/interfaces` keeps core ethernet/VLAN management plus quick-create actions, without duplicating full family-link navigation.
 - Interfaces page includes a clear `Open Setup Wizard` button.
 - Existing detailed interface pages remain reachable for compatibility and advanced settings.
 - `Create Interface` opens a single wizard-style modal with interface-type selector covering all family types.
 - The wizard shows type-specific fields and applies creation via existing per-family APIs without backend contract changes.
 - Main Interfaces page includes a consolidated inventory section for non-Ethernet/VLAN interface families.
-- Sidebar label for `/network/interfaces` is restored to the prior naming (`All Interfaces`).
-- PPPoE quick-add source-interface selection uses description-first labels (`Description (ethX)`) when available.
+- Common Interface Actions card is removed from `/network/interfaces` (covered by the wizard type selector).
+- Sidebar label for `/network/interfaces` remains `All Interfaces`.
 - Build/typecheck/runtime smoke pass after the IA changes.
 
 Assumptions:
@@ -81,20 +81,20 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v2 wizard expansion applied; `Create Interface` now opens a unified type-select flow for all interface families, and `/network/interfaces` now renders a consolidated inventory for additional interface families.
+- Status: interface IA consolidation v2 cleanup applied per operator UX feedback; side-nav interface family list is removed again and `Common Interface Actions` card is removed from Interfaces page.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
+- `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/src/app/network/interfaces/page.tsx`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
 - `DECISIONS.md`
-- `LAST_FAILURE.txt`
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/app/network/interfaces/page.tsx --max-warnings=0` passed.
+- `cd frontend && npx eslint src/components/layout/Sidebar.tsx src/app/network/interfaces/page.tsx --max-warnings=0` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
 - `cd frontend && npm run -s smoke:ui` remains blocked by missing host library `libnspr4.so` (recorded in `LAST_FAILURE.txt`).
@@ -317,3 +317,5 @@ Assumptions:
 - `Create Interface` now uses one wizard modal with a full family selector (`Ethernet`, `VLAN/QinQ`, `Dummy`, `Bonding`, `Bridge`, `Geneve`, `L2TPv3`, `Loopback`, `MACsec`, `OpenVPN`, `PPPoE`, `Pseudo-Ethernet`, `SSTP`, `Tunnel`, `Virtual-Ethernet`, `VTI`, `VXLAN`, `Wireless`, `WWAN`).
 - Generic family create path now applies minimal type-specific commands via existing API wrappers (no backend route changes); Ethernet/VLAN routes to existing dedicated create modals from the same wizard flow.
 - `/network/interfaces` now aggregates non-Ethernet family instances (bonding/bridge/dummy/geneve/l2tpv3/loopback/macsec/openvpn/pppoe/pseudo-ethernet/sstp/tunnel/virtual-ethernet/vti/vxlan/wireless/wwan) into a single inventory section so created interfaces are visible on the main page.
+- `Interfaces` sidebar now shows only `Setup Wizard` and `All Interfaces` (family deep links removed from side panel).
+- `Common Interface Actions` panel was removed from the interfaces page because the same actions are now covered by the wizard type selector.

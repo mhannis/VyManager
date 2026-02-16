@@ -61,7 +61,6 @@ import { wirelessService } from "@/lib/api/wireless";
 import { wwanService } from "@/lib/api/wwan";
 
 type InterfaceType = "all" | "ethernet" | "vlan";
-type InterfaceFamilyGroup = "core-l2" | "overlay-secure" | "access-wan";
 type QuickFamily =
   | "ethernet"
   | "vlan"
@@ -94,15 +93,6 @@ type GenericQuickFamily = Exclude<
   | "tunnel"
 >;
 
-interface InterfaceFamily {
-  key: string;
-  title: string;
-  href: string;
-  group: InterfaceFamilyGroup;
-  summary: string;
-  commonFields: string[];
-}
-
 interface AdditionalInterfaceEntry {
   family: string;
   name: string;
@@ -110,157 +100,6 @@ interface AdditionalInterfaceEntry {
   addresses: string[];
   disabled?: boolean;
 }
-
-const INTERFACE_FAMILIES: InterfaceFamily[] = [
-  {
-    key: "ethernet-vlan",
-    title: "Ethernet & VLAN",
-    href: "/network/interfaces",
-    group: "core-l2",
-    summary: "Physical interfaces plus VLAN/QinQ tagging and addressing.",
-    commonFields: ["Description", "Addresses", "VRF"],
-  },
-  {
-    key: "dummy",
-    title: "Dummy",
-    href: "/network/interfaces/dummy",
-    group: "core-l2",
-    summary: "Software-only interfaces for route/policy testing and anchors.",
-    commonFields: ["Description", "MTU", "VRF"],
-  },
-  {
-    key: "bonding",
-    title: "Bonding",
-    href: "/network/interfaces/bonding",
-    group: "core-l2",
-    summary: "LACP and static link aggregation with member management.",
-    commonFields: ["Description", "MTU", "VRF"],
-  },
-  {
-    key: "bridge",
-    title: "Bridge",
-    href: "/network/interfaces/bridge",
-    group: "core-l2",
-    summary: "Layer-2 switching with STP controls and bridge member tuning.",
-    commonFields: ["Description", "MTU", "VRF"],
-  },
-  {
-    key: "loopback",
-    title: "Loopback",
-    href: "/network/interfaces/loopback",
-    group: "core-l2",
-    summary: "Stable local endpoints for router IDs and control plane use.",
-    commonFields: ["Description", "Addresses"],
-  },
-  {
-    key: "pseudo-ethernet",
-    title: "Pseudo-Ethernet",
-    href: "/network/interfaces/pseudo-ethernet",
-    group: "core-l2",
-    summary: "Interface abstraction with source-interface binding.",
-    commonFields: ["Description", "MTU", "VRF"],
-  },
-  {
-    key: "virtual-ethernet",
-    title: "Virtual-Ethernet",
-    href: "/network/interfaces/virtual-ethernet",
-    group: "core-l2",
-    summary: "Veth pair style interfaces for local interconnect use cases.",
-    commonFields: ["Description", "MTU", "VRF"],
-  },
-  {
-    key: "tunnel",
-    title: "Tunnel",
-    href: "/network/interfaces/tunnel",
-    group: "overlay-secure",
-    summary: "GRE/IPIP-style tunnels with source/remote and MSS controls.",
-    commonFields: ["Source Address", "Remote Endpoint", "MTU"],
-  },
-  {
-    key: "vti",
-    title: "VTI",
-    href: "/network/interfaces/vti",
-    group: "overlay-secure",
-    summary: "Route-based IPsec tunnel interfaces with addressing and VRF.",
-    commonFields: ["Description", "MTU", "VRF"],
-  },
-  {
-    key: "vxlan",
-    title: "VXLAN",
-    href: "/network/interfaces/vxlan",
-    group: "overlay-secure",
-    summary: "Overlay transport with VNI mapping and underlay source controls.",
-    commonFields: ["VNI", "Source Interface", "MTU"],
-  },
-  {
-    key: "geneve",
-    title: "Geneve",
-    href: "/network/interfaces/geneve",
-    group: "overlay-secure",
-    summary: "Geneve overlays with endpoint, VNI, and MSS behavior.",
-    commonFields: ["Remote Endpoint", "Source Interface", "MTU"],
-  },
-  {
-    key: "l2tpv3",
-    title: "L2TPv3",
-    href: "/network/interfaces/l2tpv3",
-    group: "overlay-secure",
-    summary:
-      "Pseudowire transport with tunnel/session identifiers and cookies.",
-    commonFields: ["Remote Endpoint", "Session IDs", "MTU"],
-  },
-  {
-    key: "macsec",
-    title: "MACsec",
-    href: "/network/interfaces/macsec",
-    group: "overlay-secure",
-    summary:
-      "Layer-2 encryption with cipher, MKA/static peers, and replay settings.",
-    commonFields: ["Source Interface", "Cipher", "MTU"],
-  },
-  {
-    key: "openvpn",
-    title: "OpenVPN",
-    href: "/network/interfaces/openvpn",
-    group: "overlay-secure",
-    summary:
-      "OpenVPN interface mode/server/client settings and crypto controls.",
-    commonFields: ["Protocol", "Remote Host", "MTU"],
-  },
-  {
-    key: "pppoe",
-    title: "PPPoE Client",
-    href: "/network/interfaces/pppoe",
-    group: "access-wan",
-    summary:
-      "WAN client dialer with authentication and route behavior controls.",
-    commonFields: ["Source Interface", "Auth", "Default Route Distance"],
-  },
-  {
-    key: "sstp-client",
-    title: "SSTP Client",
-    href: "/network/interfaces/sstp-client",
-    group: "access-wan",
-    summary: "SSTP client tunnels with server/authentication options.",
-    commonFields: ["Server", "Auth", "MTU"],
-  },
-  {
-    key: "wireless",
-    title: "Wireless",
-    href: "/network/interfaces/wireless",
-    group: "access-wan",
-    summary: "WLAN AP/station mode with SSID, WPA, and HT controls.",
-    commonFields: ["SSID", "Mode", "MTU"],
-  },
-  {
-    key: "wwan",
-    title: "WWAN",
-    href: "/network/interfaces/wwan",
-    group: "access-wan",
-    summary: "Cellular modem interfaces with APN, DHCP, and MSS controls.",
-    commonFields: ["APN", "MTU", "Default Route Distance"],
-  },
-];
 
 const QUICK_TUNNEL_ENCAPSULATION_OPTIONS = [
   "gre",
@@ -849,20 +688,6 @@ function InterfacesPageContent() {
         })
         .sort((left, right) => left.label.localeCompare(right.label)),
     [interfaces],
-  );
-
-  const quickFamilies = useMemo(
-    () =>
-      INTERFACE_FAMILIES.filter(
-        (family) =>
-          family.key === "dummy" ||
-          family.key === "loopback" ||
-          family.key === "pppoe" ||
-          family.key === "tunnel" ||
-          family.key === "vti" ||
-          family.key === "vxlan",
-      ),
-    [],
   );
 
   const quickFamilyTitle = useMemo(() => {
@@ -1788,65 +1613,6 @@ function InterfacesPageContent() {
                 </Button>
               </div>
             </div>
-
-            <Card className="border-border">
-              <CardContent className="space-y-4 p-4">
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-base font-semibold text-foreground">
-                    Common Interface Actions
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    Quick-create common interface families from this page.
-                    Advanced family configuration is available from the left
-                    sidebar.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {quickFamilies.map((family) => {
-                    return (
-                      <div
-                        key={family.key}
-                        className="rounded-lg border border-border bg-card/40 p-3 transition-colors hover:border-primary/40"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="space-y-1">
-                            <h3 className="font-semibold text-foreground">
-                              {family.title}
-                            </h3>
-                            <p className="text-xs text-muted-foreground">
-                              {family.summary}
-                            </p>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs"
-                            onClick={() =>
-                              openQuickEditor(family.key as QuickFamily)
-                            }
-                          >
-                            Quick Add
-                          </Button>
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {family.commonFields.map((field) => (
-                            <Badge
-                              key={`${family.key}-${field}`}
-                              variant="secondary"
-                              className="text-[10px]"
-                            >
-                              {field}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         )}
 

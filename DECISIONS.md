@@ -256,3 +256,5 @@
 - 2026-02-16: The unified wizard uses existing per-family API wrappers and type-specific minimal fields; no backend contract changes were introduced in this slice.
 - 2026-02-16: Ethernet and VLAN/QinQ creation remain on their dedicated modals, but are now launched from the same unified create wizard so operator workflow starts from one button.
 - 2026-02-16: `/network/interfaces` now includes an `Additional Interface Families` inventory fed from existing family config endpoints so non-Ethernet interfaces appear on the main page after creation.
+- 2026-02-16: Removed the large interface-family link list from the left sidebar again; `Interfaces` now keeps only high-level navigation entries (`Setup Wizard`, `All Interfaces`).
+- 2026-02-16: Removed `Common Interface Actions` from `/network/interfaces`; the unified create wizard type selector is now the single creation entry point to reduce duplicate controls.

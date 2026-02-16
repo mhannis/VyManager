@@ -14,7 +14,9 @@ commits:
   - 134fd11 (revert to dedicated separate interface family pages only)
   - 69a4987 (restore interface family entries in left sidebar)
   - 7868da2 (trim family-link duplication from Interface Manager + restore old sidebar label)
-  - pending (unified create-interface wizard + main-page additional-family inventory)
+  - 647f6e0 (unified create-interface wizard with all interface families)
+  - 51ea487 (main-page additional-family inventory)
+  - pending (remove sidebar bulk family links + remove common interface actions panel)
 notes:
   - Interfaces sidebar remains consolidated to:
     - `Interfaces`
@@ -46,6 +48,8 @@ notes:
   - Sidebar child label for `/network/interfaces` is restored to `All Interfaces`.
   - `Create Interface` button now opens the unified wizard instead of directly opening only Ethernet create.
   - Main Interfaces page now includes `Additional Interface Families` cards so non-Ethernet interface types are visible in one inventory view.
+  - `Interfaces` sidebar is trimmed back to `Setup Wizard` + `All Interfaces`; family bulk links are removed.
+  - `Common Interface Actions` panel is removed from `/network/interfaces`; interface creation remains wizard-driven from the single `Create Interface` button.
   - Setup wizard remains available on the Interfaces page via `Open Setup Wizard`.
   - Validation for this increment:
     - `cd frontend && npx tsc --noEmit --pretty false`

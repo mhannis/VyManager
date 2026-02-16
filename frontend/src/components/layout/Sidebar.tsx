@@ -10,7 +10,23 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, Shield, Network, Server, Settings, LayoutDashboard, Route, Lock, LogOut, User, FileText, Building2, Power, PowerOff, Wrench } from "lucide-react";
+import {
+  ChevronDown,
+  Shield,
+  Network,
+  Server,
+  Settings,
+  LayoutDashboard,
+  Route,
+  Lock,
+  LogOut,
+  User,
+  FileText,
+  Building2,
+  Power,
+  PowerOff,
+  Wrench,
+} from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -96,91 +112,6 @@ const navigation: NavItem[] = [
       {
         title: "All Interfaces",
         href: "/network/interfaces",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "Bonding",
-        href: "/network/interfaces/bonding",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "Bridge",
-        href: "/network/interfaces/bridge",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "Dummy",
-        href: "/network/interfaces/dummy",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "Geneve",
-        href: "/network/interfaces/geneve",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "L2TPv3",
-        href: "/network/interfaces/l2tpv3",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "Loopback",
-        href: "/network/interfaces/loopback",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "MACsec",
-        href: "/network/interfaces/macsec",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "OpenVPN",
-        href: "/network/interfaces/openvpn",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "PPPoE Client",
-        href: "/network/interfaces/pppoe",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "Pseudo-Ethernet",
-        href: "/network/interfaces/pseudo-ethernet",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "SSTP Client",
-        href: "/network/interfaces/sstp-client",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "Tunnel",
-        href: "/network/interfaces/tunnel",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "Virtual-Ethernet",
-        href: "/network/interfaces/virtual-ethernet",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "VTI",
-        href: "/network/interfaces/vti",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "VXLAN",
-        href: "/network/interfaces/vxlan",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "Wireless",
-        href: "/network/interfaces/wireless",
-        requiredPermission: FeatureGroup.INTERFACES,
-      },
-      {
-        title: "WWAN",
-        href: "/network/interfaces/wwan",
         requiredPermission: FeatureGroup.INTERFACES,
       },
     ],
@@ -548,29 +479,36 @@ export function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [openOverrides, setOpenOverrides] = useState<Record<string, boolean>>({});
+  const [openOverrides, setOpenOverrides] = useState<Record<string, boolean>>(
+    {},
+  );
   const { data: session } = useSession();
-  const { activeSession, loadSession, disconnectFromInstance } = useSessionStore();
+  const { activeSession, loadSession, disconnectFromInstance } =
+    useSessionStore();
   const { canRead } = usePermissions();
 
-  const isHrefActive = useCallback((href?: string): boolean => {
-    if (!href) return false;
-    const [hrefPath, hrefQuery] = href.split("?");
-    const normalizePath = (path: string) => path.replace(/\/+$/, "") || "/";
-    const normalizedHrefPath = normalizePath(hrefPath);
-    const normalizedPathname = normalizePath(pathname);
-    const pathMatches =
-      normalizedPathname === normalizedHrefPath ||
-      (normalizedHrefPath !== "/" && normalizedPathname.startsWith(`${normalizedHrefPath}/`));
-    if (!pathMatches) return false;
-    if (!hrefQuery) return true;
+  const isHrefActive = useCallback(
+    (href?: string): boolean => {
+      if (!href) return false;
+      const [hrefPath, hrefQuery] = href.split("?");
+      const normalizePath = (path: string) => path.replace(/\/+$/, "") || "/";
+      const normalizedHrefPath = normalizePath(hrefPath);
+      const normalizedPathname = normalizePath(pathname);
+      const pathMatches =
+        normalizedPathname === normalizedHrefPath ||
+        (normalizedHrefPath !== "/" &&
+          normalizedPathname.startsWith(`${normalizedHrefPath}/`));
+      if (!pathMatches) return false;
+      if (!hrefQuery) return true;
 
-    const requiredParams = new URLSearchParams(hrefQuery);
-    for (const [key, value] of requiredParams.entries()) {
-      if (searchParams.get(key) !== value) return false;
-    }
-    return true;
-  }, [pathname, searchParams]);
+      const requiredParams = new URLSearchParams(hrefQuery);
+      for (const [key, value] of requiredParams.entries()) {
+        if (searchParams.get(key) !== value) return false;
+      }
+      return true;
+    },
+    [pathname, searchParams],
+  );
 
   // Load active session on mount
   useEffect(() => {
@@ -595,7 +533,9 @@ export function Sidebar() {
     const activeParents: string[] = [];
     navigation.forEach((item) => {
       if (item.children) {
-        const hasActiveChild = item.children.some((child) => isHrefActive(child.href));
+        const hasActiveChild = item.children.some((child) =>
+          isHrefActive(child.href),
+        );
         if (hasActiveChild) {
           activeParents.push(item.title);
         }
@@ -625,120 +565,182 @@ export function Sidebar() {
    * 3. Special case: Unicast Protocols shows if user has any routing protocol permission
    */
   const filterNavigation = (items: NavItem[]): NavItem[] => {
-    return items.map((item) => {
-      // Filter children first
-      if (item.children) {
-        const visibleChildren = item.children.filter((child) => {
-          // If no permission required, always show
-          if (!child.requiredPermission) return true;
+    return items
+      .map((item) => {
+        // Filter children first
+        if (item.children) {
+          const visibleChildren = item.children.filter((child) => {
+            // If no permission required, always show
+            if (!child.requiredPermission) return true;
 
-          // Special case for Unicast Protocols: show if user has UNICAST_PROTOCOLS
-          // OR any individual routing protocol permission
-          if (child.requiredPermission === FeatureGroup.UNICAST_PROTOCOLS) {
-            return canRead(FeatureGroup.UNICAST_PROTOCOLS) ||
-                   canRead(FeatureGroup.BGP) ||
-                   canRead(FeatureGroup.OSPF) ||
-                   canRead(FeatureGroup.OSPFV3) ||
-                   canRead(FeatureGroup.ISIS) ||
-                   canRead(FeatureGroup.OPENFABRIC) ||
-                   canRead(FeatureGroup.RIP) ||
-                   canRead(FeatureGroup.RIPNG) ||
-                   canRead(FeatureGroup.BABEL);
+            // Special case for Unicast Protocols: show if user has UNICAST_PROTOCOLS
+            // OR any individual routing protocol permission
+            if (child.requiredPermission === FeatureGroup.UNICAST_PROTOCOLS) {
+              return (
+                canRead(FeatureGroup.UNICAST_PROTOCOLS) ||
+                canRead(FeatureGroup.BGP) ||
+                canRead(FeatureGroup.OSPF) ||
+                canRead(FeatureGroup.OSPFV3) ||
+                canRead(FeatureGroup.ISIS) ||
+                canRead(FeatureGroup.OPENFABRIC) ||
+                canRead(FeatureGroup.RIP) ||
+                canRead(FeatureGroup.RIPNG) ||
+                canRead(FeatureGroup.BABEL)
+              );
+            }
+
+            // Special case for Static & Failover: show if user has STATIC_ROUTES OR FAILOVER
+            if (child.requiredPermission === FeatureGroup.STATIC_ROUTES) {
+              return (
+                canRead(FeatureGroup.STATIC_ROUTES) ||
+                canRead(FeatureGroup.FAILOVER)
+              );
+            }
+
+            // Special case for Routing Infrastructure: show if user has ROUTING_INFRASTRUCTURE
+            // OR any individual infrastructure component permission
+            if (
+              child.requiredPermission === FeatureGroup.ROUTING_INFRASTRUCTURE
+            ) {
+              return (
+                canRead(FeatureGroup.ROUTING_INFRASTRUCTURE) ||
+                canRead(FeatureGroup.BFD) ||
+                canRead(FeatureGroup.MPLS) ||
+                canRead(FeatureGroup.SEGMENT_ROUTING) ||
+                canRead(FeatureGroup.NHRP) ||
+                canRead(FeatureGroup.RPKI)
+              );
+            }
+
+            // Special case for Multicast: show if user has MULTICAST
+            // OR any individual multicast protocol permission
+            if (child.requiredPermission === FeatureGroup.MULTICAST) {
+              return (
+                canRead(FeatureGroup.MULTICAST) ||
+                canRead(FeatureGroup.IGMP_PROXY) ||
+                canRead(FeatureGroup.PIM) ||
+                canRead(FeatureGroup.PIM6)
+              );
+            }
+
+            // Special cases for Firewall sub-features: show if user has FIREWALL OR the specific permission
+            if (child.requiredPermission === FeatureGroup.FIREWALL_POLICIES) {
+              return (
+                canRead(FeatureGroup.FIREWALL) ||
+                canRead(FeatureGroup.FIREWALL_POLICIES)
+              );
+            }
+            if (child.requiredPermission === FeatureGroup.FIREWALL_BRIDGE) {
+              return (
+                canRead(FeatureGroup.FIREWALL) ||
+                canRead(FeatureGroup.FIREWALL_BRIDGE)
+              );
+            }
+            if (child.requiredPermission === FeatureGroup.FIREWALL_GROUPS) {
+              return (
+                canRead(FeatureGroup.FIREWALL) ||
+                canRead(FeatureGroup.FIREWALL_GROUPS)
+              );
+            }
+            if (child.requiredPermission === FeatureGroup.FIREWALL_ZONES) {
+              return (
+                canRead(FeatureGroup.FIREWALL) ||
+                canRead(FeatureGroup.FIREWALL_ZONES)
+              );
+            }
+            if (
+              child.requiredPermission === FeatureGroup.FIREWALL_GLOBAL_OPTIONS
+            ) {
+              return (
+                canRead(FeatureGroup.FIREWALL) ||
+                canRead(FeatureGroup.FIREWALL_GLOBAL_OPTIONS)
+              );
+            }
+            if (child.requiredPermission === FeatureGroup.FIREWALL_FLOWTABLES) {
+              return (
+                canRead(FeatureGroup.FIREWALL) ||
+                canRead(FeatureGroup.FIREWALL_FLOWTABLES)
+              );
+            }
+
+            // Special cases for Routing Policies: show if user has ROUTING_POLICIES OR the specific permission
+            if (child.requiredPermission === FeatureGroup.ACCESS_LIST) {
+              return (
+                canRead(FeatureGroup.ROUTING_POLICIES) ||
+                canRead(FeatureGroup.ACCESS_LIST)
+              );
+            }
+            if (child.requiredPermission === FeatureGroup.PREFIX_LIST) {
+              return (
+                canRead(FeatureGroup.ROUTING_POLICIES) ||
+                canRead(FeatureGroup.PREFIX_LIST)
+              );
+            }
+            if (child.requiredPermission === FeatureGroup.ROUTE_POLICY) {
+              return (
+                canRead(FeatureGroup.ROUTING_POLICIES) ||
+                canRead(FeatureGroup.ROUTE_POLICY)
+              );
+            }
+            if (child.requiredPermission === FeatureGroup.ROUTE_MAP) {
+              return (
+                canRead(FeatureGroup.ROUTING_POLICIES) ||
+                canRead(FeatureGroup.ROUTE_MAP)
+              );
+            }
+            if (child.requiredPermission === FeatureGroup.LOCAL_ROUTE) {
+              return (
+                canRead(FeatureGroup.ROUTING_POLICIES) ||
+                canRead(FeatureGroup.LOCAL_ROUTE)
+              );
+            }
+            if (child.requiredPermission === FeatureGroup.BGP_AS_PATH) {
+              return (
+                canRead(FeatureGroup.ROUTING_POLICIES) ||
+                canRead(FeatureGroup.BGP_AS_PATH)
+              );
+            }
+            if (child.requiredPermission === FeatureGroup.BGP_COMMUNITY) {
+              return (
+                canRead(FeatureGroup.ROUTING_POLICIES) ||
+                canRead(FeatureGroup.BGP_COMMUNITY)
+              );
+            }
+            if (
+              child.requiredPermission === FeatureGroup.BGP_EXTENDED_COMMUNITY
+            ) {
+              return (
+                canRead(FeatureGroup.ROUTING_POLICIES) ||
+                canRead(FeatureGroup.BGP_EXTENDED_COMMUNITY)
+              );
+            }
+            if (child.requiredPermission === FeatureGroup.BGP_LARGE_COMMUNITY) {
+              return (
+                canRead(FeatureGroup.ROUTING_POLICIES) ||
+                canRead(FeatureGroup.BGP_LARGE_COMMUNITY)
+              );
+            }
+
+            // If permission required, check if user has READ access
+            return canRead(child.requiredPermission);
+          });
+
+          // If all children are filtered out, hide the parent
+          if (visibleChildren.length === 0) {
+            return null;
           }
 
-          // Special case for Static & Failover: show if user has STATIC_ROUTES OR FAILOVER
-          if (child.requiredPermission === FeatureGroup.STATIC_ROUTES) {
-            return canRead(FeatureGroup.STATIC_ROUTES) || canRead(FeatureGroup.FAILOVER);
-          }
+          return { ...item, children: visibleChildren };
+        }
 
-          // Special case for Routing Infrastructure: show if user has ROUTING_INFRASTRUCTURE
-          // OR any individual infrastructure component permission
-          if (child.requiredPermission === FeatureGroup.ROUTING_INFRASTRUCTURE) {
-            return canRead(FeatureGroup.ROUTING_INFRASTRUCTURE) ||
-                   canRead(FeatureGroup.BFD) ||
-                   canRead(FeatureGroup.MPLS) ||
-                   canRead(FeatureGroup.SEGMENT_ROUTING) ||
-                   canRead(FeatureGroup.NHRP) ||
-                   canRead(FeatureGroup.RPKI);
-          }
-
-          // Special case for Multicast: show if user has MULTICAST
-          // OR any individual multicast protocol permission
-          if (child.requiredPermission === FeatureGroup.MULTICAST) {
-            return canRead(FeatureGroup.MULTICAST) ||
-                   canRead(FeatureGroup.IGMP_PROXY) ||
-                   canRead(FeatureGroup.PIM) ||
-                   canRead(FeatureGroup.PIM6);
-          }
-
-          // Special cases for Firewall sub-features: show if user has FIREWALL OR the specific permission
-          if (child.requiredPermission === FeatureGroup.FIREWALL_POLICIES) {
-            return canRead(FeatureGroup.FIREWALL) || canRead(FeatureGroup.FIREWALL_POLICIES);
-          }
-          if (child.requiredPermission === FeatureGroup.FIREWALL_BRIDGE) {
-            return canRead(FeatureGroup.FIREWALL) || canRead(FeatureGroup.FIREWALL_BRIDGE);
-          }
-          if (child.requiredPermission === FeatureGroup.FIREWALL_GROUPS) {
-            return canRead(FeatureGroup.FIREWALL) || canRead(FeatureGroup.FIREWALL_GROUPS);
-          }
-          if (child.requiredPermission === FeatureGroup.FIREWALL_ZONES) {
-            return canRead(FeatureGroup.FIREWALL) || canRead(FeatureGroup.FIREWALL_ZONES);
-          }
-          if (child.requiredPermission === FeatureGroup.FIREWALL_GLOBAL_OPTIONS) {
-            return canRead(FeatureGroup.FIREWALL) || canRead(FeatureGroup.FIREWALL_GLOBAL_OPTIONS);
-          }
-          if (child.requiredPermission === FeatureGroup.FIREWALL_FLOWTABLES) {
-            return canRead(FeatureGroup.FIREWALL) || canRead(FeatureGroup.FIREWALL_FLOWTABLES);
-          }
-
-          // Special cases for Routing Policies: show if user has ROUTING_POLICIES OR the specific permission
-          if (child.requiredPermission === FeatureGroup.ACCESS_LIST) {
-            return canRead(FeatureGroup.ROUTING_POLICIES) || canRead(FeatureGroup.ACCESS_LIST);
-          }
-          if (child.requiredPermission === FeatureGroup.PREFIX_LIST) {
-            return canRead(FeatureGroup.ROUTING_POLICIES) || canRead(FeatureGroup.PREFIX_LIST);
-          }
-          if (child.requiredPermission === FeatureGroup.ROUTE_POLICY) {
-            return canRead(FeatureGroup.ROUTING_POLICIES) || canRead(FeatureGroup.ROUTE_POLICY);
-          }
-          if (child.requiredPermission === FeatureGroup.ROUTE_MAP) {
-            return canRead(FeatureGroup.ROUTING_POLICIES) || canRead(FeatureGroup.ROUTE_MAP);
-          }
-          if (child.requiredPermission === FeatureGroup.LOCAL_ROUTE) {
-            return canRead(FeatureGroup.ROUTING_POLICIES) || canRead(FeatureGroup.LOCAL_ROUTE);
-          }
-          if (child.requiredPermission === FeatureGroup.BGP_AS_PATH) {
-            return canRead(FeatureGroup.ROUTING_POLICIES) || canRead(FeatureGroup.BGP_AS_PATH);
-          }
-          if (child.requiredPermission === FeatureGroup.BGP_COMMUNITY) {
-            return canRead(FeatureGroup.ROUTING_POLICIES) || canRead(FeatureGroup.BGP_COMMUNITY);
-          }
-          if (child.requiredPermission === FeatureGroup.BGP_EXTENDED_COMMUNITY) {
-            return canRead(FeatureGroup.ROUTING_POLICIES) || canRead(FeatureGroup.BGP_EXTENDED_COMMUNITY);
-          }
-          if (child.requiredPermission === FeatureGroup.BGP_LARGE_COMMUNITY) {
-            return canRead(FeatureGroup.ROUTING_POLICIES) || canRead(FeatureGroup.BGP_LARGE_COMMUNITY);
-          }
-
-          // If permission required, check if user has READ access
-          return canRead(child.requiredPermission);
-        });
-
-        // If all children are filtered out, hide the parent
-        if (visibleChildren.length === 0) {
+        // For items without children, check permission requirement
+        if (item.requiredPermission && !canRead(item.requiredPermission)) {
           return null;
         }
 
-        return { ...item, children: visibleChildren };
-      }
-
-      // For items without children, check permission requirement
-      if (item.requiredPermission && !canRead(item.requiredPermission)) {
-        return null;
-      }
-
-      return item;
-    }).filter((item): item is NavItem => item !== null);
+        return item;
+      })
+      .filter((item): item is NavItem => item !== null);
   };
 
   const visibleNavigation = filterNavigation(navigation);
@@ -770,7 +772,9 @@ export function Sidebar() {
         <nav className="space-y-1">
           {visibleNavigation.map((item) => {
             const Icon = item.icon;
-            const isActive = isHrefActive(item.href) || item.children?.some((child) => isHrefActive(child.href));
+            const isActive =
+              isHrefActive(item.href) ||
+              item.children?.some((child) => isHrefActive(child.href));
 
             if (item.children) {
               const isOpen = isItemOpen(item.title);
@@ -782,18 +786,26 @@ export function Sidebar() {
                 >
                   <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground">
                     <div className="flex items-center gap-3">
-                      <Icon className={cn(
-                        "h-4 w-4",
-                        isActive ? "text-primary" : "text-muted-foreground"
-                      )} />
-                      <span className={cn(
-                        isActive ? "text-foreground" : "text-muted-foreground"
-                      )}>{item.title}</span>
+                      <Icon
+                        className={cn(
+                          "h-4 w-4",
+                          isActive ? "text-primary" : "text-muted-foreground",
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          isActive
+                            ? "text-foreground"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {item.title}
+                      </span>
                     </div>
                     <ChevronDown
                       className={cn(
                         "h-4 w-4 text-muted-foreground transition-transform",
-                        isOpen && "rotate-180"
+                        isOpen && "rotate-180",
                       )}
                     />
                   </CollapsibleTrigger>
@@ -808,13 +820,17 @@ export function Sidebar() {
                             "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                             isChildActive
                               ? "bg-accent text-accent-foreground font-medium"
-                              : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                              : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground",
                           )}
                         >
-                          <span className={cn(
-                            "h-1.5 w-1.5 rounded-full",
-                            isChildActive ? "bg-primary" : "bg-muted-foreground/40"
-                          )} />
+                          <span
+                            className={cn(
+                              "h-1.5 w-1.5 rounded-full",
+                              isChildActive
+                                ? "bg-primary"
+                                : "bg-muted-foreground/40",
+                            )}
+                          />
                           {child.title}
                         </Link>
                       );
@@ -832,13 +848,15 @@ export function Sidebar() {
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground",
                 )}
               >
-                <Icon className={cn(
-                  "h-4 w-4",
-                  isActive ? "text-primary" : "text-muted-foreground"
-                )} />
+                <Icon
+                  className={cn(
+                    "h-4 w-4",
+                    isActive ? "text-primary" : "text-muted-foreground",
+                  )}
+                />
                 {item.title}
               </Link>
             );
@@ -894,9 +912,7 @@ export function Sidebar() {
                   <p className="text-xs font-medium text-muted-foreground">
                     No Instance
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    Not connected
-                  </p>
+                  <p className="text-xs text-muted-foreground">Not connected</p>
                 </div>
                 <div
                   className="h-2 w-2 rounded-full bg-gray-500"
