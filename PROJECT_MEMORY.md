@@ -306,3 +306,4 @@ Assumptions:
 - Interface family cards now show `Current` when already on the target view, preventing perceived no-op behavior from `Open` on the active page.
 - Interface family `Open` now launches an in-page advanced workspace (right-side sheet with embedded editor) so operators stay on `/network/interfaces`.
 - Added embedded AppLayout mode (`?embedded=1`) so editors rendered inside the workspace sheet do not include nested sidebar chrome, fixing clipped/cut-off content.
+- Workspace panel width is now full viewport (`w-screen max-w-none`) to remove remaining horizontal clipping after embedded-mode fix.

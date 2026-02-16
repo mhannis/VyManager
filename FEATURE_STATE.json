@@ -123,6 +123,15 @@
         "frontend/src/app/network/interfaces/page.tsx"
       ],
       "notes": "Added embedded-layout mode and pass `embedded=1` into family workspace iframe URLs to remove nested sidebar/layout clipping in the panel."
+    },
+    {
+      "id": "IF-IA-12",
+      "owner_role": "UI|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/app/network/interfaces/page.tsx"
+      ],
+      "notes": "Tuned workspace panel width to full viewport (`w-screen max-w-none`) to eliminate residual right-edge clipping."
     }
   ],
   "commands": {

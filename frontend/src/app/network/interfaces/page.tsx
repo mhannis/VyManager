@@ -1355,7 +1355,7 @@ function InterfacesPageContent() {
       </div>
 
       <Sheet open={Boolean(advancedFamily)} onOpenChange={(open) => !open && setAdvancedFamily(null)}>
-        <SheetContent side="right" className="w-[96vw] max-w-6xl p-0 sm:w-[95vw]">
+        <SheetContent side="right" className="w-screen max-w-none p-0 sm:max-w-none">
           {advancedFamily && (
             <div className="flex h-full min-h-0 flex-col">
               <SheetHeader className="border-b border-border px-6 py-4">
