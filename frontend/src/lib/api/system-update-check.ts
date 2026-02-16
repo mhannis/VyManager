@@ -11,6 +11,7 @@ function asString(value: unknown): string {
 }
 
 export interface SystemUpdateCheckConfig {
+  autoCheck: boolean;
   url: string;
 }
 
@@ -24,6 +25,7 @@ class SystemUpdateCheckService {
   async getConfig(refresh = false): Promise<SystemUpdateCheckConfig> {
     const root = asObject(await this.getRawConfig(refresh));
     return {
+      autoCheck: Object.prototype.hasOwnProperty.call(root, "auto-check"),
       url: asString(root.url),
     };
   }
@@ -34,4 +36,3 @@ class SystemUpdateCheckService {
 }
 
 export const systemUpdateCheckService = new SystemUpdateCheckService();
-

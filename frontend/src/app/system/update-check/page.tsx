@@ -7,6 +7,7 @@ import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -15,10 +16,12 @@ import { pageGuides } from "@/lib/help/pageGuides";
 import { systemUpdateCheckService, type SystemUpdateCheckConfig } from "@/lib/api/system-update-check";
 
 interface FormState {
+  autoCheck: boolean;
   url: string;
 }
 
 const EMPTY_FORM: FormState = {
+  autoCheck: false,
   url: "",
 };
 
@@ -31,14 +34,21 @@ function quoteCliValue(value: string): string {
 
 function toFormState(config: SystemUpdateCheckConfig): FormState {
   return {
+    autoCheck: config.autoCheck,
     url: config.url,
   };
 }
 
 function buildOperations(current: SystemUpdateCheckConfig | null, form: FormState): string[] {
   const operations: string[] = [];
+  const desiredAutoCheck = form.autoCheck;
+  const currentAutoCheck = Boolean(current?.autoCheck);
   const desiredUrl = form.url.trim();
   const currentUrl = (current?.url || "").trim();
+
+  if (desiredAutoCheck !== currentAutoCheck) {
+    operations.push(`${desiredAutoCheck ? "set" : "delete"} system update-check auto-check`);
+  }
 
   if (desiredUrl !== currentUrl) {
     if (desiredUrl) {
@@ -84,8 +94,8 @@ export default function SystemUpdateCheckPage() {
 
   const hasChanges = useMemo(() => {
     if (!config) return false;
-    return form.url.trim() !== config.url.trim();
-  }, [config, form.url]);
+    return form.autoCheck !== config.autoCheck || form.url.trim() !== config.url.trim();
+  }, [config, form.autoCheck, form.url]);
 
   const saveConfig = async () => {
     const desired = form.url.trim();
@@ -136,7 +146,7 @@ export default function SystemUpdateCheckPage() {
           <div>
             <h1 className="text-3xl font-bold">System Update Check</h1>
             <p className="mt-1 text-muted-foreground">
-              Configure `system update-check url` for package metadata refresh source.
+              Configure automatic checks and optional custom metadata source under `system update-check`.
             </p>
           </div>
           <PageGuideDialog guide={pageGuides.systemUpdateCheck} />
@@ -163,12 +173,23 @@ export default function SystemUpdateCheckPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Update Check URL</CardTitle>
+            <CardTitle>Update Check Settings</CardTitle>
             <CardDescription>
-              Leave blank to use the platform default update source.
+              Configure automatic update checks and optional metadata source URL.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={form.autoCheck}
+                onCheckedChange={(checked) =>
+                  setForm((previous) => ({ ...previous, autoCheck: checked === true }))
+                }
+                disabled={!canEdit || saving}
+              />
+              Enable automatic update checks
+            </label>
+
             <div className="space-y-2">
               <Label htmlFor="update-check-url">URL</Label>
               <Input
@@ -212,4 +233,3 @@ export default function SystemUpdateCheckPage() {
     </AppLayout>
   );
 }
-

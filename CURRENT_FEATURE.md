@@ -20,15 +20,28 @@ completed_in_cycle:
   - Expanded runtime/browser smoke route lists to include the new System pages.
   - Extended backend wrapper regression test suite for the two new wrappers.
   - Extended backend DNS tests for system resolver defaults parsing/update/validation.
+  - Triage pass for user-reported `Not Found` on System IP / Update Check / Watchdog:
+    - confirmed wrapper endpoints are present in backend runtime
+    - restarted `vm-api` and `vm-ui`
+    - revalidated runtime smoke (`smoke:runtime` pass)
+  - Extended `System -> Update Check` parity:
+    - added `auto-check` toggle support (`set/delete system update-check auto-check`)
+    - retained custom `url` field handling
+  - Extended `System -> Watchdog` parity:
+    - added watchdog enable/disable control (`set/delete system watchdog`)
+    - added `module`, `timeout`, `shutdown-timeout`, and `reboot-timeout` fields
+    - retained optional ping/startup-delay/test-interval controls for compatibility
+  - Updated System how-to guides for Update Check and Watchdog to reflect the expanded controls.
 validation:
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py
   - cd frontend && npx tsc --noEmit --pretty false
   - cd frontend && npm run -s build
   - cd frontend && npm run -s smoke:runtime
   - cd frontend && npm run -s lint  # warnings-only baseline remains; no errors
+  - tmux restart: vm-ui session restarted after build (`npm run -s start -- --hostname 0.0.0.0 --port 3000`)
 known_limitations:
   - Frontend lint baseline still contains pre-existing repo-wide warnings outside this slice.
-  - Browser Playwright smoke was not re-run in this cycle; runtime smoke + build/typecheck passed.
+  - Browser Playwright smoke is blocked on host dependency (`libnspr4.so` missing); runtime smoke + build/typecheck passed.
 next_queue:
   - Continue `system` bucket depth: login/user parity deepening and remaining time/update/watchdog option coverage verification.
   - Continue `interfaces` bucket depth for WWAN/Wireless advanced leaves and live-save guide verification.

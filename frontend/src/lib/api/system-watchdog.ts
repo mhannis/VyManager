@@ -30,6 +30,11 @@ function readTagValues(value: unknown): string[] {
 }
 
 export interface SystemWatchdogConfig {
+  enabled: boolean;
+  module: string;
+  timeout: string;
+  shutdownTimeout: string;
+  rebootTimeout: string;
   pingTargets: string[];
   startupDelay: string;
   testInterval: string;
@@ -45,6 +50,11 @@ class SystemWatchdogService {
   async getConfig(refresh = false): Promise<SystemWatchdogConfig> {
     const root = asObject(await this.getRawConfig(refresh));
     return {
+      enabled: Object.keys(root).length > 0,
+      module: asString(root.module),
+      timeout: asString(root.timeout),
+      shutdownTimeout: asString(root["shutdown-timeout"]),
+      rebootTimeout: asString(root["reboot-timeout"]),
       pingTargets: readTagValues(root.ping),
       startupDelay: asString(root["startup-delay"]),
       testInterval: asString(root["test-interval"]),
@@ -57,4 +67,3 @@ class SystemWatchdogService {
 }
 
 export const systemWatchdogService = new SystemWatchdogService();
-

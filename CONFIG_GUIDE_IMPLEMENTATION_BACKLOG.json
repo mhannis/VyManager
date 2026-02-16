@@ -497,7 +497,7 @@
       "id": "SYS-16",
       "domain": "system",
       "status": "partial",
-      "title": "Time-zone/update/watchdog parity completion"
+      "title": "Time-zone/update/watchdog parity deepening (auto-check + watchdog hardware controls added; remaining depth/verification pending)"
     },
     {
       "id": "X-01",

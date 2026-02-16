@@ -2,6 +2,10 @@
 
 ## Decision Log
 
+- 2026-02-16: For `SYS-16` parity depth, expanded existing `system update-check` and `system watchdog` form pages in place (no new endpoints) to preserve thin-wrapper architecture and existing API contracts.
+- 2026-02-16: `system watchdog` UX keeps optional ping/startup/test fields while adding documented hardware watchdog controls (`module`, `timeout`, `shutdown-timeout`, `reboot-timeout`) to support mixed-version/operator use without forcing a migration.
+- 2026-02-16: For user-reported `Not Found` on System IP/Update Check/Watchdog, treated the issue as runtime drift first: confirmed wrapper routes exist (`401` unauth endpoint probes), kept code unchanged, and validated by rebuilding/restarting `vm-api` + `vm-ui`.
+- 2026-02-16: Kept browser smoke (`smoke:ui`) as a required gate but marked it host-blocked until Playwright OS deps are installed (`libnspr4.so` missing); recorded blocker in `LAST_FAILURE.txt` instead of bypassing silently.
 - 2026-02-16: Implemented `system update-check` and `system watchdog` as thin `build_config_tree_router(...)` wrappers plus dedicated form-first pages, preserving existing backend API/service contracts and avoiding broad system-router rewrites.
 - 2026-02-16: Resolved `SYS-10` DNS ownership gap by extending existing `/vyos/system/dns-config` models to include `system_name_servers` + `system_domain_search` rather than creating a parallel endpoint, so UI ownership stays consolidated and backward-compatible.
 - 2026-02-16: Deepened wireless parity using guide-backed VHT leaves in the existing Wireless page/API parser (scalar + tag + beamform flags) to increase interface bucket depth without introducing new interface-family routes.

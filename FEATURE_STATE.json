@@ -92,6 +92,39 @@
         "frontend/src/app/network/interfaces/wireless/page.tsx"
       ],
       "notes": "Manual in-process review complete. APPROVED."
+    },
+    {
+      "id": "T8",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "PROJECT_MEMORY.md",
+        "LAST_FAILURE.txt"
+      ],
+      "notes": "Live triage for user-reported Not Found: confirmed system wrapper endpoints exist (401 unauth), runtime smoke passed after vm-api/vm-ui restart; browser smoke remains blocked by missing Playwright OS dependency."
+    },
+    {
+      "id": "T9",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/lib/api/system-update-check.ts",
+        "frontend/src/app/system/update-check/page.tsx",
+        "frontend/src/lib/api/system-watchdog.ts",
+        "frontend/src/app/system/watchdog/page.tsx",
+        "frontend/src/lib/help/pageGuides.ts"
+      ],
+      "notes": "Extended SYS-16 parity depth: update-check now supports auto-check toggle; watchdog now supports enable/module/timeout/shutdown-timeout/reboot-timeout plus existing optional ping/timer controls."
+    },
+    {
+      "id": "T10",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/update-check/page.tsx",
+        "frontend/src/app/system/watchdog/page.tsx"
+      ],
+      "notes": "Validated with frontend TypeScript check, production build, and runtime smoke; restarted vm-ui to ensure new UI is served."
     }
   ],
   "commands": {

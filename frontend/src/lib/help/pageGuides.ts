@@ -1079,12 +1079,13 @@ export const pageGuides: Record<
   systemUpdateCheck: {
     title: "System Update Check How-To",
     summary:
-      "Configure the optional update-check URL used by VyOS when checking package metadata.",
+      "Configure automatic update checks and an optional update-check URL for package metadata lookups.",
     docsUrl: "https://docs.vyos.io/en/latest/configuration/system/updates.html",
     sections: [
       {
         title: "Recommended Setup Order",
         items: [
+          "Enable auto-check when the node should periodically verify update metadata on its own.",
           "Leave URL empty to keep default package source behavior.",
           "Set a custom URL only when using an internal mirror or alternate package channel.",
         ],
@@ -1108,29 +1109,29 @@ export const pageGuides: Record<
   systemWatchdog: {
     title: "System Watchdog How-To",
     summary:
-      "Configure watchdog ping targets and timers so the system can detect persistent upstream outages.",
+      "Configure hardware watchdog module/timeouts and optional ping targets to handle persistent failures safely.",
     docsUrl: "https://docs.vyos.io/en/latest/configuration/system/watchdog.html",
     sections: [
       {
         title: "Recommended Setup Order",
         items: [
-          "Add one or more stable ping targets first (gateway or reliable upstream endpoints).",
-          "Set startup-delay to avoid false alarms during boot and link negotiation.",
-          "Tune test-interval based on how quickly you need outage detection.",
+          "Enable watchdog and set module/timeout values that match your platform watchdog hardware.",
+          "Use shutdown-timeout and reboot-timeout values high enough for clean state transitions.",
+          "Optionally add stable ping targets and startup/test timers for additional reachability checks.",
         ],
       },
       {
         title: "Validation",
         items: [
-          "Save and refresh to confirm target and timer values persist.",
-          "Monitor system behavior during controlled link outages to verify watchdog responsiveness.",
+          "Save and refresh to confirm module, timeout, and optional ping settings persist.",
+          "Run a controlled restart/failure test window to verify watchdog behavior matches expected recovery policy.",
         ],
       },
       {
         title: "Troubleshooting",
         items: [
-          "Frequent watchdog events usually indicate unstable targets or over-aggressive timer values.",
-          "Choose destinations reachable from the configured routing table/VRF for consistent checks.",
+          "If watchdog does not engage, verify the module name exists on the running kernel/platform.",
+          "Frequent watchdog triggers usually indicate overly aggressive timeout values or unstable ping targets.",
         ],
       },
     ],

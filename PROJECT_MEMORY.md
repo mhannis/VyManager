@@ -77,7 +77,9 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: system/interfaces largest-bucket depth pass implemented locally and validated.
+- Status: system/interfaces largest-bucket depth pass implemented locally and validated; runtime drift hotfix applied by restarting `vm-api` + `vm-ui`.
+- Live triage (2026-02-16): user-reported `Not Found` on System IP/Update Check/Watchdog was investigated; backend routes are present and responding (unauthenticated probes now return `401`, not `404`).
+- SYS-16 continuation (2026-02-16): expanded UI parity depth for `system update-check` and `system watchdog` option leaves without backend contract changes.
 - Backlog audit (2026-02-16): moved forward on `SYS-10`, `SYS-16`, and `IF-13`.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
@@ -101,6 +103,8 @@ Assumptions:
 - `frontend/src/lib/sidebar-visibility.ts`
 - `frontend/scripts/check-runtime.sh`
 - `frontend/scripts/smoke-ui.mjs`
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
@@ -112,10 +116,22 @@ Assumptions:
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
 - `cd frontend && npm run -s lint` passed with warnings only (`0 errors`).
+- Runtime drift recovery: restarted tmux sessions `vm-api` and `vm-ui` and revalidated listeners on ports `8000` and `3000`.
+- Endpoint spot-check after restart:
+  - `/vyos/system-ip/capabilities` -> `401` (expected unauthenticated)
+  - `/vyos/system-update-check/capabilities` -> `401` (expected unauthenticated)
+  - `/vyos/system-watchdog/capabilities` -> `401` (expected unauthenticated)
+- `cd frontend && npm run -s smoke:ui` currently blocked by host dependency (`libnspr4.so` missing).
+- SYS-16 UI parity pass validation:
+  - `cd frontend && npx tsc --noEmit --pretty false` passed.
+  - `cd frontend && npm run -s build` passed.
+  - `cd frontend && npm run -s smoke:runtime` passed.
+  - Restarted `vm-ui` tmux session after build and rechecked runtime smoke.
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
 - Browser smoke depends on host-specific Playwright shared libs path.
+- Browser smoke dependency install is currently blocked without elevated host package permissions (`sudo` unavailable in this session).
 - Sidebar visibility preferences are currently browser-local (localStorage) rather than profile-synced.
 - Services sidebar consolidation keeps the tabbed services UI as the primary workflow; only a minimal shortcut set is exposed in sidebar navigation.
 - DHCP remains critical: the dedicated `/network/dhcp` editor remains authoritative, and Services now includes a DHCP tab that embeds the same management workspace.
@@ -132,6 +148,10 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui` where deps permit).
 
 ## Agent Handoff Notes
+- User-reported `Not Found` banners on System pages were consistent with stale runtime processes; wrappers/routes were present in code (`401` unauth on backend direct endpoint probes), and issue was addressed by rebuilding frontend and restarting `vm-api` + `vm-ui`.
+- Verified tmux runtime sessions are currently healthy: `vm-api` (uvicorn on `:8000`) and `vm-ui` (Next start on `:3000`), with no `404` for the triaged System wrapper endpoints in backend logs.
+- `System -> Update Check` now manages both `auto-check` and `url` fields (set/delete semantics) through the existing `system-update-check` wrapper.
+- `System -> Watchdog` now manages `enable`, `module`, `timeout`, `shutdown-timeout`, and `reboot-timeout` in addition to optional ping/timer fields, with numeric validation aligned to docs ranges.
 - Added thin system wrappers `system_update_check` and `system_watchdog` (`/vyos/system-update-check/*`, `/vyos/system-watchdog/*`) and registered them in `backend/app.py`.
 - Added form-first System pages `/system/update-check` and `/system/watchdog` plus matching API clients (`system-update-check.ts`, `system-watchdog.ts`) and help guides (`pageGuides.systemUpdateCheck`, `pageGuides.systemWatchdog`).
 - `System -> DNS` now owns both forwarding settings and resolver defaults: backend + UI support for `system name-server` and `system domain-search` with strict validation and deterministic errors.

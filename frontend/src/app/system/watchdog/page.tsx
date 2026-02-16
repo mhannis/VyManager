@@ -7,6 +7,7 @@ import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,12 +17,22 @@ import { pageGuides } from "@/lib/help/pageGuides";
 import { systemWatchdogService, type SystemWatchdogConfig } from "@/lib/api/system-watchdog";
 
 interface FormState {
+  enabled: boolean;
+  module: string;
+  timeout: string;
+  shutdownTimeout: string;
+  rebootTimeout: string;
   pingTargetsText: string;
   startupDelay: string;
   testInterval: string;
 }
 
 const EMPTY_FORM: FormState = {
+  enabled: false,
+  module: "",
+  timeout: "",
+  shutdownTimeout: "",
+  rebootTimeout: "",
   pingTargetsText: "",
   startupDelay: "",
   testInterval: "",
@@ -53,8 +64,19 @@ function isValidPingTarget(value: string): boolean {
   return false;
 }
 
+function isValidWatchdogModule(value: string): boolean {
+  const candidate = value.trim();
+  if (!candidate) return false;
+  return /^[A-Za-z0-9._:-]+$/.test(candidate);
+}
+
 function toFormState(config: SystemWatchdogConfig): FormState {
   return {
+    enabled: config.enabled,
+    module: config.module,
+    timeout: config.timeout,
+    shutdownTimeout: config.shutdownTimeout,
+    rebootTimeout: config.rebootTimeout,
     pingTargetsText: config.pingTargets.join("\n"),
     startupDelay: config.startupDelay,
     testInterval: config.testInterval,
@@ -66,9 +88,46 @@ function buildOperations(current: SystemWatchdogConfig | null, form: FormState):
   const base = "system watchdog";
 
   const currentSafe: SystemWatchdogConfig = current || {
+    enabled: false,
+    module: "",
+    timeout: "",
+    shutdownTimeout: "",
+    rebootTimeout: "",
     pingTargets: [],
     startupDelay: "",
     testInterval: "",
+  };
+
+  if (!form.enabled) {
+    if (currentSafe.enabled) {
+      operations.push(`delete ${base}`);
+    }
+    return operations;
+  }
+
+  if (!currentSafe.enabled) {
+    operations.push(`set ${base}`);
+  }
+
+  const syncScalar = (
+    token:
+      | "module"
+      | "timeout"
+      | "shutdown-timeout"
+      | "reboot-timeout"
+      | "startup-delay"
+      | "test-interval",
+    desiredRaw: string,
+    currentRaw: string,
+  ) => {
+    const desired = desiredRaw.trim();
+    const existing = currentRaw.trim();
+    if (desired === existing) return;
+    if (desired) {
+      operations.push(`set ${base} ${token} ${quoteCliValue(desired)}`);
+    } else {
+      operations.push(`delete ${base} ${token}`);
+    }
   };
 
   const desiredTargets = splitUniqueLines(form.pingTargetsText);
@@ -87,17 +146,10 @@ function buildOperations(current: SystemWatchdogConfig | null, form: FormState):
     }
   }
 
-  const syncScalar = (token: "startup-delay" | "test-interval", desiredRaw: string, currentRaw: string) => {
-    const desired = desiredRaw.trim();
-    const existing = currentRaw.trim();
-    if (desired === existing) return;
-    if (desired) {
-      operations.push(`set ${base} ${token} ${quoteCliValue(desired)}`);
-    } else {
-      operations.push(`delete ${base} ${token}`);
-    }
-  };
-
+  syncScalar("module", form.module, currentSafe.module);
+  syncScalar("timeout", form.timeout, currentSafe.timeout);
+  syncScalar("shutdown-timeout", form.shutdownTimeout, currentSafe.shutdownTimeout);
+  syncScalar("reboot-timeout", form.rebootTimeout, currentSafe.rebootTimeout);
   syncScalar("startup-delay", form.startupDelay, currentSafe.startupDelay);
   syncScalar("test-interval", form.testInterval, currentSafe.testInterval);
 
@@ -138,6 +190,11 @@ export default function SystemWatchdogPage() {
   const hasChanges = useMemo(() => {
     if (!config) return false;
     return (
+      form.enabled !== config.enabled ||
+      form.module.trim() !== config.module.trim() ||
+      form.timeout.trim() !== config.timeout.trim() ||
+      form.shutdownTimeout.trim() !== config.shutdownTimeout.trim() ||
+      form.rebootTimeout.trim() !== config.rebootTimeout.trim() ||
       splitUniqueLines(form.pingTargetsText).join("\n") !== config.pingTargets.join("\n") ||
       form.startupDelay.trim() !== config.startupDelay.trim() ||
       form.testInterval.trim() !== config.testInterval.trim()
@@ -145,26 +202,43 @@ export default function SystemWatchdogPage() {
   }, [config, form]);
 
   const saveConfig = async () => {
-    const pingTargets = splitUniqueLines(form.pingTargetsText);
-    for (const target of pingTargets) {
-      if (!isValidPingTarget(target)) {
-        setError(`Invalid watchdog ping target '${target}'.`);
+    if (form.enabled) {
+      if (form.module.trim() && !isValidWatchdogModule(form.module)) {
+        setError("Watchdog module name can only contain letters, numbers, dot, underscore, colon, or dash.");
         setSuccess(null);
         return;
       }
-    }
 
-    const numericFields = [
-      { label: "Startup delay", value: form.startupDelay },
-      { label: "Test interval", value: form.testInterval },
-    ];
-    for (const field of numericFields) {
-      const trimmed = field.value.trim();
-      if (!trimmed) continue;
-      if (!/^\d+$/.test(trimmed)) {
-        setError(`${field.label} must be a whole number.`);
-        setSuccess(null);
-        return;
+      const pingTargets = splitUniqueLines(form.pingTargetsText);
+      for (const target of pingTargets) {
+        if (!isValidPingTarget(target)) {
+          setError(`Invalid watchdog ping target '${target}'.`);
+          setSuccess(null);
+          return;
+        }
+      }
+
+      const numericFields = [
+        { label: "Watchdog timeout", value: form.timeout, min: 1, max: 65535 },
+        { label: "Shutdown timeout", value: form.shutdownTimeout, min: 60, max: 65535 },
+        { label: "Reboot timeout", value: form.rebootTimeout, min: 60, max: 65535 },
+        { label: "Startup delay", value: form.startupDelay, min: 0, max: 65535 },
+        { label: "Test interval", value: form.testInterval, min: 1, max: 65535 },
+      ] as const;
+      for (const field of numericFields) {
+        const trimmed = field.value.trim();
+        if (!trimmed) continue;
+        if (!/^\d+$/.test(trimmed)) {
+          setError(`${field.label} must be a whole number.`);
+          setSuccess(null);
+          return;
+        }
+        const parsed = Number.parseInt(trimmed, 10);
+        if (parsed < field.min || parsed > field.max) {
+          setError(`${field.label} must be between ${field.min} and ${field.max}.`);
+          setSuccess(null);
+          return;
+        }
       }
     }
 
@@ -209,7 +283,7 @@ export default function SystemWatchdogPage() {
           <div>
             <h1 className="text-3xl font-bold">System Watchdog</h1>
             <p className="mt-1 text-muted-foreground">
-              Configure periodic watchdog pings and timers under `system watchdog`.
+              Configure hardware watchdog controls and optional ping checks under `system watchdog`.
             </p>
           </div>
           <PageGuideDialog guide={pageGuides.systemWatchdog} />
@@ -238,12 +312,74 @@ export default function SystemWatchdogPage() {
           <CardHeader>
             <CardTitle>Watchdog Configuration</CardTitle>
             <CardDescription>
-              Add one or more ping targets so VyOS can detect upstream failures and trigger configured actions.
+              Enable watchdog support, select the watchdog module, and tune timeout behavior.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={form.enabled}
+                onCheckedChange={(checked) =>
+                  setForm((previous) => ({ ...previous, enabled: checked === true }))
+                }
+                disabled={!canEdit || saving}
+              />
+              Enable system watchdog
+            </label>
+
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="space-y-2">
+                <Label htmlFor="watchdog-module">Module</Label>
+                <Input
+                  id="watchdog-module"
+                  value={form.module}
+                  onChange={(event) =>
+                    setForm((previous) => ({ ...previous, module: event.target.value }))
+                  }
+                  placeholder="iTCO_wdt"
+                  disabled={!canEdit || saving || !form.enabled}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="watchdog-timeout">Timeout (seconds)</Label>
+                <Input
+                  id="watchdog-timeout"
+                  value={form.timeout}
+                  onChange={(event) =>
+                    setForm((previous) => ({ ...previous, timeout: event.target.value }))
+                  }
+                  placeholder="120"
+                  disabled={!canEdit || saving || !form.enabled}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="watchdog-shutdown-timeout">Shutdown Timeout (seconds)</Label>
+                <Input
+                  id="watchdog-shutdown-timeout"
+                  value={form.shutdownTimeout}
+                  onChange={(event) =>
+                    setForm((previous) => ({ ...previous, shutdownTimeout: event.target.value }))
+                  }
+                  placeholder="180"
+                  disabled={!canEdit || saving || !form.enabled}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="watchdog-reboot-timeout">Reboot Timeout (seconds)</Label>
+                <Input
+                  id="watchdog-reboot-timeout"
+                  value={form.rebootTimeout}
+                  onChange={(event) =>
+                    setForm((previous) => ({ ...previous, rebootTimeout: event.target.value }))
+                  }
+                  placeholder="180"
+                  disabled={!canEdit || saving || !form.enabled}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="watchdog-ping-targets">Ping Targets</Label>
+              <Label htmlFor="watchdog-ping-targets">Ping Targets (optional)</Label>
               <Textarea
                 id="watchdog-ping-targets"
                 value={form.pingTargetsText}
@@ -252,10 +388,10 @@ export default function SystemWatchdogPage() {
                 }
                 placeholder={"192.0.2.1\nresolver.example.net"}
                 className="min-h-28 font-mono text-sm"
-                disabled={!canEdit || saving}
+                disabled={!canEdit || saving || !form.enabled}
               />
               <p className="text-xs text-muted-foreground">
-                Enter one destination per line. Use stable upstream addresses reachable from this system.
+                Optional legacy ping checks; enter one destination per line.
               </p>
             </div>
 
@@ -269,7 +405,7 @@ export default function SystemWatchdogPage() {
                     setForm((previous) => ({ ...previous, startupDelay: event.target.value }))
                   }
                   placeholder="120"
-                  disabled={!canEdit || saving}
+                  disabled={!canEdit || saving || !form.enabled}
                 />
               </div>
               <div className="space-y-2">
@@ -281,7 +417,7 @@ export default function SystemWatchdogPage() {
                     setForm((previous) => ({ ...previous, testInterval: event.target.value }))
                   }
                   placeholder="15"
-                  disabled={!canEdit || saving}
+                  disabled={!canEdit || saving || !form.enabled}
                 />
               </div>
             </div>
@@ -318,4 +454,3 @@ export default function SystemWatchdogPage() {
     </AppLayout>
   );
 }
-

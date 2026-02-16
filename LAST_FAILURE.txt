@@ -1,15 +1,9 @@
-timestamp: 2026-02-16T19:28:36Z
-failing_command: cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_config_tree_wrapper_capabilities.py
-error_summary: The new `system-syslog` config wrapper test failed because the dummy test fixture did not include any `system.syslog` subtree data, so the marker assertion (`preserve-fqdn`) had an empty payload.
+timestamp: 2026-02-16T20:44:20Z
+failing_command: cd frontend && npm run -s smoke:runtime
+error_summary: Runtime smoke probe briefly failed while `vm-ui` was being restarted, causing a transient connect error on port 3000.
 last_output:
-=================================== FAILURES ===================================
-_ test_config_tree_wrapper_config_payload[/vyos/system-syslog/config-syslog-preserve-fqdn] _
-...
->       assert marker in payload[response_key]
-E       AssertionError: assert 'preserve-fqdn' in {}
-tests/test_config_tree_wrapper_capabilities.py:542: AssertionError
-=========================== short test summary info ============================
-FAILED tests/test_config_tree_wrapper_capabilities.py::test_config_tree_wrapper_config_payload[/vyos/system-syslog/config-syslog-preserve-fqdn]
-1 failed, 102 passed in 5.55s
-suspected_cause: `DummyService.get_full_config()` lacked `system: { syslog: ... }` sample data for the new wrapper endpoint.
-next_step: Add representative `system.syslog` fixture data in `backend/tests/test_config_tree_wrapper_capabilities.py` and rerun the test file; this was completed with `103 passed`.
+[runtime-check] Probing http://localhost:3000
+curl: (7) Failed to connect to localhost port 3000 after 0 ms: Couldn't connect to server
+[runtime-check] ERROR: Probe failed for /
+suspected_cause: The smoke probe and frontend process restart happened concurrently before the HTTP listener was fully ready.
+next_step: Rerun `npm run -s smoke:runtime` after confirming `vm-ui` reports `Ready`.
