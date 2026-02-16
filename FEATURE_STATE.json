@@ -1,17 +1,17 @@
 {
-  "feature_id": "interfaces-ethernet-dhcp-ipv6-depth-2026-02-16",
-  "title": "Interfaces Ethernet DHCP/DHCPv6/IPv6 parity depth pass (IF-15 subset)",
+  "feature_id": "interfaces-wireguard-peer-validation-depth-2026-02-16",
+  "title": "Interfaces WireGuard peer validation/safety parity depth pass (IF-15 subset)",
   "status": "in_progress",
   "acceptance_criteria": [
-    "Ethernet GUI supports DHCP options reject routes and user-class with deterministic set/delete semantics.",
-    "Ethernet GUI supports DHCPv6 options no-release, parameters-only, and temporary flags with robust toggle handling.",
-    "Ethernet GUI supports IPv6 accept-dad and no-default-link-local options plus correct autoconf/eui64 round-trip behavior.",
-    "Backend router/builder/mapper support all newly exposed ethernet operations and preserve legacy set_* value=false compatibility via delete mapping.",
-    "Validation gates pass: backend targeted pytest, frontend tsc, targeted eslint, build, runtime smoke, UI smoke."
+    "WireGuard peer batch API validates endpoint semantics (address vs host-name exclusivity, port dependency, keepalive range).",
+    "WireGuard peer batch API rejects duplicate allowed-ips within a peer and collisions against other peers on the same interface.",
+    "Create/Edit WireGuard peer modals enforce the same validation constraints client-side before submit.",
+    "Backend regression tests cover the new peer validation logic and pass locally.",
+    "Frontend gates pass (tsc, targeted eslint, build, runtime smoke, UI smoke)."
   ],
   "assumptions": [
-    "IF-15 remains partial after this slice because loopback and wireguard option-depth work is still pending.",
-    "This slice intentionally extends existing ethernet endpoints/contracts rather than introducing new interface APIs."
+    "WireGuard option-depth work remains partial after this slice; this pass focuses on peer safety/validation behavior.",
+    "Existing /vyos/vpn/wireguard endpoints remain authoritative and unchanged in contract surface."
   ],
   "tasks": [
     {
@@ -19,40 +19,38 @@
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/vyos_mappers/interfaces/ethernet.py",
-        "backend/vyos_builders/interfaces/ethernet.py",
-        "backend/routers/interfaces/ethernet.py"
+        "backend/routers/wireguard/wireguard.py"
       ],
-      "notes": "Added mapper paths, builder methods, response model fields, capabilities entries, and batch operation handlers for new DHCP/DHCPv6/IPv6 leaves and delete semantics."
+      "notes": "Added peer batch validation helpers for endpoint semantics, allowed-IP validation, and collision checks."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/network/ComprehensiveEthernetModal.tsx",
-        "frontend/src/lib/api/types/ethernet.ts"
+        "frontend/src/components/vpn/CreatePeerModal.tsx",
+        "frontend/src/components/vpn/EditPeerModal.tsx",
+        "frontend/src/app/vpn/wireguard/page.tsx"
       ],
-      "notes": "Added Ethernet modal controls and operation generation for reject/user-class/no-release/parameters-only/temporary/accept-dad/no-default-link-local; fixed autoconf/eui64 diff logic."
+      "notes": "Added matching client-side validation guardrails and passed interface context to EditPeer modal for cross-peer collision checks."
     },
     {
       "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_ethernet_batch_parity_options.py"
+        "backend/tests/test_wireguard_peer_validation.py"
       ],
-      "notes": "Added router regression coverage for new ops and legacy false->delete behavior; full validation gates passed."
+      "notes": "Added endpoint regression coverage for endpoint exclusivity, duplicate allowed-ips, missing endpoint port, keepalive range, and successful valid path."
     },
     {
       "id": "T4",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/routers/interfaces/ethernet.py",
-        "backend/vyos_builders/interfaces/ethernet.py",
-        "backend/vyos_mappers/interfaces/ethernet.py",
-        "frontend/src/components/network/ComprehensiveEthernetModal.tsx"
+        "backend/routers/wireguard/wireguard.py",
+        "frontend/src/components/vpn/CreatePeerModal.tsx",
+        "frontend/src/components/vpn/EditPeerModal.tsx"
       ],
       "notes": "Manual in-process review complete. APPROVED."
     },
@@ -64,18 +62,18 @@
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
       ],
-      "notes": "Execute next IF-15 depth slices for loopback and wireguard in guide order."
+      "notes": "Close remaining IF-15 loopback edge-depth gaps, then continue next backlog domain."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_ethernet_batch_parity_options.py tests/test_ethernet_vlan_batch_ops.py && cd ../frontend && npx tsc --noEmit --pretty false && npx eslint src/components/network/ComprehensiveEthernetModal.tsx src/lib/api/types/ethernet.ts && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_wireguard_peer_validation.py tests/test_ethernet_batch_parity_options.py && cd ../frontend && npx tsc --noEmit --pretty false && npx eslint src/components/vpn/CreatePeerModal.tsx src/components/vpn/EditPeerModal.tsx src/app/vpn/wireguard/page.tsx src/components/network/ComprehensiveEthernetModal.tsx src/lib/api/types/ethernet.ts && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "IF-15 ethernet DHCP/DHCPv6/IPv6 parity depth implementation and validation",
+      "purpose": "IF-15 wireguard peer validation depth and runtime verification",
       "status": "active"
     }
   ]

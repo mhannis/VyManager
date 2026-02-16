@@ -844,6 +844,7 @@ export default function WireGuardPage() {
               open={!!editingPeer}
               onOpenChange={(open) => !open && setEditingPeer(null)}
               interfaceName={currentInterface.name}
+              interfaceData={currentInterface}
               peerData={editingPeer}
               onSuccess={() => fetchConfig(true)}
             />

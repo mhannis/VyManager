@@ -1,20 +1,22 @@
-timestamp: 2026-02-16T22:11:47Z
-failing_command: cd frontend && npm run -s smoke:ui
-error_summary: Browser smoke failed with client-side ChunkLoadError on interfaces pages due stale/missing Next.js chunk artifacts served by the current vm-ui runtime.
+timestamp: 2026-02-16T22:49:31Z
+failing_command: cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_wireguard_peer_validation.py tests/test_ethernet_batch_parity_options.py
+error_summary: New WireGuard peer validation tests initially failed (4 cases) because validation logic was mistakenly inserted into the interface-batch endpoint instead of the peer-batch endpoint. Peer endpoint requests therefore bypassed validation and returned HTTP 200.
 last_output:
-UI smoke test FAILED:
-- /network/interfaces?group=core-l2: rendered client-side application error banner
-- /network/interfaces?group=core-l2: pageerror at http://localhost:3000/network/interfaces?group=core-l2 -> ChunkLoadError: Failed to load chunk /_next/static/chunks/ba15d20e2824928d.js from module 264918
-    at http://localhost:3000/_next/static/chunks/turbopack-50a273dcebd10f43.js:1:5953
-- /network/interfaces?group=overlay-secure: rendered client-side application error banner
-- /network/interfaces?group=overlay-secure: pageerror at http://localhost:3000/network/interfaces?group=overlay-secure -> ChunkLoadError: Failed to load chunk /_next/static/chunks/ba15d20e2824928d.js from module 264918
-    at http://localhost:3000/_next/static/chunks/turbopack-50a273dcebd10f43.js:1:5953
-- /network/interfaces?group=access-wan: rendered client-side application error banner
-- /network/interfaces?group=access-wan: pageerror at http://localhost:3000/network/interfaces?group=access-wan -> ChunkLoadError: Failed to load chunk /_next/static/chunks/ba15d20e2824928d.js from module 264918
-    at http://localhost:3000/_next/static/chunks/turbopack-50a273dcebd10f43.js:1:5953
-- /network/interfaces/wwan: rendered client-side application error banner
-- /network/interfaces/wwan: pageerror at http://localhost:3000/network/interfaces/wwan -> ChunkLoadError: Failed to load chunk /_next/static/chunks/a3268c76071619b9.js from module 264918
-    at http://localhost:3000/_next/static/chunks/turbopack-50a273dcebd10f43.js:1:5953
-Artifacts: smoke-artifacts/
-suspected_cause: vm-ui process serving stale chunk manifest after a fresh build.
-next_step: Restart vm-ui tmux session and rerun npm run -s smoke:runtime && npm run -s smoke:ui.
+FFF.F......                                                              [100%]
+=================================== FAILURES ===================================
+_____________ test_rejects_endpoint_address_and_hostname_together ______________
+E       assert 200 == 400
+_______________ test_rejects_duplicate_allowed_ips_across_peers ________________
+E       assert 200 == 400
+___________________ test_rejects_peer_port_without_endpoint ____________________
+E       assert 200 == 400
+________________________ test_rejects_invalid_keepalive ________________________
+E       assert 200 == 400
+=========================== short test summary info ============================
+FAILED tests/test_wireguard_peer_validation.py::test_rejects_endpoint_address_and_hostname_together
+FAILED tests/test_wireguard_peer_validation.py::test_rejects_duplicate_allowed_ips_across_peers
+FAILED tests/test_wireguard_peer_validation.py::test_rejects_peer_port_without_endpoint
+FAILED tests/test_wireguard_peer_validation.py::test_rejects_invalid_keepalive
+4 failed, 7 passed in 0.49s
+suspected_cause: Validation hook placement error during patching (wrong function context matched by apply patch).
+next_step: Move preflight validation into `wireguard_peer_batch`, rerun pytest for wireguard + ethernet suites, then rerun frontend gates.

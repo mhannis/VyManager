@@ -20,6 +20,7 @@ from starlette.concurrency import run_in_threadpool
 import asyncpg
 import inspect
 import re
+import ipaddress
 
 router = APIRouter(prefix="/vyos/vpn/wireguard", tags=["wireguard"])
 
@@ -110,6 +111,109 @@ class VyOSResponse(BaseModel):
     success: bool
     data: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
+
+
+def _normalize_wireguard_list(value: Any) -> List[str]:
+    """Normalize VyOS scalar/list/dict-key values into a flat string list."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if isinstance(value, dict):
+        return [str(key) for key in value.keys()]
+    return [str(value)]
+
+
+def _extract_wireguard_interface_peers(full_config: Dict[str, Any], interface: str) -> Dict[str, Dict[str, Any]]:
+    """Extract peer config mapping for a specific WireGuard interface from full config."""
+    return (
+        full_config
+        .get("interfaces", {})
+        .get("wireguard", {})
+        .get(interface, {})
+        .get("peer", {})
+        or {}
+    )
+
+
+def _validate_wireguard_peer_batch(
+    body: WireGuardPeerBatchRequest,
+    peer_tree: Dict[str, Dict[str, Any]],
+) -> None:
+    """Validate peer batch semantics before command generation."""
+    current_peer = peer_tree.get(body.peer, {}) if isinstance(peer_tree.get(body.peer, {}), dict) else {}
+    final_has_address = bool(current_peer.get("address"))
+    final_has_hostname = bool(current_peer.get("host-name"))
+    set_port_requested = False
+    requested_allowed_ips: List[str] = []
+
+    for operation in body.operations:
+        op = operation.op
+        value = (operation.value or "").strip()
+
+        if op == "set_peer_address":
+            if not value:
+                raise HTTPException(status_code=400, detail="set_peer_address requires a value")
+            final_has_address = True
+        elif op == "delete_peer_address":
+            final_has_address = False
+        elif op == "set_peer_host_name":
+            if not value:
+                raise HTTPException(status_code=400, detail="set_peer_host_name requires a value")
+            final_has_hostname = True
+        elif op == "delete_peer_host_name":
+            final_has_hostname = False
+        elif op == "set_peer_port":
+            if not value:
+                raise HTTPException(status_code=400, detail="set_peer_port requires a value")
+            if not value.isdigit() or not (1 <= int(value) <= 65535):
+                raise HTTPException(status_code=400, detail="Peer port must be an integer between 1 and 65535")
+            set_port_requested = True
+        elif op == "set_peer_persistent_keepalive":
+            if not value:
+                raise HTTPException(status_code=400, detail="set_peer_persistent_keepalive requires a value")
+            if not value.isdigit() or not (0 <= int(value) <= 65535):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Persistent keepalive must be an integer between 0 and 65535",
+                )
+        elif op == "set_peer_allowed_ips":
+            if not value:
+                raise HTTPException(status_code=400, detail="set_peer_allowed_ips requires a value")
+            try:
+                ipaddress.ip_network(value, strict=False)
+            except ValueError:
+                raise HTTPException(status_code=400, detail=f"Invalid allowed IP/network: {value}") from None
+            requested_allowed_ips.append(value)
+
+    if final_has_address and final_has_hostname:
+        raise HTTPException(
+            status_code=400,
+            detail="Peer endpoint cannot have both address and host-name. Configure one endpoint type only.",
+        )
+
+    if set_port_requested and not (final_has_address or final_has_hostname):
+        raise HTTPException(
+            status_code=400,
+            detail="Peer port requires an endpoint address or host-name.",
+        )
+
+    if len(set(requested_allowed_ips)) != len(requested_allowed_ips):
+        raise HTTPException(status_code=400, detail="Allowed IPs in a peer must be unique.")
+
+    if requested_allowed_ips:
+        used_by_other_peers = set()
+        for peer_name, peer_config in peer_tree.items():
+            if peer_name == body.peer or not isinstance(peer_config, dict):
+                continue
+            used_by_other_peers.update(_normalize_wireguard_list(peer_config.get("allowed-ips")))
+
+        collisions = sorted({ip for ip in requested_allowed_ips if ip in used_by_other_peers})
+        if collisions:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Allowed IP(s) already assigned to another peer on {body.interface}: {', '.join(collisions)}",
+            )
 
 
 # ========================================================================
@@ -277,6 +381,9 @@ async def wireguard_peer_batch(request: Request, body: WireGuardPeerBatchRequest
     try:
         service = await get_user_vyos_service(request)
         version = service.get_version()
+        full_config = service.get_full_config()
+        peer_tree = _extract_wireguard_interface_peers(full_config, body.interface)
+        _validate_wireguard_peer_batch(body, peer_tree)
 
         builder = WireGuardBatchBuilder(version=version)
 

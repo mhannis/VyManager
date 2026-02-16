@@ -2,6 +2,9 @@
 
 ## Decision Log
 
+- 2026-02-16: Prioritized a WireGuard peer safety slice within `IF-15` to prevent invalid but common tunnel misconfigurations (duplicate allowed-ips, conflicting endpoint fields) using additive validation in existing peer batch endpoints and modals.
+- 2026-02-16: Implemented backend peer-batch preflight validation in `backend/routers/wireguard/wireguard.py` rather than adding a new API endpoint, so existing `/vyos/vpn/wireguard/peer/batch` contracts remain stable while safety improves.
+- 2026-02-16: Enforced matching frontend validation in Create/Edit peer modals to keep operator feedback immediate and reduce backend round-trip failures.
 - 2026-02-16: Prioritized an Ethernet option-depth slice next in `IF-15` (after PPPoE/WWAN) because the docs-backed missing leaves were concentrated in one high-impact editor and could be implemented as additive changes across mapper/builder/router/modal without architecture churn.
 - 2026-02-16: Implemented delete semantics for Ethernet boolean leaves in both explicit `delete_*` operations and backward-compatible `set_* value=false` handling to prevent stale toggles and preserve compatibility with existing frontend payload patterns.
 - 2026-02-16: Modeled DHCP reject routes in the Ethernet modal as a comma-delimited list with deterministic set/delete diffing against current config to keep UX compact while still emitting precise CLI operations.

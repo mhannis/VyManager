@@ -24,12 +24,24 @@ import {
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { wireguardService, WireGuardInterface } from "@/lib/api/wireguard";
+import { isValidIPv4CIDR, isValidIPv6CIDR } from "@/lib/validators/firewall";
 
 interface CreatePeerModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   interfaceData: WireGuardInterface | null;
+}
+
+function parseAllowedIpEntries(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((ip) => ip.trim())
+    .filter(Boolean);
+}
+
+function isValidAllowedIp(value: string): boolean {
+  return isValidIPv4CIDR(value) || isValidIPv6CIDR(value);
 }
 
 export function CreatePeerModal({
@@ -108,6 +120,39 @@ export function CreatePeerModal({
     if (!allowedIps.trim()) {
       return "At least one allowed IP is required";
     }
+
+    const parsedAllowedIps = parseAllowedIpEntries(allowedIps);
+    if (new Set(parsedAllowedIps).size !== parsedAllowedIps.length) {
+      return "Allowed IPs must be unique for a peer.";
+    }
+    const invalidAllowedIp = parsedAllowedIps.find((ip) => !isValidAllowedIp(ip));
+    if (invalidAllowedIp) {
+      return `Invalid allowed IP/network: ${invalidAllowedIp}`;
+    }
+
+    const allowedIpInUse = interfaceData?.peers.find((peer) =>
+      parsedAllowedIps.some((allowedIp) => peer.allowed_ips.includes(allowedIp)),
+    );
+    if (allowedIpInUse) {
+      const collision = parsedAllowedIps.find((allowedIp) => allowedIpInUse.allowed_ips.includes(allowedIp));
+      return `Allowed IP '${collision}' is already assigned to peer '${allowedIpInUse.name}'.`;
+    }
+
+    if (address.trim() && hostName.trim()) {
+      return "Use endpoint IP or endpoint hostname, not both.";
+    }
+
+    if (port.trim() && !address.trim() && !hostName.trim()) {
+      return "Endpoint port requires an endpoint IP address or hostname.";
+    }
+
+    if (persistentKeepalive.trim()) {
+      const value = Number.parseInt(persistentKeepalive.trim(), 10);
+      if (Number.isNaN(value) || value < 0 || value > 65535) {
+        return "Persistent keepalive must be a number between 0 and 65535.";
+      }
+    }
+
     // Check if peer name already exists
     if (interfaceData?.peers.some((p) => p.name === name.trim())) {
       return `Peer '${name}' already exists on this interface`;
@@ -143,10 +188,7 @@ export function CreatePeerModal({
       } = {
         name: name.trim(),
         public_key: publicKey.trim(),
-        allowed_ips: allowedIps
-          .split(",")
-          .map((ip) => ip.trim())
-          .filter(Boolean),
+        allowed_ips: parseAllowedIpEntries(allowedIps),
       };
 
       if (presharedKey.trim()) {

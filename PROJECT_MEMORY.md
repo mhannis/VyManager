@@ -61,32 +61,31 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Interfaces Ethernet parity depth (`IF-15` subset)**.
+Feature: **Interfaces WireGuard peer validation depth (`IF-15` subset)**.
 
 Acceptance criteria:
-- Ethernet GUI supports `dhcp-options reject` and `dhcp-options user-class` with deterministic set/delete command generation.
-- Ethernet GUI supports `dhcpv6-options no-release`, `parameters-only`, and `temporary` flag controls.
-- Ethernet GUI supports `ipv6 accept-dad` and `ipv6 address no-default-link-local`, and correctly round-trips `autoconf`/`eui64`.
-- Backend router/builder/mapper support the same option set and preserve existing endpoint contracts.
+- WireGuard peer batch API enforces endpoint semantics (`address` XOR `host-name`, and endpoint port dependency).
+- WireGuard peer batch API enforces safe allowed-IP behavior (valid network syntax, no duplicates per peer, no collisions across peers on the same interface).
+- Create/Edit WireGuard peer modals enforce the same rules client-side.
+- Backend regression tests cover the peer validation paths and pass.
 - Validation gates pass (`backend targeted pytest`, `tsc`, targeted `eslint`, `build`, `smoke:runtime`, `smoke:ui`).
 
 Assumptions:
-- `IF-15` remains `partial` after this slice because loopback/wireguard advanced leaves are still pending.
-- This slice remains additive on existing `/vyos/ethernet/*` endpoints and avoids backend architecture refactors.
+- `IF-15` remains `partial` after this slice because loopback edge-depth work is still pending.
+- This slice remains additive on existing `/vyos/vpn/wireguard/*` endpoints and avoids backend architecture refactors.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: Ethernet DHCP/DHCPv6/IPv6 depth slice implemented and validated; next queue continues IF-15 on loopback/wireguard.
+- Status: WireGuard peer validation/safety depth slice implemented and validated; next queue continues IF-15 on loopback edge-depth.
 - Runtime smoke process stabilized by restarting `vm-ui` after each production build before UI smoke checks.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `backend/vyos_mappers/interfaces/ethernet.py`
-- `backend/vyos_builders/interfaces/ethernet.py`
-- `backend/routers/interfaces/ethernet.py`
-- `backend/tests/test_ethernet_batch_parity_options.py`
-- `frontend/src/components/network/ComprehensiveEthernetModal.tsx`
-- `frontend/src/lib/api/types/ethernet.ts`
+- `backend/routers/wireguard/wireguard.py`
+- `backend/tests/test_wireguard_peer_validation.py`
+- `frontend/src/components/vpn/CreatePeerModal.tsx`
+- `frontend/src/components/vpn/EditPeerModal.tsx`
+- `frontend/src/app/vpn/wireguard/page.tsx`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CURRENT_FEATURE.md`
@@ -94,9 +93,9 @@ Assumptions:
 - `PROJECT_MEMORY.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_ethernet_batch_parity_options.py tests/test_ethernet_vlan_batch_ops.py` passed.
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_wireguard_peer_validation.py tests/test_ethernet_batch_parity_options.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/components/network/ComprehensiveEthernetModal.tsx src/lib/api/types/ethernet.ts` passed.
+- `cd frontend && npx eslint src/components/vpn/CreatePeerModal.tsx src/components/vpn/EditPeerModal.tsx src/app/vpn/wireguard/page.tsx src/components/network/ComprehensiveEthernetModal.tsx src/lib/api/types/ethernet.ts` passed (`0 errors`, warnings only).
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
 - `cd frontend && npm run -s smoke:ui` passed.
@@ -121,6 +120,9 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui` where deps permit).
 
 ## Agent Handoff Notes
+- WireGuard peer batch endpoint now rejects invalid/unsafe combinations before apply: address+host-name together, endpoint port without endpoint, invalid keepalive range, invalid allowed-IP syntax, duplicate allowed-IP values, and cross-peer allowed-IP collisions.
+- WireGuard Create/Edit Peer modals now mirror backend rules and block conflicting submissions early (duplicate allowed-ips, endpoint conflicts, invalid keepalive, and cross-peer collisions).
+- Added backend tests in `backend/tests/test_wireguard_peer_validation.py` and verified successful/failed peer batch scenarios through FastAPI test client.
 - Ethernet parity depth pass added end-to-end support for these guide leaves: `dhcp-options reject`, `dhcp-options user-class`, `dhcpv6-options no-release`, `dhcpv6-options parameters-only`, `dhcpv6-options temporary`, `ipv6 accept-dad`, and `ipv6 address no-default-link-local`.
 - Ethernet batch handlers now support delete semantics for legacy boolean payloads (`set_*` with `value=false`) and explicit delete operations, preventing stale-on toggles during UI edits.
 - `ComprehensiveEthernetModal` now round-trips `ipv6 address autoconf` and `ipv6 address eui64` correctly and includes deterministic reject-route diffing for DHCP options.

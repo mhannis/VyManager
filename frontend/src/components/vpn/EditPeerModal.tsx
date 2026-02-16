@@ -23,14 +23,27 @@ import {
   Ban,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { wireguardService, WireGuardPeer } from "@/lib/api/wireguard";
+import { wireguardService, WireGuardInterface, WireGuardPeer } from "@/lib/api/wireguard";
+import { isValidIPv4CIDR, isValidIPv6CIDR } from "@/lib/validators/firewall";
 
 interface EditPeerModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   interfaceName: string;
+  interfaceData: WireGuardInterface | null;
   peerData: WireGuardPeer | null;
+}
+
+function parseAllowedIpEntries(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((ip) => ip.trim())
+    .filter(Boolean);
+}
+
+function isValidAllowedIp(value: string): boolean {
+  return isValidIPv4CIDR(value) || isValidIPv6CIDR(value);
 }
 
 export function EditPeerModal({
@@ -38,6 +51,7 @@ export function EditPeerModal({
   onOpenChange,
   onSuccess,
   interfaceName,
+  interfaceData,
   peerData,
 }: EditPeerModalProps) {
   // Form state
@@ -117,6 +131,43 @@ export function EditPeerModal({
     if (!allowedIps.trim()) {
       return "At least one allowed IP is required";
     }
+
+    const parsedAllowedIps = parseAllowedIpEntries(allowedIps);
+    if (new Set(parsedAllowedIps).size !== parsedAllowedIps.length) {
+      return "Allowed IPs must be unique for a peer.";
+    }
+    const invalidAllowedIp = parsedAllowedIps.find((ip) => !isValidAllowedIp(ip));
+    if (invalidAllowedIp) {
+      return `Invalid allowed IP/network: ${invalidAllowedIp}`;
+    }
+
+    if (interfaceData && peerData) {
+      const otherPeer = interfaceData.peers.find(
+        (peer) =>
+          peer.name !== peerData.name &&
+          parsedAllowedIps.some((allowedIp) => peer.allowed_ips.includes(allowedIp)),
+      );
+      if (otherPeer) {
+        const collision = parsedAllowedIps.find((allowedIp) => otherPeer.allowed_ips.includes(allowedIp));
+        return `Allowed IP '${collision}' is already assigned to peer '${otherPeer.name}'.`;
+      }
+    }
+
+    if (address.trim() && hostName.trim()) {
+      return "Use endpoint IP or endpoint hostname, not both.";
+    }
+
+    if (port.trim() && !address.trim() && !hostName.trim()) {
+      return "Endpoint port requires an endpoint IP address or hostname.";
+    }
+
+    if (persistentKeepalive.trim()) {
+      const value = Number.parseInt(persistentKeepalive.trim(), 10);
+      if (Number.isNaN(value) || value < 0 || value > 65535) {
+        return "Persistent keepalive must be a number between 0 and 65535.";
+      }
+    }
+
     return null;
   };
 
@@ -143,10 +194,7 @@ export function EditPeerModal({
       }
 
       // Allowed IPs change
-      const newAllowedIps = allowedIps
-        .split(",")
-        .map((ip) => ip.trim())
-        .filter(Boolean);
+      const newAllowedIps = parseAllowedIpEntries(allowedIps);
       if (JSON.stringify(newAllowedIps) !== JSON.stringify(peerData.allowed_ips)) {
         newConfig.allowed_ips = newAllowedIps;
       }
