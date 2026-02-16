@@ -289,6 +289,8 @@ export default function FirewallZonesPage() {
     }
     return { policies: parsed, errors };
   };
+  const parsedCreatePolicies = useMemo(() => parsePolicyTextarea(createPolicies), [createPolicies]);
+  const parsedEditPolicies = useMemo(() => parsePolicyTextarea(editPolicies), [editPolicies]);
 
   const createZone = async () => {
     if (!canEdit) return;
@@ -297,9 +299,8 @@ export default function FirewallZonesPage() {
       setError("Zone name is required.");
       return;
     }
-    const parsedPolicies = parsePolicyTextarea(createPolicies);
-    if (parsedPolicies.errors.length > 0) {
-      setError(parsedPolicies.errors.slice(0, 3).join(" "));
+    if (parsedCreatePolicies.errors.length > 0) {
+      setError(parsedCreatePolicies.errors.slice(0, 3).join(" "));
       return;
     }
 
@@ -312,7 +313,7 @@ export default function FirewallZonesPage() {
         default_action: createDefaultAction,
         local_zone: createLocalZone,
         interfaces: parseCsvList(createInterfaces),
-        from_policies: parsedPolicies.policies,
+        from_policies: parsedCreatePolicies.policies,
       });
       setSuccess(`Zone '${zoneName}' created/updated.`);
       setCreateZoneName("");
@@ -332,9 +333,8 @@ export default function FirewallZonesPage() {
 
   const saveSelectedZone = async () => {
     if (!canEdit || !selectedZoneName) return;
-    const parsedPolicies = parsePolicyTextarea(editPolicies);
-    if (parsedPolicies.errors.length > 0) {
-      setError(parsedPolicies.errors.slice(0, 3).join(" "));
+    if (parsedEditPolicies.errors.length > 0) {
+      setError(parsedEditPolicies.errors.slice(0, 3).join(" "));
       return;
     }
     setSaving(true);
@@ -346,7 +346,7 @@ export default function FirewallZonesPage() {
         default_action: editDefaultAction,
         local_zone: editLocalZone,
         interfaces: parseCsvList(editInterfaces),
-        from_policies: parsedPolicies.policies,
+        from_policies: parsedEditPolicies.policies,
       });
       setSuccess(`Zone '${selectedZoneName}' updated.`);
       await loadData();
@@ -758,8 +758,19 @@ export default function FirewallZonesPage() {
                 <p className="mt-1 text-xs text-muted-foreground">
                   Use one mapping per from-zone. `LOCAL` is supported.
                 </p>
+                {parsedCreatePolicies.errors.length > 0 ? (
+                  <div className="mt-2 space-y-1 text-xs text-destructive">
+                    {parsedCreatePolicies.errors.map((entry, index) => (
+                      <p key={`create-policy-error-${index}`}>{entry}</p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Parsed mappings: {parsedCreatePolicies.policies.length}
+                  </p>
+                )}
               </div>
-              <Button onClick={createZone} disabled={!canEdit || saving}>
+              <Button onClick={createZone} disabled={!canEdit || saving || parsedCreatePolicies.errors.length > 0}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create / Upsert Zone
               </Button>
@@ -868,9 +879,23 @@ export default function FirewallZonesPage() {
                     <p className="mt-1 text-xs text-muted-foreground">
                       Use one mapping per from-zone. `LOCAL` is supported.
                     </p>
+                    {parsedEditPolicies.errors.length > 0 ? (
+                      <div className="mt-2 space-y-1 text-xs text-destructive">
+                        {parsedEditPolicies.errors.map((entry, index) => (
+                          <p key={`edit-policy-error-${index}`}>{entry}</p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Parsed mappings: {parsedEditPolicies.policies.length}
+                      </p>
+                    )}
                   </div>
                   <div className="flex gap-2">
-                    <Button onClick={saveSelectedZone} disabled={!canEdit || saving}>
+                    <Button
+                      onClick={saveSelectedZone}
+                      disabled={!canEdit || saving || parsedEditPolicies.errors.length > 0}
+                    >
                       <Save className="mr-2 h-4 w-4" />
                       Save Zone
                     </Button>
