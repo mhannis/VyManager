@@ -93,6 +93,15 @@
         "frontend/src/app/network/interfaces/page.tsx"
       ],
       "notes": "Add inline quick-edit (existing-value prefill) for quick-add-enabled families; preserve sidebar as a single Interfaces entry with setup-wizard access on page."
+    },
+    {
+      "id": "IF-IA-09",
+      "owner_role": "UI|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/app/network/interfaces/page.tsx"
+      ],
+      "notes": "Family card action now renders `Current` for the exact active view so no-op open actions are explicit."
     }
   ],
   "commands": {

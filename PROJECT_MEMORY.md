@@ -304,3 +304,4 @@ Assumptions:
 - Interface Manager quick-add now also supports Tunnel creation inline using existing `/vyos/tunnel-interface/configure` batch API with required `source-address` and `remote` validation.
 - Next IA target is inline quick-edit for these families so operators can patch common fields without navigating to full per-family editors.
 - Sidebar Interfaces navigation was simplified from grouped submenu entries to a single `Interfaces` item, with setup access retained on the Interfaces page via `Open Setup Wizard`.
+- Interface family cards now show `Current` when already on the target view, preventing perceived no-op behavior from `Open` on the active page.

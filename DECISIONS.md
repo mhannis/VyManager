@@ -243,3 +243,4 @@
 - 2026-02-16: VXLAN quick-add enforces core validity in-manager (required `vni` and exactly one of `remote` or `group`) to avoid invalid apply attempts before moving to advanced pages.
 - 2026-02-16: Extended unified Interfaces manager quick-add to include `Tunnel` using existing `/vyos/tunnel-interface/configure` command-batch contract with required source/remote validation.
 - 2026-02-16: Simplified sidebar IA by collapsing Interfaces navigation to a single `Interfaces` entry; kept setup flow discoverable with an explicit `Open Setup Wizard` button on the Interfaces page.
+- 2026-02-16: Interface family card actions now render `Current` for exact active-view links to avoid confusing no-op `Open` clicks on the page already in focus.

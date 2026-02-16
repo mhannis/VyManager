@@ -20,7 +20,7 @@ import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Plus, RefreshCw, AlertCircle, Search, Cable, Pencil, Trash2, Network, ArrowUpRight } from "lucide-react";
 import { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ethernetService } from "@/lib/api/ethernet";
 import { showService } from "@/lib/api/show";
 import type { InterfacePhysical } from "@/lib/api/show";
@@ -246,6 +246,7 @@ function quoteCliValue(value: string): string {
 }
 
 function InterfacesPageContent() {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [interfaces, setInterfaces] = useState<EthernetInterface[]>([]);
   const [physicalByInterface, setPhysicalByInterface] = useState<Record<string, InterfacePhysical>>({});
@@ -996,6 +997,8 @@ function InterfacesPageContent() {
                       family.key === "tunnel" ||
                       family.key === "vti" ||
                       family.key === "vxlan";
+                    const currentUrl = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
+                    const isActiveFamilyLink = family.href === currentUrl;
                     return (
                     <div
                       key={family.key}
@@ -1018,12 +1021,18 @@ function InterfacesPageContent() {
                               Quick Add
                             </Button>
                           )}
-                          <Button asChild variant="ghost" size="sm" className="shrink-0">
-                            <Link href={family.href}>
-                              Open
-                              <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                            </Link>
-                          </Button>
+                          {isActiveFamilyLink ? (
+                            <Button variant="ghost" size="sm" className="shrink-0" disabled>
+                              Current
+                            </Button>
+                          ) : (
+                            <Button asChild variant="ghost" size="sm" className="shrink-0">
+                              <Link href={family.href}>
+                                Open
+                                <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                              </Link>
+                            </Button>
+                          )}
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-1.5">

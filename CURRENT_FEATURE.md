@@ -32,6 +32,7 @@ notes:
     - `POST /vyos/vxlan-interface/configure`
     - `POST /vyos/tunnel-interface/configure`
   - Family cards still link to dedicated advanced pages for full feature depth.
+  - Interface family cards now show `Current` (disabled) when a card targets the exact view already open, so `Open` no longer appears broken on the current page.
   - Setup wizard remains available on the Interfaces page via `Open Setup Wizard`.
   - Validation for this increment:
     - `cd frontend && npx tsc --noEmit --pretty false`
