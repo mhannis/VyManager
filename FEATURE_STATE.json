@@ -20,6 +20,7 @@
     "Local Route rule displays and delete confirmations show description-first interface labels when metadata is available.",
     "Local Route create/edit inbound-interface selectors display description-first labels when metadata is available.",
     "Runtime smoke probes include recently touched policy/firewall/system routes to reduce false green builds.",
+    "Containers New Container action has explicit UX behavior (reset + focus + scroll) and no longer appears to do nothing.",
     "Backend and frontend validation gates pass for touched surfaces."
   ],
   "assumptions": [
@@ -150,6 +151,15 @@
         "frontend/scripts/smoke-ui.mjs"
       ],
       "notes": "Expanded smoke-route probes to include policy/firewall/system pages touched in recent slices and reran runtime smoke successfully."
+    },
+    {
+      "id": "T13",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/containers/page.tsx"
+      ],
+      "notes": "New Container button now resets draft state, switches from edit to create mode, scrolls to create card, and focuses name input for clear operator feedback."
     }
   ],
   "commands": {
