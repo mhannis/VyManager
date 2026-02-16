@@ -1,19 +1,18 @@
 {
-  "feature_id": "firewall-flowtables-validation-hardening-2026-02-16",
-  "title": "Firewall flowtables input validation hardening",
+  "feature_id": "firewall-zones-cross-validation-hardening-2026-02-16",
+  "title": "Firewall zones cross-zone validation hardening",
   "status": "done",
   "acceptance_criteria": [
-    "Flowtable batch endpoint rejects invalid flowtable names with explicit 400 errors.",
-    "Flowtable batch endpoint enforces an operation allowlist and rejects unknown operations with 400.",
-    "Flowtable batch endpoint validates required values per operation and rejects missing/blank values with 400.",
-    "Flowtable batch endpoint validates interface-name values for interface operations and rejects invalid names with 400.",
-    "Flowtable batch endpoint validates offload values and accepts only hardware/software, normalizing mixed-case input to canonical lowercase values.",
-    "Flowtable delete endpoint validates path flowtable name and rejects invalid names with 400.",
-    "Regression tests cover invalid and valid flowtable batch/delete paths."
+    "Zone upsert rejects interfaces already assigned to a different existing zone.",
+    "Zone upsert resolves `from_zone` values case-insensitively to existing zone names and preserves canonical names in generated operations.",
+    "Zone upsert allows `LOCAL` pseudo-zone mapping and normalizes `local` input to `LOCAL`.",
+    "Zone upsert rejects unknown `from_zone` references with explicit 400 errors.",
+    "Zone upsert rejects duplicate `from_zone` mappings after canonicalization (e.g., `WAN` and `wan`).",
+    "Regression tests cover interface overlap, unknown `from_zone`, canonicalization + LOCAL support, and duplicate detection."
   ],
   "assumptions": [
-    "Allowed flowtable names follow ^[A-Za-z][A-Za-z0-9_-]{0,62}$ for safe command generation.",
-    "Allowed interface names follow ^[A-Za-z0-9][A-Za-z0-9._:-]{0,62}$ and include common VyOS interface formats.",
+    "Interface assignments must be unique across zones to avoid ambiguous zone-based firewall behavior.",
+    "Existing deployments that intentionally referenced non-existent zones in `from` mappings should now fail fast until referenced zones exist.",
     "Browser e2e smoke remains out-of-gate on this host until Playwright shared libraries are installed."
   ],
   "tasks": [
@@ -22,33 +21,33 @@
       "owner_role": "Backend|Integration",
       "status": "done",
       "files": [
-        "backend/routers/firewall/flowtables.py"
+        "backend/routers/firewall/zones.py"
       ],
-      "notes": "Added backend validation helpers and fail-fast 400 responses for flowtable batch/delete inputs."
+      "notes": "Added cross-zone interface ownership checks, from-zone canonicalization/validation, LOCAL handling, and duplicate detection after canonicalization."
     },
     {
       "id": "T2",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_firewall_flowtables_validation.py"
+        "backend/tests/test_firewall_zones_validation.py"
       ],
-      "notes": "Added regression tests for invalid names, invalid offload/interface values, missing required values, valid flowtable batch, and invalid delete input."
+      "notes": "Added regression tests for interface overlap, unknown from-zone, canonicalization + LOCAL mapping, and duplicate from-zone detection."
     },
     {
       "id": "T3",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/routers/firewall/flowtables.py",
-        "backend/tests/test_firewall_flowtables_validation.py"
+        "backend/routers/firewall/zones.py",
+        "backend/tests/test_firewall_zones_validation.py"
       ],
-      "notes": "Manual review completed (reviewer sub-agent unavailable due thread cap). APPROVED with one follow-up fix applied: lowercase normalization for offload values before command generation."
+      "notes": "Manual review completed in-process. APPROVED."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_flowtables_validation.py tests/test_firewall_batch_semantics.py tests/test_firewall_global_options_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_zones_validation.py tests/test_firewall_zones_local_zone.py tests/test_firewall_flowtables_validation.py tests/test_firewall_batch_semantics.py tests/test_firewall_global_options_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [

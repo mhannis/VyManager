@@ -271,6 +271,16 @@ async def upsert_zone(request: Request, zone_name: str, body: ZoneUpsertRequest)
         full_config = await run_in_threadpool(service.get_full_config, refresh=True)
         existing_zones = _extract_zones_config(full_config)
         existing_zone = existing_zones.get(zone)
+        existing_zone_names = set(existing_zones.keys())
+        zone_name_by_upper = {name.upper(): name for name in existing_zone_names | {zone}}
+        interface_owner_by_name: Dict[str, str] = {}
+        for existing_name, existing_config in existing_zones.items():
+            if existing_name == zone:
+                continue
+            for existing_iface in existing_config.interfaces:
+                iface_name = str(existing_iface).strip()
+                if iface_name and iface_name not in interface_owner_by_name:
+                    interface_owner_by_name[iface_name] = existing_name
 
         operations: List[Dict[str, Any]] = []
 
@@ -340,14 +350,18 @@ async def upsert_zone(request: Request, zone_name: str, body: ZoneUpsertRequest)
                 }
             )
 
-        normalized_interfaces: List[str] = []
         seen_interfaces = set()
         for iface in body.interfaces:
             iface_name = _normalize_interface_name_or_400(iface)
             if iface_name in seen_interfaces:
                 continue
+            owner_zone = interface_owner_by_name.get(iface_name)
+            if owner_zone:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Interface '{iface_name}' is already assigned to zone '{owner_zone}'",
+                )
             seen_interfaces.add(iface_name)
-            normalized_interfaces.append(iface_name)
             operations.append(
                 {
                     "op": "set",
@@ -366,7 +380,17 @@ async def upsert_zone(request: Request, zone_name: str, body: ZoneUpsertRequest)
 
         seen_from_zones = set()
         for policy in body.from_policies:
-            from_zone = _normalize_zone_name_or_400(policy.from_zone, label="From-zone name")
+            from_zone_input = _normalize_zone_name_or_400(policy.from_zone, label="From-zone name")
+            if from_zone_input.upper() == "LOCAL":
+                from_zone = "LOCAL"
+            else:
+                from_zone = zone_name_by_upper.get(from_zone_input.upper(), "")
+                if not from_zone:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"from_zone '{from_zone_input}' does not exist. Create the zone first or use LOCAL.",
+                    )
+
             if from_zone == zone:
                 raise HTTPException(status_code=400, detail="from_zone cannot match to_zone")
             if from_zone in seen_from_zones:

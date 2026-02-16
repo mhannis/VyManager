@@ -62,32 +62,32 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Firewall flowtables input validation hardening (`F-05` depth pass)**
+Feature: **Firewall zones cross-zone validation hardening (`F-06` depth pass)**
 
 Acceptance criteria:
-- Validate flowtable names in batch/delete APIs and reject invalid values with explicit `400` errors.
-- Validate batch operation names against an allowlist and reject unknown ops with `400`.
-- Validate required values per operation and reject missing/blank values with `400`.
-- Validate offload values to `hardware|software` only.
-- Validate interface names for interface operations before builder invocation.
-- Add backend tests for invalid/valid flowtable batch and delete behavior.
+- Reject zone upserts when interfaces are already assigned to another zone.
+- Resolve `from_zone` case-insensitively to existing zone names and preserve canonical names in config operations.
+- Allow and normalize `LOCAL` pseudo-zone mappings.
+- Reject unknown `from_zone` references with explicit `400` errors.
+- Reject duplicate `from_zone` mappings after canonicalization.
+- Add backend tests covering overlap, unknown references, canonicalization, and duplicate detection.
 - Pass backend+frontend validation gates.
 
 Assumptions:
-- Existing valid flowtable payloads continue to work; malformed values fail earlier with `400`.
-- Interface-name regex should support current VyOS formats (`eth0`, `bond0.10`, `vti0`, etc.) while rejecting whitespace/unsafe values.
+- Interface membership should remain unique across zones to prevent ambiguous zone-policy behavior.
+- Existing configs that rely on non-existent from-zones should fail fast and require zone creation first.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: firewall flowtables validation hardening slice completed locally and queued for commit/push.
-- Backlog audit (2026-02-16, strict option-level tracker): `F-05` progressed with backend validation guardrails and dedicated tests.
+- Status: firewall zones cross-zone validation hardening slice completed locally and queued for commit/push.
+- Backlog audit (2026-02-16, strict option-level tracker): `F-06` progressed with backend cross-zone validation guardrails and dedicated tests.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `backend/routers/firewall/flowtables.py`
-- `backend/tests/test_firewall_flowtables_validation.py`
-- `AGENT_REPORTS/2026-02-16-firewall-flowtables-validation-hardening.md`
+- `backend/routers/firewall/zones.py`
+- `backend/tests/test_firewall_zones_validation.py`
+- `AGENT_REPORTS/2026-02-16-firewall-zones-validation-hardening.md`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
@@ -96,11 +96,9 @@ Assumptions:
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_flowtables_validation.py tests/test_firewall_batch_semantics.py tests/test_firewall_global_options_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py` passed.
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_zones_validation.py tests/test_firewall_zones_local_zone.py tests/test_firewall_flowtables_validation.py tests/test_firewall_batch_semantics.py tests/test_firewall_global_options_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npm run -s build` passed.
-- `cd frontend && npm run -s smoke:runtime` passed.
-- `cd frontend && npm run -s lint` passed with existing warnings only (0 errors).
+- Frontend build/runtime smoke were not rerun in this backend-only slice (last known from prior cycle: build + runtime smoke passed; lint had warnings only and 0 errors).
 - `cd frontend && npm run -s smoke:ui` still blocked on host dependency (`libnspr4.so` missing).
 
 ## Risks / Open Questions
@@ -122,6 +120,9 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Firewall zones upsert now enforces cross-zone interface ownership uniqueness and rejects overlap with explicit `400` errors.
+- Firewall zones `from_zone` handling now canonicalizes case-insensitive matches to existing zone names, supports `LOCAL`, and rejects unknown references before apply.
+- Added backend regression coverage `backend/tests/test_firewall_zones_validation.py` for interface-overlap rejection, unknown from-zone rejection, canonicalized LOCAL mapping, and duplicate detection after canonicalization.
 - Firewall flowtables router now enforces strict server-side validation for flowtable names, operation allowlist, required values, interface-name values, and offload enum values before invoking builder methods.
 - Flowtables offload writes now normalize accepted mixed-case input to lowercase canonical values before builder invocation, ensuring consistent command output (`hardware|software`).
 - Added backend regression coverage `backend/tests/test_firewall_flowtables_validation.py` for invalid flowtable name/offload/interface/missing-value paths plus valid batch and delete validation behavior.
