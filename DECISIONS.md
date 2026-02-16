@@ -314,3 +314,5 @@
 - 2026-02-16: LLDP structured parser was extended to decode JSON-text payloads from show `data` strings, because some environments return stringified neighbor objects instead of direct dict/list payloads.
 - 2026-02-16: DNS services UI now errors on partial override rows (domain-without-servers or hostname-without-addresses) to avoid silent data loss; backend `/vyos/system/dns-config` now validates listen/allow-from/name-server/domain tokens for deterministic 400 responses.
 - 2026-02-16: Added DNS endpoint regression tests to ensure stricter validation remains compatible with hostname-based upstream resolvers and to lock in `400` behavior for invalid local domain names.
+- 2026-02-16: Added LLDP/mDNS pre-submit validation in `System Services` tab (LLDP management address IP checks, mDNS browse domain token validation, mDNS service filter whitespace guard, integer cache entries) to prevent avoidable backend rejections.
+- 2026-02-16: Updated LLDP service/runtime UI to display local interfaces using description-first labels for consistency with global interface naming conventions.

@@ -10,6 +10,8 @@
     "Router Advertisements interface entry offers description-first interface suggestions.",
     "DNS tab rejects partial/invalid domain+host override rows with explicit errors (no silent drops).",
     "DNS backend rejects malformed listen-address/allow-from/name-server/domain values with deterministic HTTP 400 responses.",
+    "LLDP/mDNS tabs reject malformed management/domain/service-filter/cache values before API submit.",
+    "LLDP interface displays in services views use description-first labels when available.",
     "Backend and frontend validation gates pass for touched surfaces."
   ],
   "assumptions": [
@@ -36,9 +38,10 @@
       "files": [
         "frontend/src/components/services/CreateDHCPServerModal.tsx",
         "frontend/src/components/services/EditDHCPServerModal.tsx",
-        "frontend/src/components/system/DnsServiceTab.tsx"
+        "frontend/src/components/system/DnsServiceTab.tsx",
+        "frontend/src/app/system/services/page.tsx"
       ],
-      "notes": "Added gateway-based DNS defaults, existing-network default prefill behavior, and strict DNS override row validation in UI."
+      "notes": "Added gateway-based DNS defaults, existing-network default prefill behavior, strict DNS override row validation in DNS tab, and LLDP/mDNS pre-submit validation + description-first interface label display in services page."
     },
     {
       "id": "T3",
