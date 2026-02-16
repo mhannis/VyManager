@@ -68,6 +68,7 @@ Acceptance criteria:
 - Enforce strict `FROM_ZONE:FIREWALL_NAME` parsing for non-empty policy textarea lines.
 - Reject duplicate `from_zone` mappings in create/edit forms before API submission.
 - Block create/save submission when policy textarea contains malformed entries.
+- Block guided WAN/LAN preset apply when selected interfaces are still assigned to non-target zones.
 - Surface concise, actionable policy parsing errors to the operator.
 - Add inline helper copy clarifying one mapping per from-zone and `LOCAL` support.
 - Pass backend+frontend validation gates.
@@ -119,6 +120,7 @@ Assumptions:
 ## Agent Handoff Notes
 - Firewall zones create/edit flows now pre-validate policy textarea rows (`FROM_ZONE:FIREWALL_NAME`) and block submit for malformed lines or duplicate from-zones, reducing backend round-trip failures.
 - Firewall zones policy textareas now include guidance for one mapping per from-zone and explicit `LOCAL` pseudo-zone usage.
+- Firewall zones guided setup now runs a local interface-ownership preflight and blocks preset apply when interfaces are still bound to other zones, with conflict details shown in the UI error banner.
 - Firewall IPv4/IPv6 batch endpoints now validate chain context, rule-number requirements, and operation value arity before method invocation; invalid argument shapes now return explicit `400` errors.
 - Added backend regression coverage `backend/tests/test_firewall_rule_batch_validation.py` for chain/rule/value validation semantics and valid normalized batch execution.
 - Firewall global-options `/batch` now enforces strict value semantics (required/no-arg checks), enum validation for operation families, timeout integer/range validation, and canonical lowercase normalization before command generation.

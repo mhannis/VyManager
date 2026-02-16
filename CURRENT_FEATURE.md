@@ -7,6 +7,7 @@ completed_in_cycle:
   - Added pre-submit validation for `FROM_ZONE:FIREWALL_NAME` rows with duplicate `from_zone` protection (case-insensitive).
   - Improved UI error clarity by surfacing parser failures before API calls.
   - Added helper guidance text clarifying one mapping per from-zone and `LOCAL` support.
+  - Added guided setup preflight checks to block WAN/LAN preset apply when selected interfaces are still assigned to other zones.
 validation:
   - cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime
 known_limitations:

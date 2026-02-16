@@ -139,6 +139,15 @@ export default function FirewallZonesPage() {
     }
     return labels;
   }, [interfaceOptions]);
+  const interfaceOwnerByName = useMemo(() => {
+    const owners: Record<string, string> = {};
+    for (const [zoneName, zone] of Object.entries(zones)) {
+      for (const iface of zone.interfaces || []) {
+        if (!owners[iface]) owners[iface] = zoneName;
+      }
+    }
+    return owners;
+  }, [zones]);
   const createInterfaceSelection = useMemo(() => new Set(parseCsvList(createInterfaces)), [createInterfaces]);
   const editInterfaceSelection = useMemo(() => new Set(parseCsvList(editInterfaces)), [editInterfaces]);
 
@@ -397,6 +406,22 @@ export default function FirewallZonesPage() {
       return;
     }
 
+    const conflicts: string[] = [];
+    const wanOwner = interfaceOwnerByName[guidedWanInterface];
+    if (wanOwner && wanOwner !== "WAN") {
+      conflicts.push(`${guidedWanInterface} is currently assigned to zone ${wanOwner}`);
+    }
+    for (const iface of guidedLanInterfaces) {
+      const owner = interfaceOwnerByName[iface];
+      if (owner && owner !== "LAN") {
+        conflicts.push(`${iface} is currently assigned to zone ${owner}`);
+      }
+    }
+    if (conflicts.length > 0) {
+      setError(`Guided preset cannot reuse interfaces assigned to other zones. ${conflicts.join("; ")}`);
+      return;
+    }
+
     const wanPolicies = guidedCreatePolicies && guidedLanToWanRuleset.trim()
       ? [{ from_zone: "LAN", firewall_ruleset: guidedLanToWanRuleset.trim() }]
       : [];
@@ -527,6 +552,10 @@ export default function FirewallZonesPage() {
             </DialogHeader>
 
             <div className="space-y-4">
+              <div className="rounded-md border border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground">
+                Guided setup updates WAN/LAN interface assignments. Interfaces already mapped to other zones must
+                be moved manually first.
+              </div>
               <div className="grid gap-4 xl:grid-cols-2">
                 <div className="space-y-2">
                   <Label>WAN Interface</Label>

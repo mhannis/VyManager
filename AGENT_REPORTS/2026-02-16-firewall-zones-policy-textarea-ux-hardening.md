@@ -15,9 +15,13 @@ Added:
 - pre-submit validation gates in both create and edit flows:
   - blocks save/upsert when parser finds errors
   - surfaces concise actionable error messages in UI
+- guided preset preflight conflict checks:
+  - blocks apply when selected WAN/LAN interfaces are already assigned to non-target zones
+  - reports conflicting interface->zone mappings before API calls
 - helper copy below policy textareas:
   - clarifies one mapping per from-zone
   - calls out `LOCAL` pseudo-zone support
+  - adds guided setup note about interface reassignment behavior
 
 ## Validation Run
 - `cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime`

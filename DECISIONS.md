@@ -3,6 +3,7 @@
 ## Decision Log
 
 - 2026-02-16: Hardened `Firewall -> Zones` policy textarea UX by enforcing strict `FROM_ZONE:FIREWALL_NAME` parsing and duplicate from-zone rejection client-side before submit, so operators get immediate actionable feedback instead of silent line drops or delayed backend failures.
+- 2026-02-16: Added guided WAN/LAN zone preset preflight checks in the Zones page to reject interface selections that are still assigned to other zones, preventing predictable apply failures and making reassignment requirements explicit before write attempts.
 - 2026-02-16: Hardened `firewall ipv4/ipv6` batch endpoints with explicit chain-context validation, rule-number/value arity checks, signature-ordered argument binding, and `TypeError -> 400` conversion so invalid payloads fail deterministically and do not surface as generic server errors.
 - 2026-02-16: Hardened `firewall global-options` `/batch` endpoint with per-operation value validation (required/no-arg arity checks, enum validation, timeout integer/range validation) and canonical lowercase normalization, so malformed batch payloads return deterministic `400` errors instead of leaking method-signature/runtime errors.
 - 2026-02-16: Hardened `firewall zones` upsert validation to enforce cross-zone interface uniqueness and canonicalized/validated `from_zone` references (including `LOCAL`) before apply, to prevent ambiguous zone membership and typo-driven policy mappings.
