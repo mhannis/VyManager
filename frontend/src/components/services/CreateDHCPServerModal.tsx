@@ -83,6 +83,13 @@ interface CreateDHCPServerModalProps {
   } | null;
 }
 
+interface ExistingNetworkDefaults {
+  defaultRouter: string;
+  domainName: string;
+  lease: string;
+  nameServers: string[];
+}
+
 export function CreateDHCPServerModal({
   open,
   onOpenChange,
@@ -97,6 +104,7 @@ export function CreateDHCPServerModal({
   // Mode selection
   const [mode, setMode] = useState<"new" | "existing">("new");
   const [existingNetworks, setExistingNetworks] = useState<string[]>([]);
+  const [existingNetworkDefaults, setExistingNetworkDefaults] = useState<Record<string, ExistingNetworkDefaults>>({});
 
   // Basic fields
   const [networkName, setNetworkName] = useState("");
@@ -182,12 +190,54 @@ export function CreateDHCPServerModal({
     });
   }, [defaultRouter]);
 
+  useEffect(() => {
+    if (mode !== "existing" || !selectedNetwork) {
+      return;
+    }
+    const defaults = existingNetworkDefaults[selectedNetwork];
+    if (!defaults) {
+      return;
+    }
+
+    setDefaultRouter(defaults.defaultRouter);
+    setDomainName(defaults.domainName);
+    setLease(defaults.lease || "86400");
+    setNameServers(
+      defaults.nameServers.length > 0
+        ? defaults.nameServers
+        : defaults.defaultRouter
+          ? [defaults.defaultRouter]
+          : [""]
+    );
+  }, [mode, selectedNetwork, existingNetworkDefaults]);
+
   const loadExistingNetworks = async () => {
     try {
       const config = await dhcpService.getConfig();
       setExistingNetworks(config.shared_networks.map(n => n.name));
+      const defaultsByNetwork: Record<string, ExistingNetworkDefaults> = {};
+      for (const network of config.shared_networks) {
+        const firstSubnet = network.subnets[0];
+        const defaultRouter = (firstSubnet?.default_router || "").trim();
+        const domainName = (firstSubnet?.domain_name || network.domain_name || "").trim();
+        const lease = (firstSubnet?.lease || "").trim();
+        const nameServers = (
+          firstSubnet?.name_servers?.length ? firstSubnet.name_servers : network.name_servers
+        )
+          .map((entry) => entry.trim())
+          .filter((entry) => entry.length > 0);
+
+        defaultsByNetwork[network.name] = {
+          defaultRouter,
+          domainName,
+          lease,
+          nameServers,
+        };
+      }
+      setExistingNetworkDefaults(defaultsByNetwork);
     } catch (err) {
       console.error("Failed to load existing networks:", err);
+      setExistingNetworkDefaults({});
     }
   };
 
