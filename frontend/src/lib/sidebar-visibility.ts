@@ -199,6 +199,12 @@ export const SIDEBAR_VISIBILITY_ITEMS: SidebarVisibilityItem[] = [
         href: "/system/services",
         canHide: true,
       },
+      {
+        id: "services-dhcp-server",
+        label: "DHCP Server",
+        href: "/network/dhcp",
+        canHide: true,
+      },
     ],
   },
   { id: "traffic-policy", label: "Traffic Policy", canHide: true },

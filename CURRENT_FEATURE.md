@@ -20,7 +20,7 @@ commits:
   - 2e9c531 (remove redundant configuration guide nav + add sidebar visibility controls in settings)
   - 2e9c531 (move navigation controls to dedicated settings page with full tree support)
   - 2e9c531 (split System Identification from Guided Setup and update System sidebar IA)
-  - 2e9c531 (consolidate Services sidebar navigation to `All Services`)
+  - 2e9c531 (consolidate Services sidebar navigation, then restore DHCP quick link)
 notes:
   - Interfaces sidebar remains consolidated to:
     - `Interfaces`
@@ -60,7 +60,8 @@ notes:
   - `Settings` and `Navigation` are now fixed-visible controls and cannot be hidden.
   - `System -> System Identification` now contains hostname/timezone/domain settings.
   - `System -> Guided Setup` now contains the three setup actions (Network Wizard, Zone Guided Setup, Firewall Policies).
-  - Services sidebar navigation is consolidated to `All Services`; service-specific controls remain in `/system/services` tabs.
+  - Services sidebar navigation is consolidated to `All Services` plus `DHCP Server`; service-specific controls remain in `/system/services` tabs.
+  - `DHCP Server` remains directly reachable from the Services sidebar after consolidation.
   - Validation for this increment:
     - `cd frontend && npx tsc --noEmit --pretty false`
     - `cd frontend && npx eslint src/components/layout/Sidebar.tsx src/lib/sidebar-visibility.ts src/app/settings/page.tsx src/app/settings/navigation/page.tsx src/app/system/options/page.tsx src/app/system/identification/page.tsx src/app/configuration/page.tsx src/components/dashboard/ServicesStatusCard.tsx --max-warnings=0`

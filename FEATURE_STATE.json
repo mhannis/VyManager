@@ -20,7 +20,7 @@
     "Settings and the `Navigation` settings link are always visible and cannot be hidden.",
     "System navigation replaces `Options & Coverage` with `System Identification` and `Guided Setup` entries.",
     "`/system/options` is a dedicated Guided Setup launcher page with the 3 baseline setup actions.",
-    "Services sidebar is consolidated to a single `All Services` child entry while service tabs remain inside the Services page.",
+    "Services sidebar is consolidated to a minimal set (`All Services` plus `DHCP Server` quick link) while detailed service tabs remain inside the Services page.",
     "Build/typecheck/runtime smoke pass after IA changes."
   ],
   "assumptions": [
@@ -206,7 +206,17 @@
         "frontend/src/components/layout/Sidebar.tsx",
         "frontend/src/lib/sidebar-visibility.ts"
       ],
-      "notes": "Consolidated Services sidebar navigation to a single `All Services` entry while keeping internal tabbed service coverage on `/system/services`."
+      "notes": "Consolidated Services sidebar navigation to a minimal set centered on `All Services` while keeping internal tabbed service coverage on `/system/services`."
+    },
+    {
+      "id": "IF-IA-22",
+      "owner_role": "UI|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/components/layout/Sidebar.tsx",
+        "frontend/src/lib/sidebar-visibility.ts"
+      ],
+      "notes": "Restored a direct `DHCP Server` child link under `Services` after consolidation so DHCP remains discoverable without opening the Services hub first."
     }
   ],
   "commands": {
