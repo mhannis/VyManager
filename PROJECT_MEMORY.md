@@ -68,6 +68,7 @@ Acceptance criteria:
 - Dedicated form-first pages exist for `System -> Update Check` and `System -> Watchdog`, backed by scoped config-tree wrappers.
 - Navigation/smoke coverage includes the new System pages.
 - Local user management supports `authentication principal` and OTP (`key`, `rate-limit`, `window-size`) with structured form-based controls.
+- Global login management supports `banner pre-login/post-login`, `max-sessions-per-user`, `timeout`, `radius source-address/server`, and `tacacs server` controls via GUI and backend validation.
 - Wireless page includes deeper VHT capability controls from the guide without using free-form CLI text input.
 - Preserve existing API contracts and thin-wrapper architecture.
 - Pass backend+frontend validation gates.
@@ -78,10 +79,10 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: system/interfaces largest-bucket depth pass active; `SYS-09` principal+OTP local-user slice implemented and validated; runtime chunk drift hotfix applied via `vm-ui` restart.
+- Status: system/interfaces largest-bucket depth pass active; `SYS-09` local-user principal/OTP plus global-login RADIUS/TACACS/banner/session slices implemented and validated; runtime chunk drift hotfix applied via `vm-ui` restart.
 - Live triage (2026-02-16): user-reported `Not Found` on System IP/Update Check/Watchdog was investigated; backend routes are present and responding (unauthenticated probes now return `401`, not `404`).
 - SYS-16 continuation (2026-02-16): expanded UI parity depth for `system update-check` and `system watchdog` option leaves without backend contract changes.
-- Backlog audit (2026-02-16): moved forward on `SYS-09`, `SYS-10`, `SYS-16`, and `IF-13`.
+- Backlog audit (2026-02-16): moved forward on `SYS-09`, `SYS-10`, `SYS-16`, and `IF-13` (including global login config depth).
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
@@ -90,6 +91,7 @@ Assumptions:
 - `backend/routers/system_update_check.py`
 - `backend/routers/system_watchdog.py`
 - `backend/tests/test_config_tree_wrapper_capabilities.py`
+- `backend/tests/test_system_login_config.py`
 - `backend/tests/test_system_local_users_parity.py`
 - `backend/tests/test_system_services_ssh_dns.py`
 - `frontend/src/app/network/interfaces/wireless/page.tsx`
@@ -113,7 +115,7 @@ Assumptions:
 - `DECISIONS.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_local_users_parity.py tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py` passed (`134 passed`).
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_login_config.py tests/test_system_local_users_parity.py tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py` passed (`137 passed`).
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
 - `cd frontend && npm run -s lint` passed with warnings only (`0 errors`).
 - `cd frontend && npm run -s build` passed.
@@ -133,6 +135,7 @@ Assumptions:
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
 - Browser smoke can fail transiently with stale chunk manifests if frontend runtime is not restarted after rebuild.
+- Global login auth workflows still need live AAA backend verification (real RADIUS/TACACS servers) beyond parser/operation tests.
 - Sidebar visibility preferences are currently browser-local (localStorage) rather than profile-synced.
 - Services sidebar consolidation keeps the tabbed services UI as the primary workflow; only a minimal shortcut set is exposed in sidebar navigation.
 - DHCP remains critical: the dedicated `/network/dhcp` editor remains authoritative, and Services now includes a DHCP tab that embeds the same management workspace.
@@ -143,12 +146,18 @@ Assumptions:
 
 ## TODO Backlog (next queue)
 - Continue option-depth parity sweep for high-impact partial domains (Firewall, Interfaces, Protocols, Services, VPN, System).
-- Continue `system` depth (remaining `SYS-09` global login auth/session/banner workflows and remaining `SYS-16` verification).
+- Continue `system` depth (live RADIUS/TACACS verification and remaining login-auth edge behavior; remaining `SYS-16` verification).
 - Continue `interfaces` depth (`IF-14`, `IF-15`) with guide-leaf completion and live save/apply verification.
 - Continue firewall parity depth beyond recent hardening (`F-01`, `F-02`, `F-04`, `F-05`, `F-06`).
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui` where deps permit).
 
 ## Agent Handoff Notes
+- Added global login API endpoints:
+  - `GET /vyos/system/login-config`
+  - `PUT /vyos/system/login-config`
+  These now provide diff-based write semantics for banners, session limits, and RADIUS/TACACS server trees under `system login`.
+- `System -> Users` now contains a dedicated `Global Login Authentication` section so local-user CRUD and global login auth/session controls can be managed from one page.
+- Added backend regression suite `backend/tests/test_system_login_config.py` covering parser output, operation emission, and missing-key validation for AAA servers.
 - `System -> Users` local-user CRUD now supports `authentication principal` and OTP controls (`otp key`, `otp rate-limit`, `otp window-size`) end-to-end through backend API + UI forms, with regression tests in `backend/tests/test_system_local_users_parity.py`.
 - Browser smoke dependency issue is resolved on this host (`smoke:ui` passes); latest smoke failure mode was stale chunk runtime after rebuild, fixed by restarting `vm-ui`.
 - User-reported `Not Found` banners on System pages were consistent with stale runtime processes; wrappers/routes were present in code (`401` unauth on backend direct endpoint probes), and issue was addressed by rebuilding frontend and restarting `vm-api` + `vm-ui`.

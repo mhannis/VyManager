@@ -342,3 +342,6 @@
 - 2026-02-16: Prioritized `SYS-09` local-user parity depth by extending existing `/vyos/system/local-users` CRUD (principal + OTP fields) instead of introducing a new login router/page, preserving API contracts and minimizing migration risk.
 - 2026-02-16: Kept OTP secret handling non-disclosing in read models (`otp_key_configured` boolean only) while exposing rate/window settings to maintain operational visibility without leaking shared secrets.
 - 2026-02-16: Browser smoke failure on `/system/users` was caused by stale chunk artifacts (`ChunkLoadError`) after rebuild; runtime process restart (`vm-ui`) is now treated as required before rerunning `smoke:ui` when chunk drift appears.
+- 2026-02-16: Implemented global `system login` parity on existing `system` router (`/vyos/system/login-config`) instead of creating a new router namespace, to keep API surface additive and aligned with current `System -> Users` ownership.
+- 2026-02-16: Modeled RADIUS/TACACS servers as explicit row forms (address/key/port/timeout) with backend required-key validation; this avoids opaque command text inputs and provides deterministic set/delete diff behavior.
+- 2026-02-16: Kept global login controls on `System -> Users` rather than splitting into a separate page so user-local and global auth settings remain co-located during parity hardening.

@@ -382,6 +382,34 @@ export interface LocalUserOperationResponse {
   message: string;
 }
 
+export interface LoginAuthServerConfig {
+  address: string;
+  key: string;
+  port?: number | null;
+  timeout?: number | null;
+}
+
+export interface LoginConfigResponse {
+  configured: boolean;
+  banner_pre_login?: string | null;
+  banner_post_login?: string | null;
+  max_sessions_per_user?: number | null;
+  timeout?: number | null;
+  radius_source_address?: string | null;
+  radius_servers: LoginAuthServerConfig[];
+  tacacs_servers: LoginAuthServerConfig[];
+}
+
+export interface LoginConfigUpdateRequest {
+  banner_pre_login?: string | null;
+  banner_post_login?: string | null;
+  max_sessions_per_user?: number | null;
+  timeout?: number | null;
+  radius_source_address?: string | null;
+  radius_servers: LoginAuthServerConfig[];
+  tacacs_servers: LoginAuthServerConfig[];
+}
+
 // ============================================================================
 // API Service
 // ============================================================================
@@ -655,6 +683,16 @@ class SystemService {
    */
   async deleteLocalUser(username: string): Promise<LocalUserOperationResponse> {
     return apiClient.delete<LocalUserOperationResponse>(`/vyos/system/local-users/${encodeURIComponent(username)}`);
+  }
+
+  async getLoginConfig(refresh: boolean = false): Promise<LoginConfigResponse> {
+    return apiClient.get<LoginConfigResponse>("/vyos/system/login-config", {
+      refresh: refresh.toString(),
+    });
+  }
+
+  async updateLoginConfig(payload: LoginConfigUpdateRequest): Promise<LoginConfigResponse> {
+    return apiClient.put<LoginConfigResponse>("/vyos/system/login-config", payload);
   }
 }
 

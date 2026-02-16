@@ -455,7 +455,7 @@
       "id": "SYS-09",
       "domain": "system",
       "status": "partial",
-      "title": "Login/user management parity deepening (principal + OTP local-user controls implemented; global login auth/banner/session workflows pending)"
+      "title": "Login/user management parity deepening (local user principal/OTP plus global login banners/session/RADIUS/TACACS implemented; live AAA verification pending)"
     },
     {
       "id": "SYS-10",

@@ -26,7 +26,12 @@ import {
 } from "@/components/ui/table";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
-import { systemService, type LocalUserSummary } from "@/lib/api/system";
+import {
+  systemService,
+  type LocalUserSummary,
+  type LoginConfigResponse,
+  type LoginAuthServerConfig,
+} from "@/lib/api/system";
 import {
   AlertCircle,
   KeyRound,
@@ -53,17 +58,81 @@ function keysToTextarea(keys: string[]): string {
   return keys.join("\n");
 }
 
-function parseOptionalOtpNumber(value: string): number | null {
+function parseOptionalBoundedInteger(value: string, fieldLabel: string): number | null {
   const text = value.trim();
   if (!text) return null;
   if (!/^\d+$/.test(text)) {
-    throw new Error("OTP rate/window values must be whole numbers.");
+    throw new Error(`${fieldLabel} must be a whole number.`);
   }
   const parsed = Number(text);
   if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
-    throw new Error("OTP rate/window values must be between 1 and 65535.");
+    throw new Error(`${fieldLabel} must be between 1 and 65535.`);
   }
   return parsed;
+}
+
+interface LoginServerFormState {
+  address: string;
+  key: string;
+  port: string;
+  timeout: string;
+}
+
+const EMPTY_LOGIN_SERVER: LoginServerFormState = {
+  address: "",
+  key: "",
+  port: "",
+  timeout: "",
+};
+
+function toServerForm(entry: LoginAuthServerConfig): LoginServerFormState {
+  return {
+    address: entry.address || "",
+    key: entry.key || "",
+    port: typeof entry.port === "number" ? String(entry.port) : "",
+    timeout: typeof entry.timeout === "number" ? String(entry.timeout) : "",
+  };
+}
+
+function normalizeLoginServerRows(
+  rows: LoginServerFormState[],
+  fieldName: "RADIUS" | "TACACS",
+): LoginAuthServerConfig[] {
+  const dedupe = new Map<string, LoginAuthServerConfig>();
+  for (const row of rows) {
+    const address = row.address.trim();
+    const key = row.key.trim();
+    const portText = row.port.trim();
+    const timeoutText = row.timeout.trim();
+    if (!address && !key && !portText && !timeoutText) continue;
+    if (!address) throw new Error(`${fieldName} server address is required.`);
+    if (!key) throw new Error(`${fieldName} server '${address}' requires key.`);
+
+    let port: number | null = null;
+    if (portText) {
+      if (!/^\d+$/.test(portText)) throw new Error(`${fieldName} server '${address}' port must be a whole number.`);
+      port = Number(portText);
+      if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        throw new Error(`${fieldName} server '${address}' port must be between 1 and 65535.`);
+      }
+    }
+
+    let timeout: number | null = null;
+    if (timeoutText) {
+      if (!/^\d+$/.test(timeoutText)) {
+        throw new Error(`${fieldName} server '${address}' timeout must be a whole number.`);
+      }
+      timeout = Number(timeoutText);
+      if (!Number.isInteger(timeout) || timeout < 1 || timeout > 65535) {
+        throw new Error(`${fieldName} server '${address}' timeout must be between 1 and 65535.`);
+      }
+    }
+
+    dedupe.set(address, { address, key, port, timeout });
+  }
+  return Array.from(dedupe.entries())
+    .sort((left, right) => left[0].localeCompare(right[0]))
+    .map(([, entry]) => entry);
 }
 
 export default function SystemUsersPage() {
@@ -73,6 +142,7 @@ export default function SystemUsersPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savingLoginConfig, setSavingLoginConfig] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -102,6 +172,15 @@ export default function SystemUsersPage() {
   const [editOtpWindowSize, setEditOtpWindowSize] = useState("");
   const [editKeys, setEditKeys] = useState("");
 
+  const [loginConfig, setLoginConfig] = useState<LoginConfigResponse | null>(null);
+  const [bannerPreLogin, setBannerPreLogin] = useState("");
+  const [bannerPostLogin, setBannerPostLogin] = useState("");
+  const [maxSessionsPerUser, setMaxSessionsPerUser] = useState("");
+  const [loginTimeout, setLoginTimeout] = useState("");
+  const [radiusSourceAddress, setRadiusSourceAddress] = useState("");
+  const [radiusServers, setRadiusServers] = useState<LoginServerFormState[]>([]);
+  const [tacacsServers, setTacacsServers] = useState<LoginServerFormState[]>([]);
+
   const selectedUser = useMemo(
     () => users.find((user) => user.username === selectedUserName) || null,
     [users, selectedUserName]
@@ -111,14 +190,31 @@ export default function SystemUsersPage() {
     try {
       setError(null);
       setRefreshing(true);
-      const response = await systemService.getLocalUsers(true);
-      const userList = response.users || [];
+      const [usersResponse, loginResponse] = await Promise.all([
+        systemService.getLocalUsers(true),
+        systemService.getLoginConfig(true),
+      ]);
+
+      const userList = usersResponse.users || [];
       setUsers(userList);
       if (!selectedUserName || !userList.find((user) => user.username === selectedUserName)) {
         setSelectedUserName(userList[0]?.username || "");
       }
+
+      setLoginConfig(loginResponse);
+      setBannerPreLogin(loginResponse.banner_pre_login || "");
+      setBannerPostLogin(loginResponse.banner_post_login || "");
+      setMaxSessionsPerUser(
+        typeof loginResponse.max_sessions_per_user === "number"
+          ? String(loginResponse.max_sessions_per_user)
+          : ""
+      );
+      setLoginTimeout(typeof loginResponse.timeout === "number" ? String(loginResponse.timeout) : "");
+      setRadiusSourceAddress(loginResponse.radius_source_address || "");
+      setRadiusServers((loginResponse.radius_servers || []).map(toServerForm));
+      setTacacsServers((loginResponse.tacacs_servers || []).map(toServerForm));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load local users");
+      setError(err instanceof Error ? err.message : "Failed to load user/login configuration");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -150,8 +246,8 @@ export default function SystemUsersPage() {
     setError(null);
     setSuccess(null);
     try {
-      const otpRateLimit = parseOptionalOtpNumber(createOtpRateLimit);
-      const otpWindowSize = parseOptionalOtpNumber(createOtpWindowSize);
+      const otpRateLimit = parseOptionalBoundedInteger(createOtpRateLimit, "OTP rate-limit");
+      const otpWindowSize = parseOptionalBoundedInteger(createOtpWindowSize, "OTP window-size");
       if ((otpRateLimit !== null || otpWindowSize !== null) && !createOtpKey.trim()) {
         throw new Error("OTP key is required when OTP rate-limit or window-size is provided.");
       }
@@ -196,8 +292,8 @@ export default function SystemUsersPage() {
     setError(null);
     setSuccess(null);
     try {
-      const otpRateLimit = parseOptionalOtpNumber(editOtpRateLimit);
-      const otpWindowSize = parseOptionalOtpNumber(editOtpWindowSize);
+      const otpRateLimit = parseOptionalBoundedInteger(editOtpRateLimit, "OTP rate-limit");
+      const otpWindowSize = parseOptionalBoundedInteger(editOtpWindowSize, "OTP window-size");
 
       await systemService.updateLocalUser(selectedUser.username, {
         full_name: editFullName.trim(),
@@ -236,6 +332,72 @@ export default function SystemUsersPage() {
       setError(err instanceof Error ? err.message : "Failed to delete local user");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const updateServerRow = (
+    collection: "radius" | "tacacs",
+    index: number,
+    key: keyof LoginServerFormState,
+    value: string,
+  ) => {
+    const updater =
+      collection === "radius" ? setRadiusServers : setTacacsServers;
+    updater((previous) =>
+      previous.map((row, rowIndex) => (rowIndex === index ? { ...row, [key]: value } : row))
+    );
+  };
+
+  const addServerRow = (collection: "radius" | "tacacs") => {
+    const updater = collection === "radius" ? setRadiusServers : setTacacsServers;
+    updater((previous) => [...previous, { ...EMPTY_LOGIN_SERVER }]);
+  };
+
+  const removeServerRow = (collection: "radius" | "tacacs", index: number) => {
+    const updater = collection === "radius" ? setRadiusServers : setTacacsServers;
+    updater((previous) => previous.filter((_, rowIndex) => rowIndex !== index));
+  };
+
+  const handleSaveLoginConfig = async () => {
+    if (!canEdit) return;
+
+    setSavingLoginConfig(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const parsedMaxSessions = maxSessionsPerUser.trim()
+        ? parseOptionalBoundedInteger(maxSessionsPerUser, "Max sessions per user")
+        : null;
+      const parsedTimeout = loginTimeout.trim()
+        ? parseOptionalBoundedInteger(loginTimeout, "Session timeout")
+        : null;
+
+      const payload = {
+        banner_pre_login: bannerPreLogin,
+        banner_post_login: bannerPostLogin,
+        max_sessions_per_user: parsedMaxSessions,
+        timeout: parsedTimeout,
+        radius_source_address: radiusSourceAddress.trim() || null,
+        radius_servers: normalizeLoginServerRows(radiusServers, "RADIUS"),
+        tacacs_servers: normalizeLoginServerRows(tacacsServers, "TACACS"),
+      };
+
+      const response = await systemService.updateLoginConfig(payload);
+      setLoginConfig(response);
+      setBannerPreLogin(response.banner_pre_login || "");
+      setBannerPostLogin(response.banner_post_login || "");
+      setMaxSessionsPerUser(
+        typeof response.max_sessions_per_user === "number" ? String(response.max_sessions_per_user) : ""
+      );
+      setLoginTimeout(typeof response.timeout === "number" ? String(response.timeout) : "");
+      setRadiusSourceAddress(response.radius_source_address || "");
+      setRadiusServers((response.radius_servers || []).map(toServerForm));
+      setTacacsServers((response.tacacs_servers || []).map(toServerForm));
+      setSuccess("Global login authentication settings updated.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save login configuration");
+    } finally {
+      setSavingLoginConfig(false);
     }
   };
 
@@ -575,6 +737,202 @@ export default function SystemUsersPage() {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              Global Login Authentication
+              <Badge variant={loginConfig?.configured ? "default" : "secondary"}>
+                {loginConfig?.configured ? "Configured" : "Default"}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <div>
+                <Label>Max Sessions Per User</Label>
+                <Input
+                  value={maxSessionsPerUser}
+                  onChange={(event) => setMaxSessionsPerUser(event.target.value)}
+                  placeholder="Optional"
+                  disabled={!canEdit || saving || savingLoginConfig}
+                />
+              </div>
+              <div>
+                <Label>Session Timeout</Label>
+                <Input
+                  value={loginTimeout}
+                  onChange={(event) => setLoginTimeout(event.target.value)}
+                  placeholder="Optional"
+                  disabled={!canEdit || saving || savingLoginConfig}
+                />
+              </div>
+              <div>
+                <Label>RADIUS Source Address</Label>
+                <Input
+                  value={radiusSourceAddress}
+                  onChange={(event) => setRadiusSourceAddress(event.target.value)}
+                  placeholder="Optional IPv4/IPv6 address"
+                  disabled={!canEdit || saving || savingLoginConfig}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <Label>Pre-login Banner</Label>
+                <Textarea
+                  value={bannerPreLogin}
+                  onChange={(event) => setBannerPreLogin(event.target.value)}
+                  className="min-h-[90px]"
+                  placeholder="Shown before authentication"
+                  disabled={!canEdit || saving || savingLoginConfig}
+                />
+              </div>
+              <div>
+                <Label>Post-login Banner</Label>
+                <Textarea
+                  value={bannerPostLogin}
+                  onChange={(event) => setBannerPostLogin(event.target.value)}
+                  className="min-h-[90px]"
+                  placeholder="Shown after authentication"
+                  disabled={!canEdit || saving || savingLoginConfig}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-3 xl:grid-cols-2">
+              <div className="rounded-md border border-border/60 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">RADIUS Servers</h3>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => addServerRow("radius")}
+                    disabled={!canEdit || saving || savingLoginConfig}
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    Add
+                  </Button>
+                </div>
+                {radiusServers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No RADIUS servers configured.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {radiusServers.map((row, index) => (
+                      <div key={`radius-${index}`} className="grid gap-2 md:grid-cols-12">
+                        <Input
+                          value={row.address}
+                          onChange={(event) => updateServerRow("radius", index, "address", event.target.value)}
+                          placeholder="Address"
+                          className="md:col-span-3"
+                          disabled={!canEdit || saving || savingLoginConfig}
+                        />
+                        <Input
+                          value={row.key}
+                          onChange={(event) => updateServerRow("radius", index, "key", event.target.value)}
+                          placeholder="Shared key"
+                          className="md:col-span-4"
+                          disabled={!canEdit || saving || savingLoginConfig}
+                        />
+                        <Input
+                          value={row.port}
+                          onChange={(event) => updateServerRow("radius", index, "port", event.target.value)}
+                          placeholder="Port"
+                          className="md:col-span-2"
+                          disabled={!canEdit || saving || savingLoginConfig}
+                        />
+                        <Input
+                          value={row.timeout}
+                          onChange={(event) => updateServerRow("radius", index, "timeout", event.target.value)}
+                          placeholder="Timeout"
+                          className="md:col-span-2"
+                          disabled={!canEdit || saving || savingLoginConfig}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeServerRow("radius", index)}
+                          disabled={!canEdit || saving || savingLoginConfig}
+                          className="md:col-span-1"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-md border border-border/60 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">TACACS Servers</h3>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => addServerRow("tacacs")}
+                    disabled={!canEdit || saving || savingLoginConfig}
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    Add
+                  </Button>
+                </div>
+                {tacacsServers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No TACACS servers configured.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {tacacsServers.map((row, index) => (
+                      <div key={`tacacs-${index}`} className="grid gap-2 md:grid-cols-12">
+                        <Input
+                          value={row.address}
+                          onChange={(event) => updateServerRow("tacacs", index, "address", event.target.value)}
+                          placeholder="Address"
+                          className="md:col-span-3"
+                          disabled={!canEdit || saving || savingLoginConfig}
+                        />
+                        <Input
+                          value={row.key}
+                          onChange={(event) => updateServerRow("tacacs", index, "key", event.target.value)}
+                          placeholder="Shared key"
+                          className="md:col-span-4"
+                          disabled={!canEdit || saving || savingLoginConfig}
+                        />
+                        <Input
+                          value={row.port}
+                          onChange={(event) => updateServerRow("tacacs", index, "port", event.target.value)}
+                          placeholder="Port"
+                          className="md:col-span-2"
+                          disabled={!canEdit || saving || savingLoginConfig}
+                        />
+                        <Input
+                          value={row.timeout}
+                          onChange={(event) => updateServerRow("tacacs", index, "timeout", event.target.value)}
+                          placeholder="Timeout"
+                          className="md:col-span-2"
+                          disabled={!canEdit || saving || savingLoginConfig}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeServerRow("tacacs", index)}
+                          disabled={!canEdit || saving || savingLoginConfig}
+                          className="md:col-span-1"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Button onClick={handleSaveLoginConfig} disabled={!canEdit || saving || savingLoginConfig}>
+              <Save className="mr-2 h-4 w-4" />
+              {savingLoginConfig ? "Saving..." : "Save Login Settings"}
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

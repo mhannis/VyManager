@@ -3,6 +3,14 @@ title: System + Interfaces largest bucket depth pass (`SYS-09`, `SYS-10`, `SYS-1
 status: in_progress
 branch: feature/containers-automation-v1
 completed_in_cycle:
+  - Extended `SYS-09` global login parity with dedicated backend API (`/vyos/system/login-config`) covering:
+    - pre/post-login banners
+    - max sessions per user
+    - login timeout
+    - RADIUS source-address and server set (address/key/port/timeout)
+    - TACACS server set (address/key/port/timeout)
+  - Extended `System -> Users` with a form-first `Global Login Authentication` section for RADIUS/TACACS rows and login banner/session controls.
+  - Added backend regression tests `backend/tests/test_system_login_config.py` for login-config parsing, command generation, and validation semantics.
   - Deepened `SYS-09` local login-user parity:
     - backend `system/local-users` now supports `authentication principal`
     - backend `system/local-users` now supports OTP controls (`otp key`, `otp rate-limit`, `otp window-size`) with range validation
@@ -39,7 +47,7 @@ completed_in_cycle:
     - retained optional ping/startup-delay/test-interval controls for compatibility
   - Updated System how-to guides for Update Check and Watchdog to reflect the expanded controls.
 validation:
-  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_local_users_parity.py tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py
+  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_login_config.py tests/test_system_local_users_parity.py tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py
   - cd frontend && npx tsc --noEmit --pretty false
   - cd frontend && npm run -s lint  # warnings-only baseline remains; no errors
   - cd frontend && npm run -s build
@@ -50,6 +58,6 @@ known_limitations:
   - Frontend lint baseline still contains pre-existing repo-wide warnings outside this slice.
   - UI smoke can fail transiently with stale chunk artifacts if `vm-ui` serves an older build after a rebuild; restart `vm-ui` before rerunning `smoke:ui`.
 next_queue:
-  - Continue `system` bucket depth: global login auth/banner/session parity (radius, tacacs, pre/post-login banner, session limits).
+  - Continue `system` bucket depth: live AAA verification hardening for RADIUS/TACACS login config and remaining login-auth edge cases.
   - Continue `interfaces` bucket depth for WWAN/Wireless advanced leaves and live-save guide verification.
   - Continue backlog progression in requested guide order after this batch is reviewed.

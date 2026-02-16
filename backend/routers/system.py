@@ -932,6 +932,34 @@ class LocalUserOperationResponse(BaseModel):
     message: str
 
 
+class LoginAuthServerConfig(BaseModel):
+    address: str
+    key: str
+    port: Optional[int] = Field(default=None, ge=1, le=65535)
+    timeout: Optional[int] = Field(default=None, ge=1, le=65535)
+
+
+class LoginConfigResponse(BaseModel):
+    configured: bool = False
+    banner_pre_login: Optional[str] = None
+    banner_post_login: Optional[str] = None
+    max_sessions_per_user: Optional[int] = Field(default=None, ge=1, le=65535)
+    timeout: Optional[int] = Field(default=None, ge=1, le=65535)
+    radius_source_address: Optional[str] = None
+    radius_servers: List[LoginAuthServerConfig] = Field(default_factory=list)
+    tacacs_servers: List[LoginAuthServerConfig] = Field(default_factory=list)
+
+
+class LoginConfigRequest(BaseModel):
+    banner_pre_login: Optional[str] = None
+    banner_post_login: Optional[str] = None
+    max_sessions_per_user: Optional[int] = Field(default=None, ge=1, le=65535)
+    timeout: Optional[int] = Field(default=None, ge=1, le=65535)
+    radius_source_address: Optional[str] = None
+    radius_servers: List[LoginAuthServerConfig] = Field(default_factory=list)
+    tacacs_servers: List[LoginAuthServerConfig] = Field(default_factory=list)
+
+
 def _parse_ntp_service_config(full_config: Dict[str, Any]) -> NtpServiceConfigResponse:
     service_config = full_config.get("service", {})
     ntp_config = service_config.get("ntp")
@@ -1791,6 +1819,90 @@ def _find_local_user(users: List[LocalUserSummary], username: str) -> Optional[L
         if user.username == username:
             return user
     return None
+
+
+def _parse_login_auth_servers(raw_server_block: Any) -> List[LoginAuthServerConfig]:
+    servers_root = _as_dict(raw_server_block)
+    parsed: List[LoginAuthServerConfig] = []
+    for address, server_data in sorted(servers_root.items(), key=lambda item: str(item[0])):
+        server_address = str(address).strip()
+        if not server_address:
+            continue
+        options = _as_dict(server_data)
+        key = str(options.get("key") or "").strip()
+        if not key:
+            continue
+        port = _safe_int(options.get("port"))
+        if port is not None and (port < 1 or port > 65535):
+            port = None
+        timeout = _safe_int(options.get("timeout"))
+        if timeout is not None and (timeout < 1 or timeout > 65535):
+            timeout = None
+        parsed.append(
+            LoginAuthServerConfig(
+                address=server_address,
+                key=key,
+                port=port,
+                timeout=timeout,
+            )
+        )
+    return parsed
+
+
+def _normalize_login_auth_servers_or_400(
+    entries: List[LoginAuthServerConfig],
+    *,
+    field_name: str,
+) -> List[LoginAuthServerConfig]:
+    dedupe: Dict[str, LoginAuthServerConfig] = {}
+    for entry in entries:
+        address = _normalize_dns_server_or_400(entry.address, field_name=f"{field_name} address")
+        key = (entry.key or "").strip()
+        if not key:
+            raise HTTPException(status_code=400, detail=f"{field_name} server '{address}' requires key")
+        dedupe[address] = LoginAuthServerConfig(
+            address=address,
+            key=key,
+            port=entry.port,
+            timeout=entry.timeout,
+        )
+    return [dedupe[address] for address in sorted(dedupe.keys())]
+
+
+def _parse_login_config(full_config: Dict[str, Any]) -> LoginConfigResponse:
+    system_root = _as_dict(full_config.get("system"))
+    login_root = _as_dict(system_root.get("login"))
+    if not login_root:
+        return LoginConfigResponse(configured=False)
+
+    banner_root = _as_dict(login_root.get("banner"))
+    radius_root = _as_dict(login_root.get("radius"))
+    tacacs_root = _as_dict(login_root.get("tacacs"))
+
+    max_sessions_per_user = _safe_int(login_root.get("max-sessions-per-user"))
+    if max_sessions_per_user is not None and (max_sessions_per_user < 1 or max_sessions_per_user > 65535):
+        max_sessions_per_user = None
+
+    timeout = _safe_int(login_root.get("timeout"))
+    if timeout is not None and (timeout < 1 or timeout > 65535):
+        timeout = None
+
+    radius_source_address = radius_root.get("source-address")
+    if isinstance(radius_source_address, str):
+        radius_source_address = radius_source_address.strip() or None
+    else:
+        radius_source_address = None
+
+    return LoginConfigResponse(
+        configured=True,
+        banner_pre_login=_string_or_none(banner_root.get("pre-login")),
+        banner_post_login=_string_or_none(banner_root.get("post-login")),
+        max_sessions_per_user=max_sessions_per_user,
+        timeout=timeout,
+        radius_source_address=radius_source_address,
+        radius_servers=_parse_login_auth_servers(radius_root.get("server")),
+        tacacs_servers=_parse_login_auth_servers(tacacs_root.get("server")),
+    )
 
 
 def _infer_log_severity(line: str) -> Optional[str]:
@@ -3554,6 +3666,210 @@ async def delete_local_user(request: Request, username: str) -> LocalUserOperati
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error deleting local user: {str(exc)}")
+
+
+@router.get("/login-config", response_model=LoginConfigResponse)
+async def get_login_config(request: Request, refresh: bool = False) -> LoginConfigResponse:
+    """Get global system login configuration (`system login ...`)."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        return _parse_login_config(full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving login configuration: {str(exc)}")
+
+
+@router.put("/login-config", response_model=LoginConfigResponse)
+async def update_login_config(request: Request, body: LoginConfigRequest) -> LoginConfigResponse:
+    """Update global system login configuration (`system login ...`)."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        desired_radius_servers = _normalize_login_auth_servers_or_400(
+            body.radius_servers, field_name="radius"
+        )
+        desired_tacacs_servers = _normalize_login_auth_servers_or_400(
+            body.tacacs_servers, field_name="tacacs"
+        )
+
+        desired_pre_banner = (body.banner_pre_login or "").strip()
+        desired_post_banner = (body.banner_post_login or "").strip()
+        desired_max_sessions = body.max_sessions_per_user
+        desired_timeout = body.timeout
+        desired_radius_source = (body.radius_source_address or "").strip()
+        if desired_radius_source:
+            desired_radius_source = _normalize_ip_address_or_400(
+                desired_radius_source, field_name="radius_source_address"
+            )
+        else:
+            desired_radius_source = ""
+
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        current = _parse_login_config(full_config)
+
+        operations: List[Dict[str, Any]] = []
+
+        current_pre_banner = (current.banner_pre_login or "").strip()
+        if desired_pre_banner != current_pre_banner:
+            if desired_pre_banner:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["system", "login", "banner", "pre-login", desired_pre_banner],
+                    }
+                )
+            else:
+                operations.append(
+                    {"op": "delete", "path": ["system", "login", "banner", "pre-login"]}
+                )
+
+        current_post_banner = (current.banner_post_login or "").strip()
+        if desired_post_banner != current_post_banner:
+            if desired_post_banner:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["system", "login", "banner", "post-login", desired_post_banner],
+                    }
+                )
+            else:
+                operations.append(
+                    {"op": "delete", "path": ["system", "login", "banner", "post-login"]}
+                )
+
+        if desired_max_sessions != current.max_sessions_per_user:
+            if desired_max_sessions is None:
+                operations.append(
+                    {"op": "delete", "path": ["system", "login", "max-sessions-per-user"]}
+                )
+            else:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": [
+                            "system",
+                            "login",
+                            "max-sessions-per-user",
+                            str(desired_max_sessions),
+                        ],
+                    }
+                )
+
+        if desired_timeout != current.timeout:
+            if desired_timeout is None:
+                operations.append({"op": "delete", "path": ["system", "login", "timeout"]})
+            else:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["system", "login", "timeout", str(desired_timeout)],
+                    }
+                )
+
+        current_radius_source = (current.radius_source_address or "").strip()
+        if desired_radius_source != current_radius_source:
+            if desired_radius_source:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["system", "login", "radius", "source-address", desired_radius_source],
+                    }
+                )
+            else:
+                operations.append(
+                    {"op": "delete", "path": ["system", "login", "radius", "source-address"]}
+                )
+
+        def _server_signature(server: LoginAuthServerConfig) -> tuple[str, Optional[int], Optional[int]]:
+            return (server.key, server.port, server.timeout)
+
+        def _sync_auth_servers(
+            subtree: str,
+            current_servers: List[LoginAuthServerConfig],
+            desired_servers: List[LoginAuthServerConfig],
+        ) -> None:
+            current_map = {server.address: server for server in current_servers}
+            desired_map = {server.address: server for server in desired_servers}
+
+            for address, current_server in current_map.items():
+                desired_server = desired_map.get(address)
+                if desired_server is None or _server_signature(desired_server) != _server_signature(current_server):
+                    operations.append(
+                        {
+                            "op": "delete",
+                            "path": ["system", "login", subtree, "server", address],
+                        }
+                    )
+
+            for address, desired_server in desired_map.items():
+                current_server = current_map.get(address)
+                if current_server is not None and _server_signature(desired_server) == _server_signature(current_server):
+                    continue
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["system", "login", subtree, "server", address],
+                    }
+                )
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["system", "login", subtree, "server", address, "key", desired_server.key],
+                    }
+                )
+                if desired_server.port is not None:
+                    operations.append(
+                        {
+                            "op": "set",
+                            "path": [
+                                "system",
+                                "login",
+                                subtree,
+                                "server",
+                                address,
+                                "port",
+                                str(desired_server.port),
+                            ],
+                        }
+                    )
+                if desired_server.timeout is not None:
+                    operations.append(
+                        {
+                            "op": "set",
+                            "path": [
+                                "system",
+                                "login",
+                                subtree,
+                                "server",
+                                address,
+                                "timeout",
+                                str(desired_server.timeout),
+                            ],
+                        }
+                    )
+
+        _sync_auth_servers("radius", current.radius_servers, desired_radius_servers)
+        _sync_auth_servers("tacacs", current.tacacs_servers, desired_tacacs_servers)
+
+        if operations:
+            response = await run_in_threadpool(service.apply_operations, operations)
+            if response.status != 200:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to update login configuration: {response.error or 'Unknown VyOS error'}",
+                )
+
+        updated_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        return _parse_login_config(updated_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating login configuration: {str(exc)}")
 
 
 # ========================================================================
