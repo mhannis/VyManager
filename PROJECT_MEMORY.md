@@ -126,6 +126,7 @@ Assumptions:
 - Containers UI now supports row-level image lifecycle actions directly from catalog lists and provides inspect summary parsing (JSON-first, key-value fallback) above raw output.
 - Container backlog statuses were advanced: `C-02`, `C-03`, `C-04` moved to `verify` pending live-instance verification.
 - Firewall groups create/edit flows now use typed member validators; remote groups are constrained to exactly one HTTP/HTTPS URL in the GUI.
+- Firewall interface-group member inputs now provide description-first interface suggestions via datalist (`Description (ethX)`), while still storing canonical interface names.
 - Added dedicated firewall/NAT regression suites: `test_firewall_nat_save_apply_reload_loops.py` and `test_firewall_nat_config_snapshots.py`, with `firewall_nat_config_snapshots.json` as baseline snapshot artifact.
 - Robustness runner now executes firewall/NAT regression tests by default in the backend suite.
 - Expanded cross-cutting regression gates in this cycle: fixture loops increased from 12 to 35 and snapshots from 15 to 38 endpoints across protocols/system/services/vpn/pki/qos/DMVPN plus baseline firewall/NAT.

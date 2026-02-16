@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, X, AlertCircle, Search } from "lucide-react";
 import { firewallGroupsService } from "@/lib/api/firewall-groups";
 import type { FirewallGroup, GroupBatchOperation, GroupType } from "@/lib/api/types/firewall-groups";
+import { ethernetService } from "@/lib/api/ethernet";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 import { validateGroupMember } from "@/lib/validation/firewall-groups";
 
 interface EditGroupModalProps {
@@ -36,11 +38,15 @@ export function EditGroupModal({ open, onOpenChange, group, onSuccess }: EditGro
   const [includedGroupsToRemove, setIncludedGroupsToRemove] = useState<string[]>([]);
   const [availableGroups, setAvailableGroups] = useState<FirewallGroup[]>([]);
   const [groupSearchQuery, setGroupSearchQuery] = useState("");
+  const [interfaceOptions, setInterfaceOptions] = useState<Array<{ name: string; label: string }>>([]);
 
   // Load available groups when modal opens
   useEffect(() => {
     if (open && group) {
       loadAvailableGroups();
+      if (group.type === "interface-group") {
+        loadInterfaceOptions();
+      }
     }
   }, [open, group]);
 
@@ -55,6 +61,19 @@ export function EditGroupModal({ open, onOpenChange, group, onSuccess }: EditGro
       setAvailableGroups(filtered);
     } catch (err) {
       console.error("Failed to load available groups:", err);
+    }
+  };
+
+  const loadInterfaceOptions = async () => {
+    try {
+      const config = await ethernetService.getConfig();
+      const options = (config.interfaces || []).map((iface) => ({
+        name: iface.name,
+        label: formatInterfaceDisplayName(iface.name, iface.description),
+      }));
+      setInterfaceOptions(options.sort((left, right) => left.label.localeCompare(right.label)));
+    } catch {
+      setInterfaceOptions([]);
     }
   };
 
@@ -454,7 +473,17 @@ export function EditGroupModal({ open, onOpenChange, group, onSuccess }: EditGro
                 }}
                 placeholder={getMemberPlaceholder()}
                 className="font-mono"
+                list={group.type === "interface-group" ? "edit-interface-group-member-options" : undefined}
               />
+              {group.type === "interface-group" && interfaceOptions.length > 0 && (
+                <datalist id="edit-interface-group-member-options">
+                  {interfaceOptions.map((option) => (
+                    <option key={`edit-iface-option-${option.name}`} value={option.name}>
+                      {option.label}
+                    </option>
+                  ))}
+                </datalist>
+              )}
               <Button type="button" onClick={addMember} size="sm">
                 <Plus className="h-4 w-4 mr-1" />
                 Add

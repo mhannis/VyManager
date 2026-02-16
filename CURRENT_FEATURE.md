@@ -11,6 +11,7 @@ completed_in_cycle:
   - Expanded image lifecycle UX with row-level quick actions (`Use`, `Pull`, `Update`, `Delete`) from configured/runtime image lists.
   - Expanded inspect UX with parsed summary fields (JSON + key/value fallback) above raw inspect output.
   - Added firewall group type-aware member validation in create/edit flows, including strict remote-group single-URL behavior and format validation per group type.
+  - Added interface-group member suggestions in firewall group modals using description-first interface labels (`Description (ethX)`), while submitting canonical interface IDs.
   - Added backend tests for overlap and address validation helper paths.
 validation:
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_containers_automation_v1.py

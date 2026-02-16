@@ -62,7 +62,7 @@
         "frontend/src/components/firewall/EditGroupModal.tsx",
         "frontend/src/lib/validation/firewall-groups.ts"
       ],
-      "notes": "Added typed member-value validation and remote-group URL constraints to firewall group create/edit workflows (F-03 depth pass)."
+      "notes": "Added typed member-value validation and remote-group URL constraints to firewall group create/edit workflows, plus interface-group datalist suggestions with description-first labels (F-03 depth pass)."
     }
   ],
   "commands": {

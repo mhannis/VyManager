@@ -291,3 +291,4 @@
 - 2026-02-16: Kept unknown network names without explicit static addresses permissive in container upsert to preserve pre-stage/template workflows while still enforcing strict validation for explicit static addressing.
 - 2026-02-16: Expanded container UX with row-level image lifecycle actions (Use/Pull/Update/Delete) and inspect output summary parsing so common runtime operations are faster without dropping raw output access.
 - 2026-02-16: Added typed member-value validation to firewall group create/edit flows and constrained remote groups to a single HTTP/HTTPS URL member to reduce invalid commits and clarify remote-group semantics.
+- 2026-02-16: Firewall interface-group inputs now fetch ethernet config and show description-first suggestions (`Description (ethX)`) while writing raw interface IDs, aligning with global interface labeling direction.

@@ -14,6 +14,7 @@
   - `frontend/src/components/firewall/EditGroupModal.tsx`
   - type-aware member validation for additions
   - remote-group constraint retained during edits
+  - interface-group member datalist suggestions with description-first labels (`Description (ethX)`)
 
 ## Validation
 - `cd frontend && npx tsc --noEmit --pretty false`

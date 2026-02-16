@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, X, AlertCircle, Search } from "lucide-react";
 import { firewallGroupsService, type FirewallGroup } from "@/lib/api/firewall-groups";
 import type { GroupType, FirewallGroupsCapabilities } from "@/lib/api/types/firewall-groups";
+import { ethernetService } from "@/lib/api/ethernet";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 import { validateGroupMember } from "@/lib/validation/firewall-groups";
 
 interface CreateGroupModalProps {
@@ -33,11 +35,15 @@ export function CreateGroupModal({ open, onOpenChange, onSuccess, capabilities }
   const [includedGroups, setIncludedGroups] = useState<string[]>([]);
   const [availableGroups, setAvailableGroups] = useState<FirewallGroup[]>([]);
   const [groupSearchQuery, setGroupSearchQuery] = useState("");
+  const [interfaceOptions, setInterfaceOptions] = useState<Array<{ name: string; label: string }>>([]);
 
   // Load existing groups for the include dropdown
   useEffect(() => {
     if (open) {
       loadAvailableGroups();
+      if (groupType === "interface-group") {
+        loadInterfaceOptions();
+      }
     }
   }, [open, groupType]);
 
@@ -49,6 +55,19 @@ export function CreateGroupModal({ open, onOpenChange, onSuccess, capabilities }
       setAvailableGroups(groupsForType);
     } catch (err) {
       console.error("Failed to load available groups:", err);
+    }
+  };
+
+  const loadInterfaceOptions = async () => {
+    try {
+      const config = await ethernetService.getConfig();
+      const options = (config.interfaces || []).map((iface) => ({
+        name: iface.name,
+        label: formatInterfaceDisplayName(iface.name, iface.description),
+      }));
+      setInterfaceOptions(options.sort((left, right) => left.label.localeCompare(right.label)));
+    } catch {
+      setInterfaceOptions([]);
     }
   };
 
@@ -353,7 +372,17 @@ export function CreateGroupModal({ open, onOpenChange, onSuccess, capabilities }
                 }}
                 placeholder={getMemberPlaceholder(groupType)}
                 className="font-mono"
+                list={groupType === "interface-group" ? "create-interface-group-member-options" : undefined}
               />
+              {groupType === "interface-group" && interfaceOptions.length > 0 && (
+                <datalist id="create-interface-group-member-options">
+                  {interfaceOptions.map((option) => (
+                    <option key={`iface-option-${option.name}`} value={option.name}>
+                      {option.label}
+                    </option>
+                  ))}
+                </datalist>
+              )}
               <Button type="button" onClick={addMember} size="sm">
                 <Plus className="h-4 w-4 mr-1" />
                 Add
