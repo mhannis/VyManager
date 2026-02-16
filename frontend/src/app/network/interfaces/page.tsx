@@ -33,13 +33,14 @@ import { DeleteVLANModal } from "@/components/network/DeleteVLANModal";
 import { dummyService, type DummyBatchOperation } from "@/lib/api/dummy";
 import { loopbackService } from "@/lib/api/loopback";
 import { pppoeService } from "@/lib/api/pppoe";
+import { tunnelInterfaceService } from "@/lib/api/tunnel-interface";
 import { vtiService } from "@/lib/api/vti";
 import { vxlanService } from "@/lib/api/vxlan";
 
 type InterfaceType = "all" | "ethernet" | "vlan";
 type InterfaceFamilyGroup = "core-l2" | "overlay-secure" | "access-wan";
 type InterfaceFamilyFilter = "all" | InterfaceFamilyGroup;
-type QuickFamily = "dummy" | "loopback" | "pppoe" | "vti" | "vxlan";
+type QuickFamily = "dummy" | "loopback" | "pppoe" | "vti" | "vxlan" | "tunnel";
 
 interface InterfaceFamily {
   key: string;
@@ -204,6 +205,8 @@ const INTERFACE_FAMILIES: InterfaceFamily[] = [
   },
 ];
 
+const QUICK_TUNNEL_ENCAPSULATION_OPTIONS = ["gre", "gretap", "ip6gre", "ipip", "ipip6", "ip6ip6", "sit"] as const;
+
 const VLAN_KIND_LABELS: Record<VLANWithParent["kind"], string> = {
   "vif": "802.1Q",
   "vif-s": "QinQ Service",
@@ -303,6 +306,16 @@ function InterfacesPageContent() {
     sourceInterface: "",
     remote: "",
     group: "",
+    mtu: "",
+    vrf: "",
+    disabled: false,
+  });
+  const [quickTunnelForm, setQuickTunnelForm] = useState({
+    name: "",
+    description: "",
+    encapsulation: "gre",
+    sourceAddress: "",
+    remote: "",
     mtu: "",
     vrf: "",
     disabled: false,
@@ -490,6 +503,19 @@ function InterfacesPageContent() {
       });
       return;
     }
+    if (family === "tunnel") {
+      setQuickTunnelForm({
+        name: "",
+        description: "",
+        encapsulation: "gre",
+        sourceAddress: "",
+        remote: "",
+        mtu: "",
+        vrf: "",
+        disabled: false,
+      });
+      return;
+    }
     setQuickLoopbackForm({
       name: "",
       description: "",
@@ -644,6 +670,59 @@ function InterfacesPageContent() {
           throw new Error(response.error || "VyOS rejected VXLAN interface configuration.");
         }
         setQuickSuccess(`VXLAN interface '${name}' created from Interface Manager.`);
+      } else if (quickFamily === "tunnel") {
+        const name = quickTunnelForm.name.trim();
+        if (!name) {
+          throw new Error("Tunnel interface name is required.");
+        }
+
+        const sourceAddress = quickTunnelForm.sourceAddress.trim();
+        if (!sourceAddress) {
+          throw new Error("Tunnel source address is required.");
+        }
+
+        const remote = quickTunnelForm.remote.trim();
+        if (!remote) {
+          throw new Error("Tunnel remote endpoint is required.");
+        }
+
+        const operations: string[] = [];
+        const base = `interfaces tunnel ${quoteCliValue(name)}`;
+        operations.push(`set ${base} source-address ${quoteCliValue(sourceAddress)}`);
+        operations.push(`set ${base} remote ${quoteCliValue(remote)}`);
+
+        const encapsulation = quickTunnelForm.encapsulation.trim();
+        if (encapsulation) {
+          operations.push(`set ${base} encapsulation ${quoteCliValue(encapsulation)}`);
+        }
+
+        const description = quickTunnelForm.description.trim();
+        if (description) {
+          operations.push(`set ${base} description ${quoteCliValue(description)}`);
+        }
+
+        const mtu = quickTunnelForm.mtu.trim();
+        if (mtu) {
+          if (!/^\d+$/.test(mtu)) {
+            throw new Error("Tunnel MTU must be a whole number.");
+          }
+          operations.push(`set ${base} mtu ${quoteCliValue(mtu)}`);
+        }
+
+        const vrf = quickTunnelForm.vrf.trim();
+        if (vrf) {
+          operations.push(`set ${base} vrf ${quoteCliValue(vrf)}`);
+        }
+
+        if (quickTunnelForm.disabled) {
+          operations.push(`set ${base} disable`);
+        }
+
+        const response = await tunnelInterfaceService.batchConfigure(operations);
+        if (!response.success) {
+          throw new Error(response.error || "VyOS rejected tunnel interface configuration.");
+        }
+        setQuickSuccess(`Tunnel interface '${name}' created from Interface Manager.`);
       } else if (quickFamily === "pppoe") {
         const name = quickPppoeForm.name.trim();
         if (!name) {
@@ -914,6 +993,7 @@ function InterfacesPageContent() {
                       family.key === "dummy" ||
                       family.key === "loopback" ||
                       family.key === "pppoe" ||
+                      family.key === "tunnel" ||
                       family.key === "vti" ||
                       family.key === "vxlan";
                     return (
@@ -1260,6 +1340,8 @@ function InterfacesPageContent() {
                   ? "Quick Add VTI Interface"
                 : quickFamily === "vxlan"
                   ? "Quick Add VXLAN Interface"
+                : quickFamily === "tunnel"
+                  ? "Quick Add Tunnel Interface"
                 : quickFamily === "pppoe"
                   ? "Quick Add PPPoE Interface"
                 : quickFamily === "loopback"
@@ -1565,6 +1647,126 @@ function InterfacesPageContent() {
                     Create interface in disabled state
                   </Label>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {quickFamily === "tunnel" && (
+            <div className="grid gap-4 py-1">
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-tunnel-name">Interface Name</Label>
+                  <Input
+                    id="quick-tunnel-name"
+                    value={quickTunnelForm.name}
+                    onChange={(event) =>
+                      setQuickTunnelForm((previous) => ({ ...previous, name: event.target.value }))
+                    }
+                    placeholder="tun0"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-tunnel-encapsulation">Encapsulation</Label>
+                  <select
+                    id="quick-tunnel-encapsulation"
+                    value={quickTunnelForm.encapsulation}
+                    onChange={(event) =>
+                      setQuickTunnelForm((previous) => ({
+                        ...previous,
+                        encapsulation: event.target.value,
+                      }))
+                    }
+                    disabled={quickSaving}
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {QUICK_TUNNEL_ENCAPSULATION_OPTIONS.map((option) => (
+                      <option key={`quick-tunnel-encap-${option}`} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quick-tunnel-description">Description</Label>
+                <Input
+                  id="quick-tunnel-description"
+                  value={quickTunnelForm.description}
+                  onChange={(event) =>
+                    setQuickTunnelForm((previous) => ({ ...previous, description: event.target.value }))
+                  }
+                  placeholder="GRE to branch"
+                  disabled={quickSaving}
+                />
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-tunnel-source">Source Address</Label>
+                  <Input
+                    id="quick-tunnel-source"
+                    value={quickTunnelForm.sourceAddress}
+                    onChange={(event) =>
+                      setQuickTunnelForm((previous) => ({
+                        ...previous,
+                        sourceAddress: event.target.value,
+                      }))
+                    }
+                    placeholder="192.0.2.10"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-tunnel-remote">Remote Endpoint</Label>
+                  <Input
+                    id="quick-tunnel-remote"
+                    value={quickTunnelForm.remote}
+                    onChange={(event) =>
+                      setQuickTunnelForm((previous) => ({ ...previous, remote: event.target.value }))
+                    }
+                    placeholder="198.51.100.20"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-tunnel-mtu">MTU (optional)</Label>
+                  <Input
+                    id="quick-tunnel-mtu"
+                    value={quickTunnelForm.mtu}
+                    onChange={(event) =>
+                      setQuickTunnelForm((previous) => ({ ...previous, mtu: event.target.value }))
+                    }
+                    placeholder="1476"
+                    disabled={quickSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-tunnel-vrf">VRF (optional)</Label>
+                  <Input
+                    id="quick-tunnel-vrf"
+                    value={quickTunnelForm.vrf}
+                    onChange={(event) =>
+                      setQuickTunnelForm((previous) => ({ ...previous, vrf: event.target.value }))
+                    }
+                    placeholder="blue"
+                    disabled={quickSaving}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-md border border-border p-2">
+                <Checkbox
+                  id="quick-tunnel-disable"
+                  checked={quickTunnelForm.disabled}
+                  onCheckedChange={(checked) =>
+                    setQuickTunnelForm((previous) => ({ ...previous, disabled: checked === true }))
+                  }
+                  disabled={quickSaving}
+                />
+                <Label htmlFor="quick-tunnel-disable" className="text-sm font-normal">
+                  Create interface in disabled state
+                </Label>
               </div>
             </div>
           )}

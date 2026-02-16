@@ -71,7 +71,7 @@ Acceptance criteria:
   - `Access & WAN`
 - `/network/interfaces` presents grouped interface-family cards with direct `Open` links to each detailed editor.
 - Existing detailed interface pages remain reachable for compatibility and advanced settings.
-- Unified manager provides inline quick-add for `Dummy`, `Loopback`, `PPPoE`, `VTI`, and `VXLAN` families.
+- Unified manager provides inline quick-add for `Dummy`, `Loopback`, `PPPoE`, `VTI`, `VXLAN`, and `Tunnel` families.
 - PPPoE quick-add source-interface selection uses description-first labels (`Description (ethX)`) when available.
 - Build/typecheck/runtime smoke pass after the IA changes.
 
@@ -81,7 +81,7 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback/PPPoE/VTI/VXLAN is implemented and validated locally.
+- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback/PPPoE/VTI/VXLAN/Tunnel is implemented and validated locally.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
@@ -303,4 +303,5 @@ Assumptions:
 - Interface Manager quick-add now supports PPPoE creation inline using the existing `/vyos/pppoe-interface/configure` batch API (no backend contract changes).
 - PPPoE quick-add source-interface input now uses a dropdown populated from discovered interfaces with description-first labels to keep selection consistent and reduce misconfiguration risk.
 - Interface Manager quick-add now also supports VTI and VXLAN creation inline using existing `/vyos/vti-interface/configure` and `/vyos/vxlan-interface/configure` batch APIs.
-- Next IA quick-add target is tunnel interfaces, which require required-field validation for `source-address` and `remote` in the unified modal flow.
+- Interface Manager quick-add now also supports Tunnel creation inline using existing `/vyos/tunnel-interface/configure` batch API with required `source-address` and `remote` validation.
+- Next IA target is inline quick-edit for these families so operators can patch common fields without navigating to full per-family editors.
