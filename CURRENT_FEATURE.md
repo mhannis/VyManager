@@ -17,6 +17,7 @@ completed_in_cycle:
   - LLDP configuration/runtime tables now consistently display interface labels using description-first naming when available.
   - Network Load Balancing WAN rules now include quick-select outbound interface checkboxes with strict interface existence validation before add.
   - Bridge Firewall rule rows now display inbound/outbound interfaces using description-first labels sourced from runtime/config inventory.
+  - System Acceleration VPP interface selections and table rows now use description-first interface labels for consistent interface identity across system/network/firewall pages.
 validation:
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py

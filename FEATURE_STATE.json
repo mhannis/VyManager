@@ -14,6 +14,7 @@
     "LLDP interface displays in services views use description-first labels when available.",
     "Load Balancing WAN rules provide guided outbound interface selection and reject unknown interface names before add/apply.",
     "Bridge firewall rule rows display interface labels as Description (ethX) when metadata is available.",
+    "System acceleration interface selectors/tables display description-first labels when metadata is available.",
     "Backend and frontend validation gates pass for touched surfaces."
   ],
   "assumptions": [
@@ -86,6 +87,15 @@
         "frontend/src/components/firewall/BridgeRuleRow.tsx"
       ],
       "notes": "Added load-balancing outbound quick-select and strict interface validation, plus description-first bridge interface labels in rule rows."
+    },
+    {
+      "id": "T7",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/acceleration/page.tsx"
+      ],
+      "notes": "Added description-first interface labels to VPP interface selector and assignment table in System Acceleration."
     }
   ],
   "commands": {

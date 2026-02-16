@@ -392,3 +392,5 @@ Assumptions:
 - Commits pushed this cycle:
   - `5455f33` Improve load-balancing interface labeling and outbound validation
   - `2f68bd7` Show bridge firewall interfaces with description-first labels
+  - `371933c` Use description-first interface labels in acceleration page
+- 2026-02-16: `System -> Acceleration` now builds interface options from counters + ethernet descriptions and renders both selector + VPP assignment rows with `Description (ethX)` labels.
