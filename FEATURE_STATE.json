@@ -6,6 +6,7 @@
     "Interfaces navigation keeps a dedicated `Interfaces` sidebar section with family entries.",
     "`/network/interfaces` acts as the primary ethernet/VLAN manager with quick-add actions and without duplicating full family-link navigation.",
     "`Create Interface` opens a single wizard-style flow with a type selector spanning all interface families.",
+    "Main Interfaces page shows non-Ethernet family instances in a consolidated additional-families inventory section.",
     "Family actions route to dedicated per-interface pages.",
     "Interfaces page includes a clear Setup Wizard button.",
     "Existing detailed interface pages remain reachable for advanced settings and compatibility.",
@@ -142,7 +143,7 @@
       "files": [
         "frontend/src/app/network/interfaces/page.tsx"
       ],
-      "notes": "Unified `Create Interface` flow now supports all interface families with type-specific fields and existing API wrappers; Ethernet/VLAN launch dedicated modals from the same wizard."
+      "notes": "Unified `Create Interface` flow now supports all interface families with type-specific fields and existing API wrappers; Ethernet/VLAN launch dedicated modals from the same wizard. Main Interfaces page now aggregates non-Ethernet family instances in an additional inventory section."
     }
   ],
   "commands": {

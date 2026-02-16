@@ -103,6 +103,14 @@ interface InterfaceFamily {
   commonFields: string[];
 }
 
+interface AdditionalInterfaceEntry {
+  family: string;
+  name: string;
+  description?: string;
+  addresses: string[];
+  disabled?: boolean;
+}
+
 const INTERFACE_FAMILIES: InterfaceFamily[] = [
   {
     key: "ethernet-vlan",
@@ -349,8 +357,236 @@ function quoteCliValue(value: string): string {
   return `'${trimmed.replace(/'/g, `'\"'\"'`)}'`;
 }
 
+async function loadAdditionalInterfaceEntries(): Promise<
+  AdditionalInterfaceEntry[]
+> {
+  const [
+    bondingConfig,
+    bridgeConfig,
+    dummyConfig,
+    geneveConfig,
+    l2tpv3Config,
+    loopbackConfig,
+    macsecConfig,
+    openvpnConfig,
+    pppoeConfig,
+    pseudoConfig,
+    sstpcConfig,
+    tunnelConfig,
+    virtualEthernetConfig,
+    vtiConfig,
+    vxlanConfig,
+    wirelessConfig,
+    wwanConfig,
+  ] = await Promise.all([
+    bondingService.getConfig().catch(() => ({ bonds: [] })),
+    bridgeInterfaceService.getConfig().catch(() => ({ bridges: [] })),
+    dummyService.getConfig().catch(() => ({ interfaces: [] })),
+    geneveService.getConfig().catch(() => ({ interfaces: [] })),
+    l2tpv3Service.getConfig().catch(() => ({ interfaces: [] })),
+    loopbackService.getConfig().catch(() => ({ interfaces: [] })),
+    macsecService.getConfig().catch(() => ({ interfaces: [] })),
+    openvpnInterfaceService.getConfig().catch(() => ({ interfaces: [] })),
+    pppoeService.getConfig().catch(() => ({ interfaces: [] })),
+    pseudoEthernetService.getConfig().catch(() => ({ interfaces: [] })),
+    sstpcService.getConfig().catch(() => ({ interfaces: [] })),
+    tunnelInterfaceService.getConfig().catch(() => ({ interfaces: [] })),
+    virtualEthernetService.getConfig().catch(() => ({ interfaces: [] })),
+    vtiService.getConfig().catch(() => ({ interfaces: [] })),
+    vxlanService.getConfig().catch(() => ({ interfaces: [] })),
+    wirelessService.getConfig().catch(() => ({ interfaces: [] })),
+    wwanService.getConfig().catch(() => ({ interfaces: [] })),
+  ]);
+
+  const combined: AdditionalInterfaceEntry[] = [];
+
+  combined.push(
+    ...bondingConfig.bonds.map((item) => ({
+      family: "Bonding",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...bridgeConfig.bridges.map((item) => ({
+      family: "Bridge",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...dummyConfig.interfaces.map((item) => ({
+      family: "Dummy",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses || [],
+      disabled: item.disable ?? false,
+    })),
+  );
+
+  combined.push(
+    ...geneveConfig.interfaces.map((item) => ({
+      family: "Geneve",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...l2tpv3Config.interfaces.map((item) => ({
+      family: "L2TPv3",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...loopbackConfig.interfaces.map((item) => ({
+      family: "Loopback",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: false,
+    })),
+  );
+
+  combined.push(
+    ...macsecConfig.interfaces.map((item) => ({
+      family: "MACsec",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...openvpnConfig.interfaces.map((item) => ({
+      family: "OpenVPN",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...pppoeConfig.interfaces.map((item) => ({
+      family: "PPPoE",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: [],
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...pseudoConfig.interfaces.map((item) => ({
+      family: "Pseudo-Ethernet",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...sstpcConfig.interfaces.map((item) => ({
+      family: "SSTP",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: [],
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...tunnelConfig.interfaces.map((item) => ({
+      family: "Tunnel",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...virtualEthernetConfig.interfaces.map((item) => ({
+      family: "Virtual-Ethernet",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...vtiConfig.interfaces.map((item) => ({
+      family: "VTI",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...vxlanConfig.interfaces.map((item) => ({
+      family: "VXLAN",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...wirelessConfig.interfaces.map((item) => ({
+      family: "Wireless",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: item.disable,
+    })),
+  );
+
+  combined.push(
+    ...wwanConfig.interfaces.map((item) => ({
+      family: "WWAN",
+      name: item.name,
+      description: item.description || undefined,
+      addresses: item.addresses,
+      disabled: item.disable,
+    })),
+  );
+
+  return combined.sort(
+    (left, right) =>
+      left.family.localeCompare(right.family, undefined, {
+        sensitivity: "base",
+      }) ||
+      left.name.localeCompare(right.name, undefined, {
+        sensitivity: "base",
+        numeric: true,
+      }),
+  );
+}
+
 function InterfacesPageContent() {
   const [interfaces, setInterfaces] = useState<EthernetInterface[]>([]);
+  const [additionalInterfaces, setAdditionalInterfaces] = useState<
+    AdditionalInterfaceEntry[]
+  >([]);
   const [physicalByInterface, setPhysicalByInterface] = useState<
     Record<string, InterfacePhysical>
   >({});
@@ -467,15 +703,18 @@ function InterfacesPageContent() {
   const loadData = async () => {
     try {
       setError(null);
-      const [configData, capabilitiesData, physicalData] = await Promise.all([
-        ethernetService.getConfig(),
-        ethernetService.getCapabilities(),
-        showService
-          .getInterfacePhysical()
-          .catch(() => ({ interfaces: [], total: 0 })),
-      ]);
+      const [configData, capabilitiesData, physicalData, additionalData] =
+        await Promise.all([
+          ethernetService.getConfig(),
+          ethernetService.getCapabilities(),
+          showService
+            .getInterfacePhysical()
+            .catch(() => ({ interfaces: [], total: 0 })),
+          loadAdditionalInterfaceEntries().catch(() => []),
+        ]);
       setInterfaces(configData.interfaces);
       setCapabilities(capabilitiesData);
+      setAdditionalInterfaces(additionalData);
       const physicalMap = physicalData.interfaces.reduce<
         Record<string, InterfacePhysical>
       >((acc, item) => {
@@ -543,7 +782,9 @@ function InterfacesPageContent() {
     );
 
   // Calculate statistics
-  const totalInterfaces = interfaces.length;
+  const totalPhysicalInterfaces = interfaces.length;
+  const totalAdditionalInterfaces = additionalInterfaces.length;
+  const totalInterfaces = totalPhysicalInterfaces + totalAdditionalInterfaces;
   const totalVlans = allVlans.length;
 
   // Filter interfaces based on type
@@ -580,6 +821,19 @@ function InterfacesPageContent() {
         addr.toLowerCase().includes(searchQuery.toLowerCase()),
       ) ||
       vlan.vrf?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
+
+  const filteredAdditionalInterfaces = additionalInterfaces.filter((entry) => {
+    if (typeFilter !== "all") return false;
+    return (
+      searchQuery === "" ||
+      entry.family.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      entry.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      entry.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      entry.addresses.some((address) =>
+        address.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
     );
   });
 
@@ -1374,7 +1628,7 @@ function InterfacesPageContent() {
         </div>
 
         {/* Stats Dashboard */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <Card className="border-border">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -1401,9 +1655,29 @@ function InterfacesPageContent() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">
-                    {totalInterfaces}
+                    {totalPhysicalInterfaces}
                   </p>
-                  <p className="text-xs text-muted-foreground">Ethernet</p>
+                  <p className="text-xs text-muted-foreground">
+                    Ethernet (Physical)
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+                  <Network className="h-5 w-5 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">
+                    {totalAdditionalInterfaces}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Other Families
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -1493,7 +1767,7 @@ function InterfacesPageContent() {
                   size="sm"
                   onClick={() => setTypeFilter("ethernet")}
                 >
-                  Ethernet ({totalInterfaces})
+                  Ethernet ({totalPhysicalInterfaces})
                 </Button>
                 <Button
                   variant={typeFilter === "vlan" ? "default" : "outline"}
@@ -1894,29 +2168,108 @@ function InterfacesPageContent() {
                 </div>
               )}
 
-            {/* Empty state */}
-            {filteredInterfaces.length === 0 && filteredVlans.length === 0 && (
-              <Card className="border-border">
-                <CardContent className="py-12">
-                  <div className="flex flex-col items-center gap-2">
-                    <Network className="h-12 w-12 text-muted-foreground/30" />
-                    <p className="text-muted-foreground">
-                      {searchQuery
-                        ? "No interfaces or VLANs found matching your search"
-                        : typeFilter === "vlan"
-                          ? "No VLANs configured"
-                          : "No interfaces configured"}
-                    </p>
+            {/* Additional Interface Families */}
+            {typeFilter === "all" &&
+              filteredAdditionalInterfaces.length > 0 && (
+                <div className="space-y-3">
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Additional Interface Families
+                  </h2>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {filteredAdditionalInterfaces.map((entry) => (
+                      <Card
+                        key={`${entry.family}:${entry.name}`}
+                        className="border-border"
+                      >
+                        <CardContent className="space-y-3 p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              {entry.description ? (
+                                <div
+                                  className="font-semibold text-foreground"
+                                  title={entry.description}
+                                >
+                                  {entry.description}
+                                </div>
+                              ) : (
+                                <code className="font-semibold text-foreground">
+                                  {entry.name}
+                                </code>
+                              )}
+                              <div className="text-xs text-muted-foreground">
+                                {entry.family}{" "}
+                                {entry.description ? `(${entry.name})` : ""}
+                              </div>
+                            </div>
+                            <Badge
+                              variant="outline"
+                              className={
+                                entry.disabled
+                                  ? "bg-red-500/10 text-red-500 border-red-500/20"
+                                  : "bg-green-500/10 text-green-500 border-green-500/20"
+                              }
+                            >
+                              {entry.disabled ? "Disabled" : "Enabled"}
+                            </Badge>
+                          </div>
+                          {entry.addresses.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                              {entry.addresses.slice(0, 2).map((address) => (
+                                <code
+                                  key={`${entry.family}:${entry.name}:${address}`}
+                                  className="text-xs font-mono px-1.5 py-0.5 rounded bg-accent text-foreground"
+                                >
+                                  {address}
+                                </code>
+                              ))}
+                              {entry.addresses.length > 2 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{entry.addresses.length - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              No IP address configured
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              )}
+
+            {/* Empty state */}
+            {filteredInterfaces.length === 0 &&
+              filteredVlans.length === 0 &&
+              filteredAdditionalInterfaces.length === 0 && (
+                <Card className="border-border">
+                  <CardContent className="py-12">
+                    <div className="flex flex-col items-center gap-2">
+                      <Network className="h-12 w-12 text-muted-foreground/30" />
+                      <p className="text-muted-foreground">
+                        {searchQuery
+                          ? "No interfaces or VLANs found matching your search"
+                          : typeFilter === "vlan"
+                            ? "No VLANs configured"
+                            : "No interfaces configured"}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
             {/* Count */}
-            {(filteredInterfaces.length > 0 || filteredVlans.length > 0) && (
+            {(filteredInterfaces.length > 0 ||
+              filteredVlans.length > 0 ||
+              filteredAdditionalInterfaces.length > 0) && (
               <p className="text-sm text-muted-foreground text-center">
-                Showing {filteredInterfaces.length + filteredVlans.length} of{" "}
-                {totalInterfaces + totalVlans} item
+                Showing{" "}
+                {filteredInterfaces.length +
+                  filteredVlans.length +
+                  filteredAdditionalInterfaces.length}{" "}
+                of {totalInterfaces + totalVlans} item
                 {totalInterfaces + totalVlans !== 1 ? "s" : ""}
               </p>
             )}
