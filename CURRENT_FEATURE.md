@@ -16,11 +16,11 @@ commits:
   - 7868da2 (trim family-link duplication from Interface Manager + restore old sidebar label)
   - 647f6e0 (unified create-interface wizard with all interface families)
   - 51ea487 (main-page additional-family inventory)
-  - pending (remove sidebar bulk family links + remove common interface actions panel)
-  - pending (remove redundant configuration guide nav + add sidebar visibility controls in settings)
-  - pending (move navigation controls to dedicated settings page with full tree support)
-  - pending (split System Identification from Guided Setup and update System sidebar IA)
-  - pending (consolidate Services sidebar navigation to `All Services`)
+  - 44e1ca7 (remove sidebar bulk family links + remove common interface actions panel)
+  - 2e9c531 (remove redundant configuration guide nav + add sidebar visibility controls in settings)
+  - 2e9c531 (move navigation controls to dedicated settings page with full tree support)
+  - 2e9c531 (split System Identification from Guided Setup and update System sidebar IA)
+  - 2e9c531 (consolidate Services sidebar navigation to `All Services`)
 notes:
   - Interfaces sidebar remains consolidated to:
     - `Interfaces`
