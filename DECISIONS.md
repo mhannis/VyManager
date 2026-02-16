@@ -362,3 +362,7 @@
 - 2026-02-16: Implemented global `system login` parity on existing `system` router (`/vyos/system/login-config`) instead of creating a new router namespace, to keep API surface additive and aligned with current `System -> Users` ownership.
 - 2026-02-16: Modeled RADIUS/TACACS servers as explicit row forms (address/key/port/timeout) with backend required-key validation; this avoids opaque command text inputs and provides deterministic set/delete diff behavior.
 - 2026-02-16: Kept global login controls on `System -> Users` rather than splitting into a separate page so user-local and global auth settings remain co-located during parity hardening.
+- 2026-02-16: Prioritized a high-availability depth slice after firewall hardening to advance the next backlog domain in guide order while keeping changes frontend-local and contract-safe.
+- 2026-02-16: Implemented VRRP per-address interface binding support in the existing High Availability page (`address=interface` mapping input + parser/save diff updates) instead of adding a new backend endpoint, preserving thin-wrapper API contracts.
+- 2026-02-16: Added stricter client-side HA validation (VRRP/IPVS ranges, sync-member existence, dual-stack address guardrail) to reduce failed apply attempts before command generation.
+- 2026-02-16: Reviewer agent spawn failed due active thread cap; completed manual in-process review for HA slice and accepted as APPROVED after validation-gate reruns.

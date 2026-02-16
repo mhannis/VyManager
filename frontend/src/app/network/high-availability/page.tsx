@@ -59,6 +59,11 @@ type GlobalParams = {
   garp: GarpSettings;
 };
 
+type VrrpAddress = {
+  address: string;
+  interface: string;
+};
+
 type VrrpGroup = {
   name: string;
   interface: string;
@@ -71,7 +76,7 @@ type VrrpGroup = {
   preemptDelay: string;
   peerAddress: string;
   helloSourceAddress: string;
-  addresses: string[];
+  addresses: VrrpAddress[];
   excludedAddresses: string[];
   trackInterfaces: string[];
   trackExcludeVrrpInterface: boolean;
@@ -211,6 +216,105 @@ function parseCsvList(value: string): string[] {
   return uniqueList(value.split(",").map((item) => item.trim()));
 }
 
+function normalizeAddressEntry(entry: VrrpAddress): VrrpAddress {
+  return {
+    address: normalizeText(entry.address),
+    interface: normalizeText(entry.interface),
+  };
+}
+
+function normalizeAddressList(entries: VrrpAddress[]): VrrpAddress[] {
+  const seen = new Set<string>();
+  const output: VrrpAddress[] = [];
+  for (const entry of entries) {
+    const normalized = normalizeAddressEntry(entry);
+    if (!normalized.address) continue;
+    const key = `${normalized.address}|${normalized.interface}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    output.push(normalized);
+  }
+  return output;
+}
+
+function addressListEqual(left: VrrpAddress[], right: VrrpAddress[]): boolean {
+  const leftSorted = normalizeAddressList(left).sort((a, b) =>
+    `${a.address}|${a.interface}`.localeCompare(`${b.address}|${b.interface}`, undefined, {
+      numeric: true,
+    })
+  );
+  const rightSorted = normalizeAddressList(right).sort((a, b) =>
+    `${a.address}|${a.interface}`.localeCompare(`${b.address}|${b.interface}`, undefined, {
+      numeric: true,
+    })
+  );
+  if (leftSorted.length !== rightSorted.length) return false;
+  return leftSorted.every(
+    (entry, index) =>
+      entry.address === rightSorted[index].address && entry.interface === rightSorted[index].interface
+  );
+}
+
+function parseAddressInterfaceOverrides(value: string): { overrides: Record<string, string>; error?: string } {
+  const overrides: Record<string, string> = {};
+  const entries = value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  for (const entry of entries) {
+    const separatorIndex = entry.indexOf("=");
+    if (separatorIndex <= 0 || separatorIndex === entry.length - 1) {
+      return {
+        overrides: {},
+        error: `Address interface mapping '${entry}' is invalid. Use address=interface.`,
+      };
+    }
+
+    const address = normalizeText(entry.slice(0, separatorIndex));
+    const interfaceName = normalizeText(entry.slice(separatorIndex + 1));
+    if (!address || !interfaceName) {
+      return {
+        overrides: {},
+        error: `Address interface mapping '${entry}' is invalid. Use address=interface.`,
+      };
+    }
+
+    overrides[address] = interfaceName;
+  }
+
+  return { overrides };
+}
+
+function getAddressFamily(addressWithPrefix: string): "ipv4" | "ipv6" | null {
+  const token = normalizeText(addressWithPrefix).split("/")[0];
+  if (!token) return null;
+  if (token.includes(":")) return "ipv6";
+  if (token.includes(".")) return "ipv4";
+  return null;
+}
+
+function validateIntegerRange(
+  value: string,
+  min: number,
+  max: number,
+  label: string,
+  required: boolean = false
+): string | null {
+  const trimmed = normalizeText(value);
+  if (!trimmed) {
+    return required ? `${label} is required.` : null;
+  }
+  if (!/^\d+$/.test(trimmed)) {
+    return `${label} must be a whole number.`;
+  }
+  const parsed = Number(trimmed);
+  if (parsed < min || parsed > max) {
+    return `${label} must be between ${min} and ${max}.`;
+  }
+  return null;
+}
+
 function serializeCsvList(values: string[]): string {
   return uniqueList(values).join(", ");
 }
@@ -265,7 +369,7 @@ function groupEqual(left: VrrpGroup, right: VrrpGroup): boolean {
     left.peerAddress === right.peerAddress &&
     left.helloSourceAddress === right.helloSourceAddress &&
     left.trackExcludeVrrpInterface === right.trackExcludeVrrpInterface &&
-    arrayEquals([...left.addresses].sort(), [...right.addresses].sort()) &&
+    addressListEqual(left.addresses, right.addresses) &&
     arrayEquals([...left.excludedAddresses].sort(), [...right.excludedAddresses].sort()) &&
     arrayEquals([...left.trackInterfaces].sort(), [...right.trackInterfaces].sort()) &&
     garpEqual(left.garp, right.garp) &&
@@ -347,6 +451,7 @@ export default function HighAvailabilityPage() {
 
   const [groupDraft, setGroupDraft] = useState<VrrpGroup>(EMPTY_VRRP_DRAFT);
   const [groupAddressesInput, setGroupAddressesInput] = useState("");
+  const [groupAddressInterfaceMapInput, setGroupAddressInterfaceMapInput] = useState("");
   const [groupExcludedInput, setGroupExcludedInput] = useState("");
   const [groupTrackInput, setGroupTrackInput] = useState("");
 
@@ -419,6 +524,27 @@ export default function HighAvailabilityPage() {
           const addressRoot = asObject(root.address);
           const virtualAddressRoot = asObject(root["virtual-address"]);
           const excludedAddressRoot = asObject(root["excluded-address"]);
+          const parsedAddressEntries = normalizeAddressList([
+            ...Object.entries(addressRoot).map(([address, addressValue]) => {
+              const addressNode = asObject(addressValue);
+              const interfaceNode = asObject(addressNode.interface);
+              const directInterface =
+                typeof addressNode.interface === "string"
+                  ? normalizeText(addressNode.interface)
+                  : "";
+              const interfaceKey = Object.keys(interfaceNode)
+                .map((item) => normalizeText(item))
+                .find(Boolean);
+              return {
+                address: normalizeText(address),
+                interface: directInterface || interfaceKey || "",
+              };
+            }),
+            ...Object.keys(virtualAddressRoot).map((address) => ({
+              address: normalizeText(address),
+              interface: "",
+            })),
+          ]);
 
           return {
             name: normalizeText(name),
@@ -432,10 +558,7 @@ export default function HighAvailabilityPage() {
             preemptDelay: normalizeText(asText(root["preempt-delay"])),
             peerAddress: normalizeText(asText(root["peer-address"])),
             helloSourceAddress: normalizeText(asText(root["hello-source-address"])),
-            addresses: uniqueList([
-              ...Object.keys(addressRoot),
-              ...Object.keys(virtualAddressRoot),
-            ]),
+            addresses: parsedAddressEntries,
             excludedAddresses: uniqueList(Object.keys(excludedAddressRoot).map((item) => normalizeText(item))),
             trackInterfaces: uniqueList(Object.keys(asObject(trackRoot.interface)).map((item) => normalizeText(item))),
             trackExcludeVrrpInterface: Object.prototype.hasOwnProperty.call(trackRoot, "exclude-vrrp-interface"),
@@ -551,6 +674,7 @@ export default function HighAvailabilityPage() {
 
       setGroupDraft({ ...EMPTY_VRRP_DRAFT, interface: normalizedInterfaces[0]?.value || "" });
       setGroupAddressesInput("");
+      setGroupAddressInterfaceMapInput("");
       setGroupExcludedInput("");
       setGroupTrackInput("");
       setSyncDraft(EMPTY_SYNC_DRAFT);
@@ -574,6 +698,30 @@ export default function HighAvailabilityPage() {
   const addGroup = () => {
     setError(null);
 
+    const parsedAddresses = parseCsvList(groupAddressesInput);
+    const { overrides: addressInterfaceOverrides, error: addressMapError } =
+      parseAddressInterfaceOverrides(groupAddressInterfaceMapInput);
+    if (addressMapError) {
+      setError(addressMapError);
+      return;
+    }
+
+    for (const mappedAddress of Object.keys(addressInterfaceOverrides)) {
+      if (!parsedAddresses.includes(mappedAddress)) {
+        setError(
+          `Address interface mapping references '${mappedAddress}' but it is not in the Addresses field.`
+        );
+        return;
+      }
+    }
+
+    const normalizedAddressEntries = normalizeAddressList(
+      parsedAddresses.map((address) => ({
+        address,
+        interface: addressInterfaceOverrides[address] || "",
+      }))
+    );
+
     const entry: VrrpGroup = {
       name: normalizeText(groupDraft.name),
       interface: normalizeText(groupDraft.interface),
@@ -586,7 +734,7 @@ export default function HighAvailabilityPage() {
       preemptDelay: normalizeText(groupDraft.preemptDelay),
       peerAddress: normalizeText(groupDraft.peerAddress),
       helloSourceAddress: normalizeText(groupDraft.helloSourceAddress),
-      addresses: parseCsvList(groupAddressesInput),
+      addresses: normalizedAddressEntries,
       excludedAddresses: parseCsvList(groupExcludedInput),
       trackInterfaces: parseCsvList(groupTrackInput),
       trackExcludeVrrpInterface: Boolean(groupDraft.trackExcludeVrrpInterface),
@@ -615,6 +763,78 @@ export default function HighAvailabilityPage() {
       return;
     }
 
+    if (entry.addresses.length === 0) {
+      setError("VRRP group requires at least one virtual address.");
+      return;
+    }
+
+    const vridError = validateIntegerRange(entry.vrid, 1, 255, "VRID", true);
+    if (vridError) {
+      setError(vridError);
+      return;
+    }
+
+    const priorityError = validateIntegerRange(entry.priority, 1, 255, "Priority");
+    if (priorityError) {
+      setError(priorityError);
+      return;
+    }
+
+    const advertiseIntervalError = validateIntegerRange(entry.advertiseInterval, 1, 255, "Advertise Interval");
+    if (advertiseIntervalError) {
+      setError(advertiseIntervalError);
+      return;
+    }
+
+    const preemptDelayError = validateIntegerRange(entry.preemptDelay, 0, 3600, "Preempt Delay");
+    if (preemptDelayError) {
+      setError(preemptDelayError);
+      return;
+    }
+
+    const healthIntervalError = validateIntegerRange(
+      entry.healthCheck.interval,
+      1,
+      3600,
+      "Health Interval"
+    );
+    if (healthIntervalError) {
+      setError(healthIntervalError);
+      return;
+    }
+
+    const healthFailureError = validateIntegerRange(
+      entry.healthCheck.failureCount,
+      1,
+      20,
+      "Health Failure Count"
+    );
+    if (healthFailureError) {
+      setError(healthFailureError);
+      return;
+    }
+
+    const healthSuccessError = validateIntegerRange(
+      entry.healthCheck.successCount,
+      1,
+      20,
+      "Health Success Count"
+    );
+    if (healthSuccessError) {
+      setError(healthSuccessError);
+      return;
+    }
+
+    const addressFamilies = new Set(
+      entry.addresses
+        .map((item) => getAddressFamily(item.address))
+        .filter((value): value is "ipv4" | "ipv6" => Boolean(value))
+    );
+    if (addressFamilies.size > 1) {
+      setError("VRRP group addresses cannot mix IPv4 and IPv6 in the same group.");
+      return;
+    }
+
     if (groups.some((item) => item.name === entry.name)) {
       setError("VRRP group name already exists.");
       return;
@@ -626,6 +846,7 @@ export default function HighAvailabilityPage() {
 
     setGroupDraft({ ...EMPTY_VRRP_DRAFT, interface: interfaceOptions[0]?.value || "" });
     setGroupAddressesInput("");
+    setGroupAddressInterfaceMapInput("");
     setGroupExcludedInput("");
     setGroupTrackInput("");
   };
@@ -660,6 +881,12 @@ export default function HighAvailabilityPage() {
 
     if (entry.members.length === 0) {
       setError("Sync-group requires at least one member VRRP group.");
+      return;
+    }
+
+    const unknownMembers = entry.members.filter((member) => !groupNames.includes(member));
+    if (unknownMembers.length > 0) {
+      setError(`Sync-group members not found in VRRP groups: ${unknownMembers.join(", ")}`);
       return;
     }
 
@@ -709,6 +936,35 @@ export default function HighAvailabilityPage() {
 
     if (!entry.port && !entry.fwmark) {
       setError("Virtual server requires either a port or an fwmark.");
+      return;
+    }
+
+    const portError = validateIntegerRange(entry.port, 1, 65535, "Virtual server port");
+    if (portError) {
+      setError(portError);
+      return;
+    }
+
+    const fwmarkError = validateIntegerRange(entry.fwmark, 1, 4294967295, "Virtual server fwmark");
+    if (fwmarkError) {
+      setError(fwmarkError);
+      return;
+    }
+
+    const delayLoopError = validateIntegerRange(entry.delayLoop, 1, 3600, "Delay Loop");
+    if (delayLoopError) {
+      setError(delayLoopError);
+      return;
+    }
+
+    const persistenceTimeoutError = validateIntegerRange(
+      entry.persistenceTimeout,
+      1,
+      2147483647,
+      "Persistence Timeout"
+    );
+    if (persistenceTimeoutError) {
+      setError(persistenceTimeoutError);
       return;
     }
 
@@ -815,6 +1071,23 @@ export default function HighAvailabilityPage() {
 
     if (!entry.port) {
       setError("Real server port is required (use 0 with fwmark virtual servers).");
+      return;
+    }
+
+    const portError = validateIntegerRange(entry.port, 0, 65535, "Real server port", true);
+    if (portError) {
+      setError(portError);
+      return;
+    }
+
+    const timeoutError = validateIntegerRange(
+      entry.connectionTimeout,
+      1,
+      2147483647,
+      "Connection Timeout"
+    );
+    if (timeoutError) {
+      setError(timeoutError);
       return;
     }
 
@@ -978,18 +1251,32 @@ export default function HighAvailabilityPage() {
           operations.push(`delete high-availability vrrp group ${name} hello-source-address`);
         }
 
-        const currentAddresses = uniqueList(current?.addresses || []);
-        const desiredAddresses = uniqueList(desired.addresses);
+        const currentAddresses = normalizeAddressList(current?.addresses || []);
+        const desiredAddresses = normalizeAddressList(desired.addresses || []);
+        const currentByAddress = new Map(currentAddresses.map((item) => [item.address, item.interface]));
+        const desiredByAddress = new Map(desiredAddresses.map((item) => [item.address, item.interface]));
 
-        for (const address of currentAddresses) {
-          if (!desiredAddresses.includes(address)) {
-            operations.push(`delete high-availability vrrp group ${name} address ${address}`);
+        for (const currentAddress of currentAddresses) {
+          if (!desiredByAddress.has(currentAddress.address)) {
+            operations.push(`delete high-availability vrrp group ${name} address ${currentAddress.address}`);
+            continue;
+          }
+          const desiredInterface = desiredByAddress.get(currentAddress.address) || "";
+          if (desiredInterface !== currentAddress.interface) {
+            operations.push(`delete high-availability vrrp group ${name} address ${currentAddress.address}`);
           }
         }
 
-        for (const address of desiredAddresses) {
-          if (!currentAddresses.includes(address)) {
-            operations.push(`set high-availability vrrp group ${name} address ${address}`);
+        for (const desiredAddress of desiredAddresses) {
+          const existingInterface = currentByAddress.get(desiredAddress.address);
+          if (existingInterface === undefined || existingInterface !== desiredAddress.interface) {
+            if (desiredAddress.interface) {
+              operations.push(
+                `set high-availability vrrp group ${name} address ${desiredAddress.address} interface ${desiredAddress.interface}`
+              );
+            } else {
+              operations.push(`set high-availability vrrp group ${name} address ${desiredAddress.address}`);
+            }
           }
         }
 
@@ -1500,13 +1787,22 @@ export default function HighAvailabilityPage() {
               </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-5">
+            <div className="grid gap-3 md:grid-cols-6">
               <div className="space-y-2">
                 <Label>Addresses</Label>
                 <Input
                   value={groupAddressesInput}
                   onChange={(event) => setGroupAddressesInput(event.target.value)}
                   placeholder="192.0.2.10/24, 2001:db8::10/64"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Address Interfaces (optional)</Label>
+                <Input
+                  value={groupAddressInterfaceMapInput}
+                  onChange={(event) => setGroupAddressInterfaceMapInput(event.target.value)}
+                  placeholder="203.0.113.22/24=eth2"
                   disabled={!canEdit}
                 />
               </div>

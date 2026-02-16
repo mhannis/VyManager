@@ -56,8 +56,8 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `F-06` (`partial`): Zone workflow hardening in progress (cross-zone validation added: interface overlap protection + `from_zone` existence/canonicalization with `LOCAL`; UI now pre-validates policy textarea format/duplicates and guided preset interface conflicts before apply; remaining onboarding/UX depth pending).
 
 ### High Availability (`highavailability/index.html`)
-- `HA-01` (`partial`): Complete VRRP and sync-group option parity audit against guide leaves.
-- `HA-02` (`partial`): Complete IPVS virtual/real server parity (all health/protocol/scheduler options).
+- `HA-01` (`partial`): VRRP depth pass improved: per-address interface bindings are now parsed, editable in form input (`address=interface` mapping), and emitted in save diffs; added VRRP/sync-group semantic guards (required address, VRID/priority/interval ranges, unknown sync members). Remaining work: inline edit UX and any uncovered leaves from guide audit.
+- `HA-02` (`partial`): IPVS depth pass improved: stricter virtual/real server validation for port/fwmark/timeouts before command generation. Remaining work: complete remaining option-depth audit and live interop verification.
 - `HA-03` (`verify`): Dual-node failover verification playbook and smoke tests.
 
 ### Interfaces (`interfaces/*`)

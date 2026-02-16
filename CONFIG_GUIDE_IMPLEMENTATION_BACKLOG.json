@@ -89,13 +89,13 @@
       "id": "HA-01",
       "domain": "high-availability",
       "status": "partial",
-      "title": "Complete VRRP/sync-group option parity"
+      "title": "VRRP/sync-group depth hardening in progress (address-interface mapping support + validation guardrails added; inline edit and remaining guide leaves pending)"
     },
     {
       "id": "HA-02",
       "domain": "high-availability",
       "status": "partial",
-      "title": "Complete IPVS option parity"
+      "title": "IPVS depth hardening in progress (virtual/real server validation improved; remaining option-depth and live interop verification pending)"
     },
     {
       "id": "HA-03",

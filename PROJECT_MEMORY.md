@@ -55,41 +55,31 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Continue guide-order backlog execution with firewall parity depth and robust validation.
-- Keep changes additive to existing wrappers/services while improving correctness of batch APIs and GUI-generated operations.
+- Continue guide-order backlog execution with high-availability option-depth parity and robust GUI-first validation.
+- Keep changes additive to existing wrappers/services while improving correctness of generated HA command operations.
 - Maintain deterministic gates on each slice (`pytest` + `tsc` + targeted `eslint` + `build` + runtime/browser smoke).
 
 ## Current Feature Spec
-Feature: **Firewall parity hardening batch (`F-01`, `F-02`, `F-03`, `F-05` depth slices plus remote-group rule mapping support)**.
+Feature: **High Availability parity depth (`HA-01` and `HA-02` option hardening slice)**.
 
 Acceptance criteria:
-- Firewall IPv4/IPv6 batch endpoints enforce protocol/action semantic coupling (ports/TCP/ICMP vs protocol, jump/offload target coupling).
-- Firewall rule reorder endpoints preserve advanced rule leaves (GeoIP and mac/domain/remote groups) for both IPv4 and IPv6.
-- Firewall groups batch endpoint rejects conflicting set/delete member ops, duplicate member ops, and multiple remote URL values in one request.
-- Flowtables batch endpoint rejects duplicate interface additions, conflicting offload values, and oversized descriptions.
-- Frontend firewall rule API mappers emit remote-group source/destination operations for create/update in both IPv4 and IPv6 services.
-- Validation gates pass (`pytest` targeted suites, `tsc`, targeted `eslint`, `build`, `smoke:runtime`, `smoke:ui`).
+- VRRP group editor supports per-address interface bindings (`address ... interface <if>`) and preserves existing bindings from config.
+- HA save diff logic correctly handles address-interface rebinding through deterministic delete/recreate command generation.
+- VRRP/IPVS forms enforce core numeric and semantic validation before apply (VRID/priority/intervals, port/fwmark ranges, sync member existence, dual-stack guardrails).
+- Validation gates pass (`tsc`, targeted `eslint`, `build`, runtime/browser smoke).
 
 Assumptions:
-- These slices advance parity status but do not fully close `F-01`/`F-02`/`F-03`/`F-05`; remaining advanced option-depth and live device verification still required.
-- `F-04` (global options) remains unchanged this cycle.
+- This slice advances `HA-01`/`HA-02` but does not close full high-availability parity; live dual-node verification remains.
+- Current VRRP group/sync-group flows remain add/remove based (no inline edit modal) in this cycle.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: firewall hardening batch implemented and validated; next queue continues remaining firewall partials and guide-order backlog.
+- Status: high-availability depth hardening implemented and validated; next queue continues remaining HA and adjacent backlog slices.
 - Runtime smoke process still requires `vm-ui` restart after `next build` to avoid stale chunk manifest failures.
 - Working tree remains dirty with unrelated pre-existing files outside this slice (`CONFIG_COVERAGE_PHASE1.*`, existing untracked artifacts).
 
 ### Files Touched This Cycle
-- `backend/routers/firewall/ipv4.py`
-- `backend/routers/firewall/ipv6.py`
-- `backend/routers/firewall/groups.py`
-- `backend/routers/firewall/flowtables.py`
-- `backend/tests/test_firewall_rule_batch_validation.py`
-- `backend/tests/test_firewall_groups_validation.py`
-- `backend/tests/test_firewall_flowtables_validation.py`
-- `frontend/src/lib/api/firewall-ipv4.ts`
-- `frontend/src/lib/api/firewall-ipv6.ts`
+- `frontend/src/app/network/high-availability/page.tsx`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CURRENT_FEATURE.md`
@@ -97,9 +87,8 @@ Assumptions:
 - `PROJECT_MEMORY.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_rule_batch_validation.py tests/test_firewall_groups_validation.py tests/test_firewall_flowtables_validation.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/lib/api/firewall-ipv4.ts src/lib/api/firewall-ipv6.ts` passed (`0 errors`, warnings only).
+- `cd frontend && npx eslint src/app/network/high-availability/page.tsx` passed (`0 errors`).
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
 - `cd frontend && npm run -s smoke:ui` passed after restarting `vm-ui` on the fresh build.
@@ -117,13 +106,16 @@ Assumptions:
 - Next.js app-router pages that use `useSearchParams` can trigger prerender errors if not wrapped in Suspense; for top-level pages prefer window-query parsing in `useEffect` when practical.
 
 ## TODO Backlog (next queue)
-- Continue option-depth parity sweep for high-impact partial domains (Firewall, Interfaces, Protocols, Services, VPN, System).
+- Continue option-depth parity sweep for high-impact partial domains (High Availability, Firewall, Interfaces, Protocols, Services, VPN, System).
 - Continue `system` depth (live RADIUS/TACACS verification and remaining login-auth edge behavior; remaining `SYS-16` verification).
 - Continue `interfaces` depth (`IF-14`, `IF-15`) with guide-leaf completion and live save/apply verification.
-- Continue firewall parity depth beyond recent hardening (`F-01`, `F-02`, `F-04`, `F-05`, `F-06`).
+- Continue high-availability parity depth (`HA-01`, `HA-02`, `HA-03`) and then firewall depth beyond recent hardening (`F-01`, `F-02`, `F-04`, `F-05`, `F-06`).
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui` where deps permit).
 
 ## Agent Handoff Notes
+- High Availability page now parses VRRP address-interface bindings from config (`address <cidr> interface <if>`) and preserves them in GUI state instead of flattening to plain address strings.
+- VRRP save-diff logic now detects interface rebinding per address and emits deterministic delete/recreate commands so interface-specific address bindings round-trip correctly.
+- HA forms now include pre-submit validation for VRRP/IPVS numeric ranges and sync-group member existence, reducing invalid apply attempts before command generation.
 - WireGuard peer batch endpoint now rejects invalid/unsafe combinations before apply: address+host-name together, endpoint port without endpoint, invalid keepalive range, invalid allowed-IP syntax, duplicate allowed-IP values, and cross-peer allowed-IP collisions.
 - WireGuard Create/Edit Peer modals now mirror backend rules and block conflicting submissions early (duplicate allowed-ips, endpoint conflicts, invalid keepalive, and cross-peer collisions).
 - Added backend tests in `backend/tests/test_wireguard_peer_validation.py` and verified successful/failed peer batch scenarios through FastAPI test client.
