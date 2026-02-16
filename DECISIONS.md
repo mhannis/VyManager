@@ -2,6 +2,8 @@
 
 ## Decision Log
 
+- 2026-02-16: Added dedicated firewall/NAT loop+snapshot regression suites (`test_firewall_nat_save_apply_reload_loops.py`, `test_firewall_nat_config_snapshots.py`) instead of overloading generic wrapper tests, because these routers use custom builder/service paths (`execute_batch`, `create_firewall_groups_batch`) and custom response models.
+- 2026-02-16: Firewall groups batch tests require dummy services to implement `create_firewall_groups_batch()`; missing this method causes `500` failures even when `execute_batch()` exists.
 - 2026-02-16: Per operator correction, save/apply/reload fixture coverage is tracked as one cross-cutting backlog item (`X-02`) with breadth measured by covered domain loops, not as multiple backlog items.
 - 2026-02-16: Expanded `X-02`/`X-03` regression depth by extending loop/snapshot suites to service wrappers, VPN wrappers, DMVPN, PKI, QoS, and additional system wrappers while preserving existing API contracts.
 - 2026-02-16: Closed strict cross-cutting `missing` backlog baseline by implementing `X-02` fixture save/apply/reload loops, `X-03` domain snapshot tests, and `X-05` reproducible robustness relook runner/report without changing existing backend API contracts.

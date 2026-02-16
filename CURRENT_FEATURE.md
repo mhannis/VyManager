@@ -3,23 +3,29 @@ title: Expand fixture loops and config snapshots across partial backlog domains
 status: in_review
 branch: feature/containers-automation-v1
 completed_in_cycle:
-  - Expanded `X-02` fixture save/apply/reload coverage from 12 loops to 31 loops across:
+  - Expanded `X-02` fixture save/apply/reload coverage from 12 loops to 35 loops across:
     - Protocols, VRF, load-balancing, HA, traffic-policy
     - System wrappers (proxy, sysctl, flow-accounting, ipv6, lcd, sflow, task-scheduler)
     - Service wrappers (dns, ntp, lldp, router-advert)
     - VPN wrappers (l2tp, openconnect, pptp, sstp, rsa-keys) + DMVPN
     - PKI and QoS wrappers
-  - Expanded `X-03` config snapshot coverage from 15 endpoints to 34 endpoints across the same domain set.
+    - Firewall/NAT loop suite (IPv4, IPv6, groups, NAT source)
+  - Expanded `X-03` config snapshot coverage from 15 endpoints to 38 endpoints across the same domain set plus Firewall/NAT snapshots.
   - Updated dummy-service harness and router wiring in both tests to validate real endpoint contracts (no route fakes).
+  - Added dedicated firewall/NAT regression suites:
+    - `backend/tests/test_firewall_nat_save_apply_reload_loops.py`
+    - `backend/tests/test_firewall_nat_config_snapshots.py`
+    - `backend/tests/snapshots/firewall_nat_config_snapshots.json`
+  - Extended robustness runner backend suite to include the new firewall/NAT tests.
   - Regenerated `ROBUSTNESS_RELOOK_REPORT.md` after expanded test scope.
   - Applied user correction in tracking: save/apply/reload loop is treated as one cross-cutting backlog item, with breadth tracked as loop count.
 validation:
-  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py
+  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py
   - python3 scripts/run_robustness_relook.py --skip-ui-smoke
 known_limitations:
   - Browser smoke (Playwright) remains blocked by missing host dependency libnspr4.so.
-  - X-02 and X-03 remain `partial` until remaining domains (firewall/NAT/deeper service/VPN option trees) gain equivalent fixture and snapshot depth.
+  - X-02 and X-03 remain `partial` until remaining deep option trees gain equivalent fixture/snapshot depth and live-device verification.
 next_queue:
-  - Extend fixture/snapshot parity into firewall and NAT custom routers.
+  - Expand Firewall/NAT regression loops beyond baseline rule/group creation into advanced option trees.
   - Add command-delta snapshot assertions for expected `show configuration commands` style output.
   - Continue option-depth implementation on high-risk partial domains (Firewall, VPN, Services).

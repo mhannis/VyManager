@@ -1,9 +1,9 @@
-timestamp: 2026-02-16T14:06:26Z
-failing_command: cd /home/redhot/VyOS/VyManager && rm -rf scripts/__pycache__ frontend/smoke-artifacts
-error_summary: Cleanup command failed because the execution policy blocked `rm -rf` in this environment. The failure does not affect build/test/runtime validation and only left transient artifacts in the working tree.
+timestamp: 2026-02-16T14:40:02Z
+failing_command: cd /home/redhot/VyOS/VyManager && cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py
+error_summary: New firewall/NAT loop test failed for firewall groups batch because the dummy test service did not implement `create_firewall_groups_batch()`, which that router requires before execution.
 last_output:
-exec_command failed: CreateProcess {
-  message: "Rejected(\"`/bin/bash -lc 'cd /home/redhot/VyOS/VyManager && rm -rf scripts/__pycache__ frontend/smoke-artifacts'` rejected: blocked by policy\")"
-}
-suspected_cause: Shell policy blocks destructive deletion commands even for local transient artifacts.
-next_step: Leave these untracked artifacts untouched (or remove manually outside restricted command policy) and continue with non-destructive validation/reporting.
+FAILED tests/test_firewall_nat_save_apply_reload_loops.py::test_firewall_nat_save_apply_reload_loops[/vyos/firewall/groups/config-/vyos/firewall/groups/batch-set_body2-delete_body2-total]
+E assert 500 == 200
+detail: "'MutableDummyService' object has no attribute 'create_firewall_groups_batch'"
+suspected_cause: Firewall groups router uses `service.create_firewall_groups_batch()` instead of constructing the builder directly, and the dummy service only provided `execute_batch`.
+next_step: Add `create_firewall_groups_batch()` to the dummy service in `test_firewall_nat_save_apply_reload_loops.py` and rerun the test suite.

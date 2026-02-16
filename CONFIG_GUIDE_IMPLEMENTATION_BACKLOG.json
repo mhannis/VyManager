@@ -509,13 +509,13 @@
       "id": "X-02",
       "domain": "cross-cutting",
       "status": "partial",
-      "title": "Fixture-based save/apply/reload loops (31-loop breadth in place; expand into firewall/NAT and live verification)"
+      "title": "Fixture-based save/apply/reload loops (35-loop breadth in place including baseline firewall/NAT; expand advanced depth and live verification)"
     },
     {
       "id": "X-03",
       "domain": "cross-cutting",
       "status": "partial",
-      "title": "Config snapshot tests by domain (34-endpoint breadth in place; add command-delta/live snapshots)"
+      "title": "Config snapshot tests by domain (38-endpoint breadth in place including firewall/NAT; add command-delta/live snapshots)"
     },
     {
       "id": "X-04",

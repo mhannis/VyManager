@@ -1,6 +1,6 @@
 # ROBUSTNESS_RELOOK_REPORT.md
 
-Generated: 2026-02-16T14:32:54+00:00
+Generated: 2026-02-16T14:41:43+00:00
 
 - `skip_ui_smoke`: `true`
 
@@ -12,14 +12,24 @@ Generated: 2026-02-16T14:32:54+00:00
 ## Steps
 
 ### Backend protocol + wrapper tests [PASS]
-- Command: `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_config_tree_wrapper_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py`
+- Command: `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_config_tree_wrapper_capabilities.py tests/test_firewall_nat_save_apply_reload_loops.py tests/test_fixture_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py tests/test_domain_config_snapshots.py`
 - Return code: `0`
 
 ```text
-........................................................................ [ 34%]
-........................................................................ [ 69%]
-..............................................................           [100%]
-206 passed in 8.98s
+........................................................................ [ 33%]
+........................................................................ [ 67%]
+......................................................................   [100%]
+=============================== warnings summary ===============================
+routers/firewall/groups.py:38
+  /home/redhot/VyOS/VyManager/backend/routers/firewall/groups.py:38: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class GroupBatchRequest(BaseModel):
+
+routers/nat/nat.py:38
+  /home/redhot/VyOS/VyManager/backend/routers/nat/nat.py:38: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class NATBatchRequest(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+214 passed, 2 warnings in 9.12s
 ```
 
 ### Frontend TypeScript [PASS]
@@ -130,12 +140,12 @@ ve
  Detected additional lockfiles: 
    * /home/redhot/VyOS/VyManager/frontend/package-lock.json
 
-2026-02-16T14:32:52.445Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx @better-auth/cli secret` or `openssl rand -base64 32`.
-2026-02-16T14:32:52.446Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
-2026-02-16T14:32:52.462Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx @better-auth/cli secret` or `openssl rand -base64 32`.
-2026-02-16T14:32:52.463Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
-2026-02-16T14:32:52.614Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx @better-auth/cli secret` or `openssl rand -base64 32`.
-2026-02-16T14:32:52.615Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
+2026-02-16T14:41:42.270Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx @better-auth/cli secret` or `openssl rand -base64 32`.
+2026-02-16T14:41:42.271Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
+2026-02-16T14:41:42.274Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx @better-auth/cli secret` or `openssl rand -base64 32`.
+2026-02-16T14:41:42.275Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
+2026-02-16T14:41:42.447Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET should be at least 32 characters long for adequate security. Generate one with `npx @better-auth/cli secret` or `openssl rand -base64 32`.
+2026-02-16T14:41:42.448Z WARN [Better Auth]: [better-auth] Warning: your BETTER_AUTH_SECRET appears low-entropy. Use a randomly generated secret for production.
 ```
 
 ### Frontend runtime smoke [PASS]

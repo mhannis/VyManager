@@ -65,8 +65,8 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 Feature: **Cross-cutting robustness expansion (`X-02`, `X-03`)**
 
 Acceptance criteria:
-- Expand fixture-based save/apply/reload loops across service, VPN, PKI, QoS, and additional system wrappers.
-- Expand domain snapshot tests to match the widened loop domain set.
+- Expand fixture-based save/apply/reload loops across service, VPN, PKI, QoS, additional system wrappers, and baseline firewall/NAT custom routers.
+- Expand domain snapshot tests to match the widened loop domain set, including firewall/NAT snapshots.
 - Keep save/apply/reload tracking as one cross-cutting item while increasing breadth counts.
 - Pass expanded backend loop/snapshot tests and robustness relook gates.
 
@@ -76,23 +76,29 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: expanded `X-02`/`X-03` from baseline into broader partial-domain coverage.
+- Status: expanded `X-02`/`X-03` from baseline into broader partial-domain coverage, including firewall/NAT baseline loops and snapshots.
 - Backlog audit (2026-02-16, strict option-level tracker): `85` total tasks remain (`0 missing`, `76 partial`, `9 verify`) after updating cross-cutting statuses.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
 - `backend/tests/fixtures/config_apply_loops.json`
 - `backend/tests/snapshots/domain_config_snapshots.json`
+- `backend/tests/snapshots/firewall_nat_config_snapshots.json`
 - `backend/tests/test_fixture_save_apply_reload_loops.py`
 - `backend/tests/test_domain_config_snapshots.py`
+- `backend/tests/test_firewall_nat_save_apply_reload_loops.py`
+- `backend/tests/test_firewall_nat_config_snapshots.py`
+- `scripts/run_robustness_relook.py`
 - `ROBUSTNESS_RELOOK_REPORT.md`
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
 - `DECISIONS.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py` passed.
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py` passed.
 - `python3 scripts/run_robustness_relook.py --skip-ui-smoke` passed (`ROBUSTNESS_RELOOK_REPORT.md` updated).
 - `cd frontend && npm run -s smoke:ui` still blocked on host dependency (`libnspr4.so` missing).
 
@@ -109,7 +115,7 @@ Assumptions:
 
 ## TODO Backlog (next queue)
 - Deepen cross-cutting quality gates from current breadth to parity-level depth:
-  - Expand `X-02` loops into Firewall and NAT custom routers.
+  - Expand `X-02` firewall/NAT loops beyond baseline create/delete into advanced option trees.
   - Expand `X-03` snapshots into command-delta comparisons against expected CLI output.
   - Extend `X-05` robustness runner with live parity-domain verification workflow.
 - Start option-depth parity sweep for high-impact partial domains (Firewall, Interfaces, Protocols, Services, VPN, System).
@@ -117,7 +123,9 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
-- Expanded cross-cutting regression gates in this cycle: fixture loops increased from 12 to 31 and snapshots from 15 to 34 endpoints across protocols/system/services/vpn/pki/qos + DMVPN.
+- Added dedicated firewall/NAT regression suites: `test_firewall_nat_save_apply_reload_loops.py` and `test_firewall_nat_config_snapshots.py`, with `firewall_nat_config_snapshots.json` as baseline snapshot artifact.
+- Robustness runner now executes firewall/NAT regression tests by default in the backend suite.
+- Expanded cross-cutting regression gates in this cycle: fixture loops increased from 12 to 35 and snapshots from 15 to 38 endpoints across protocols/system/services/vpn/pki/qos/DMVPN plus baseline firewall/NAT.
 - Tracking convention adjusted per operator direction: save/apply/reload fixture loop is treated as one cross-cutting backlog item; breadth is tracked as loop count, not separate backlog items.
 - Local command policy can reject destructive cleanup commands (`rm -rf`) even for transient artifacts; this is non-blocking for feature/test work but leaves temporary untracked folders unless removed manually.
 - Added thin system wrappers `system_lcd`, `system_sflow`, and `system_task_scheduler` via `build_config_tree_router(...)`, preserving existing service/session architecture and API contract style.

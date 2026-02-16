@@ -4,7 +4,9 @@
   "status": "in_review",
   "acceptance_criteria": [
     "Fixture save/apply/reload coverage expands beyond protocols/system baseline into service, VPN, PKI, and QoS wrappers.",
+    "Fixture save/apply/reload coverage includes baseline Firewall/NAT custom-router loops.",
     "Domain snapshot coverage expands to include matching endpoints for the new fixture domains.",
+    "Domain snapshot coverage includes baseline Firewall/NAT snapshots.",
     "Expanded backend tests pass and robustness relook runner passes with the larger suite.",
     "Tracking reflects save/apply/reload as one cross-cutting item with expanded breadth counts."
   ],
@@ -19,9 +21,10 @@
       "status": "done",
       "files": [
         "backend/tests/fixtures/config_apply_loops.json",
-        "backend/tests/test_fixture_save_apply_reload_loops.py"
+        "backend/tests/test_fixture_save_apply_reload_loops.py",
+        "backend/tests/test_firewall_nat_save_apply_reload_loops.py"
       ],
-      "notes": "Expanded loop fixtures from 12 to 31 and extended harness wiring for service/vpn/wrapper domains."
+      "notes": "Expanded loop fixtures from 12 to 35 (31 fixture entries + 4 firewall/nat loops) and extended harness wiring for service/vpn/wrapper/firewall/nat domains."
     },
     {
       "id": "T2",
@@ -29,18 +32,21 @@
       "status": "done",
       "files": [
         "backend/tests/snapshots/domain_config_snapshots.json",
-        "backend/tests/test_domain_config_snapshots.py"
+        "backend/tests/test_domain_config_snapshots.py",
+        "backend/tests/snapshots/firewall_nat_config_snapshots.json",
+        "backend/tests/test_firewall_nat_config_snapshots.py"
       ],
-      "notes": "Expanded snapshot matrix from 15 to 34 endpoints with matching router coverage."
+      "notes": "Expanded snapshot matrix from 15 to 38 endpoints (34 domain + 4 firewall/nat) with matching router coverage."
     },
     {
       "id": "T3",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "ROBUSTNESS_RELOOK_REPORT.md"
+        "ROBUSTNESS_RELOOK_REPORT.md",
+        "scripts/run_robustness_relook.py"
       ],
-      "notes": "Re-ran robustness runner after expansion and confirmed all configured gates pass."
+      "notes": "Extended robustness runner backend suite to include new firewall/nat tests, then re-ran and confirmed all configured gates pass."
     },
     {
       "id": "T4",
@@ -66,7 +72,7 @@
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_firewall_nat_save_apply_reload_loops.py tests/test_firewall_nat_config_snapshots.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [

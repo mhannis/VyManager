@@ -54,7 +54,9 @@ def build_steps(skip_ui_smoke: bool) -> list[tuple[str, str]]:
             "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q "
             "tests/test_protocol_capabilities.py "
             "tests/test_config_tree_wrapper_capabilities.py "
+            "tests/test_firewall_nat_save_apply_reload_loops.py "
             "tests/test_fixture_save_apply_reload_loops.py "
+            "tests/test_firewall_nat_config_snapshots.py "
             "tests/test_domain_config_snapshots.py",
         ),
         (
@@ -141,4 +143,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -1,0 +1,179 @@
+{
+  "/vyos/firewall/ipv4/config": {
+    "forward": {
+      "default_action": "drop",
+      "rules": [
+        {
+          "rule_number": 100,
+          "chain": "forward",
+          "is_custom_chain": false,
+          "description": null,
+          "action": null,
+          "protocol": null,
+          "source": null,
+          "destination": null,
+          "state": null,
+          "interface": null,
+          "packet_mods": null,
+          "tcp_flags": null,
+          "icmp_type_name": null,
+          "jump_target": null,
+          "offload_target": null,
+          "disable": false,
+          "log": false
+        }
+      ]
+    },
+    "input": {
+      "default_action": null,
+      "rules": []
+    },
+    "output": {
+      "default_action": null,
+      "rules": []
+    },
+    "forward_rules": [
+      {
+        "rule_number": 100,
+        "chain": "forward",
+        "is_custom_chain": false,
+        "description": null,
+        "action": null,
+        "protocol": null,
+        "source": null,
+        "destination": null,
+        "state": null,
+        "interface": null,
+        "packet_mods": null,
+        "tcp_flags": null,
+        "icmp_type_name": null,
+        "jump_target": null,
+        "offload_target": null,
+        "disable": false,
+        "log": false
+      }
+    ],
+    "input_rules": [],
+    "output_rules": [],
+    "custom_chains": [],
+    "total_rules": 1
+  },
+  "/vyos/firewall/ipv6/config": {
+    "forward": {
+      "default_action": "drop",
+      "rules": [
+        {
+          "rule_number": 200,
+          "chain": "forward",
+          "is_custom_chain": false,
+          "description": null,
+          "action": null,
+          "protocol": null,
+          "source": null,
+          "destination": null,
+          "state": null,
+          "interface": null,
+          "packet_mods": null,
+          "tcp_flags": null,
+          "icmp_type_name": null,
+          "jump_target": null,
+          "offload_target": null,
+          "disable": false,
+          "log": false
+        }
+      ]
+    },
+    "input": {
+      "default_action": null,
+      "rules": []
+    },
+    "output": {
+      "default_action": null,
+      "rules": []
+    },
+    "forward_rules": [
+      {
+        "rule_number": 200,
+        "chain": "forward",
+        "is_custom_chain": false,
+        "description": null,
+        "action": null,
+        "protocol": null,
+        "source": null,
+        "destination": null,
+        "state": null,
+        "interface": null,
+        "packet_mods": null,
+        "tcp_flags": null,
+        "icmp_type_name": null,
+        "jump_target": null,
+        "offload_target": null,
+        "disable": false,
+        "log": false
+      }
+    ],
+    "input_rules": [],
+    "output_rules": [],
+    "custom_chains": [],
+    "total_rules": 1
+  },
+  "/vyos/firewall/groups/config": {
+    "address_groups": [
+      {
+        "name": "LAB-NETS",
+        "type": "address-group",
+        "description": null,
+        "members": [
+          "10.0.0.0/8"
+        ],
+        "included_groups": []
+      }
+    ],
+    "ipv6_address_groups": [],
+    "network_groups": [],
+    "ipv6_network_groups": [],
+    "port_groups": [],
+    "interface_groups": [],
+    "mac_groups": [],
+    "domain_groups": [],
+    "remote_groups": [],
+    "total": 1,
+    "by_type": {
+      "address-group": 1,
+      "ipv6-address-group": 0,
+      "network-group": 0,
+      "ipv6-network-group": 0,
+      "port-group": 0,
+      "interface-group": 0,
+      "mac-group": 0,
+      "domain-group": 0,
+      "remote-group": 0
+    }
+  },
+  "/vyos/nat/config": {
+    "source_rules": [
+      {
+        "rule_number": 100,
+        "description": null,
+        "source": null,
+        "destination": null,
+        "outbound_interface": null,
+        "protocol": null,
+        "packet_type": null,
+        "translation": null,
+        "load_balance": null,
+        "disable": false,
+        "exclude": false,
+        "log": false
+      }
+    ],
+    "destination_rules": [],
+    "static_rules": [],
+    "total": 1,
+    "by_type": {
+      "source": 1,
+      "destination": 0,
+      "static": 0
+    }
+  }
+}
