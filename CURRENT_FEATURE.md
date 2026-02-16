@@ -7,7 +7,8 @@ commits:
   - 199cac3 (interfaces inline quick add for dummy/loopback/pppoe + description-first PPPoE source selector)
   - d87861c (interfaces inline quick add for VTI/VXLAN)
   - daff875 (interfaces inline quick add for tunnel)
-  - pending (interfaces sidebar collapse to single nav item + setup wizard button polish)
+  - 55814ca (interfaces sidebar collapse to single nav item + setup wizard button polish)
+  - pending (interfaces in-page advanced workspace panel for family open actions)
 notes:
   - Interfaces sidebar remains consolidated to:
     - `Interfaces`
@@ -31,7 +32,7 @@ notes:
     - `POST /vyos/vti-interface/configure`
     - `POST /vyos/vxlan-interface/configure`
     - `POST /vyos/tunnel-interface/configure`
-  - Family cards still link to dedicated advanced pages for full feature depth.
+  - Family `Open` actions now stay on `/network/interfaces` by launching an in-page advanced workspace panel (right-side sheet) for the selected family editor.
   - Interface family cards now show `Current` (disabled) when a card targets the exact view already open, so `Open` no longer appears broken on the current page.
   - Setup wizard remains available on the Interfaces page via `Open Setup Wizard`.
   - Validation for this increment:

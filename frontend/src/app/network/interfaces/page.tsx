@@ -16,9 +16,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { PageGuideDialog } from "@/components/common/PageGuideDialog";
 import { Plus, RefreshCw, AlertCircle, Search, Cable, Pencil, Trash2, Network, ArrowUpRight } from "lucide-react";
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ethernetService } from "@/lib/api/ethernet";
@@ -265,6 +272,7 @@ function InterfacesPageContent() {
   const [isCreateVLANModalOpen, setIsCreateVLANModalOpen] = useState(false);
   const [editingVLAN, setEditingVLAN] = useState<VLANWithParent | null>(null);
   const [deletingVLAN, setDeletingVLAN] = useState<VLANWithParent | null>(null);
+  const [advancedFamily, setAdvancedFamily] = useState<InterfaceFamily | null>(null);
   const [quickFamily, setQuickFamily] = useState<QuickFamily | null>(null);
   const [quickSaving, setQuickSaving] = useState(false);
   const [quickError, setQuickError] = useState<string | null>(null);
@@ -323,6 +331,7 @@ function InterfacesPageContent() {
   });
   const groupParam = searchParams.get("group");
   const familyFilter: InterfaceFamilyFilter = isFamilyFilter(groupParam) ? groupParam : "all";
+  const interfaceCardsRef = useRef<HTMLDivElement | null>(null);
 
   const loadData = async () => {
     try {
@@ -522,6 +531,15 @@ function InterfacesPageContent() {
       description: "",
       addressesText: "",
     });
+  };
+
+  const openFamilyWorkspace = (family: InterfaceFamily) => {
+    if (family.key === "ethernet-vlan") {
+      setTypeFilter("all");
+      interfaceCardsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    setAdvancedFamily(family);
   };
 
   const saveQuickEditor = async () => {
@@ -1021,18 +1039,16 @@ function InterfacesPageContent() {
                               Quick Add
                             </Button>
                           )}
-                          {isActiveFamilyLink ? (
-                            <Button variant="ghost" size="sm" className="shrink-0" disabled>
-                              Current
-                            </Button>
-                          ) : (
-                            <Button asChild variant="ghost" size="sm" className="shrink-0">
-                              <Link href={family.href}>
-                                Open
-                                <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                              </Link>
-                            </Button>
-                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="shrink-0"
+                            onClick={() => openFamilyWorkspace(family)}
+                          >
+                            {isActiveFamilyLink ? "Current" : "Open"}
+                            {!isActiveFamilyLink && <ArrowUpRight className="ml-1 h-3.5 w-3.5" />}
+                          </Button>
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-1.5">
@@ -1053,7 +1069,7 @@ function InterfacesPageContent() {
 
         {/* Interface Cards */}
         {!error && (
-          <div className="space-y-4 mt-6">
+          <div ref={interfaceCardsRef} className="space-y-4 mt-6">
             {/* Ethernet Interfaces */}
             {(typeFilter === "all" || typeFilter === "ethernet") && filteredInterfaces.length > 0 && (
               <div className="space-y-3">
@@ -1329,6 +1345,28 @@ function InterfacesPageContent() {
           </div>
         )}
       </div>
+
+      <Sheet open={Boolean(advancedFamily)} onOpenChange={(open) => !open && setAdvancedFamily(null)}>
+        <SheetContent side="right" className="w-[96vw] max-w-6xl p-0 sm:w-[95vw]">
+          {advancedFamily && (
+            <div className="flex h-full min-h-0 flex-col">
+              <SheetHeader className="border-b border-border px-6 py-4">
+                <SheetTitle>{advancedFamily.title}</SheetTitle>
+                <SheetDescription>
+                  Advanced editor opened inline from Interface Manager. Main page context stays in place.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="min-h-0 flex-1">
+                <iframe
+                  title={`${advancedFamily.title} advanced editor`}
+                  src={advancedFamily.href}
+                  className="h-full w-full border-0"
+                />
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Quick Configure Modal */}
       <Dialog

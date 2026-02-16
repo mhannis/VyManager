@@ -5,6 +5,7 @@
   "acceptance_criteria": [
     "Interfaces navigation is consolidated to a single `Interfaces` sidebar entry.",
     "`/network/interfaces` acts as the primary hub with family grouping and direct access to all detailed editors.",
+    "Family `Open` actions operate inline on `/network/interfaces` (no page navigation away from manager).",
     "Interfaces page includes a clear Setup Wizard button.",
     "Existing detailed interface pages remain reachable for advanced settings and compatibility.",
     "Inline PPPoE quick-add supports source interface selection with description-first labels.",
@@ -102,6 +103,15 @@
         "frontend/src/app/network/interfaces/page.tsx"
       ],
       "notes": "Family card action now renders `Current` for the exact active view so no-op open actions are explicit."
+    },
+    {
+      "id": "IF-IA-10",
+      "owner_role": "UI|Test",
+      "status": "done",
+      "files": [
+        "frontend/src/app/network/interfaces/page.tsx"
+      ],
+      "notes": "Family `Open` actions now launch an in-page advanced workspace panel (sheet + iframe) so operators remain on `/network/interfaces`."
     }
   ],
   "commands": {

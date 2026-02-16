@@ -65,7 +65,7 @@ Feature: **Interfaces IA Consolidation v2**
 
 Acceptance criteria:
 - Interfaces sidebar is condensed to a single `Interfaces` entry.
-- `/network/interfaces` presents grouped interface-family cards with direct `Open` links to each detailed editor.
+- `/network/interfaces` presents grouped interface-family cards and keeps `Open` workflows inline (no navigation away from manager).
 - Interfaces page includes a clear `Open Setup Wizard` button.
 - Existing detailed interface pages remain reachable for compatibility and advanced settings.
 - Unified manager provides inline quick-add for `Dummy`, `Loopback`, `PPPoE`, `VTI`, `VXLAN`, and `Tunnel` families.
@@ -78,11 +78,10 @@ Assumptions:
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback/PPPoE/VTI/VXLAN/Tunnel is implemented, and sidebar is now collapsed to a single `Interfaces` entry.
+- Status: interface IA consolidation v1 is committed/pushed; v2 inline quick-add for Dummy/Loopback/PPPoE/VTI/VXLAN/Tunnel is implemented, sidebar is collapsed to single `Interfaces`, and family `Open` now launches inline workspace.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `frontend/src/components/layout/Sidebar.tsx`
 - `frontend/src/app/network/interfaces/page.tsx`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
@@ -305,3 +304,4 @@ Assumptions:
 - Next IA target is inline quick-edit for these families so operators can patch common fields without navigating to full per-family editors.
 - Sidebar Interfaces navigation was simplified from grouped submenu entries to a single `Interfaces` item, with setup access retained on the Interfaces page via `Open Setup Wizard`.
 - Interface family cards now show `Current` when already on the target view, preventing perceived no-op behavior from `Open` on the active page.
+- Interface family `Open` now launches an in-page advanced workspace (right-side sheet with embedded editor) so operators stay on `/network/interfaces`.
