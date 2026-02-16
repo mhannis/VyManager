@@ -2,6 +2,9 @@
 
 ## Decision Log
 
+- 2026-02-16: Closed strict cross-cutting `missing` backlog baseline by implementing `X-02` fixture save/apply/reload loops, `X-03` domain snapshot tests, and `X-05` reproducible robustness relook runner/report without changing existing backend API contracts.
+- 2026-02-16: Standardized loop/snapshot hardening around thin test harness routers and mutable dummy VyOS service so regression tests remain deterministic and fast in local CI.
+- 2026-02-16: Kept `X-02`/`X-03`/`X-05` statuses at `partial` (not `verify`) after baseline completion, because full-domain option-depth and live-instance parity verification are still pending.
 - 2026-02-13: New UI features (e.g., dashboard cards) may not appear if VyManager is running via `container/vymanager-prod/env-file-docker-compose.yml` because it uses pre-compiled `ghcr.io/...:beta` images. For testing fork changes, use `container/vymanager-dev/env-file-docker-compose.yml` (source build + bind mounts) or rebuild/publish custom images.
 - 2026-02-13: Updated `ORCHESTRATOR.md` to add a HEAVY `Build/Execution` role, require canonical command discovery up front, and enforce feature-branch workflow (no direct commits to `main`).
 - 2026-02-13: For Next.js start flags, use `npm run start -- --hostname 0.0.0.0 --port 3000` (or ensure args are passed after `--`); `npm exec next start --hostname ...` can mis-forward args and cause Next to treat the hostname as a positional project directory.

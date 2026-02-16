@@ -152,7 +152,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 
 ## Program-Level Cross-Cutting Backlog
 - `X-01` (`partial`): Added option-level parity scorer (`scripts/score_option_parity.py`) with JSON/MD scorecards; next step is improving matching precision and enforcing per-domain thresholds in CI.
-- `X-02`: Add domain fixtures for save/apply/reload verification loops.
-- `X-03`: Add command snapshot tests per domain (`show configuration commands` deltas).
+- `X-02` (`partial`): Added fixture-driven save/apply/reload loops (`backend/tests/fixtures/config_apply_loops.json`, `backend/tests/test_fixture_save_apply_reload_loops.py`) for 12 high-impact domains; remaining work is expanding fixture depth and adding live-device runs.
+- `X-03` (`partial`): Added domain config snapshot tests (`backend/tests/snapshots/domain_config_snapshots.json`, `backend/tests/test_domain_config_snapshots.py`) across 15 endpoints; remaining work is command-delta snapshots and live-instance comparisons.
 - `X-04`: Add browser smoke routes for every newly added/updated page.
-- `X-05`: Final robustness relook pass across all previously implemented domains before “parity done”.
+- `X-05` (`partial`): Added reproducible robustness relook runner (`scripts/run_robustness_relook.py`) and generated baseline report (`ROBUSTNESS_RELOOK_REPORT.md`); remaining work is broadening to full parity-domain live verification before final sign-off.

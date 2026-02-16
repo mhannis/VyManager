@@ -1,0 +1,149 @@
+{
+  "/vyos/ospf/config": {
+    "ospf": {
+      "parameters": {
+        "router-id": "1.1.1.1",
+        "opaque-lsa": {}
+      },
+      "segment-routing": {
+        "global-block": {
+          "low-label-value": "1000",
+          "high-label-value": "1100"
+        }
+      }
+    }
+  },
+  "/vyos/rip/config": {
+    "rip": {
+      "network": {
+        "10.0.0.0/8": {}
+      }
+    }
+  },
+  "/vyos/isis/config": {
+    "isis": {
+      "net": "49.0001.0102.0304.0506.00",
+      "segment-routing": {
+        "global-block": {
+          "low-label-value": "1000",
+          "high-label-value": "1100"
+        }
+      }
+    }
+  },
+  "/vyos/mpls/config": {
+    "mpls": {
+      "interface": {
+        "eth2": {}
+      }
+    }
+  },
+  "/vyos/openfabric/config": {
+    "openfabric": {
+      "domain": {
+        "1": {
+          "net": "49.0001.0102.0304.0506.00"
+        }
+      }
+    }
+  },
+  "/vyos/rpki/config": {
+    "rpki": {
+      "cache": {
+        "192.0.2.10": {
+          "port": "3323"
+        }
+      }
+    }
+  },
+  "/vyos/igmp-proxy/config": {
+    "igmp_proxy": {
+      "interface": {
+        "eth1": {
+          "role": "upstream"
+        }
+      }
+    }
+  },
+  "/vyos/segment-routing/config": {
+    "segment_routing": {
+      "isis": {
+        "segment-routing": {
+          "global-block": {
+            "low-label-value": "1000",
+            "high-label-value": "1100"
+          }
+        }
+      },
+      "ospf": {
+        "segment-routing": {
+          "global-block": {
+            "low-label-value": "1000",
+            "high-label-value": "1100"
+          }
+        },
+        "parameters": {
+          "router-id": "1.1.1.1",
+          "opaque-lsa": {}
+        }
+      }
+    }
+  },
+  "/vyos/vrf/config": {
+    "vrf": {
+      "name": {
+        "BLUE": {
+          "table": "10"
+        }
+      }
+    }
+  },
+  "/vyos/load-balancing/config": {
+    "load_balancing": {
+      "wan": {
+        "interface-health": {
+          "eth1": {
+            "nexthop": "203.0.113.1"
+          }
+        }
+      }
+    }
+  },
+  "/vyos/high-availability/config": {
+    "high_availability": {
+      "vrrp": {
+        "group": {
+          "WAN": {
+            "interface": "eth0",
+            "vrid": "10"
+          }
+        }
+      }
+    }
+  },
+  "/vyos/traffic-policy/config": {
+    "traffic_policy": {
+      "shaper": {
+        "WAN-OUT": {
+          "bandwidth": "100mbit"
+        }
+      }
+    }
+  },
+  "/vyos/system-ip/config": {
+    "ip": {
+      "disable-forwarding": {}
+    }
+  },
+  "/vyos/system-conntrack/config": {
+    "conntrack": {
+      "table-size": "262144"
+    }
+  },
+  "/vyos/system-frr/config": {
+    "frr": {
+      "profile": "traditional"
+    }
+  }
+}
+

@@ -1,0 +1,163 @@
+{
+  "fixtures": [
+    {
+      "id": "LOOP-01",
+      "name": "OSPF loop",
+      "config_endpoint": "/vyos/ospf/config",
+      "batch_endpoint": "/vyos/ospf/batch",
+      "response_key": "ospf",
+      "set_operations": [
+        "set protocols ospf parameters router-id 1.1.1.1"
+      ],
+      "delete_operations": [
+        "delete protocols ospf parameters router-id"
+      ]
+    },
+    {
+      "id": "LOOP-02",
+      "name": "RIP loop",
+      "config_endpoint": "/vyos/rip/config",
+      "batch_endpoint": "/vyos/rip/batch",
+      "response_key": "rip",
+      "set_operations": [
+        "set protocols rip network 10.0.0.0/8"
+      ],
+      "delete_operations": [
+        "delete protocols rip network 10.0.0.0/8"
+      ]
+    },
+    {
+      "id": "LOOP-03",
+      "name": "IS-IS loop",
+      "config_endpoint": "/vyos/isis/config",
+      "batch_endpoint": "/vyos/isis/batch",
+      "response_key": "isis",
+      "set_operations": [
+        "set protocols isis net 49.0001.0102.0304.0506.00"
+      ],
+      "delete_operations": [
+        "delete protocols isis net"
+      ]
+    },
+    {
+      "id": "LOOP-04",
+      "name": "MPLS loop",
+      "config_endpoint": "/vyos/mpls/config",
+      "batch_endpoint": "/vyos/mpls/batch",
+      "response_key": "mpls",
+      "set_operations": [
+        "set protocols mpls interface eth2"
+      ],
+      "delete_operations": [
+        "delete protocols mpls interface eth2"
+      ]
+    },
+    {
+      "id": "LOOP-05",
+      "name": "Segment Routing loop",
+      "config_endpoint": "/vyos/segment-routing/config",
+      "batch_endpoint": "/vyos/segment-routing/batch",
+      "response_key": "segment_routing",
+      "set_operations": [
+        "set protocols ospf parameters opaque-lsa",
+        "set protocols ospf segment-routing global-block low-label-value 1000"
+      ],
+      "delete_operations": [
+        "delete protocols ospf segment-routing global-block low-label-value",
+        "delete protocols ospf parameters opaque-lsa"
+      ]
+    },
+    {
+      "id": "LOOP-06",
+      "name": "VRF loop",
+      "config_endpoint": "/vyos/vrf/config",
+      "batch_endpoint": "/vyos/vrf/batch",
+      "response_key": "vrf",
+      "set_operations": [
+        "set vrf name BLUE table 10"
+      ],
+      "delete_operations": [
+        "delete vrf name BLUE"
+      ]
+    },
+    {
+      "id": "LOOP-07",
+      "name": "Load balancing loop",
+      "config_endpoint": "/vyos/load-balancing/config",
+      "batch_endpoint": "/vyos/load-balancing/batch",
+      "response_key": "load_balancing",
+      "set_operations": [
+        "set load-balancing wan flush-connections"
+      ],
+      "delete_operations": [
+        "delete load-balancing wan flush-connections"
+      ]
+    },
+    {
+      "id": "LOOP-08",
+      "name": "High availability loop",
+      "config_endpoint": "/vyos/high-availability/config",
+      "batch_endpoint": "/vyos/high-availability/batch",
+      "response_key": "high_availability",
+      "set_operations": [
+        "set high-availability vrrp group WAN vrid 10"
+      ],
+      "delete_operations": [
+        "delete high-availability vrrp group WAN vrid"
+      ]
+    },
+    {
+      "id": "LOOP-09",
+      "name": "Traffic policy loop",
+      "config_endpoint": "/vyos/traffic-policy/config",
+      "batch_endpoint": "/vyos/traffic-policy/batch",
+      "response_key": "traffic_policy",
+      "set_operations": [
+        "set traffic-policy shaper WAN-OUT bandwidth 100mbit"
+      ],
+      "delete_operations": [
+        "delete traffic-policy shaper WAN-OUT bandwidth"
+      ]
+    },
+    {
+      "id": "LOOP-10",
+      "name": "System IP loop",
+      "config_endpoint": "/vyos/system-ip/config",
+      "batch_endpoint": "/vyos/system-ip/batch",
+      "response_key": "ip",
+      "set_operations": [
+        "set system ip disable-forwarding"
+      ],
+      "delete_operations": [
+        "delete system ip disable-forwarding"
+      ]
+    },
+    {
+      "id": "LOOP-11",
+      "name": "System Conntrack loop",
+      "config_endpoint": "/vyos/system-conntrack/config",
+      "batch_endpoint": "/vyos/system-conntrack/batch",
+      "response_key": "conntrack",
+      "set_operations": [
+        "set system conntrack table-size 262144"
+      ],
+      "delete_operations": [
+        "delete system conntrack table-size"
+      ]
+    },
+    {
+      "id": "LOOP-12",
+      "name": "System FRR loop",
+      "config_endpoint": "/vyos/system-frr/config",
+      "batch_endpoint": "/vyos/system-frr/batch",
+      "response_key": "frr",
+      "set_operations": [
+        "set system frr profile traditional"
+      ],
+      "delete_operations": [
+        "delete system frr profile"
+      ]
+    }
+  ]
+}
+

@@ -1,112 +1,180 @@
 {
-  "feature_id": "segment-routing-and-vrf-l3vpn-v1-2026-02-16",
-  "title": "Segment Routing page + VRF L3VPN workflow",
-  "status": "in_progress",
+  "feature_id": "cross-cutting-robustness-batch-v1-2026-02-16",
+  "title": "Close strict missing cross-cutting items and harden partial domains with fixture/snapshot/relook gates",
+  "status": "in_review",
   "acceptance_criteria": [
-    "Backend exposes /vyos/segment-routing capabilities/config/batch with strict command scope validation.",
-    "Routing UI includes dedicated Segment Routing page with OSPF/IS-IS SR block and Prefix-SID management.",
-    "VRF page includes dedicated L3VPN workflow for RD/RT/label/route-leaking/route-map controls and BGP MPLS forwarding interfaces.",
-    "Left navigation is consolidated to a single VRF item; L3VPN is represented as an in-page tab.",
-    "Option-level parity scorecard generation exists and produces machine/human-readable outputs from docs cfgcmd leaves.",
-    "Strict backlog tasks PR-03 and VRF-02 are moved out of missing status.",
-    "Backend tests and frontend typecheck/lint/build/runtime smoke pass."
+    "Backlog items X-02, X-03, and X-05 are no longer marked missing in strict backlog artifacts.",
+    "Fixture-driven save/apply/reload tests exist and pass for at least 12 high-impact domains.",
+    "Config snapshot tests exist and pass for at least 15 domain endpoints.",
+    "A reproducible robustness relook runner exists and emits a report artifact.",
+    "Backend protocol/wrapper tests, frontend build, and runtime smoke pass for this slice."
   ],
   "assumptions": [
-    "L3VPN workflow models high-value documented leaves first; advanced live interop validation remains in partial backlog.",
-    "Playwright browser smoke remains environment-blocked until libnspr4.so is installed on host."
+    "This batch closes missing-status baseline for X-02/X-03/X-05 but does not claim final parity completion across all domains.",
+    "Playwright UI smoke remains host-blocked until required system library dependencies are installed."
   ],
   "tasks": [
     {
-      "id": "PR03-ANALYST",
-      "owner_role": "Analyst",
+      "id": "T01",
+      "owner_role": "Backend|Test",
       "status": "done",
       "files": [
-        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
-        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
+        "backend/tests/fixtures/config_apply_loops.json",
+        "backend/tests/test_fixture_save_apply_reload_loops.py"
       ],
-      "notes": "Mapped Segment Routing and VRF L3VPN command trees from docs.vyos.io and aligned slice scope."
+      "notes": "Implemented X-02 baseline with fixture-driven save/apply/reload loops."
     },
     {
-      "id": "PR03-BACKEND",
-      "owner_role": "Backend",
+      "id": "T02",
+      "owner_role": "Backend|Test",
       "status": "done",
       "files": [
-        "backend/routers/segment_routing/segment_routing.py",
-        "backend/routers/segment_routing/__init__.py",
-        "backend/app.py",
-        "backend/tests/test_protocol_capabilities.py"
+        "backend/tests/snapshots/domain_config_snapshots.json",
+        "backend/tests/test_domain_config_snapshots.py"
       ],
-      "notes": "Added thin segment-routing router and command scope tests."
+      "notes": "Implemented X-03 baseline with 15-endpoint snapshot checks."
     },
     {
-      "id": "PR03-UI",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/components/routing/SegmentRoutingContent.tsx",
-        "frontend/src/app/routing/infrastructure/page.tsx",
-        "frontend/src/app/routing/infrastructure/segment-routing/page.tsx",
-        "frontend/src/lib/api/segment-routing.ts",
-        "frontend/src/lib/help/routingProtocolGuides.ts"
-      ],
-      "notes": "Built form-first Segment Routing editor and integrated in routing infrastructure pages."
-    },
-    {
-      "id": "VRF02-UI-BACKEND",
-      "owner_role": "UI|Backend",
-      "status": "done",
-      "files": [
-        "frontend/src/lib/api/vrf.ts",
-        "frontend/src/app/network/vrf/page.tsx",
-        "frontend/src/components/layout/Sidebar.tsx",
-        "frontend/src/lib/sidebar-visibility.ts"
-      ],
-      "notes": "Extended VRF model and UI for L3VPN workflows; consolidated navigation to a single VRF item."
-    },
-    {
-      "id": "TEST-VALIDATION",
+      "id": "T03",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "frontend/scripts/check-runtime.sh",
-        "frontend/scripts/smoke-ui.mjs"
+        "scripts/run_robustness_relook.py",
+        "ROBUSTNESS_RELOOK_REPORT.md"
       ],
-      "notes": "Added segment-routing and vrf-l3vpn routes to smoke probes; runtime smoke passes."
+      "notes": "Implemented X-05 baseline runner/report for deterministic robustness passes."
     },
     {
-      "id": "X01-SCORER",
-      "owner_role": "Test|Analyst",
+      "id": "T04",
+      "owner_role": "Test",
       "status": "done",
       "files": [
-        "scripts/score_option_parity.py",
-        "OPTION_PARITY_SCORECARD.json",
-        "OPTION_PARITY_SCORECARD.md",
-        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
-        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+        "backend/tests/fixtures/config_apply_loops.json"
       ],
-      "notes": "Implemented option-level parity scorer from docs cfgcmd leaves and moved X-01 to partial."
+      "notes": "Loop coverage: OSPF save/apply/reload."
     },
     {
-      "id": "REVIEW",
+      "id": "T05",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json"
+      ],
+      "notes": "Loop coverage: RIP save/apply/reload."
+    },
+    {
+      "id": "T06",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json"
+      ],
+      "notes": "Loop coverage: IS-IS save/apply/reload."
+    },
+    {
+      "id": "T07",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json"
+      ],
+      "notes": "Loop coverage: MPLS save/apply/reload."
+    },
+    {
+      "id": "T08",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json"
+      ],
+      "notes": "Loop coverage: Segment Routing save/apply/reload."
+    },
+    {
+      "id": "T09",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json"
+      ],
+      "notes": "Loop coverage: VRF save/apply/reload."
+    },
+    {
+      "id": "T10",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json"
+      ],
+      "notes": "Loop coverage: Load Balancing save/apply/reload."
+    },
+    {
+      "id": "T11",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json"
+      ],
+      "notes": "Loop coverage: High Availability save/apply/reload."
+    },
+    {
+      "id": "T12",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json"
+      ],
+      "notes": "Loop coverage: Traffic Policy save/apply/reload."
+    },
+    {
+      "id": "T13",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json"
+      ],
+      "notes": "Loop coverage: System IP save/apply/reload."
+    },
+    {
+      "id": "T14",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json"
+      ],
+      "notes": "Loop coverage: System Conntrack save/apply/reload."
+    },
+    {
+      "id": "T15",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json"
+      ],
+      "notes": "Loop coverage: System FRR save/apply/reload."
+    },
+    {
+      "id": "T16",
       "owner_role": "Reviewer",
       "status": "doing",
       "files": [
-        "backend/tests/test_protocol_capabilities.py",
-        "frontend/src/app/network/vrf/page.tsx",
-        "frontend/src/components/routing/SegmentRoutingContent.tsx"
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "backend/tests/test_fixture_save_apply_reload_loops.py",
+        "backend/tests/test_domain_config_snapshots.py",
+        "scripts/run_robustness_relook.py"
       ],
-      "notes": "Manual in-process review complete for regression/contract checks; follow-up deep live validation remains."
+      "notes": "Pending final human review pass and next domain-depth expansion selection."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_config_tree_wrapper_capabilities.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
-    "lint": "cd frontend && npx eslint src/app/network/vrf/page.tsx src/app/routing/infrastructure/page.tsx src/app/routing/infrastructure/segment-routing/page.tsx src/components/layout/Sidebar.tsx src/components/routing/SegmentRoutingContent.tsx src/lib/api/vrf.ts src/lib/api/segment-routing.ts src/lib/help/routingProtocolGuides.ts src/lib/sidebar-visibility.ts scripts/smoke-ui.mjs --max-warnings=0"
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s smoke:runtime",
+    "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "Configuration-guide parity implementation",
+      "purpose": "Strict backlog closure + robustness hardening",
       "status": "active"
     }
   ]

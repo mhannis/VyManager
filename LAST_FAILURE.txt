@@ -1,7 +1,9 @@
-timestamp: 2026-02-16T13:48:11Z
-failing_command: python3 inspect CONFIG_COVERAGE_MATRIX.json expecting key 'entries'
-error_summary: Script probe failed with KeyError because CONFIG_COVERAGE_MATRIX.json schema uses top-level key 'items' instead of 'entries'.
+timestamp: 2026-02-16T14:06:26Z
+failing_command: cd /home/redhot/VyOS/VyManager && rm -rf scripts/__pycache__ frontend/smoke-artifacts
+error_summary: Cleanup command failed because the execution policy blocked `rm -rf` in this environment. The failure does not affect build/test/runtime validation and only left transient artifacts in the working tree.
 last_output:
-KeyError: 'entries'
-suspected_cause: Matrix schema assumption was stale.
-next_step: Parse matrix from the 'items' key and continue implementing option-level parity scorer.
+exec_command failed: CreateProcess {
+  message: "Rejected(\"`/bin/bash -lc 'cd /home/redhot/VyOS/VyManager && rm -rf scripts/__pycache__ frontend/smoke-artifacts'` rejected: blocked by policy\")"
+}
+suspected_cause: Shell policy blocks destructive deletion commands even for local transient artifacts.
+next_step: Leave these untracked artifacts untouched (or remove manually outside restricted command policy) and continue with non-destructive validation/reporting.

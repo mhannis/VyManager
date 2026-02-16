@@ -57,68 +57,50 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 ## Current Objective
 - Execute backlog slices in guide order with full GUI-first coverage and validation.
 - Keep each slice additive and robust: backend schema + frontend UX + validation + tests/checks.
-- Continue reducing strict backlog by implementing missing/partial domains in robust form-first UX.
-- Move protocol and VRF backlog forward while preserving thin-wrapper backend contracts.
-- Next strict-missing focus now shifts to cross-cutting gates:
-  - `X-02`, `X-03`, `X-05`
+- Continue reducing strict backlog by implementing partial domains in robust form-first UX.
+- Close the strict missing cross-cutting backlog items and strengthen regression gates for partial domains.
+- Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Protocols + VRF parity slice (`PR-03`, `VRF-02`)**
+Feature: **Cross-cutting robustness batch (`X-02`, `X-03`, `X-05`)**
 
 Acceptance criteria:
-- Add backend Segment Routing endpoints (`/vyos/segment-routing/*`) with strict command-scope validation.
-- Add dedicated form-first Segment Routing page with OSPF/IS-IS sections and Prefix-SID controls.
-- Expand VRF page with in-page L3VPN workflow:
-  - RD export, route-target import/export/both, label export/allocation mode
-  - import/export vpn toggles, import vrf list, route-map controls
-  - BGP interface MPLS forwarding controls
-- Consolidate navigation to one `VRF` left-panel item; keep `L3VPN` as an in-page tab.
-- Update strict backlog status for `PR-03` and `VRF-02` from `missing` to `partial`.
-- Pass backend tests + frontend typecheck/lint/build/runtime smoke.
+- Move strict missing items `X-02`, `X-03`, and `X-05` out of `missing`.
+- Add fixture-based save/apply/reload loops for 12 high-impact domains.
+- Add config snapshot tests for 15 domain endpoints.
+- Add reproducible robustness relook runner and persisted report artifact.
+- Pass backend loop/snapshot tests and frontend runtime gates.
 
 Assumptions:
-- Baseline/robust controls are implemented; additional option-depth and live interoperability checks remain `partial`.
+- This batch closes baseline implementation for cross-cutting missing items; final parity completion still requires deeper domain-by-domain option coverage and live verification.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: completed Segment Routing + VRF L3VPN implementation slice and consolidated VRF navigation model.
-- Backlog audit (2026-02-16, strict option-level tracker): `85` total tasks remain (`3 missing`, `73 partial`, `9 verify`) after moving `PR-03`, `VRF-02`, and `X-01` to partial.
+- Status: completed baseline implementation of `X-02`, `X-03`, and `X-05`, plus a 15-item robustness completion batch.
+- Backlog audit (2026-02-16, strict option-level tracker): `85` total tasks remain (`0 missing`, `76 partial`, `9 verify`) after updating cross-cutting statuses.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `backend/routers/segment_routing/segment_routing.py`
-- `backend/routers/segment_routing/__init__.py`
-- `backend/app.py`
-- `backend/tests/test_protocol_capabilities.py`
-- `frontend/src/components/routing/SegmentRoutingContent.tsx`
-- `frontend/src/app/routing/infrastructure/segment-routing/page.tsx`
-- `frontend/src/app/routing/infrastructure/page.tsx`
-- `frontend/src/lib/api/segment-routing.ts`
-- `frontend/src/app/network/vrf/page.tsx`
-- `frontend/src/lib/api/vrf.ts`
-- `frontend/src/components/layout/Sidebar.tsx`
-- `frontend/src/lib/sidebar-visibility.ts`
-- `frontend/src/lib/help/routingProtocolGuides.ts`
-- `frontend/scripts/check-runtime.sh`
-- `frontend/scripts/smoke-ui.mjs`
-- `scripts/score_option_parity.py`
-- `OPTION_PARITY_SCORECARD.json`
-- `OPTION_PARITY_SCORECARD.md`
+- `backend/tests/fixtures/config_apply_loops.json`
+- `backend/tests/snapshots/domain_config_snapshots.json`
+- `backend/tests/test_fixture_save_apply_reload_loops.py`
+- `backend/tests/test_domain_config_snapshots.py`
+- `scripts/run_robustness_relook.py`
+- `ROBUSTNESS_RELOOK_REPORT.md`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
-- `LAST_FAILURE.txt`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
 - `DECISIONS.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_config_tree_wrapper_capabilities.py` passed.
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/app/network/vrf/page.tsx src/app/routing/infrastructure/page.tsx src/app/routing/infrastructure/segment-routing/page.tsx src/components/layout/Sidebar.tsx src/components/routing/SegmentRoutingContent.tsx src/lib/api/vrf.ts src/lib/api/segment-routing.ts src/lib/help/routingProtocolGuides.ts src/lib/sidebar-visibility.ts scripts/smoke-ui.mjs --max-warnings=0` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
+- `python3 scripts/run_robustness_relook.py --skip-ui-smoke` passed (`ROBUSTNESS_RELOOK_REPORT.md` updated).
 - `cd frontend && npm run -s smoke:ui` failed on host dependency (`libnspr4.so` missing).
 
 ## Risks / Open Questions
@@ -133,15 +115,16 @@ Assumptions:
 - Next.js app-router pages that use `useSearchParams` can trigger prerender errors if not wrapped in Suspense; for top-level pages prefer window-query parsing in `useEffect` when practical.
 
 ## TODO Backlog (next queue)
-- Finish cross-cutting parity quality gates:
-  - `X-02` fixture-based save/apply/reload loops
-  - `X-03` config snapshot tests by domain
-  - `X-05` final robustness relook pass
+- Deepen cross-cutting quality gates from baseline to parity-level depth:
+  - Expand `X-02` loops into Firewall, NAT, Services, VPN, and PKI trees.
+  - Expand `X-03` snapshots into command-delta comparisons against expected CLI output.
+  - Extend `X-05` robustness runner to include full parity-domain live verification workflow.
 - Start option-depth parity sweep for high-impact partial domains (Firewall, Interfaces, Protocols, Services, VPN, System).
 - Improve option-level parity scorer precision and add CI thresholds (`X-01` hardening).
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Local command policy can reject destructive cleanup commands (`rm -rf`) even for transient artifacts; this is non-blocking for feature/test work but leaves temporary untracked folders unless removed manually.
 - Added thin system wrappers `system_lcd`, `system_sflow`, and `system_task_scheduler` via `build_config_tree_router(...)`, preserving existing service/session architecture and API contract style.
 - Added dedicated form-first pages `/system/lcd`, `/system/sflow`, and `/system/task-scheduler` with diff-based set/delete batch operations and in-page help dialogs.
 - Added `System` sidebar entries and smoke coverage for the new routes so runtime regressions are caught by default.
