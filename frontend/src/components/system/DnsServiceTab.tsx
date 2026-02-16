@@ -47,6 +47,17 @@ function fromCsv(raw: string): string[] {
   );
 }
 
+function isValidHostnameLike(value: string): boolean {
+  const candidate = value.trim();
+  if (!candidate || candidate.length > 253) return false;
+  const labels = candidate.split(".");
+  return labels.every((label) => {
+    if (!label || label.length > 63) return false;
+    if (label.startsWith("-") || label.endsWith("-")) return false;
+    return /^[A-Za-z0-9-]+$/.test(label);
+  });
+}
+
 export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder" }: DnsServiceTabProps) {
   const [config, setConfig] = useState<DnsConfig | null>(null);
   const [loading, setLoading] = useState(false);
@@ -119,6 +130,69 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
   const handleSave = async () => {
     if (!config) return;
 
+    const normalizedDomainOverrides = config.domain_overrides.map((entry) => ({
+      domain: entry.domain.trim(),
+      name_servers: fromCsv(toCsv(entry.name_servers)),
+    }));
+    for (let index = 0; index < normalizedDomainOverrides.length; index += 1) {
+      const entry = normalizedDomainOverrides[index];
+      const hasDomain = entry.domain.length > 0;
+      const hasServers = entry.name_servers.length > 0;
+      if (hasDomain !== hasServers) {
+        setError(`Domain override row ${index + 1} requires both domain and at least one name server.`);
+        setSuccess(null);
+        return;
+      }
+      if (hasDomain && !isValidHostnameLike(entry.domain)) {
+        setError(`Domain override row ${index + 1} has an invalid domain name.`);
+        setSuccess(null);
+        return;
+      }
+    }
+
+    const normalizedHostOverrides = config.host_overrides.map((entry) => ({
+      hostname: entry.hostname.trim(),
+      addresses: fromCsv(toCsv(entry.addresses)),
+      aliases: fromCsv(toCsv(entry.aliases)),
+    }));
+    const seenHostnames = new Set<string>();
+    for (let index = 0; index < normalizedHostOverrides.length; index += 1) {
+      const entry = normalizedHostOverrides[index];
+      const hasHostname = entry.hostname.length > 0;
+      const hasAddresses = entry.addresses.length > 0;
+      const hasAliases = entry.aliases.length > 0;
+
+      if (!hasHostname && !hasAddresses && !hasAliases) {
+        continue;
+      }
+
+      if (hasHostname !== hasAddresses) {
+        setError(`Host override row ${index + 1} requires both hostname and at least one address.`);
+        setSuccess(null);
+        return;
+      }
+      if (!isValidHostnameLike(entry.hostname)) {
+        setError(`Host override row ${index + 1} has an invalid hostname.`);
+        setSuccess(null);
+        return;
+      }
+      const normalizedHostname = entry.hostname.toLowerCase();
+      if (seenHostnames.has(normalizedHostname)) {
+        setError(`Host override row ${index + 1} duplicates hostname '${entry.hostname}'.`);
+        setSuccess(null);
+        return;
+      }
+      seenHostnames.add(normalizedHostname);
+
+      for (const alias of entry.aliases) {
+        if (!isValidHostnameLike(alias)) {
+          setError(`Host override row ${index + 1} has an invalid alias '${alias}'.`);
+          setSuccess(null);
+          return;
+        }
+      }
+    }
+
     const payload: DnsConfig = {
       enabled: config.enabled,
       local_domain_name: config.local_domain_name?.trim() || null,
@@ -128,18 +202,9 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
       use_system_name_servers: config.use_system_name_servers,
       cache_size: config.cache_size,
       authoritative_domains: fromCsv(toCsv(config.authoritative_domains)),
-      domain_overrides: config.domain_overrides
-        .map((entry) => ({
-          domain: entry.domain.trim(),
-          name_servers: fromCsv(toCsv(entry.name_servers)),
-        }))
+      domain_overrides: normalizedDomainOverrides
         .filter((entry) => entry.domain.length > 0 && entry.name_servers.length > 0),
-      host_overrides: config.host_overrides
-        .map((entry) => ({
-          hostname: entry.hostname.trim(),
-          addresses: fromCsv(toCsv(entry.addresses)),
-          aliases: fromCsv(toCsv(entry.aliases)),
-        }))
+      host_overrides: normalizedHostOverrides
         .filter((entry) => entry.hostname.length > 0 && entry.addresses.length > 0),
     };
 
