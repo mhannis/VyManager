@@ -6,9 +6,12 @@ completed_in_cycle:
   - Added backend LLDP structured-payload fallback parsing for runtime neighbor status when table output is empty.
   - Added LLDP parser regression coverage for list-style and nested interface-key structured payloads.
   - Added LLDP `/vyos/system/lldp-status` endpoint tests to verify structured neighbor/detail payload fallback behavior end-to-end.
+  - Extended LLDP structured parser to decode JSON-text payloads embedded in show `data` fields and added endpoint/unit regression coverage.
   - DHCP create/edit modals now default DNS servers to the gateway IP in form state when DNS is empty.
   - DHCP create modal now auto-prefills gateway/domain/lease/DNS defaults when adding a subnet into an existing shared network.
   - Router Advertisements service tab now provides description-first interface suggestions while preserving free-form interface entry.
+  - DNS service tab now blocks partial/invalid domain and host override rows (with explicit row-level error messages) instead of silently dropping malformed entries.
+  - DNS backend update endpoint now validates `listen-address`, `allow-from`, `name-server`, `authoritative-domain`, and `local_domain_name` inputs before apply.
 validation:
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py

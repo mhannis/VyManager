@@ -4,9 +4,12 @@
   "status": "in_progress",
   "acceptance_criteria": [
     "LLDP dashboard/service status can populate neighbors when show output is structured instead of table-formatted.",
+    "LLDP dashboard/service status can also populate neighbors when show `data` is JSON text.",
     "DHCP create/edit forms default DNS to gateway IP when DNS list is empty while preserving manual override.",
     "DHCP create existing-network mode preloads sensible defaults from selected shared network.",
     "Router Advertisements interface entry offers description-first interface suggestions.",
+    "DNS tab rejects partial/invalid domain+host override rows with explicit errors (no silent drops).",
+    "DNS backend rejects malformed listen-address/allow-from/name-server/domain values with deterministic HTTP 400 responses.",
     "Backend and frontend validation gates pass for touched surfaces."
   ],
   "assumptions": [
@@ -21,9 +24,10 @@
       "status": "done",
       "files": [
         "backend/routers/system.py",
-        "backend/tests/test_system_lldp_parsing.py"
+        "backend/tests/test_system_lldp_parsing.py",
+        "backend/tests/test_system_services_ssh_dns.py"
       ],
-      "notes": "Added structured LLDP parser fallback and tests."
+      "notes": "Added structured LLDP parser fallbacks (including JSON-text data payloads), endpoint-level LLDP tests, and DNS input validation in update endpoint."
     },
     {
       "id": "T2",
@@ -31,9 +35,10 @@
       "status": "done",
       "files": [
         "frontend/src/components/services/CreateDHCPServerModal.tsx",
-        "frontend/src/components/services/EditDHCPServerModal.tsx"
+        "frontend/src/components/services/EditDHCPServerModal.tsx",
+        "frontend/src/components/system/DnsServiceTab.tsx"
       ],
-      "notes": "Added gateway-based DNS defaults and existing-network default prefill behavior."
+      "notes": "Added gateway-based DNS defaults, existing-network default prefill behavior, and strict DNS override row validation in UI."
     },
     {
       "id": "T3",
@@ -69,7 +74,7 @@
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py tests/test_system_dashboard_temperature.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [

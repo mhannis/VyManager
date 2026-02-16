@@ -66,9 +66,11 @@ Feature: **Service UX and LLDP parsing hardening (`SVC-03`/`SVC-05` support pass
 
 Acceptance criteria:
 - Parse LLDP neighbors from structured show payloads when text-table parsing is unavailable/empty.
+- Parse LLDP neighbors when show `data` payloads are JSON text (stringified structured output).
 - Keep DHCP DNS defaults visible in-form by auto-seeding gateway IP when DNS values are blank.
 - Prefill DHCP create form defaults when adding a subnet to an existing shared network.
 - Provide description-first interface suggestions in Router Advertisements service form.
+- Reject malformed/partial DNS override rows in UI before save and return deterministic backend `400` for invalid DNS input values.
 - Preserve existing API contracts and thin-wrapper architecture.
 - Pass backend+frontend validation gates.
 
@@ -87,9 +89,11 @@ Assumptions:
 ### Files Touched This Cycle
 - `backend/routers/system.py`
 - `backend/tests/test_system_lldp_parsing.py`
+- `backend/tests/test_system_services_ssh_dns.py`
 - `frontend/src/app/firewall/zones/page.tsx`
 - `frontend/src/components/services/CreateDHCPServerModal.tsx`
 - `frontend/src/components/services/EditDHCPServerModal.tsx`
+- `frontend/src/components/system/DnsServiceTab.tsx`
 - `frontend/src/components/system/RouterAdvertServiceTab.tsx`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
@@ -100,6 +104,7 @@ Assumptions:
 ### Validation This Cycle
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py` passed.
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py` passed.
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py` passed after LLDP JSON-text fallback + DNS validation additions.
 - `cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime` passed (multiple runs during cycle).
 - `cd frontend && npm run -s smoke:ui` still blocked on host dependency (`libnspr4.so` missing).
 
@@ -125,9 +130,11 @@ Assumptions:
 - LLDP runtime neighbor parsing now includes a structured-payload fallback path in `backend/routers/system.py` (`_parse_lldp_neighbors_structured_output`) when text parsing returns no neighbors.
 - Added LLDP structured parser regression tests in `backend/tests/test_system_lldp_parsing.py` for both list-style and nested interface-key payload shapes.
 - Added endpoint-level LLDP status tests in `backend/tests/test_system_services_ssh_dns.py` to verify structured `neighbors` and structured `detail` fallback parsing through `/vyos/system/lldp-status`.
+- LLDP structured parser now also decodes JSON-text payloads embedded in show output `data` strings, with unit + endpoint regression tests.
 - DHCP create/edit modals now auto-seed DNS servers with gateway IP when DNS entries are blank in-form, aligning visible defaults with submit-time behavior.
 - DHCP create modal existing-network mode now preloads gateway/domain/lease/DNS defaults from selected shared-network configuration.
 - Router Advertisements service tab now fetches interface inventory and provides description-first datalist suggestions (`Description (ethX)`), while preserving free-text interface input.
+- DNS service tab now validates override rows strictly (no silent drop of partial/invalid rows), and backend `/vyos/system/dns-config` update now validates listen-address/allow-from/name-server/domain inputs before apply.
 - Firewall rule create/edit modals now enforce action-dependent targets (`jump` requires jump target chain, `offload` requires flowtable) and block submit with explicit UI errors when missing.
 - Firewall rule modals now disable jump/offload target selectors when no custom chains/flowtables are available and keep submit disabled for those blocked action states.
 - Firewall zones create/edit flows now pre-validate policy textarea rows (`FROM_ZONE:FIREWALL_NAME`) and block submit for malformed lines or duplicate from-zones, reducing backend round-trip failures.
