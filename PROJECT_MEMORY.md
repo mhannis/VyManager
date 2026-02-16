@@ -61,76 +61,41 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Largest bucket pass: System + Interfaces (`SYS-09`, `SYS-10`, `SYS-16`, `IF-13`)**
+Feature: **Interfaces WWAN parity depth (`IF-14`)**
 
 Acceptance criteria:
-- DNS configuration supports ownership of `system name-server` and `system domain-search` with explicit UI fields + backend validation.
-- Dedicated form-first pages exist for `System -> Update Check` and `System -> Watchdog`, backed by scoped config-tree wrappers.
-- Navigation/smoke coverage includes the new System pages.
-- Local user management supports `authentication principal` and OTP (`key`, `rate-limit`, `window-size`) with structured form-based controls.
-- Global login management supports `banner pre-login/post-login`, `max-sessions-per-user`, `timeout`, `radius source-address/server`, and `tacacs server` controls via GUI and backend validation.
-- Wireless page includes deeper VHT capability controls from the guide without using free-form CLI text input.
-- Preserve existing API contracts and thin-wrapper architecture.
-- Pass backend+frontend validation gates.
+- WWAN GUI exposes advanced IPv4/IPv6 leaves from the guide (including ARP and IPv6 address-mode controls).
+- WWAN GUI exposes DHCPv4 extras (`reject`, `user-class`) and DHCPv6 core options (`duid`, `no-release`, `parameters-only`, `rapid-commit`, `temporary`).
+- WWAN GUI supports DHCPv6 Prefix Delegation row CRUD with deterministic validation and command generation.
+- WWAN parser/model avoids mis-parsing IPv6 special keys (`autoconf`, `eui64`, `no-default-link-local`) as address entries.
+- Frontend gates pass (`tsc`, `lint` with 0 errors, `build`, `smoke:runtime`, `smoke:ui`).
+- Preserve thin-wrapper backend/API architecture.
 
 Assumptions:
-- `system update-check` parity for this slice targets the documented `url` leaf.
-- `system watchdog` parity for this slice targets documented `ping`, `startup-delay`, and `test-interval` leaves.
+- `IF-14` remains `partial` after this slice because modem operational workflows are still pending.
+- UI smoke chunk errors are runtime artifact drift and require `vm-ui` restart on this host.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: system/interfaces largest-bucket depth pass active; `SYS-09` local-user principal/OTP plus global-login RADIUS/TACACS/banner/session slices implemented and validated; runtime chunk drift hotfix applied via `vm-ui` restart.
-- Live triage (2026-02-16): user-reported `Not Found` on System IP/Update Check/Watchdog was investigated; backend routes are present and responding (unauthenticated probes now return `401`, not `404`).
-- SYS-16 continuation (2026-02-16): expanded UI parity depth for `system update-check` and `system watchdog` option leaves without backend contract changes.
-- Backlog audit (2026-02-16): moved forward on `SYS-09`, `SYS-10`, `SYS-16`, and `IF-13` (including global login config depth).
+- Status: `IF-14` WWAN depth slice implemented and validated; preparing next `IF-15` interfaces depth pass.
+- Smoke triage (2026-02-16): `smoke:ui` initially failed with `ChunkLoadError`; resolved by restarting `vm-ui` and rerunning smoke gates.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `backend/app.py`
-- `backend/routers/system.py`
-- `backend/routers/system_update_check.py`
-- `backend/routers/system_watchdog.py`
-- `backend/tests/test_config_tree_wrapper_capabilities.py`
-- `backend/tests/test_system_login_config.py`
-- `backend/tests/test_system_local_users_parity.py`
-- `backend/tests/test_system_services_ssh_dns.py`
-- `frontend/src/app/network/interfaces/wireless/page.tsx`
-- `frontend/src/app/system/update-check/page.tsx`
-- `frontend/src/app/system/watchdog/page.tsx`
-- `frontend/src/components/layout/Sidebar.tsx`
-- `frontend/src/components/system/DnsServiceTab.tsx`
-- `frontend/src/lib/api/system-update-check.ts`
-- `frontend/src/lib/api/system-watchdog.ts`
-- `frontend/src/lib/api/wireless.ts`
-- `frontend/src/lib/api/system.ts`
-- `frontend/src/lib/help/pageGuides.ts`
-- `frontend/src/lib/sidebar-visibility.ts`
-- `frontend/scripts/check-runtime.sh`
-- `frontend/scripts/smoke-ui.mjs`
+- `frontend/src/lib/api/wwan.ts`
+- `frontend/src/app/network/interfaces/wwan/page.tsx`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
-- `DECISIONS.md`
 
 ### Validation This Cycle
-- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_login_config.py tests/test_system_local_users_parity.py tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py` passed (`137 passed`).
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
 - `cd frontend && npm run -s lint` passed with warnings only (`0 errors`).
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
-- `cd frontend && npm run -s smoke:ui` passed (after `vm-ui` restart to clear stale chunk artifacts).
-- Runtime drift recovery: restarted tmux sessions `vm-api` and `vm-ui` and revalidated listeners on ports `8000` and `3000`.
-- Endpoint spot-check after restart:
-  - `/vyos/system-ip/capabilities` -> `401` (expected unauthenticated)
-  - `/vyos/system-update-check/capabilities` -> `401` (expected unauthenticated)
-  - `/vyos/system-watchdog/capabilities` -> `401` (expected unauthenticated)
-- SYS-16 UI parity pass validation:
-  - `cd frontend && npx tsc --noEmit --pretty false` passed.
-  - `cd frontend && npm run -s build` passed.
-  - `cd frontend && npm run -s smoke:runtime` passed.
-  - Restarted `vm-ui` tmux session after build and rechecked runtime smoke.
+- `cd frontend && npm run -s smoke:ui` failed once with `ChunkLoadError`, then passed after `vm-ui` restart.
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
@@ -152,6 +117,9 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui` where deps permit).
 
 ## Agent Handoff Notes
+- WWAN parity depth pass (`IF-14`) now includes advanced IPv4/IPv6 leaves, DHCPv4 extras, DHCPv6 core flags, and DHCPv6-PD row CRUD in `frontend/src/app/network/interfaces/wwan/page.tsx` + `frontend/src/lib/api/wwan.ts`.
+- WWAN parser now excludes IPv6 special keys (`autoconf`, `eui64`, `no-default-link-local`) from literal `ipv6 address` entries to prevent incorrect round-trip state.
+- If UI smoke shows `ChunkLoadError` after rebuild, restart `vm-ui` and rerun `smoke:runtime` + `smoke:ui`; this cycle confirmed the fix path.
 - Added global login API endpoints:
   - `GET /vyos/system/login-config`
   - `PUT /vyos/system/login-config`

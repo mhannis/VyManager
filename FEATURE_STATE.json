@@ -1,19 +1,17 @@
 {
-  "feature_id": "system-interfaces-largest-buckets-2026-02-16",
-  "title": "System + Interfaces largest bucket depth pass (SYS-09/SYS-10/SYS-16/IF-13)",
+  "feature_id": "interfaces-wwan-depth-2026-02-16",
+  "title": "Interfaces WWAN parity depth pass (IF-14)",
   "status": "in_progress",
   "acceptance_criteria": [
-    "DNS settings support system name-server and system domain-search ownership through GUI and backend validation.",
-    "System Update Check and System Watchdog have dedicated form-first pages backed by scoped backend wrappers.",
-    "Sidebar/navigation includes new System pages and smoke probes cover their routes.",
-    "Wireless interface editor supports additional VHT capabilities from VyOS guide and saves via structured controls.",
-    "Backend and frontend validation commands pass for touched files.",
-    "System local user workflows cover principal and OTP authentication controls with backend validation and form-based UI.",
-    "Global system login settings (banners/session limits/RADIUS/TACACS) are manageable from GUI with validated backend contract."
+    "WWAN GUI exposes advanced IPv4/IPv6 behavior leaves from the VyOS guide instead of baseline-only controls.",
+    "WWAN GUI supports DHCPv4 reject/user-class and DHCPv6 core flags/duid through structured controls.",
+    "WWAN GUI supports DHCPv6 Prefix Delegation row CRUD with validation and deterministic command generation.",
+    "WWAN parser/model round-trips advanced fields without mis-parsing IPv6 special address keys as normal addresses.",
+    "Frontend validation gates pass (typecheck, lint no errors, build, runtime smoke, UI smoke)."
   ],
   "assumptions": [
-    "System update-check parity in this slice targets documented `system update-check url` support.",
-    "Watchdog parity in this slice targets documented `ping`, `startup-delay`, and `test-interval` controls."
+    "IF-14 remains partial after this slice because modem operational workflows are still not implemented.",
+    "Chunk-load UI smoke failures are runtime process drift and should be resolved by restarting vm-ui on this host."
   ],
   "tasks": [
     {
@@ -21,163 +19,67 @@
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "backend/routers/system_update_check.py",
-        "backend/routers/system_watchdog.py",
-        "backend/app.py"
+        "frontend/src/lib/api/wwan.ts"
       ],
-      "notes": "Added and registered thin config-tree wrappers for system update-check and watchdog."
+      "notes": "Extended WWAN config parser/model to include advanced IPv4/IPv6, DHCP extras, and DHCPv6 PD rows; fixed IPv6 special-key parsing."
     },
     {
       "id": "T2",
-      "owner_role": "Backend",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "backend/routers/system.py",
-        "backend/tests/test_system_services_ssh_dns.py"
+        "frontend/src/app/network/interfaces/wwan/page.tsx"
       ],
-      "notes": "Extended DNS model + update flow for system name-server/domain-search ownership and validation, with regression tests."
+      "notes": "Expanded WWAN form UI into grouped sections with advanced controls and DHCPv6 PD row CRUD editor."
     },
     {
       "id": "T3",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/system/DnsServiceTab.tsx",
-        "frontend/src/lib/api/system.ts"
+        "frontend/src/app/network/interfaces/wwan/page.tsx"
       ],
-      "notes": "Added system resolver defaults fields to DNS tab and payload wiring/validation."
+      "notes": "Added deterministic client-side validation and operation-build error handling for advanced WWAN fields and PD rows."
     },
     {
       "id": "T4",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/system/update-check/page.tsx",
-        "frontend/src/app/system/watchdog/page.tsx",
-        "frontend/src/lib/api/system-update-check.ts",
-        "frontend/src/lib/api/system-watchdog.ts",
-        "frontend/src/components/layout/Sidebar.tsx",
-        "frontend/src/lib/sidebar-visibility.ts",
-        "frontend/src/lib/help/pageGuides.ts"
-      ],
-      "notes": "Implemented two new system pages and integrated navigation/help coverage."
-    },
-    {
-      "id": "T5",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/lib/api/wireless.ts",
-        "frontend/src/app/network/interfaces/wireless/page.tsx"
-      ],
-      "notes": "Expanded wireless form/API model to include VHT capability depth (scalar, tag, and beamform flag leaves)."
-    },
-    {
-      "id": "T6",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "backend/tests/test_config_tree_wrapper_capabilities.py",
-        "frontend/scripts/check-runtime.sh",
-        "frontend/scripts/smoke-ui.mjs"
+        "LAST_FAILURE.txt"
       ],
-      "notes": "Extended wrapper tests and smoke route probes; backend/frontend validation commands passed."
+      "notes": "Ran frontend gates; recovered smoke failure caused by stale chunks via vm-ui restart and rerun."
     },
     {
-      "id": "T7",
+      "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "backend/routers/system.py",
-        "frontend/src/app/system/update-check/page.tsx",
-        "frontend/src/app/system/watchdog/page.tsx",
-        "frontend/src/app/network/interfaces/wireless/page.tsx"
+        "frontend/src/lib/api/wwan.ts",
+        "frontend/src/app/network/interfaces/wwan/page.tsx"
       ],
       "notes": "Manual in-process review complete. APPROVED."
     },
     {
-      "id": "T8",
-      "owner_role": "Test",
-      "status": "done",
+      "id": "T6",
+      "owner_role": "Planner",
+      "status": "todo",
       "files": [
-        "PROJECT_MEMORY.md",
-        "LAST_FAILURE.txt"
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
       ],
-      "notes": "Live triage for user-reported Not Found: confirmed system wrapper endpoints exist (401 unauth), runtime smoke passed after vm-api/vm-ui restart; browser smoke remains blocked by missing Playwright OS dependency."
-    },
-    {
-      "id": "T9",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/lib/api/system-update-check.ts",
-        "frontend/src/app/system/update-check/page.tsx",
-        "frontend/src/lib/api/system-watchdog.ts",
-        "frontend/src/app/system/watchdog/page.tsx",
-        "frontend/src/lib/help/pageGuides.ts"
-      ],
-      "notes": "Extended SYS-16 parity depth: update-check now supports auto-check toggle; watchdog now supports enable/module/timeout/shutdown-timeout/reboot-timeout plus existing optional ping/timer controls."
-    },
-    {
-      "id": "T10",
-      "owner_role": "Test",
-      "status": "done",
-      "files": [
-        "frontend/src/app/system/update-check/page.tsx",
-        "frontend/src/app/system/watchdog/page.tsx"
-      ],
-      "notes": "Validated with frontend TypeScript check, production build, and runtime smoke; restarted vm-ui to ensure new UI is served."
-    },
-    {
-      "id": "T11",
-      "owner_role": "Backend",
-      "status": "done",
-      "files": [
-        "backend/routers/system.py",
-        "backend/tests/test_system_local_users_parity.py"
-      ],
-      "notes": "Extended local-user API/model/parse and write operations for principal + OTP controls (key/rate-limit/window-size) with regression coverage."
-    },
-    {
-      "id": "T12",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/system/users/page.tsx",
-        "frontend/src/lib/api/system.ts"
-      ],
-      "notes": "Extended System Users create/edit/inventory UI to manage principal + OTP controls with client-side numeric validation and clear semantics."
-    },
-    {
-      "id": "T13",
-      "owner_role": "Backend",
-      "status": "done",
-      "files": [
-        "backend/routers/system.py",
-        "backend/tests/test_system_login_config.py"
-      ],
-      "notes": "Added /vyos/system/login-config GET/PUT with parser + diff-based apply for banners/session limits/radius/tacacs and regression coverage."
-    },
-    {
-      "id": "T14",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/system/users/page.tsx",
-        "frontend/src/lib/api/system.ts"
-      ],
-      "notes": "Added Global Login Authentication form section to System Users page with RADIUS/TACACS server row editing and session/banner controls."
+      "notes": "Continue IF-15 parity slices after WWAN depth commit."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_login_config.py tests/test_system_local_users_parity.py tests/test_system_services_ssh_dns.py tests/test_config_tree_wrapper_capabilities.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s lint && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
+    "test": "cd frontend && npx tsc --noEmit --pretty false && npm run -s lint && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "System and interfaces largest-bucket parity execution",
+      "purpose": "WWAN parity depth implementation and validation",
       "status": "active"
     }
   ]

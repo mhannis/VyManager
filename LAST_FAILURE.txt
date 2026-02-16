@@ -1,11 +1,20 @@
-timestamp: 2026-02-16T21:08:57Z
+timestamp: 2026-02-16T22:11:47Z
 failing_command: cd frontend && npm run -s smoke:ui
-error_summary: UI smoke failed on `/system/users` with a client-side chunk load exception (`ChunkLoadError`) while loading a stale/missing build artifact.
+error_summary: Browser smoke failed with client-side ChunkLoadError on interfaces pages due stale/missing Next.js chunk artifacts served by the current vm-ui runtime.
 last_output:
 UI smoke test FAILED:
-- /system/users: rendered client-side application error banner
-- /system/users: pageerror at http://localhost:3000/system/users -> ChunkLoadError: Failed to load chunk /_next/static/chunks/bb9edaa0f15bae83.js from module 264918
+- /network/interfaces?group=core-l2: rendered client-side application error banner
+- /network/interfaces?group=core-l2: pageerror at http://localhost:3000/network/interfaces?group=core-l2 -> ChunkLoadError: Failed to load chunk /_next/static/chunks/ba15d20e2824928d.js from module 264918
+    at http://localhost:3000/_next/static/chunks/turbopack-50a273dcebd10f43.js:1:5953
+- /network/interfaces?group=overlay-secure: rendered client-side application error banner
+- /network/interfaces?group=overlay-secure: pageerror at http://localhost:3000/network/interfaces?group=overlay-secure -> ChunkLoadError: Failed to load chunk /_next/static/chunks/ba15d20e2824928d.js from module 264918
+    at http://localhost:3000/_next/static/chunks/turbopack-50a273dcebd10f43.js:1:5953
+- /network/interfaces?group=access-wan: rendered client-side application error banner
+- /network/interfaces?group=access-wan: pageerror at http://localhost:3000/network/interfaces?group=access-wan -> ChunkLoadError: Failed to load chunk /_next/static/chunks/ba15d20e2824928d.js from module 264918
+    at http://localhost:3000/_next/static/chunks/turbopack-50a273dcebd10f43.js:1:5953
+- /network/interfaces/wwan: rendered client-side application error banner
+- /network/interfaces/wwan: pageerror at http://localhost:3000/network/interfaces/wwan -> ChunkLoadError: Failed to load chunk /_next/static/chunks/a3268c76071619b9.js from module 264918
     at http://localhost:3000/_next/static/chunks/turbopack-50a273dcebd10f43.js:1:5953
 Artifacts: smoke-artifacts/
-suspected_cause: Frontend runtime (`vm-ui`) was serving stale chunk metadata after a rebuild.
-next_step: Restart `vm-ui` and rerun `npm run -s smoke:runtime` + `npm run -s smoke:ui` (both now pass).
+suspected_cause: vm-ui process serving stale chunk manifest after a fresh build.
+next_step: Restart vm-ui tmux session and rerun npm run -s smoke:runtime && npm run -s smoke:ui.

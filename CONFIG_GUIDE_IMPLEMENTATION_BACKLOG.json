@@ -185,7 +185,7 @@
       "id": "IF-14",
       "domain": "interfaces",
       "status": "partial",
-      "title": "Add wwan editor"
+      "title": "Add wwan editor (advanced IPv4/IPv6 + DHCPv6 PD depth in place; modem-op workflows pending)"
     },
     {
       "id": "IF-15",

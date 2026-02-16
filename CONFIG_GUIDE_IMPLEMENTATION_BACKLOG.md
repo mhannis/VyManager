@@ -74,7 +74,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `IF-11` (`partial`): Add robust `vti` editor. Baseline page implemented; VPN IPsec interaction and advanced parity verification remains.
 - `IF-12` (`partial`): Add robust `vxlan` editor. Baseline page implemented; advanced EVPN/SVD depth verification remains.
 - `IF-13` (`partial`): Add robust `wireless` editor. Baseline form-first page is implemented with core WLAN, WPA/RADIUS, HT capabilities, and country-code support; advanced 802.11 capability depth still needs parity sweep.
-- `IF-14` (`partial`): Add robust `wwan` editor. Baseline form-first page is implemented with APN, addressing, DHCP options, and IPv4/IPv6 tuning; full DHCPv6-PD and modem-op depth still needs parity sweep.
+- `IF-14` (`partial`): Add robust `wwan` editor. Form-first page now covers APN, addressing, advanced IPv4/IPv6 tuning, DHCPv4 extras, and DHCPv6 prefix delegation rows; modem operational workflows still need parity sweep.
 - `IF-15` (`partial`): Deepen existing ethernet/pppoe/loopback/wireguard option parity.
 
 ### Load Balancing (`loadbalancing/*`)

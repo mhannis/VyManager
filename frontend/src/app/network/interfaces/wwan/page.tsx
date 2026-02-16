@@ -20,7 +20,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { showService } from "@/lib/api/show";
-import { type WwanInterfaceConfig, wwanService } from "@/lib/api/wwan";
+import { type WwanDhcpv6PdRow, type WwanInterfaceConfig, wwanService } from "@/lib/api/wwan";
 import { pageGuides } from "@/lib/help/pageGuides";
 
 interface WwanFormState {
@@ -33,11 +33,24 @@ interface WwanFormState {
   disableLinkDetect: boolean;
   apn: string;
   ipDisableForwarding: boolean;
+  ipArpCacheTimeout: string;
+  ipDisableArpFilter: boolean;
+  ipEnableDirectedBroadcast: boolean;
+  ipEnableArpAccept: boolean;
+  ipEnableArpAnnounce: boolean;
+  ipEnableArpIgnore: boolean;
+  ipEnableProxyArp: boolean;
+  ipProxyArpPvlan: boolean;
   ipSourceValidation: string;
   ipAdjustMssClamp: boolean;
   ipAdjustMssValue: string;
   ipv6AddressesText: string;
+  ipv6AddressAutoconf: boolean;
+  ipv6AddressEui64: string;
+  ipv6AddressNoDefaultLinkLocal: boolean;
   ipv6DisableForwarding: boolean;
+  ipv6AcceptDad: string;
+  ipv6DupAddrDetectTransmits: string;
   ipv6AdjustMssClamp: boolean;
   ipv6AdjustMssValue: string;
   dhcpClientId: string;
@@ -45,9 +58,26 @@ interface WwanFormState {
   dhcpVendorClassId: string;
   dhcpNoDefaultRoute: boolean;
   dhcpDefaultRouteDistance: string;
+  dhcpRejectText: string;
+  dhcpUserClass: string;
+  dhcpv6Duid: string;
+  dhcpv6NoRelease: boolean;
+  dhcpv6ParametersOnly: boolean;
+  dhcpv6RapidCommit: boolean;
+  dhcpv6Temporary: boolean;
+  dhcpv6PdRows: WwanDhcpv6PdRow[];
 }
 
 const SOURCE_VALIDATION_OPTIONS = ["disable", "strict", "loose"] as const;
+const IPV6_ACCEPT_DAD_OPTIONS = ["0", "1", "2"] as const;
+
+const EMPTY_PD_ROW: WwanDhcpv6PdRow = {
+  id: "",
+  length: "",
+  delegateInterface: "",
+  address: "",
+  slaId: "",
+};
 
 const EMPTY_FORM: WwanFormState = {
   name: "",
@@ -59,11 +89,24 @@ const EMPTY_FORM: WwanFormState = {
   disableLinkDetect: false,
   apn: "",
   ipDisableForwarding: false,
+  ipArpCacheTimeout: "",
+  ipDisableArpFilter: false,
+  ipEnableDirectedBroadcast: false,
+  ipEnableArpAccept: false,
+  ipEnableArpAnnounce: false,
+  ipEnableArpIgnore: false,
+  ipEnableProxyArp: false,
+  ipProxyArpPvlan: false,
   ipSourceValidation: "",
   ipAdjustMssClamp: false,
   ipAdjustMssValue: "",
   ipv6AddressesText: "",
+  ipv6AddressAutoconf: false,
+  ipv6AddressEui64: "",
+  ipv6AddressNoDefaultLinkLocal: false,
   ipv6DisableForwarding: false,
+  ipv6AcceptDad: "",
+  ipv6DupAddrDetectTransmits: "",
   ipv6AdjustMssClamp: false,
   ipv6AdjustMssValue: "",
   dhcpClientId: "",
@@ -71,6 +114,14 @@ const EMPTY_FORM: WwanFormState = {
   dhcpVendorClassId: "",
   dhcpNoDefaultRoute: false,
   dhcpDefaultRouteDistance: "",
+  dhcpRejectText: "",
+  dhcpUserClass: "",
+  dhcpv6Duid: "",
+  dhcpv6NoRelease: false,
+  dhcpv6ParametersOnly: false,
+  dhcpv6RapidCommit: false,
+  dhcpv6Temporary: false,
+  dhcpv6PdRows: [],
 };
 
 function quoteCliValue(value: string): string {
@@ -107,11 +158,24 @@ function toFormState(value: WwanInterfaceConfig): WwanFormState {
     disableLinkDetect: value.disableLinkDetect,
     apn: value.apn,
     ipDisableForwarding: value.ipDisableForwarding,
+    ipArpCacheTimeout: value.ipArpCacheTimeout,
+    ipDisableArpFilter: value.ipDisableArpFilter,
+    ipEnableDirectedBroadcast: value.ipEnableDirectedBroadcast,
+    ipEnableArpAccept: value.ipEnableArpAccept,
+    ipEnableArpAnnounce: value.ipEnableArpAnnounce,
+    ipEnableArpIgnore: value.ipEnableArpIgnore,
+    ipEnableProxyArp: value.ipEnableProxyArp,
+    ipProxyArpPvlan: value.ipProxyArpPvlan,
     ipSourceValidation: value.ipSourceValidation,
     ipAdjustMssClamp: value.ipAdjustMssClamp,
     ipAdjustMssValue: value.ipAdjustMssValue,
     ipv6AddressesText: value.ipv6Addresses.join("\n"),
+    ipv6AddressAutoconf: value.ipv6AddressAutoconf,
+    ipv6AddressEui64: value.ipv6AddressEui64,
+    ipv6AddressNoDefaultLinkLocal: value.ipv6AddressNoDefaultLinkLocal,
     ipv6DisableForwarding: value.ipv6DisableForwarding,
+    ipv6AcceptDad: value.ipv6AcceptDad,
+    ipv6DupAddrDetectTransmits: value.ipv6DupAddrDetectTransmits,
     ipv6AdjustMssClamp: value.ipv6AdjustMssClamp,
     ipv6AdjustMssValue: value.ipv6AdjustMssValue,
     dhcpClientId: value.dhcpClientId,
@@ -119,6 +183,14 @@ function toFormState(value: WwanInterfaceConfig): WwanFormState {
     dhcpVendorClassId: value.dhcpVendorClassId,
     dhcpNoDefaultRoute: value.dhcpNoDefaultRoute,
     dhcpDefaultRouteDistance: value.dhcpDefaultRouteDistance,
+    dhcpRejectText: value.dhcpReject.join("\n"),
+    dhcpUserClass: value.dhcpUserClass,
+    dhcpv6Duid: value.dhcpv6Duid,
+    dhcpv6NoRelease: value.dhcpv6NoRelease,
+    dhcpv6ParametersOnly: value.dhcpv6ParametersOnly,
+    dhcpv6RapidCommit: value.dhcpv6RapidCommit,
+    dhcpv6Temporary: value.dhcpv6Temporary,
+    dhcpv6PdRows: value.dhcpv6PdRows.length > 0 ? value.dhcpv6PdRows.map((row) => ({ ...row })) : [],
   };
 }
 
@@ -166,6 +238,111 @@ function syncTagList(
   for (const entry of desired) {
     if (!currentSet.has(entry)) {
       operations.push(`set ${base} ${token} ${quoteCliValue(entry)}`);
+    }
+  }
+}
+
+function normalizePdRows(rows: WwanDhcpv6PdRow[]): WwanDhcpv6PdRow[] {
+  const normalized: WwanDhcpv6PdRow[] = [];
+  const index = new Map<string, number>();
+
+  for (const row of rows) {
+    const id = row.id.trim();
+    const length = row.length.trim();
+    const delegateInterface = row.delegateInterface.trim();
+    const address = row.address.trim();
+    const slaId = row.slaId.trim();
+
+    if (!id && !length && !delegateInterface && !address && !slaId) continue;
+
+    if (!id) {
+      throw new Error("DHCPv6 PD row requires an ID.");
+    }
+    if (!/^\d+$/.test(id)) {
+      throw new Error(`DHCPv6 PD id '${id}' must be a whole number.`);
+    }
+    if (!length) {
+      throw new Error(`DHCPv6 PD id '${id}' requires length.`);
+    }
+    if (!/^\d+$/.test(length)) {
+      throw new Error(`DHCPv6 PD id '${id}' length must be a whole number.`);
+    }
+
+    if ((address || slaId) && !delegateInterface) {
+      throw new Error(`DHCPv6 PD id '${id}' requires delegate interface when address or SLA ID is set.`);
+    }
+    if (slaId && !/^\d+$/.test(slaId)) {
+      throw new Error(`DHCPv6 PD id '${id}' SLA ID must be a whole number.`);
+    }
+
+    const mapKey = `${id}|${delegateInterface || "-"}`;
+    if (index.has(mapKey)) {
+      const rowIndex = index.get(mapKey)!;
+      const existing = normalized[rowIndex];
+      if (existing.length !== length) {
+        throw new Error(`DHCPv6 PD id '${id}' has conflicting lengths.`);
+      }
+      normalized[rowIndex] = {
+        id,
+        length,
+        delegateInterface,
+        address: address || existing.address,
+        slaId: slaId || existing.slaId,
+      };
+      continue;
+    }
+
+    index.set(mapKey, normalized.length);
+    normalized.push({ id, length, delegateInterface, address, slaId });
+  }
+
+  return normalized.sort((left, right) => {
+    const idDelta = Number(left.id) - Number(right.id);
+    if (idDelta !== 0) return idDelta;
+    return left.delegateInterface.localeCompare(right.delegateInterface);
+  });
+}
+
+function syncDhcpv6PdRows(
+  operations: string[],
+  base: string,
+  desiredRows: WwanDhcpv6PdRow[],
+  currentRows: WwanDhcpv6PdRow[],
+): void {
+  const desired = normalizePdRows(desiredRows);
+  const current = normalizePdRows(currentRows);
+
+  if (JSON.stringify(desired) === JSON.stringify(current)) return;
+
+  const currentIds = new Set(current.map((row) => row.id));
+  for (const id of currentIds) {
+    operations.push(`delete ${base} dhcpv6-options pd ${quoteCliValue(id)}`);
+  }
+
+  const grouped = new Map<string, WwanDhcpv6PdRow[]>();
+  for (const row of desired) {
+    const existing = grouped.get(row.id) || [];
+    existing.push(row);
+    grouped.set(row.id, existing);
+  }
+
+  for (const [id, rows] of Array.from(grouped.entries()).sort((left, right) => Number(left[0]) - Number(right[0]))) {
+    const length = rows[0]?.length || "";
+    if (length) {
+      operations.push(`set ${base} dhcpv6-options pd ${quoteCliValue(id)} length ${quoteCliValue(length)}`);
+    }
+    for (const row of rows) {
+      if (!row.delegateInterface) continue;
+      if (row.address) {
+        operations.push(
+          `set ${base} dhcpv6-options pd ${quoteCliValue(id)} interface ${quoteCliValue(row.delegateInterface)} address ${quoteCliValue(row.address)}`,
+        );
+      }
+      if (row.slaId) {
+        operations.push(
+          `set ${base} dhcpv6-options pd ${quoteCliValue(id)} interface ${quoteCliValue(row.delegateInterface)} sla-id ${quoteCliValue(row.slaId)}`,
+        );
+      }
     }
   }
 }
@@ -221,11 +398,24 @@ function buildWwanOperations(candidate: WwanFormState, current: WwanInterfaceCon
       disableLinkDetect: false,
       apn: "",
       ipDisableForwarding: false,
+      ipArpCacheTimeout: "",
+      ipDisableArpFilter: false,
+      ipEnableDirectedBroadcast: false,
+      ipEnableArpAccept: false,
+      ipEnableArpAnnounce: false,
+      ipEnableArpIgnore: false,
+      ipEnableProxyArp: false,
+      ipProxyArpPvlan: false,
       ipSourceValidation: "",
       ipAdjustMssClamp: false,
       ipAdjustMssValue: "",
       ipv6Addresses: [],
+      ipv6AddressAutoconf: false,
+      ipv6AddressEui64: "",
+      ipv6AddressNoDefaultLinkLocal: false,
       ipv6DisableForwarding: false,
+      ipv6AcceptDad: "",
+      ipv6DupAddrDetectTransmits: "",
       ipv6AdjustMssClamp: false,
       ipv6AdjustMssValue: "",
       dhcpClientId: "",
@@ -233,12 +423,27 @@ function buildWwanOperations(candidate: WwanFormState, current: WwanInterfaceCon
       dhcpVendorClassId: "",
       dhcpNoDefaultRoute: false,
       dhcpDefaultRouteDistance: "",
+      dhcpReject: [],
+      dhcpUserClass: "",
+      dhcpv6Duid: "",
+      dhcpv6NoRelease: false,
+      dhcpv6ParametersOnly: false,
+      dhcpv6RapidCommit: false,
+      dhcpv6Temporary: false,
+      dhcpv6PdRows: [],
     } satisfies WwanInterfaceConfig);
 
   syncScalar(operations, base, "description", candidate.description.trim(), currentSafe.description);
   syncScalar(operations, base, "mtu", candidate.mtu.trim(), currentSafe.mtu);
   syncScalar(operations, base, "vrf", candidate.vrf.trim(), currentSafe.vrf);
   syncScalar(operations, base, "apn", candidate.apn.trim(), currentSafe.apn);
+  syncScalar(
+    operations,
+    base,
+    "ip arp-cache-timeout",
+    candidate.ipArpCacheTimeout.trim(),
+    currentSafe.ipArpCacheTimeout,
+  );
   syncScalar(
     operations,
     base,
@@ -274,6 +479,41 @@ function buildWwanOperations(candidate: WwanFormState, current: WwanInterfaceCon
     candidate.dhcpDefaultRouteDistance.trim(),
     currentSafe.dhcpDefaultRouteDistance,
   );
+  syncScalar(
+    operations,
+    base,
+    "dhcp-options user-class",
+    candidate.dhcpUserClass.trim(),
+    currentSafe.dhcpUserClass,
+  );
+  syncScalar(
+    operations,
+    base,
+    "dhcpv6-options duid",
+    candidate.dhcpv6Duid.trim(),
+    currentSafe.dhcpv6Duid,
+  );
+  syncScalar(
+    operations,
+    base,
+    "ipv6 address eui64",
+    candidate.ipv6AddressEui64.trim(),
+    currentSafe.ipv6AddressEui64,
+  );
+  syncScalar(
+    operations,
+    base,
+    "ipv6 accept-dad",
+    candidate.ipv6AcceptDad.trim(),
+    currentSafe.ipv6AcceptDad,
+  );
+  syncScalar(
+    operations,
+    base,
+    "ipv6 dup-addr-detect-transmits",
+    candidate.ipv6DupAddrDetectTransmits.trim(),
+    currentSafe.ipv6DupAddrDetectTransmits,
+  );
 
   syncTagList(
     operations,
@@ -288,6 +528,13 @@ function buildWwanOperations(candidate: WwanFormState, current: WwanInterfaceCon
     "ipv6 address",
     parseLines(candidate.ipv6AddressesText),
     currentSafe.ipv6Addresses,
+  );
+  syncTagList(
+    operations,
+    base,
+    "dhcp-options reject",
+    parseLines(candidate.dhcpRejectText),
+    currentSafe.dhcpReject,
   );
 
   syncFlag(operations, base, "disable", candidate.disable, currentSafe.disable);
@@ -305,6 +552,25 @@ function buildWwanOperations(candidate: WwanFormState, current: WwanInterfaceCon
     candidate.ipDisableForwarding,
     currentSafe.ipDisableForwarding,
   );
+  syncFlag(operations, base, "ip disable-arp-filter", candidate.ipDisableArpFilter, currentSafe.ipDisableArpFilter);
+  syncFlag(
+    operations,
+    base,
+    "ip enable-directed-broadcast",
+    candidate.ipEnableDirectedBroadcast,
+    currentSafe.ipEnableDirectedBroadcast,
+  );
+  syncFlag(operations, base, "ip enable-arp-accept", candidate.ipEnableArpAccept, currentSafe.ipEnableArpAccept);
+  syncFlag(
+    operations,
+    base,
+    "ip enable-arp-announce",
+    candidate.ipEnableArpAnnounce,
+    currentSafe.ipEnableArpAnnounce,
+  );
+  syncFlag(operations, base, "ip enable-arp-ignore", candidate.ipEnableArpIgnore, currentSafe.ipEnableArpIgnore);
+  syncFlag(operations, base, "ip enable-proxy-arp", candidate.ipEnableProxyArp, currentSafe.ipEnableProxyArp);
+  syncFlag(operations, base, "ip proxy-arp-pvlan", candidate.ipProxyArpPvlan, currentSafe.ipProxyArpPvlan);
   syncFlag(
     operations,
     base,
@@ -312,12 +578,48 @@ function buildWwanOperations(candidate: WwanFormState, current: WwanInterfaceCon
     candidate.ipv6DisableForwarding,
     currentSafe.ipv6DisableForwarding,
   );
+  syncFlag(operations, base, "ipv6 address autoconf", candidate.ipv6AddressAutoconf, currentSafe.ipv6AddressAutoconf);
+  syncFlag(
+    operations,
+    base,
+    "ipv6 address no-default-link-local",
+    candidate.ipv6AddressNoDefaultLinkLocal,
+    currentSafe.ipv6AddressNoDefaultLinkLocal,
+  );
   syncFlag(
     operations,
     base,
     "dhcp-options no-default-route",
     candidate.dhcpNoDefaultRoute,
     currentSafe.dhcpNoDefaultRoute,
+  );
+  syncFlag(
+    operations,
+    base,
+    "dhcpv6-options no-release",
+    candidate.dhcpv6NoRelease,
+    currentSafe.dhcpv6NoRelease,
+  );
+  syncFlag(
+    operations,
+    base,
+    "dhcpv6-options parameters-only",
+    candidate.dhcpv6ParametersOnly,
+    currentSafe.dhcpv6ParametersOnly,
+  );
+  syncFlag(
+    operations,
+    base,
+    "dhcpv6-options rapid-commit",
+    candidate.dhcpv6RapidCommit,
+    currentSafe.dhcpv6RapidCommit,
+  );
+  syncFlag(
+    operations,
+    base,
+    "dhcpv6-options temporary",
+    candidate.dhcpv6Temporary,
+    currentSafe.dhcpv6Temporary,
   );
 
   syncAdjustMss(
@@ -339,6 +641,8 @@ function buildWwanOperations(candidate: WwanFormState, current: WwanInterfaceCon
     currentSafe.ipv6AdjustMssValue,
   );
 
+  syncDhcpv6PdRows(operations, base, candidate.dhcpv6PdRows, currentSafe.dhcpv6PdRows);
+
   return operations;
 }
 
@@ -352,6 +656,7 @@ export default function WwanInterfacesPage() {
   const [editingName, setEditingName] = useState<string | null>(null);
   const [form, setForm] = useState<WwanFormState>(EMPTY_FORM);
   const [detectedInterfaceNames, setDetectedInterfaceNames] = useState<string[]>([]);
+  const [allInterfaceNames, setAllInterfaceNames] = useState<string[]>([]);
 
   const loadData = async (refresh: boolean) => {
     try {
@@ -367,6 +672,15 @@ export default function WwanInterfacesPage() {
         .map((entry) => entry.name)
         .sort((left, right) => left.localeCompare(right));
       setDetectedInterfaceNames(names);
+      setAllInterfaceNames(
+        Array.from(
+          new Set(
+            allInterfaces.interfaces
+              .map((entry) => entry.name)
+              .filter((name): name is string => Boolean(name)),
+          ),
+        ).sort((left, right) => left.localeCompare(right)),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load WWAN interface data.");
     } finally {
@@ -415,6 +729,29 @@ export default function WwanInterfacesPage() {
     }
   };
 
+  const updatePdRow = (index: number, patch: Partial<WwanDhcpv6PdRow>) => {
+    setForm((previous) => {
+      const rows = previous.dhcpv6PdRows.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, ...patch } : row,
+      );
+      return { ...previous, dhcpv6PdRows: rows };
+    });
+  };
+
+  const addPdRow = () => {
+    setForm((previous) => ({
+      ...previous,
+      dhcpv6PdRows: [...previous.dhcpv6PdRows, { ...EMPTY_PD_ROW }],
+    }));
+  };
+
+  const removePdRow = (index: number) => {
+    setForm((previous) => ({
+      ...previous,
+      dhcpv6PdRows: previous.dhcpv6PdRows.filter((_, rowIndex) => rowIndex !== index),
+    }));
+  };
+
   const saveInterface = async () => {
     const name = form.name.trim();
     if (!name) {
@@ -425,9 +762,20 @@ export default function WwanInterfacesPage() {
       setError("Renaming WWAN interfaces is not supported. Create a new one and remove the old interface.");
       return;
     }
+    if (
+      form.ipSourceValidation.trim() &&
+      !SOURCE_VALIDATION_OPTIONS.includes(
+        form.ipSourceValidation.trim() as (typeof SOURCE_VALIDATION_OPTIONS)[number],
+      )
+    ) {
+      setError("IPv4 Source Validation must be disable, strict, or loose.");
+      return;
+    }
 
     const numericFields = [
       { label: "MTU", value: form.mtu },
+      { label: "IPv4 ARP Cache Timeout", value: form.ipArpCacheTimeout },
+      { label: "IPv6 DAD Transmits", value: form.ipv6DupAddrDetectTransmits },
       { label: "Max Segment Size (IPv4)", value: form.ipAdjustMssValue, allowClamp: form.ipAdjustMssClamp },
       { label: "Max Segment Size (IPv6)", value: form.ipv6AdjustMssValue, allowClamp: form.ipv6AdjustMssClamp },
       { label: "DHCP Default Route Distance", value: form.dhcpDefaultRouteDistance },
@@ -441,9 +789,19 @@ export default function WwanInterfacesPage() {
         return;
       }
     }
+    if (form.ipv6AcceptDad.trim() && !IPV6_ACCEPT_DAD_OPTIONS.includes(form.ipv6AcceptDad.trim() as (typeof IPV6_ACCEPT_DAD_OPTIONS)[number])) {
+      setError("IPv6 Accept DAD must be 0, 1, or 2.");
+      return;
+    }
 
     const current = interfaces.find((entry) => entry.name === name) || null;
-    const operations = buildWwanOperations({ ...form, name }, current);
+    let operations: string[] = [];
+    try {
+      operations = buildWwanOperations({ ...form, name }, current);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid WWAN configuration.");
+      return;
+    }
     if (operations.length === 0) {
       setSuccess("No changes to apply.");
       return;
@@ -469,6 +827,13 @@ export default function WwanInterfacesPage() {
 
   const disabledCount = useMemo(() => interfaces.filter((entry) => entry.disable).length, [interfaces]);
   const hasDetectedHardware = detectedInterfaceNames.length > 0 || interfaces.length > 0;
+  const pdDelegateInterfaceNames = useMemo(
+    () =>
+      Array.from(new Set([...allInterfaceNames, ...interfaces.map((entry) => entry.name)])).sort((left, right) =>
+        left.localeCompare(right),
+      ),
+    [allInterfaceNames, interfaces],
+  );
 
   if (loading) {
     return (
@@ -693,106 +1058,486 @@ export default function WwanInterfacesPage() {
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-4 rounded-md border p-4">
+                <div>
+                  <p className="text-sm font-semibold">IPv4 Settings</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="wwan-source-validation">IPv4 Source Validation</Label>
+                    <Select
+                      value={form.ipSourceValidation || "none"}
+                      onValueChange={(value) =>
+                        setForm((previous) => ({
+                          ...previous,
+                          ipSourceValidation: value === "none" ? "" : value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger id="wwan-source-validation">
+                        <SelectValue placeholder="Default" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Default</SelectItem>
+                        {SOURCE_VALIDATION_OPTIONS.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wwan-ip-arp-timeout">ARP Cache Timeout (seconds)</Label>
+                    <Input
+                      id="wwan-ip-arp-timeout"
+                      value={form.ipArpCacheTimeout}
+                      onChange={(event) =>
+                        setForm((previous) => ({ ...previous, ipArpCacheTimeout: event.target.value }))
+                      }
+                      placeholder="120"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wwan-ip-mss">IPv4 Adjust MSS</Label>
+                    <Input
+                      id="wwan-ip-mss"
+                      value={form.ipAdjustMssValue}
+                      onChange={(event) =>
+                        setForm((previous) => ({ ...previous, ipAdjustMssValue: event.target.value }))
+                      }
+                      placeholder="1360"
+                      disabled={form.ipAdjustMssClamp}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.ipDisableForwarding}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, ipDisableForwarding: Boolean(checked) }))
+                      }
+                    />
+                    Disable IPv4 forwarding
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.ipDisableArpFilter}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, ipDisableArpFilter: Boolean(checked) }))
+                      }
+                    />
+                    Disable ARP filter
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.ipEnableDirectedBroadcast}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({
+                          ...previous,
+                          ipEnableDirectedBroadcast: Boolean(checked),
+                        }))
+                      }
+                    />
+                    Enable directed broadcast
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.ipEnableArpAccept}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, ipEnableArpAccept: Boolean(checked) }))
+                      }
+                    />
+                    Enable ARP accept
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.ipEnableArpAnnounce}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, ipEnableArpAnnounce: Boolean(checked) }))
+                      }
+                    />
+                    Enable ARP announce
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.ipEnableArpIgnore}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, ipEnableArpIgnore: Boolean(checked) }))
+                      }
+                    />
+                    Enable ARP ignore
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.ipEnableProxyArp}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, ipEnableProxyArp: Boolean(checked) }))
+                      }
+                    />
+                    Enable proxy ARP
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.ipProxyArpPvlan}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, ipProxyArpPvlan: Boolean(checked) }))
+                      }
+                    />
+                    Proxy ARP PVLAN mode
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.ipAdjustMssClamp}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, ipAdjustMssClamp: Boolean(checked) }))
+                      }
+                    />
+                    Clamp MSS to PMTU
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-md border p-4">
+                <div>
+                  <p className="text-sm font-semibold">IPv6 Settings</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="wwan-ipv6-accept-dad">Accept DAD</Label>
+                    <Select
+                      value={form.ipv6AcceptDad || "default"}
+                      onValueChange={(value) =>
+                        setForm((previous) => ({
+                          ...previous,
+                          ipv6AcceptDad: value === "default" ? "" : value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger id="wwan-ipv6-accept-dad">
+                        <SelectValue placeholder="Default" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Default</SelectItem>
+                        {IPV6_ACCEPT_DAD_OPTIONS.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wwan-ipv6-dad-transmits">DAD Transmits</Label>
+                    <Input
+                      id="wwan-ipv6-dad-transmits"
+                      value={form.ipv6DupAddrDetectTransmits}
+                      onChange={(event) =>
+                        setForm((previous) => ({
+                          ...previous,
+                          ipv6DupAddrDetectTransmits: event.target.value,
+                        }))
+                      }
+                      placeholder="1"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wwan-ipv6-eui64">EUI-64 Prefix</Label>
+                    <Input
+                      id="wwan-ipv6-eui64"
+                      value={form.ipv6AddressEui64}
+                      onChange={(event) =>
+                        setForm((previous) => ({ ...previous, ipv6AddressEui64: event.target.value }))
+                      }
+                      placeholder="2001:db8:100::/64"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wwan-ipv6-mss">IPv6 Adjust MSS</Label>
+                    <Input
+                      id="wwan-ipv6-mss"
+                      value={form.ipv6AdjustMssValue}
+                      onChange={(event) =>
+                        setForm((previous) => ({ ...previous, ipv6AdjustMssValue: event.target.value }))
+                      }
+                      placeholder="1360"
+                      disabled={form.ipv6AdjustMssClamp}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.ipv6DisableForwarding}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, ipv6DisableForwarding: Boolean(checked) }))
+                      }
+                    />
+                    Disable IPv6 forwarding
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.ipv6AddressAutoconf}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, ipv6AddressAutoconf: Boolean(checked) }))
+                      }
+                    />
+                    Enable autoconf
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.ipv6AddressNoDefaultLinkLocal}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({
+                          ...previous,
+                          ipv6AddressNoDefaultLinkLocal: Boolean(checked),
+                        }))
+                      }
+                    />
+                    No default link-local
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.ipv6AdjustMssClamp}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, ipv6AdjustMssClamp: Boolean(checked) }))
+                      }
+                    />
+                    Clamp MSS to PMTU
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-md border p-4">
+                <div>
+                  <p className="text-sm font-semibold">DHCPv4 Client Options</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="wwan-dhcp-client-id">Client ID</Label>
+                    <Input
+                      id="wwan-dhcp-client-id"
+                      value={form.dhcpClientId}
+                      onChange={(event) =>
+                        setForm((previous) => ({ ...previous, dhcpClientId: event.target.value }))
+                      }
+                      placeholder="cell-uplink-1"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wwan-dhcp-host-name">Host Name</Label>
+                    <Input
+                      id="wwan-dhcp-host-name"
+                      value={form.dhcpHostName}
+                      onChange={(event) =>
+                        setForm((previous) => ({ ...previous, dhcpHostName: event.target.value }))
+                      }
+                      placeholder="vyos-wwan"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wwan-dhcp-vendor-class">Vendor Class ID</Label>
+                    <Input
+                      id="wwan-dhcp-vendor-class"
+                      value={form.dhcpVendorClassId}
+                      onChange={(event) =>
+                        setForm((previous) => ({ ...previous, dhcpVendorClassId: event.target.value }))
+                      }
+                      placeholder="vyos-wwan-modem"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wwan-dhcp-user-class">User Class</Label>
+                    <Input
+                      id="wwan-dhcp-user-class"
+                      value={form.dhcpUserClass}
+                      onChange={(event) =>
+                        setForm((previous) => ({ ...previous, dhcpUserClass: event.target.value }))
+                      }
+                      placeholder="mobile-edge"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wwan-dhcp-distance">Default Route Distance</Label>
+                    <Input
+                      id="wwan-dhcp-distance"
+                      value={form.dhcpDefaultRouteDistance}
+                      onChange={(event) =>
+                        setForm((previous) => ({ ...previous, dhcpDefaultRouteDistance: event.target.value }))
+                      }
+                      placeholder="210"
+                    />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="wwan-source-validation">IPv4 Source Validation</Label>
-                  <Select
-                    value={form.ipSourceValidation || "none"}
-                    onValueChange={(value) =>
-                      setForm((previous) => ({
-                        ...previous,
-                        ipSourceValidation: value === "none" ? "" : value,
-                      }))
+                  <Label htmlFor="wwan-dhcp-reject">Reject Prefixes/IPs (one per line)</Label>
+                  <Textarea
+                    id="wwan-dhcp-reject"
+                    value={form.dhcpRejectText}
+                    onChange={(event) =>
+                      setForm((previous) => ({ ...previous, dhcpRejectText: event.target.value }))
                     }
-                  >
-                    <SelectTrigger id="wwan-source-validation">
-                      <SelectValue placeholder="Default" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Default</SelectItem>
-                      {SOURCE_VALIDATION_OPTIONS.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
+                    placeholder={"198.51.100.0/24\n203.0.113.2"}
+                    className="min-h-[84px]"
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.dhcpNoDefaultRoute}
+                    onCheckedChange={(checked) =>
+                      setForm((previous) => ({ ...previous, dhcpNoDefaultRoute: Boolean(checked) }))
+                    }
+                  />
+                  Do not install DHCP default route
+                </label>
+              </div>
+
+              <div className="space-y-4 rounded-md border p-4">
+                <div>
+                  <p className="text-sm font-semibold">DHCPv6 Client / Prefix Delegation</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="wwan-dhcpv6-duid">DUID</Label>
+                    <Input
+                      id="wwan-dhcpv6-duid"
+                      value={form.dhcpv6Duid}
+                      onChange={(event) =>
+                        setForm((previous) => ({ ...previous, dhcpv6Duid: event.target.value }))
+                      }
+                      placeholder="00:03:00:01:aa:bb:cc:dd:ee:ff"
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.dhcpv6NoRelease}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, dhcpv6NoRelease: Boolean(checked) }))
+                      }
+                    />
+                    No release
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.dhcpv6ParametersOnly}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({
+                          ...previous,
+                          dhcpv6ParametersOnly: Boolean(checked),
+                        }))
+                      }
+                    />
+                    Parameters only
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.dhcpv6RapidCommit}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, dhcpv6RapidCommit: Boolean(checked) }))
+                      }
+                    />
+                    Rapid commit
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={form.dhcpv6Temporary}
+                      onCheckedChange={(checked) =>
+                        setForm((previous) => ({ ...previous, dhcpv6Temporary: Boolean(checked) }))
+                      }
+                    />
+                    Temporary addresses
+                  </label>
+                </div>
+
+                <div className="space-y-3 rounded-md border border-dashed p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-medium">DHCPv6 Prefix Delegation Rows</p>
+                      <p className="text-xs text-muted-foreground">
+                        Define `pd &lt;id&gt;`, prefix length, and delegate interfaces.
+                      </p>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={addPdRow}>
+                      <Plus className="mr-2 h-3.5 w-3.5" />
+                      Add Row
+                    </Button>
+                  </div>
+
+                  {form.dhcpv6PdRows.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No PD rows configured.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {form.dhcpv6PdRows.map((row, index) => (
+                        <div
+                          key={`${index}-${row.id}-${row.delegateInterface}`}
+                          className="grid gap-2 rounded border p-2 md:grid-cols-[72px_92px_minmax(120px,1fr)_minmax(140px,1fr)_92px_auto]"
+                        >
+                          <div className="space-y-1">
+                            <Label className="text-xs">PD ID</Label>
+                            <Input
+                              value={row.id}
+                              onChange={(event) => updatePdRow(index, { id: event.target.value })}
+                              placeholder="0"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Length</Label>
+                            <Input
+                              value={row.length}
+                              onChange={(event) => updatePdRow(index, { length: event.target.value })}
+                              placeholder="56"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Delegate Interface</Label>
+                            <Input
+                              list="wwan-pd-delegate-interfaces"
+                              value={row.delegateInterface}
+                              onChange={(event) =>
+                                updatePdRow(index, { delegateInterface: event.target.value })
+                              }
+                              placeholder="eth1"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Address</Label>
+                            <Input
+                              value={row.address}
+                              onChange={(event) => updatePdRow(index, { address: event.target.value })}
+                              placeholder="2001:db8:200::/64"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">SLA ID</Label>
+                            <Input
+                              value={row.slaId}
+                              onChange={(event) => updatePdRow(index, { slaId: event.target.value })}
+                              placeholder="0"
+                            />
+                          </div>
+                          <div className="flex items-end justify-end">
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => removePdRow(index)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  )}
+                  <datalist id="wwan-pd-delegate-interfaces">
+                    {pdDelegateInterfaceNames.map((name) => (
+                      <option key={name} value={name} />
+                    ))}
+                  </datalist>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="wwan-dhcp-distance">DHCP Default Route Distance</Label>
-                  <Input
-                    id="wwan-dhcp-distance"
-                    value={form.dhcpDefaultRouteDistance}
-                    onChange={(event) =>
-                      setForm((previous) => ({ ...previous, dhcpDefaultRouteDistance: event.target.value }))
-                    }
-                    placeholder="210"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="wwan-ip-mss">IPv4 Adjust MSS</Label>
-                  <Input
-                    id="wwan-ip-mss"
-                    value={form.ipAdjustMssValue}
-                    onChange={(event) =>
-                      setForm((previous) => ({ ...previous, ipAdjustMssValue: event.target.value }))
-                    }
-                    placeholder="1360"
-                    disabled={form.ipAdjustMssClamp}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="wwan-ipv6-mss">IPv6 Adjust MSS</Label>
-                  <Input
-                    id="wwan-ipv6-mss"
-                    value={form.ipv6AdjustMssValue}
-                    onChange={(event) =>
-                      setForm((previous) => ({ ...previous, ipv6AdjustMssValue: event.target.value }))
-                    }
-                    placeholder="1360"
-                    disabled={form.ipv6AdjustMssClamp}
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="wwan-dhcp-client-id">DHCP Client ID</Label>
-                  <Input
-                    id="wwan-dhcp-client-id"
-                    value={form.dhcpClientId}
-                    onChange={(event) =>
-                      setForm((previous) => ({ ...previous, dhcpClientId: event.target.value }))
-                    }
-                    placeholder="cell-uplink-1"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="wwan-dhcp-host-name">DHCP Host Name</Label>
-                  <Input
-                    id="wwan-dhcp-host-name"
-                    value={form.dhcpHostName}
-                    onChange={(event) =>
-                      setForm((previous) => ({ ...previous, dhcpHostName: event.target.value }))
-                    }
-                    placeholder="vyos-wwan"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="wwan-dhcp-vendor-class">DHCP Vendor Class ID</Label>
-                <Input
-                  id="wwan-dhcp-vendor-class"
-                  value={form.dhcpVendorClassId}
-                  onChange={(event) =>
-                    setForm((previous) => ({ ...previous, dhcpVendorClassId: event.target.value }))
-                  }
-                  placeholder="vyos-wwan-modem"
-                />
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
@@ -813,51 +1558,6 @@ export default function WwanInterfacesPage() {
                     }
                   />
                   Disable link detect
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={form.ipDisableForwarding}
-                    onCheckedChange={(checked) =>
-                      setForm((previous) => ({ ...previous, ipDisableForwarding: Boolean(checked) }))
-                    }
-                  />
-                  Disable IPv4 forwarding
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={form.ipv6DisableForwarding}
-                    onCheckedChange={(checked) =>
-                      setForm((previous) => ({ ...previous, ipv6DisableForwarding: Boolean(checked) }))
-                    }
-                  />
-                  Disable IPv6 forwarding
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={form.ipAdjustMssClamp}
-                    onCheckedChange={(checked) =>
-                      setForm((previous) => ({ ...previous, ipAdjustMssClamp: Boolean(checked) }))
-                    }
-                  />
-                  IPv4 Clamp MSS to PMTU
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={form.ipv6AdjustMssClamp}
-                    onCheckedChange={(checked) =>
-                      setForm((previous) => ({ ...previous, ipv6AdjustMssClamp: Boolean(checked) }))
-                    }
-                  />
-                  IPv6 Clamp MSS to PMTU
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={form.dhcpNoDefaultRoute}
-                    onCheckedChange={(checked) =>
-                      setForm((previous) => ({ ...previous, dhcpNoDefaultRoute: Boolean(checked) }))
-                    }
-                  />
-                  DHCP No Default Route
                 </label>
               </div>
 

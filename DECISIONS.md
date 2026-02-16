@@ -2,6 +2,9 @@
 
 ## Decision Log
 
+- 2026-02-16: Continued IF-14 using additive frontend-only changes (`frontend/src/lib/api/wwan.ts`, `frontend/src/app/network/interfaces/wwan/page.tsx`) instead of backend refactors, preserving existing thin-wrapper API contracts.
+- 2026-02-16: Modeled DHCPv6 Prefix Delegation in WWAN as row-based UI state (`id`, `length`, delegate interface `address`/`sla-id`) with normalization + conflict detection before command generation to keep save behavior deterministic.
+- 2026-02-16: WWAN IPv6 parser now treats `autoconf`, `eui64`, and `no-default-link-local` as control leaves (not address tags) to avoid false address rows and destructive no-op churn on save.
 - 2026-02-16: For `SYS-16` parity depth, expanded existing `system update-check` and `system watchdog` form pages in place (no new endpoints) to preserve thin-wrapper architecture and existing API contracts.
 - 2026-02-16: `system watchdog` UX keeps optional ping/startup/test fields while adding documented hardware watchdog controls (`module`, `timeout`, `shutdown-timeout`, `reboot-timeout`) to support mixed-version/operator use without forcing a migration.
 - 2026-02-16: For user-reported `Not Found` on System IP/Update Check/Watchdog, treated the issue as runtime drift first: confirmed wrapper routes exist (`401` unauth endpoint probes), kept code unchanged, and validated by rebuilding/restarting `vm-api` + `vm-ui`.
