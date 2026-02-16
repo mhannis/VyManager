@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, X, AlertCircle, Search } from "lucide-react";
 import { firewallGroupsService } from "@/lib/api/firewall-groups";
-import type { FirewallGroup, GroupBatchOperation } from "@/lib/api/types/firewall-groups";
+import type { FirewallGroup, GroupBatchOperation, GroupType } from "@/lib/api/types/firewall-groups";
+import { validateGroupMember } from "@/lib/validation/firewall-groups";
 
 interface EditGroupModalProps {
   open: boolean;
@@ -117,8 +118,21 @@ export function EditGroupModal({ open, onOpenChange, group, onSuccess }: EditGro
   };
 
   const addMember = () => {
+    if (!group) return;
+
     const trimmed = newMember.trim();
     if (!trimmed) return;
+
+    const validationError = validateGroupMember(group.type as GroupType, trimmed);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    if (group.type === "remote-group" && currentMembers.length >= 1 && !currentMembers.includes(trimmed)) {
+      setError("Remote groups support exactly one URL member.");
+      return;
+    }
 
     // Check if already exists in current members
     if (currentMembers.includes(trimmed)) {
@@ -269,6 +283,12 @@ export function EditGroupModal({ open, onOpenChange, group, onSuccess }: EditGro
 
       // Handle member additions
       for (const member of membersToAdd) {
+        const validationError = validateGroupMember(group.type as GroupType, member);
+        if (validationError) {
+          setError(validationError);
+          setLoading(false);
+          return;
+        }
         operations.push({ op: getMemberOp("set"), value: member });
       }
 
@@ -290,6 +310,12 @@ export function EditGroupModal({ open, onOpenChange, group, onSuccess }: EditGro
       // Only submit if there are changes
       if (operations.length === 0) {
         setError("No changes to save");
+        setLoading(false);
+        return;
+      }
+
+      if (group.type === "remote-group" && currentMembers.length !== 1) {
+        setError("Remote groups require exactly one URL member.");
         setLoading(false);
         return;
       }
@@ -320,6 +346,7 @@ export function EditGroupModal({ open, onOpenChange, group, onSuccess }: EditGro
       "interface-group": "e.g., eth0 or eth1.100",
       "mac-group": "e.g., 00:11:22:33:44:55",
       "domain-group": "e.g., example.com",
+      "remote-group": "e.g., https://example.com/blocklist.txt",
     };
     return placeholders[group.type] || "";
   };
@@ -336,6 +363,7 @@ export function EditGroupModal({ open, onOpenChange, group, onSuccess }: EditGro
       "interface-group": "Interface",
       "mac-group": "MAC Address",
       "domain-group": "Domain",
+      "remote-group": "URL",
     };
     return labels[group.type] || "Member";
   };
@@ -352,6 +380,7 @@ export function EditGroupModal({ open, onOpenChange, group, onSuccess }: EditGro
       "interface-group": "Interface Group",
       "mac-group": "MAC Address Group",
       "domain-group": "Domain Group",
+      "remote-group": "Remote Group",
     };
     return labels[group.type] || group.type;
   };
@@ -431,6 +460,11 @@ export function EditGroupModal({ open, onOpenChange, group, onSuccess }: EditGro
                 Add
               </Button>
             </div>
+            {group.type === "remote-group" && (
+              <p className="text-xs text-muted-foreground">
+                Remote groups accept a single HTTP/HTTPS URL source.
+              </p>
+            )}
           </div>
 
           {/* Current Members */}

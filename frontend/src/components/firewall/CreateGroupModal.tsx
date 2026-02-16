@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, X, AlertCircle, Search } from "lucide-react";
 import { firewallGroupsService, type FirewallGroup } from "@/lib/api/firewall-groups";
 import type { GroupType, FirewallGroupsCapabilities } from "@/lib/api/types/firewall-groups";
+import { validateGroupMember } from "@/lib/validation/firewall-groups";
 
 interface CreateGroupModalProps {
   open: boolean;
@@ -94,9 +95,23 @@ export function CreateGroupModal({ open, onOpenChange, onSuccess, capabilities }
 
   const addMember = () => {
     const trimmed = newMember.trim();
-    if (trimmed && !members.includes(trimmed)) {
+    if (!trimmed) return;
+
+    const validationError = validateGroupMember(groupType, trimmed);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    if (groupType === "remote-group" && members.length >= 1 && !members.includes(trimmed)) {
+      setError("Remote groups support exactly one URL member.");
+      return;
+    }
+
+    if (!members.includes(trimmed)) {
       setMembers([...members, trimmed]);
       setNewMember("");
+      setError(null);
     }
   };
 
@@ -146,6 +161,19 @@ export function CreateGroupModal({ open, onOpenChange, onSuccess, capabilities }
     if (members.length === 0 && includedGroups.length === 0) {
       setError("At least one member or included group is required");
       return;
+    }
+
+    if (groupType === "remote-group" && members.length !== 1) {
+      setError("Remote groups require exactly one URL member.");
+      return;
+    }
+
+    for (const member of members) {
+      const validationError = validateGroupMember(groupType, member);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
     }
 
     setLoading(true);
@@ -350,6 +378,11 @@ export function CreateGroupModal({ open, onOpenChange, onSuccess, capabilities }
                   ))}
                 </div>
               </div>
+            )}
+            {groupType === "remote-group" && (
+              <p className="text-xs text-muted-foreground">
+                Remote groups accept a single HTTP/HTTPS URL source.
+              </p>
             )}
           </div>
 

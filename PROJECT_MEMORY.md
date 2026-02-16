@@ -70,6 +70,7 @@ Acceptance criteria:
 - Reject invalid IPv4 network/broadcast static assignments in container attachments.
 - Improve image lifecycle UX with direct row-level actions from image catalogs.
 - Improve inspect UX with parsed summary fields while retaining raw output.
+- Add firewall-group member validation by type in create/edit flows, with strict remote-group URL constraints.
 - Pass backend container tests and frontend build/runtime checks.
 
 Assumptions:
@@ -86,6 +87,9 @@ Assumptions:
 - `backend/routers/containers.py`
 - `backend/tests/test_containers_automation_v1.py`
 - `frontend/src/app/system/containers/page.tsx`
+- `frontend/src/components/firewall/CreateGroupModal.tsx`
+- `frontend/src/components/firewall/EditGroupModal.tsx`
+- `frontend/src/lib/validation/firewall-groups.ts`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CURRENT_FEATURE.md`
@@ -121,6 +125,7 @@ Assumptions:
 - Container network safety validation now enforces prefix overlap checks (`upsert /networks`) and static-address/subnet checks (`upsert/install /{container_name}`) in backend before apply.
 - Containers UI now supports row-level image lifecycle actions directly from catalog lists and provides inspect summary parsing (JSON-first, key-value fallback) above raw output.
 - Container backlog statuses were advanced: `C-02`, `C-03`, `C-04` moved to `verify` pending live-instance verification.
+- Firewall groups create/edit flows now use typed member validators; remote groups are constrained to exactly one HTTP/HTTPS URL in the GUI.
 - Added dedicated firewall/NAT regression suites: `test_firewall_nat_save_apply_reload_loops.py` and `test_firewall_nat_config_snapshots.py`, with `firewall_nat_config_snapshots.json` as baseline snapshot artifact.
 - Robustness runner now executes firewall/NAT regression tests by default in the backend suite.
 - Expanded cross-cutting regression gates in this cycle: fixture loops increased from 12 to 35 and snapshots from 15 to 38 endpoints across protocols/system/services/vpn/pki/qos/DMVPN plus baseline firewall/NAT.

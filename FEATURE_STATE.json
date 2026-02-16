@@ -52,6 +52,17 @@
         "backend/tests/test_containers_automation_v1.py"
       ],
       "notes": "Manual review pass pending before next backlog tranche."
+    },
+    {
+      "id": "T5",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/components/firewall/CreateGroupModal.tsx",
+        "frontend/src/components/firewall/EditGroupModal.tsx",
+        "frontend/src/lib/validation/firewall-groups.ts"
+      ],
+      "notes": "Added typed member-value validation and remote-group URL constraints to firewall group create/edit workflows (F-03 depth pass)."
     }
   ],
   "commands": {
