@@ -21,6 +21,7 @@
     "Local Route create/edit inbound-interface selectors display description-first labels when metadata is available.",
     "Runtime smoke probes include recently touched policy/firewall/system routes to reduce false green builds.",
     "Containers New Container action has explicit UX behavior (reset + focus + scroll) and no longer appears to do nothing.",
+    "WireGuard interface list/header display description-first labels when metadata is available.",
     "Backend and frontend validation gates pass for touched surfaces."
   ],
   "assumptions": [
@@ -160,6 +161,15 @@
         "frontend/src/app/system/containers/page.tsx"
       ],
       "notes": "New Container button now resets draft state, switches from edit to create mode, scrolls to create card, and focuses name input for clear operator feedback."
+    },
+    {
+      "id": "T14",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/vpn/wireguard/page.tsx"
+      ],
+      "notes": "WireGuard page now renders interface names with description-first display labels in the sidebar list and selected interface header."
     }
   ],
   "commands": {

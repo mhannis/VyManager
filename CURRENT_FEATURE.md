@@ -24,6 +24,7 @@ completed_in_cycle:
   - Local Route create/edit modals now use description-first interface labels in inbound-interface selectors.
   - Runtime/browser smoke route sets were expanded to probe additional high-risk pages (`firewall/policies`, `firewall/bridge`, `firewall/global-options`, `policies/route`, `policies/local-route`, `system/acceleration`) so regressions are caught earlier.
   - `System -> Containers` New Container button now clearly resets/switches to create mode, scrolls to the create form, and focuses the Name input to eliminate no-op behavior.
+  - `VPN -> WireGuard` interface list/header now use description-first interface labels for consistency with the global naming pattern.
 validation:
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py

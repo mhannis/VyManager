@@ -402,8 +402,10 @@ Assumptions:
   - `89e6d97` Use display labels in local-route interface selectors
   - `0212996` Expand smoke route coverage for policy firewall and system pages
   - `fd0fdf7` Make New Container button focus and surface create form
+  - `7f41b88` Show wireguard interface names with description labels
 - 2026-02-16: `System -> Acceleration` now builds interface options from counters + ethernet descriptions and renders both selector + VPP assignment rows with `Description (ethX)` labels.
 - 2026-02-16: `Policies -> Local Route` now resolves ethernet descriptions and renders inbound-interface values in both rule rows and delete confirmation modal using description-first labels.
 - 2026-02-16: `Policies -> Local Route` create/edit modals now also render inbound-interface options with description-first labels, closing the mismatch between selector and table/modal display surfaces.
 - 2026-02-16: Runtime/browser smoke route probes now include `/firewall/policies`, `/firewall/bridge`, `/firewall/global-options`, `/policies/route`, `/policies/local-route`, and `/system/acceleration` so route-level regressions in recently touched areas are caught pre-handoff.
 - 2026-02-16: `System -> Containers` New Container now provides explicit UX feedback by switching to create mode, scrolling the create card into view, and focusing Name input after reset.
+- 2026-02-16: `VPN -> WireGuard` now renders interface names as `Description (wgX)` where description metadata is present, keeping list/header identity consistent with the global interface naming convention.
