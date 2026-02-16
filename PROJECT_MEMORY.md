@@ -399,5 +399,7 @@ Assumptions:
   - `08bbe7c` Show route policy applied interfaces with display labels
   - `0dd1656` Disable load-balancing quick-select when user lacks edit access
   - `7901d44` Label local-route interfaces with description-first display names
+  - `89e6d97` Use display labels in local-route interface selectors
 - 2026-02-16: `System -> Acceleration` now builds interface options from counters + ethernet descriptions and renders both selector + VPP assignment rows with `Description (ethX)` labels.
 - 2026-02-16: `Policies -> Local Route` now resolves ethernet descriptions and renders inbound-interface values in both rule rows and delete confirmation modal using description-first labels.
+- 2026-02-16: `Policies -> Local Route` create/edit modals now also render inbound-interface options with description-first labels, closing the mismatch between selector and table/modal display surfaces.

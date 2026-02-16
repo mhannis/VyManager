@@ -18,6 +18,7 @@
     "Policy Route applied-interface badges display description-first labels when metadata is available.",
     "Load Balancing quick-select controls respect RBAC write permissions (disabled in read-only mode).",
     "Local Route rule displays and delete confirmations show description-first interface labels when metadata is available.",
+    "Local Route create/edit inbound-interface selectors display description-first labels when metadata is available.",
     "Backend and frontend validation gates pass for touched surfaces."
   ],
   "assumptions": [
@@ -128,6 +129,16 @@
         "frontend/src/components/policies/DeleteLocalRouteModal.tsx"
       ],
       "notes": "Local Route now renders inbound interfaces as description-first labels in table rows and delete confirmation modal."
+    },
+    {
+      "id": "T11",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/components/policies/CreateLocalRouteModal.tsx",
+        "frontend/src/components/policies/EditLocalRouteModal.tsx"
+      ],
+      "notes": "Local Route create/edit modals now render interface selectors with description-first labels for ethernet interfaces."
     }
   ],
   "commands": {
