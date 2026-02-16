@@ -61,29 +61,29 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Interfaces WWAN parity depth (`IF-14`)**
+Feature: **Interfaces PPPoE parity depth (`IF-15` subset)**.
 
 Acceptance criteria:
-- WWAN GUI exposes advanced IPv4/IPv6 leaves from the guide (including ARP and IPv6 address-mode controls).
-- WWAN GUI exposes DHCPv4 extras (`reject`, `user-class`) and DHCPv6 core options (`duid`, `no-release`, `parameters-only`, `rapid-commit`, `temporary`).
-- WWAN GUI supports DHCPv6 Prefix Delegation row CRUD with deterministic validation and command generation.
-- WWAN parser/model avoids mis-parsing IPv6 special keys (`autoconf`, `eui64`, `no-default-link-local`) as address entries.
-- Frontend gates pass (`tsc`, `lint` with 0 errors, `build`, `smoke:runtime`, `smoke:ui`).
+- PPPoE GUI supports DHCPv6 Prefix Delegation row CRUD (`pd id`, `length`, delegated interface `address` + `sla-id`).
+- PPPoE parser/model round-trips DHCPv6-PD data from config-tree payloads.
+- PPPoE save flow validates invalid PD row data and returns deterministic form errors.
+- PPPoE operation generation emits deterministic set/delete commands for DHCPv6-PD changes.
+- Frontend gates pass (`tsc`, targeted `eslint`, `build`, `smoke:runtime`, `smoke:ui`).
 - Preserve thin-wrapper backend/API architecture.
 
 Assumptions:
-- `IF-14` remains `partial` after this slice because modem operational workflows are still pending.
-- UI smoke chunk errors are runtime artifact drift and require `vm-ui` restart on this host.
+- `IF-15` remains `partial` after this slice because ethernet/loopback/wireguard advanced leaves are still pending.
+- PPPoE op-mode connect/disconnect controls are deferred; this slice targets config-tree parity depth.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: `IF-14` WWAN depth slice implemented and validated; preparing next `IF-15` interfaces depth pass.
-- Smoke triage (2026-02-16): `smoke:ui` initially failed with `ChunkLoadError`; resolved by restarting `vm-ui` and rerunning smoke gates.
+- Status: PPPoE DHCPv6-PD depth slice implemented and validated; next queue continues IF-15 on ethernet/loopback/wireguard.
+- Runtime smoke process stabilized by restarting `vm-ui` after each production build before UI smoke checks.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `frontend/src/lib/api/wwan.ts`
-- `frontend/src/app/network/interfaces/wwan/page.tsx`
+- `frontend/src/lib/api/pppoe.ts`
+- `frontend/src/app/network/interfaces/pppoe/page.tsx`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CURRENT_FEATURE.md`
@@ -92,10 +92,10 @@ Assumptions:
 
 ### Validation This Cycle
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npm run -s lint` passed with warnings only (`0 errors`).
+- `cd frontend && npx eslint src/lib/api/pppoe.ts src/app/network/interfaces/pppoe/page.tsx` passed.
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
-- `cd frontend && npm run -s smoke:ui` failed once with `ChunkLoadError`, then passed after `vm-ui` restart.
+- `cd frontend && npm run -s smoke:ui` passed.
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
@@ -117,6 +117,8 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui` where deps permit).
 
 ## Agent Handoff Notes
+- PPPoE page now supports guide-aligned DHCPv6 Prefix Delegation row CRUD (`pd id/length/interface/address/sla-id`) with deterministic validation + command generation.
+- PPPoE API parser/model now exposes `dhcpv6PdRows` and parses delegated interface subtrees from `dhcpv6-options pd`.
 - WWAN parity depth pass (`IF-14`) now includes advanced IPv4/IPv6 leaves, DHCPv4 extras, DHCPv6 core flags, and DHCPv6-PD row CRUD in `frontend/src/app/network/interfaces/wwan/page.tsx` + `frontend/src/lib/api/wwan.ts`.
 - WWAN parser now excludes IPv6 special keys (`autoconf`, `eui64`, `no-default-link-local`) from literal `ipv6 address` entries to prevent incorrect round-trip state.
 - If UI smoke shows `ChunkLoadError` after rebuild, restart `vm-ui` and rerun `smoke:runtime` + `smoke:ui`; this cycle confirmed the fix path.

@@ -1,17 +1,17 @@
 {
-  "feature_id": "interfaces-wwan-depth-2026-02-16",
-  "title": "Interfaces WWAN parity depth pass (IF-14)",
+  "feature_id": "interfaces-pppoe-pd-depth-2026-02-16",
+  "title": "Interfaces PPPoE parity depth pass (IF-15 subset)",
   "status": "in_progress",
   "acceptance_criteria": [
-    "WWAN GUI exposes advanced IPv4/IPv6 behavior leaves from the VyOS guide instead of baseline-only controls.",
-    "WWAN GUI supports DHCPv4 reject/user-class and DHCPv6 core flags/duid through structured controls.",
-    "WWAN GUI supports DHCPv6 Prefix Delegation row CRUD with validation and deterministic command generation.",
-    "WWAN parser/model round-trips advanced fields without mis-parsing IPv6 special address keys as normal addresses.",
-    "Frontend validation gates pass (typecheck, lint no errors, build, runtime smoke, UI smoke)."
+    "PPPoE GUI supports DHCPv6 Prefix Delegation row CRUD (pd id/length/interface/address/sla-id).",
+    "PPPoE parser/model round-trips DHCPv6-PD rows from config-tree payloads.",
+    "PPPoE save flow validates malformed PD rows and returns deterministic UI errors.",
+    "PPPoE operation generation emits deterministic set/delete commands for DHCPv6-PD changes.",
+    "Frontend gates pass (typecheck, targeted eslint, build, runtime smoke, UI smoke)."
   ],
   "assumptions": [
-    "IF-14 remains partial after this slice because modem operational workflows are still not implemented.",
-    "Chunk-load UI smoke failures are runtime process drift and should be resolved by restarting vm-ui on this host."
+    "IF-15 remains partial after this slice because ethernet/loopback/wireguard advanced leaves are still pending.",
+    "PPPoE operation-mode connect/disconnect controls are deferred; this slice targets configuration-tree parity depth."
   ],
   "tasks": [
     {
@@ -19,67 +19,59 @@
       "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/wwan.ts"
+        "frontend/src/lib/api/pppoe.ts"
       ],
-      "notes": "Extended WWAN config parser/model to include advanced IPv4/IPv6, DHCP extras, and DHCPv6 PD rows; fixed IPv6 special-key parsing."
+      "notes": "Extended PPPoE parser/model with DHCPv6-PD rows and robust IPv6 autoconf parsing."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/network/interfaces/wwan/page.tsx"
+        "frontend/src/app/network/interfaces/pppoe/page.tsx"
       ],
-      "notes": "Expanded WWAN form UI into grouped sections with advanced controls and DHCPv6 PD row CRUD editor."
+      "notes": "Added DHCPv6-PD editor and command generation in PPPoE create/edit workflows."
     },
     {
       "id": "T3",
-      "owner_role": "UI",
-      "status": "done",
-      "files": [
-        "frontend/src/app/network/interfaces/wwan/page.tsx"
-      ],
-      "notes": "Added deterministic client-side validation and operation-build error handling for advanced WWAN fields and PD rows."
-    },
-    {
-      "id": "T4",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "LAST_FAILURE.txt"
+        "frontend/src/lib/api/pppoe.ts",
+        "frontend/src/app/network/interfaces/pppoe/page.tsx"
       ],
-      "notes": "Ran frontend gates; recovered smoke failure caused by stale chunks via vm-ui restart and rerun."
+      "notes": "Validated with tsc, targeted eslint, build, runtime smoke, and UI smoke after vm-ui restart."
     },
     {
-      "id": "T5",
+      "id": "T4",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/wwan.ts",
-        "frontend/src/app/network/interfaces/wwan/page.tsx"
+        "frontend/src/lib/api/pppoe.ts",
+        "frontend/src/app/network/interfaces/pppoe/page.tsx"
       ],
       "notes": "Manual in-process review complete. APPROVED."
     },
     {
-      "id": "T6",
+      "id": "T5",
       "owner_role": "Planner",
       "status": "todo",
       "files": [
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
       ],
-      "notes": "Continue IF-15 parity slices after WWAN depth commit."
+      "notes": "Proceed with next IF-15 parity slices for ethernet/loopback/wireguard option depth."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd frontend && npx tsc --noEmit --pretty false && npm run -s lint && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
+    "test": "cd frontend && npx tsc --noEmit --pretty false && npx eslint src/lib/api/pppoe.ts src/app/network/interfaces/pppoe/page.tsx && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "WWAN parity depth implementation and validation",
+      "purpose": "PPPoE DHCPv6-PD parity depth implementation and validation",
       "status": "active"
     }
   ]

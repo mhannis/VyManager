@@ -12,25 +12,6 @@ function asString(value: unknown): string {
   return String(value).trim();
 }
 
-function readTagValues(value: unknown): string[] {
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    return trimmed ? [trimmed] : [];
-  }
-
-  if (Array.isArray(value)) {
-    return Array.from(
-      new Set(
-        value
-          .map((entry) => String(entry || "").trim())
-          .filter((entry) => entry.length > 0),
-      ),
-    ).sort((left, right) => left.localeCompare(right));
-  }
-
-  return Object.keys(asObject(value)).sort((left, right) => left.localeCompare(right));
-}
-
 function parseAdjustMss(value: unknown): { clamp: boolean; value: string } {
   const rawString = asString(value);
   if (rawString) return { clamp: false, value: rawString };
@@ -41,6 +22,14 @@ function parseAdjustMss(value: unknown): { clamp: boolean; value: string } {
   }
 
   return { clamp: false, value: "" };
+}
+
+export interface PppoeDhcpv6PdRow {
+  id: string;
+  length: string;
+  delegateInterface: string;
+  address: string;
+  slaId: string;
 }
 
 export interface PppoeInterfaceConfig {
@@ -71,6 +60,7 @@ export interface PppoeInterfaceConfig {
   ipv6DisableForwarding: boolean;
   ipv6AdjustMssClamp: boolean;
   ipv6AdjustMssValue: string;
+  dhcpv6PdRows: PppoeDhcpv6PdRow[];
 }
 
 export interface PppoeConfig {
@@ -93,9 +83,40 @@ class PppoeService {
       const authentication = asObject(node.authentication);
       const ipNode = asObject(node.ip);
       const ipv6Node = asObject(node.ipv6);
+      const ipv6AddressNode = asObject(ipv6Node.address);
+      const ipv6AddressScalar = asString(ipv6Node.address);
+      const dhcpv6Options = asObject(node["dhcpv6-options"]);
       const ipAdjustMss = parseAdjustMss(ipNode["adjust-mss"]);
       const ipv6AdjustMss = parseAdjustMss(ipv6Node["adjust-mss"]);
-      const ipv6Addresses = readTagValues(ipv6Node.address);
+      const pdRows: PppoeDhcpv6PdRow[] = [];
+      const pdRoot = asObject(dhcpv6Options.pd);
+      for (const pdId of Object.keys(pdRoot).sort((left, right) => left.localeCompare(right))) {
+        const pdNode = asObject(pdRoot[pdId]);
+        const length = asString(pdNode.length);
+        const interfacesNode = asObject(pdNode.interface);
+        const delegateNames = Object.keys(interfacesNode).sort((left, right) => left.localeCompare(right));
+        if (delegateNames.length === 0) {
+          pdRows.push({
+            id: pdId,
+            length,
+            delegateInterface: "",
+            address: "",
+            slaId: "",
+          });
+          continue;
+        }
+
+        for (const delegateInterface of delegateNames) {
+          const delegateNode = asObject(interfacesNode[delegateInterface]);
+          pdRows.push({
+            id: pdId,
+            length,
+            delegateInterface,
+            address: asString(delegateNode.address),
+            slaId: asString(delegateNode["sla-id"]),
+          });
+        }
+      }
 
       interfaces.push({
         name,
@@ -122,12 +143,12 @@ class PppoeService {
         ipAdjustMssClamp: ipAdjustMss.clamp,
         ipAdjustMssValue: ipAdjustMss.value,
         ipv6AddressAutoconf:
-          ipv6Addresses.includes("autoconf") ||
-          Object.prototype.hasOwnProperty.call(ipv6Node, "address") &&
-            Object.prototype.hasOwnProperty.call(asObject(ipv6Node.address), "autoconf"),
+          ipv6AddressScalar === "autoconf" ||
+          Object.prototype.hasOwnProperty.call(ipv6AddressNode, "autoconf"),
         ipv6DisableForwarding: Object.prototype.hasOwnProperty.call(ipv6Node, "disable-forwarding"),
         ipv6AdjustMssClamp: ipv6AdjustMss.clamp,
         ipv6AdjustMssValue: ipv6AdjustMss.value,
+        dhcpv6PdRows: pdRows,
       });
     }
 

@@ -2,6 +2,9 @@
 
 ## Decision Log
 
+- 2026-02-16: Prioritized IF-15 parity depth on PPPoE DHCPv6 Prefix Delegation first, because the guide documents it as a core PPPoE configuration subtree and it was missing from the form-first UI.
+- 2026-02-16: Implemented PPPoE DHCPv6-PD using additive parser + page-level command generation under existing `/vyos/pppoe-interface/*` contracts, avoiding backend API refactors.
+- 2026-02-16: Reused row-normalization semantics from WWAN for PPPoE PD (`id|interface` uniqueness, consistent length enforcement, deterministic delete/rebuild) to reduce duplicate logic drift and apply errors.
 - 2026-02-16: Continued IF-14 using additive frontend-only changes (`frontend/src/lib/api/wwan.ts`, `frontend/src/app/network/interfaces/wwan/page.tsx`) instead of backend refactors, preserving existing thin-wrapper API contracts.
 - 2026-02-16: Modeled DHCPv6 Prefix Delegation in WWAN as row-based UI state (`id`, `length`, delegate interface `address`/`sla-id`) with normalization + conflict detection before command generation to keep save behavior deterministic.
 - 2026-02-16: WWAN IPv6 parser now treats `autoconf`, `eui64`, and `no-default-link-local` as control leaves (not address tags) to avoid false address rows and destructive no-op churn on save.

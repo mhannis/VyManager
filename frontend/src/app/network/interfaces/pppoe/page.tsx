@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ethernetService } from "@/lib/api/ethernet";
-import { type PppoeInterfaceConfig, pppoeService } from "@/lib/api/pppoe";
+import { type PppoeDhcpv6PdRow, type PppoeInterfaceConfig, pppoeService } from "@/lib/api/pppoe";
 import { showService } from "@/lib/api/show";
 import { pageGuides } from "@/lib/help/pageGuides";
 import { formatInterfaceDisplayName } from "@/lib/utils";
@@ -57,9 +57,17 @@ interface PppoeFormState {
   ipv6DisableForwarding: boolean;
   ipv6AdjustMssClamp: boolean;
   ipv6AdjustMssValue: string;
+  dhcpv6PdRows: PppoeDhcpv6PdRow[];
 }
 
 const SOURCE_VALIDATION_OPTIONS = ["strict", "loose", "disable"] as const;
+const EMPTY_PD_ROW: PppoeDhcpv6PdRow = {
+  id: "",
+  length: "",
+  delegateInterface: "",
+  address: "",
+  slaId: "",
+};
 
 const EMPTY_FORM: PppoeFormState = {
   name: "",
@@ -89,6 +97,7 @@ const EMPTY_FORM: PppoeFormState = {
   ipv6DisableForwarding: false,
   ipv6AdjustMssClamp: false,
   ipv6AdjustMssValue: "",
+  dhcpv6PdRows: [],
 };
 
 function quoteCliValue(value: string): string {
@@ -127,6 +136,7 @@ function toFormState(value: PppoeInterfaceConfig): PppoeFormState {
     ipv6DisableForwarding: value.ipv6DisableForwarding,
     ipv6AdjustMssClamp: value.ipv6AdjustMssClamp,
     ipv6AdjustMssValue: value.ipv6AdjustMssValue,
+    dhcpv6PdRows: value.dhcpv6PdRows.length > 0 ? value.dhcpv6PdRows.map((row) => ({ ...row })) : [],
   };
 }
 
@@ -192,6 +202,110 @@ function syncAdjustMss(
   }
 }
 
+function normalizePdRows(rows: PppoeDhcpv6PdRow[]): PppoeDhcpv6PdRow[] {
+  const normalized: PppoeDhcpv6PdRow[] = [];
+  const index = new Map<string, number>();
+
+  for (const row of rows) {
+    const id = row.id.trim();
+    const length = row.length.trim();
+    const delegateInterface = row.delegateInterface.trim();
+    const address = row.address.trim();
+    const slaId = row.slaId.trim();
+
+    if (!id && !length && !delegateInterface && !address && !slaId) continue;
+
+    if (!id) {
+      throw new Error("DHCPv6 PD row requires an ID.");
+    }
+    if (!/^\d+$/.test(id)) {
+      throw new Error(`DHCPv6 PD id '${id}' must be a whole number.`);
+    }
+    if (!length) {
+      throw new Error(`DHCPv6 PD id '${id}' requires length.`);
+    }
+    if (!/^\d+$/.test(length)) {
+      throw new Error(`DHCPv6 PD id '${id}' length must be a whole number.`);
+    }
+    if ((address || slaId) && !delegateInterface) {
+      throw new Error(`DHCPv6 PD id '${id}' requires delegate interface when address or SLA ID is set.`);
+    }
+    if (slaId && !/^\d+$/.test(slaId)) {
+      throw new Error(`DHCPv6 PD id '${id}' SLA ID must be a whole number.`);
+    }
+
+    const mapKey = `${id}|${delegateInterface || "-"}`;
+    if (index.has(mapKey)) {
+      const rowIndex = index.get(mapKey)!;
+      const existing = normalized[rowIndex];
+      if (existing.length !== length) {
+        throw new Error(`DHCPv6 PD id '${id}' has conflicting lengths.`);
+      }
+      normalized[rowIndex] = {
+        id,
+        length,
+        delegateInterface,
+        address: address || existing.address,
+        slaId: slaId || existing.slaId,
+      };
+      continue;
+    }
+
+    index.set(mapKey, normalized.length);
+    normalized.push({ id, length, delegateInterface, address, slaId });
+  }
+
+  return normalized.sort((left, right) => {
+    const idDelta = Number(left.id) - Number(right.id);
+    if (idDelta !== 0) return idDelta;
+    return left.delegateInterface.localeCompare(right.delegateInterface);
+  });
+}
+
+function syncDhcpv6PdRows(
+  operations: string[],
+  base: string,
+  desiredRows: PppoeDhcpv6PdRow[],
+  currentRows: PppoeDhcpv6PdRow[],
+): void {
+  const desired = normalizePdRows(desiredRows);
+  const current = normalizePdRows(currentRows);
+
+  if (JSON.stringify(desired) === JSON.stringify(current)) return;
+
+  const currentIds = new Set(current.map((row) => row.id));
+  for (const id of currentIds) {
+    operations.push(`delete ${base} dhcpv6-options pd ${quoteCliValue(id)}`);
+  }
+
+  const grouped = new Map<string, PppoeDhcpv6PdRow[]>();
+  for (const row of desired) {
+    const existing = grouped.get(row.id) || [];
+    existing.push(row);
+    grouped.set(row.id, existing);
+  }
+
+  for (const [id, rows] of Array.from(grouped.entries()).sort((left, right) => Number(left[0]) - Number(right[0]))) {
+    const length = rows[0]?.length || "";
+    if (length) {
+      operations.push(`set ${base} dhcpv6-options pd ${quoteCliValue(id)} length ${quoteCliValue(length)}`);
+    }
+    for (const row of rows) {
+      if (!row.delegateInterface) continue;
+      if (row.address) {
+        operations.push(
+          `set ${base} dhcpv6-options pd ${quoteCliValue(id)} interface ${quoteCliValue(row.delegateInterface)} address ${quoteCliValue(row.address)}`,
+        );
+      }
+      if (row.slaId) {
+        operations.push(
+          `set ${base} dhcpv6-options pd ${quoteCliValue(id)} interface ${quoteCliValue(row.delegateInterface)} sla-id ${quoteCliValue(row.slaId)}`,
+        );
+      }
+    }
+  }
+}
+
 function buildPppoeOperations(candidate: PppoeFormState, current: PppoeInterfaceConfig | null): string[] {
   const operations: string[] = [];
   const base = `interfaces pppoe ${candidate.name.trim()}`;
@@ -225,6 +339,7 @@ function buildPppoeOperations(candidate: PppoeFormState, current: PppoeInterface
       ipv6DisableForwarding: false,
       ipv6AdjustMssClamp: false,
       ipv6AdjustMssValue: "",
+      dhcpv6PdRows: [],
     } satisfies PppoeInterfaceConfig);
 
   syncScalar(operations, base, "description", candidate.description.trim(), currentSafe.description);
@@ -336,6 +451,8 @@ function buildPppoeOperations(candidate: PppoeFormState, current: PppoeInterface
     currentSafe.ipv6AdjustMssValue,
   );
 
+  syncDhcpv6PdRows(operations, base, candidate.dhcpv6PdRows, currentSafe.dhcpv6PdRows);
+
   return operations;
 }
 
@@ -427,6 +544,29 @@ export default function PppoeInterfacesPage() {
     }
   };
 
+  const updatePdRow = (index: number, patch: Partial<PppoeDhcpv6PdRow>) => {
+    setForm((previous) => {
+      const rows = previous.dhcpv6PdRows.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, ...patch } : row,
+      );
+      return { ...previous, dhcpv6PdRows: rows };
+    });
+  };
+
+  const addPdRow = () => {
+    setForm((previous) => ({
+      ...previous,
+      dhcpv6PdRows: [...previous.dhcpv6PdRows, { ...EMPTY_PD_ROW }],
+    }));
+  };
+
+  const removePdRow = (index: number) => {
+    setForm((previous) => ({
+      ...previous,
+      dhcpv6PdRows: previous.dhcpv6PdRows.filter((_, rowIndex) => rowIndex !== index),
+    }));
+  };
+
   const saveInterface = async () => {
     const name = form.name.trim();
     if (!name) {
@@ -462,7 +602,13 @@ export default function PppoeInterfacesPage() {
     }
 
     const current = interfaces.find((entry) => entry.name === name) || null;
-    const operations = buildPppoeOperations({ ...form, name }, current);
+    let operations: string[] = [];
+    try {
+      operations = buildPppoeOperations({ ...form, name }, current);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid PPPoE configuration.");
+      return;
+    }
     if (operations.length === 0) {
       setSuccess("No changes to apply.");
       return;
@@ -865,6 +1011,98 @@ export default function PppoeInterfacesPage() {
                   placeholder="1432"
                   disabled={form.ipv6AdjustMssClamp}
                 />
+              </div>
+
+              <div className="space-y-3 rounded-md border border-dashed p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-medium">DHCPv6 Prefix Delegation</p>
+                    <p className="text-xs text-muted-foreground">
+                      Configure `dhcpv6-options pd &lt;id&gt;` delegation rows.
+                    </p>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={addPdRow}>
+                    <Plus className="mr-2 h-3.5 w-3.5" />
+                    Add Row
+                  </Button>
+                </div>
+
+                {form.dhcpv6PdRows.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No DHCPv6 PD rows configured.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {form.dhcpv6PdRows.map((row, index) => (
+                      <div
+                        key={`${index}-${row.id}-${row.delegateInterface}`}
+                        className="grid gap-2 rounded border p-2 md:grid-cols-[72px_92px_minmax(160px,1fr)_minmax(140px,1fr)_92px_auto]"
+                      >
+                        <div className="space-y-1">
+                          <Label className="text-xs">PD ID</Label>
+                          <Input
+                            value={row.id}
+                            onChange={(event) => updatePdRow(index, { id: event.target.value })}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Length</Label>
+                          <Input
+                            value={row.length}
+                            onChange={(event) => updatePdRow(index, { length: event.target.value })}
+                            placeholder="56"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Delegate Interface</Label>
+                          <Select
+                            value={row.delegateInterface || "none"}
+                            onValueChange={(value) =>
+                              updatePdRow(index, { delegateInterface: value === "none" ? "" : value })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select interface" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Select interface</SelectItem>
+                              {sourceInterfaces.map((option) => (
+                                <SelectItem key={`${option.value}-${index}`} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Address</Label>
+                          <Input
+                            value={row.address}
+                            onChange={(event) => updatePdRow(index, { address: event.target.value })}
+                            placeholder="1"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">SLA ID</Label>
+                          <Input
+                            value={row.slaId}
+                            onChange={(event) => updatePdRow(index, { slaId: event.target.value })}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="flex items-end justify-end">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => removePdRow(index)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
