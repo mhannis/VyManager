@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List, Tuple, Literal
 from datetime import datetime, timezone
 import asyncio
+import ipaddress
 import json
 import re
 
@@ -986,6 +987,38 @@ def _normalize_timezone_or_400(value: str) -> str:
     if not RE_TIMEZONE_TOKEN.match(text):
         raise HTTPException(status_code=400, detail=f"Invalid timezone: {text}")
     return text
+
+
+def _normalize_ip_address_or_400(value: str, field_name: str) -> str:
+    cleaned = value.strip()
+    if not cleaned:
+        raise HTTPException(status_code=400, detail=f"{field_name} is required")
+    try:
+        parsed = ipaddress.ip_address(cleaned)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid {field_name}: {cleaned}")
+    return str(parsed)
+
+
+def _normalize_cidr_or_400(value: str, field_name: str) -> str:
+    cleaned = value.strip()
+    if not cleaned:
+        raise HTTPException(status_code=400, detail=f"{field_name} is required")
+    try:
+        parsed = ipaddress.ip_network(cleaned, strict=False)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid {field_name}: {cleaned}")
+    return str(parsed)
+
+
+def _normalize_dns_server_or_400(value: str, field_name: str = "name server") -> str:
+    cleaned = value.strip()
+    if not cleaned:
+        raise HTTPException(status_code=400, detail=f"{field_name} is required")
+    try:
+        return str(ipaddress.ip_address(cleaned))
+    except ValueError:
+        return _normalize_hostname_or_400(cleaned, field_name=field_name)
 
 
 def _parse_dns_service_config(full_config: Dict[str, Any]) -> DnsServiceConfigResponse:
@@ -2484,7 +2517,10 @@ async def update_dns_config(request: Request, body: DnsServiceConfigRequest) -> 
             operations.append({"op": "set", "path": ["service", "dns", "forwarding"]})
 
             if "listen_addresses" in fields_set:
-                desired_listen = set(_normalize_unique_strings(body.listen_addresses))
+                desired_listen = set(
+                    _normalize_ip_address_or_400(address, field_name="listen address")
+                    for address in _normalize_unique_strings(body.listen_addresses)
+                )
                 current_listen = set(current.listen_addresses)
                 for addr in sorted(current_listen - desired_listen):
                     operations.append({"op": "delete", "path": ["service", "dns", "forwarding", "listen-address", addr]})
@@ -2492,7 +2528,10 @@ async def update_dns_config(request: Request, body: DnsServiceConfigRequest) -> 
                     operations.append({"op": "set", "path": ["service", "dns", "forwarding", "listen-address", addr]})
 
             if "allow_from" in fields_set:
-                desired_allow_from = set(_normalize_unique_strings(body.allow_from))
+                desired_allow_from = set(
+                    _normalize_cidr_or_400(cidr, field_name="allow-from network")
+                    for cidr in _normalize_unique_strings(body.allow_from)
+                )
                 current_allow_from = set(current.allow_from)
                 for cidr in sorted(current_allow_from - desired_allow_from):
                     operations.append({"op": "delete", "path": ["service", "dns", "forwarding", "allow-from", cidr]})
@@ -2500,7 +2539,10 @@ async def update_dns_config(request: Request, body: DnsServiceConfigRequest) -> 
                     operations.append({"op": "set", "path": ["service", "dns", "forwarding", "allow-from", cidr]})
 
             if "name_servers" in fields_set:
-                desired_name_servers = set(_normalize_unique_strings(body.name_servers))
+                desired_name_servers = set(
+                    _normalize_dns_server_or_400(name_server, field_name="DNS name server")
+                    for name_server in _normalize_unique_strings(body.name_servers)
+                )
                 current_name_servers = set(current.name_servers)
                 for ns in sorted(current_name_servers - desired_name_servers):
                     operations.append({"op": "delete", "path": ["service", "dns", "forwarding", "name-server", ns]})
@@ -2536,7 +2578,10 @@ async def update_dns_config(request: Request, body: DnsServiceConfigRequest) -> 
                         )
 
             if "authoritative_domains" in fields_set:
-                desired_auth_domains = set(_normalize_unique_strings(body.authoritative_domains))
+                desired_auth_domains = set(
+                    _normalize_hostname_or_400(domain, field_name="authoritative domain")
+                    for domain in _normalize_unique_strings(body.authoritative_domains)
+                )
                 current_auth_domains = set(current.authoritative_domains)
                 for domain in sorted(current_auth_domains - desired_auth_domains):
                     operations.append(
@@ -2551,6 +2596,7 @@ async def update_dns_config(request: Request, body: DnsServiceConfigRequest) -> 
         if "local_domain_name" in fields_set:
             local_domain_name = _string_or_none(body.local_domain_name)
             if local_domain_name:
+                local_domain_name = _normalize_hostname_or_400(local_domain_name, field_name="local domain name")
                 operations.append({"op": "set", "path": ["system", "domain-name", local_domain_name]})
             elif _string_or_none(raw_system.get("domain-name")):
                 operations.append({"op": "delete", "path": ["system", "domain-name"]})

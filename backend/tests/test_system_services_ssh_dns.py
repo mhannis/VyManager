@@ -576,3 +576,48 @@ def test_get_lldp_status_parses_json_text_neighbors_payload(monkeypatch, app, al
     assert data["neighbors"][0]["port_id"] == "Gi1/0/8"
     assert data["neighbors"][0]["system_name"] == "agg-switch"
     assert not data.get("error")
+
+
+def test_update_dns_config_rejects_invalid_listen_address(monkeypatch, app, allow_permissions):
+    service = DummyService(full_config={"service": {}, "system": {}})
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    body = {
+        "enabled": True,
+        "listen_addresses": ["192.168.50.1 bad"],
+    }
+
+    resp = client.put("/vyos/system/dns-config", json=body)
+    assert resp.status_code == 400
+    assert "Invalid listen address" in resp.json().get("detail", "")
+
+
+def test_update_dns_config_rejects_invalid_allow_from_network(monkeypatch, app, allow_permissions):
+    service = DummyService(full_config={"service": {}, "system": {}})
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    body = {
+        "enabled": True,
+        "allow_from": ["192.168.50.500/24"],
+    }
+
+    resp = client.put("/vyos/system/dns-config", json=body)
+    assert resp.status_code == 400
+    assert "Invalid allow-from network" in resp.json().get("detail", "")
+
+
+def test_update_dns_config_rejects_invalid_name_server(monkeypatch, app, allow_permissions):
+    service = DummyService(full_config={"service": {}, "system": {}})
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    body = {
+        "enabled": True,
+        "name_servers": ["resolver local!"],
+    }
+
+    resp = client.put("/vyos/system/dns-config", json=body)
+    assert resp.status_code == 400
+    assert "Invalid DNS name server" in resp.json().get("detail", "")
