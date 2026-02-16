@@ -7,6 +7,7 @@
     "IPv6 firewall batch endpoint accepts legacy op names for ICMP and TTL while mapping to canonical icmpv6/hop-limit methods.",
     "Frontend IPv6 firewall rule create/update flows send canonical icmpv6 and hop-limit operation names.",
     "Firewall rule create/edit UI labels packet modification field as Hop Limit for IPv6.",
+    "Firewall global-options page performs client-side timeout range validation before save.",
     "Firewall global-options update endpoint validates enum and timeout fields and returns 400 for invalid payloads.",
     "Regression tests cover new firewall batch semantics and global-options validation behavior."
   ],
@@ -34,9 +35,10 @@
       "files": [
         "frontend/src/lib/api/firewall-ipv6.ts",
         "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
-        "frontend/src/components/firewall/EditFirewallRuleModal.tsx"
+        "frontend/src/components/firewall/EditFirewallRuleModal.tsx",
+        "frontend/src/app/firewall/global-options/page.tsx"
       ],
-      "notes": "Updated IPv6 operation names and Hop Limit labeling in create/edit workflows."
+      "notes": "Updated IPv6 operation names/Hop Limit labeling and added client-side timeout validation in global-options UI."
     },
     {
       "id": "T3",
@@ -59,6 +61,7 @@
         "frontend/src/lib/api/firewall-ipv6.ts",
         "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
         "frontend/src/components/firewall/EditFirewallRuleModal.tsx",
+        "frontend/src/app/firewall/global-options/page.tsx",
         "backend/tests/test_firewall_batch_semantics.py",
         "backend/tests/test_firewall_global_options_validation.py"
       ],

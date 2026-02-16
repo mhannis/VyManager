@@ -297,3 +297,4 @@
 - 2026-02-16: Added IPv6 firewall operation aliasing in backend batch endpoint to preserve compatibility with older clients using `set_rule_icmp_type_name`/`set_rule_set_ttl` while migrating frontend to canonical `icmpv6` and `hop-limit` operation names.
 - 2026-02-16: Added strict server-side validation for firewall global-options update payloads (enum fields + timeout bounds) to fail fast with 400 instead of relying on downstream commit-time errors.
 - 2026-02-16: Firewall global-options validation tests initially failed with `name 'value' is not defined` due a patch placement mistake; restored `_parse_int` and removed stray conversion code from `_validate_global_options_config`, then revalidated full firewall suite.
+- 2026-02-16: Added client-side timeout validation on `Firewall -> Global Options` so timeout ranges are validated before save; backend validation remains the source of truth.

@@ -11,6 +11,7 @@ completed_in_cycle:
     - `delete_rule_set_ttl` -> `delete_rule_set_hop_limit`
   - Updated frontend IPv6 firewall API client to use canonical IPv6 operation names (`icmpv6` + `hop-limit`) for create/update rule flows.
   - Updated IPv6 firewall rule modals to label packet modification field as `Hop Limit` (instead of `TTL`) in create/edit dialogs.
+  - Added client-side timeout validation on Firewall Global Options page so invalid timeout ranges are blocked before save/apply.
   - Added server-side validation for firewall global-options update payloads (enum checks + timeout bounds) with explicit `400` errors for invalid input.
   - Added new backend regression suites:
     - `backend/tests/test_firewall_batch_semantics.py`

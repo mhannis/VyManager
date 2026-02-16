@@ -92,6 +92,7 @@ Assumptions:
 - `frontend/src/lib/api/firewall-ipv6.ts`
 - `frontend/src/components/firewall/CreateFirewallRuleModal.tsx`
 - `frontend/src/components/firewall/EditFirewallRuleModal.tsx`
+- `frontend/src/app/firewall/global-options/page.tsx`
 - `LAST_FAILURE.txt`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
@@ -128,6 +129,7 @@ Assumptions:
 - Firewall IPv4 and IPv6 batch/reorder endpoints now preserve `HTTPException` statuses; unknown operations return `400` instead of being wrapped into `500`.
 - Firewall IPv6 batch endpoint now supports legacy operation aliases (`icmp_type_name` and `set_ttl` forms) while executing canonical `icmpv6`/`hop-limit` methods for backward compatibility.
 - Frontend IPv6 firewall API now emits canonical operation names (`set_rule_icmpv6_type_name`, `delete_rule_icmpv6_type_name`, `set_rule_set_hop_limit`, `delete_rule_set_hop_limit`) and create/edit modals label the field as `Hop Limit`.
+- Firewall global-options UI now performs client-side timeout validation and disables save when timeout values are out of range, reducing failed apply attempts.
 - Firewall global-options `/update` now validates enum and timeout payload values server-side and returns explicit `400` errors for invalid inputs before commit.
 - Added backend regression coverage:
   - `test_firewall_batch_semantics.py` (HTTP error semantics + IPv6 legacy alias compatibility)

@@ -62,3 +62,9 @@ Added `except HTTPException: raise` in `/update` endpoint.
 
 ## Notes
 - During implementation, one test run failed with `name 'value' is not defined`; root cause was a misplaced `_parse_int` block in global-options router. Fixed and revalidated.
+
+## Additional UX Hardening
+- `frontend/src/app/firewall/global-options/page.tsx`
+  - Added pre-save timeout validation (`1..2147483647`, integer only).
+  - Save button is disabled while timeout validation errors exist.
+  - Validation error banner is shown inline before submission.

@@ -94,6 +94,42 @@ export default function FirewallGlobalOptionsPage() {
   // Initial form values for change detection
   const [initialValues, setInitialValues] = useState<Record<string, any>>({});
 
+  const validateTimeoutField = (value: string, label: string): string | null => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    if (!Number.isInteger(parsed)) {
+      return `${label} must be an integer`;
+    }
+    if (parsed < 1 || parsed > 2147483647) {
+      return `${label} must be between 1 and 2147483647`;
+    }
+    return null;
+  };
+
+  const getTimeoutValidationErrors = (): string[] => {
+    if (!capabilities?.version_notes.timeouts_available) return [];
+    const checks: Array<[string, string]> = [
+      ["ICMP timeout", timeoutIcmp],
+      ["Other timeout", timeoutOther],
+      ["TCP Close timeout", timeoutTcpClose],
+      ["TCP Close Wait timeout", timeoutTcpCloseWait],
+      ["TCP Established timeout", timeoutTcpEstablished],
+      ["TCP FIN Wait timeout", timeoutTcpFinWait],
+      ["TCP Last ACK timeout", timeoutTcpLastAck],
+      ["TCP SYN Recv timeout", timeoutTcpSynRecv],
+      ["TCP SYN Sent timeout", timeoutTcpSynSent],
+      ["TCP TIME Wait timeout", timeoutTcpTimeWait],
+      ["UDP Other timeout", timeoutUdpOther],
+      ["UDP Stream timeout", timeoutUdpStream],
+    ];
+    return checks
+      .map(([label, value]) => validateTimeoutField(value, label))
+      .filter((message): message is string => Boolean(message));
+  };
+
+  const timeoutValidationErrors = getTimeoutValidationErrors();
+
   const loadData = async (forceRefresh: boolean = true) => {
     try {
       setError(null);
@@ -267,6 +303,12 @@ export default function FirewallGlobalOptionsPage() {
       setSaving(true);
       setError(null);
       setSuccessMessage(null);
+
+      if (timeoutValidationErrors.length > 0) {
+        setError(`Please correct timeout values: ${timeoutValidationErrors[0]}`);
+        setSaving(false);
+        return;
+      }
 
       // Use empty string "" for "not_set" values to trigger deletion in backend
       // Backend checks: if value is truthy -> set, if value is falsy but not None -> delete
@@ -451,7 +493,7 @@ export default function FirewallGlobalOptionsPage() {
                 Reset
               </Button>
             )}
-            <Button size="sm" onClick={handleSave} disabled={saving || !hasChanges}>
+            <Button size="sm" onClick={handleSave} disabled={saving || !hasChanges || timeoutValidationErrors.length > 0}>
               {saving ? (
                 <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
               ) : (
@@ -481,6 +523,12 @@ export default function FirewallGlobalOptionsPage() {
             <p className="text-sm text-amber-600 dark:text-amber-400">
               You have unsaved changes
             </p>
+          </div>
+        )}
+        {timeoutValidationErrors.length > 0 && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2 flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <p className="text-sm text-destructive">{timeoutValidationErrors[0]}</p>
           </div>
         )}
 
