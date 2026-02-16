@@ -385,3 +385,10 @@ Assumptions:
 - Added dedicated Segment Routing backend router (`/vyos/segment-routing/*`) and form-first UI (`/routing/infrastructure/segment-routing`) with OSPF/IS-IS label block + Prefix SID management.
 - VRF page now includes explicit `VRF Core` and `L3VPN` tabs in one place; L3VPN workflows are no longer a separate left-nav item.
 - Added initial option-level parity scoring pipeline (`scripts/score_option_parity.py`) and generated `OPTION_PARITY_SCORECARD.json/.md`; backlog `X-01` moved from missing to partial.
+- 2026-02-16: `Network -> Load Balancing` WAN rules now include outbound interface quick-select checkboxes and strict interface existence validation for both inbound/outbound fields before adding rules.
+- 2026-02-16: `Network -> Load Balancing` WAN rules table now renders outbound interfaces with description-first labels (`Description (ethX)`) for consistency with global interface naming UX.
+- 2026-02-16: `Firewall -> Bridge` now resolves interface labels from `show all interfaces` + ethernet descriptions and renders bridge rule inbound/outbound paths as description-first labels in `BridgeRuleRow`.
+- 2026-02-16 validation snapshot (post-label sweep): `cd frontend && npx tsc --noEmit --pretty false`, `cd frontend && npm run -s build`, and `cd frontend && npm run -s smoke:runtime` all passed.
+- Commits pushed this cycle:
+  - `5455f33` Improve load-balancing interface labeling and outbound validation
+  - `2f68bd7` Show bridge firewall interfaces with description-first labels

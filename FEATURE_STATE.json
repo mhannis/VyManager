@@ -12,6 +12,8 @@
     "DNS backend rejects malformed listen-address/allow-from/name-server/domain values with deterministic HTTP 400 responses.",
     "LLDP/mDNS tabs reject malformed management/domain/service-filter/cache values before API submit.",
     "LLDP interface displays in services views use description-first labels when available.",
+    "Load Balancing WAN rules provide guided outbound interface selection and reject unknown interface names before add/apply.",
+    "Bridge firewall rule rows display interface labels as Description (ethX) when metadata is available.",
     "Backend and frontend validation gates pass for touched surfaces."
   ],
   "assumptions": [
@@ -73,6 +75,17 @@
         "frontend/src/components/system/RouterAdvertServiceTab.tsx"
       ],
       "notes": "Manual in-process review complete. APPROVED."
+    },
+    {
+      "id": "T6",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/network/load-balancing/page.tsx",
+        "frontend/src/app/firewall/bridge/page.tsx",
+        "frontend/src/components/firewall/BridgeRuleRow.tsx"
+      ],
+      "notes": "Added load-balancing outbound quick-select and strict interface validation, plus description-first bridge interface labels in rule rows."
     }
   ],
   "commands": {

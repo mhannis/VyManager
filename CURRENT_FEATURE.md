@@ -15,10 +15,13 @@ completed_in_cycle:
   - Expanded DNS backend regression coverage to verify hostname upstream nameservers still work and invalid local domain names return HTTP 400.
   - System Services LLDP/mDNS save paths now pre-validate LLDP management IPs, mDNS browse domains, mDNS service-filter tokens, and cache-entry integer constraints.
   - LLDP configuration/runtime tables now consistently display interface labels using description-first naming when available.
+  - Network Load Balancing WAN rules now include quick-select outbound interface checkboxes with strict interface existence validation before add.
+  - Bridge Firewall rule rows now display inbound/outbound interfaces using description-first labels sourced from runtime/config inventory.
 validation:
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_lldp_parsing.py
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_dashboard_temperature.py tests/test_system_lldp_parsing.py tests/test_system_services_ssh_dns.py
   - cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime
+  - cd frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime  # post load-balancing + bridge label sweep
 known_limitations:
   - Browser smoke (Playwright) remains blocked on host dependency (`libnspr4.so`) and is outside this slice’s pass gate.
 next_queue:
