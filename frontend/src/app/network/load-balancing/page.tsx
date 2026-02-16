@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -104,6 +105,10 @@ function parseCsvList(value: string): string[] {
   return uniqueList(value.split(",").map((item) => item.trim()));
 }
 
+function serializeCsvList(values: string[]): string {
+  return uniqueList(values).join(", ");
+}
+
 function parseServerListInput(
   value: string
 ): Record<string, { address: string; port: string }> {
@@ -198,6 +203,10 @@ export default function LoadBalancingPage() {
   const backendNames = useMemo(
     () => backends.map((entry) => entry.name).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
     [backends]
+  );
+  const selectedOutboundInterfaces = useMemo(
+    () => new Set(parseCsvList(ruleOutboundInput)),
+    [ruleOutboundInput]
   );
 
   const loadData = useCallback(async (refresh = false) => {
@@ -343,6 +352,7 @@ export default function LoadBalancingPage() {
   const addRuleEntry = () => {
     setError(null);
 
+    const availableInterfaces = new Set(interfaceOptions.map((option) => option.value));
     const entry: WanRuleEntry = {
       ruleId: normalizeText(ruleDraft.ruleId),
       inboundInterface: normalizeText(ruleDraft.inboundInterface),
@@ -354,8 +364,19 @@ export default function LoadBalancingPage() {
       return;
     }
 
+    if (!availableInterfaces.has(entry.inboundInterface)) {
+      setError(`Inbound interface '${entry.inboundInterface}' is not available.`);
+      return;
+    }
+
     if (entry.outboundInterfaces.length === 0) {
       setError("Rule requires at least one outbound interface.");
+      return;
+    }
+
+    const invalidOutbound = entry.outboundInterfaces.filter((iface) => !availableInterfaces.has(iface));
+    if (invalidOutbound.length > 0) {
+      setError(`Unknown outbound interface(s): ${invalidOutbound.join(", ")}`);
       return;
     }
 
@@ -374,6 +395,14 @@ export default function LoadBalancingPage() {
 
   const removeRuleEntry = (ruleId: string) => {
     setWanRules((previous) => previous.filter((item) => item.ruleId !== ruleId));
+  };
+
+  const toggleRuleOutboundInterface = (interfaceName: string, checked: boolean) => {
+    const current = parseCsvList(ruleOutboundInput);
+    const next = checked
+      ? serializeCsvList([...current, interfaceName])
+      : serializeCsvList(current.filter((value) => value !== interfaceName));
+    setRuleOutboundInput(next);
   };
 
   const addFrontendEntry = () => {
@@ -826,6 +855,33 @@ export default function LoadBalancingPage() {
                   </div>
                 </div>
 
+                <div className="space-y-2 rounded-lg border border-border/60 p-3">
+                  <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Quick Select Outbound Interfaces
+                  </Label>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {interfaceOptions
+                      .filter((option) => option.value !== ruleDraft.inboundInterface)
+                      .map((option) => {
+                        const isChecked = selectedOutboundInterfaces.has(option.value);
+                        return (
+                          <label
+                            key={option.value}
+                            className="flex cursor-pointer items-center gap-2 rounded-md border border-border/50 px-2 py-1.5 text-sm hover:bg-muted/40"
+                          >
+                            <Checkbox
+                              checked={isChecked}
+                              onCheckedChange={(checked) =>
+                                toggleRuleOutboundInterface(option.value, checked === true)
+                              }
+                            />
+                            <span>{option.label}</span>
+                          </label>
+                        );
+                      })}
+                  </div>
+                </div>
+
                 <Button type="button" variant="outline" onClick={addRuleEntry} disabled={!canEdit}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Rule
@@ -854,7 +910,11 @@ export default function LoadBalancingPage() {
                             <Badge variant="secondary">{entry.ruleId}</Badge>
                           </TableCell>
                           <TableCell>{interfaceLabelByName[entry.inboundInterface] || entry.inboundInterface}</TableCell>
-                          <TableCell>{entry.outboundInterfaces.join(", ")}</TableCell>
+                          <TableCell>
+                            {entry.outboundInterfaces
+                              .map((iface) => interfaceLabelByName[iface] || iface)
+                              .join(", ")}
+                          </TableCell>
                           <TableCell className="text-right">
                             <Button
                               variant="ghost"
