@@ -19,6 +19,7 @@
     "Load Balancing quick-select controls respect RBAC write permissions (disabled in read-only mode).",
     "Local Route rule displays and delete confirmations show description-first interface labels when metadata is available.",
     "Local Route create/edit inbound-interface selectors display description-first labels when metadata is available.",
+    "Runtime smoke probes include recently touched policy/firewall/system routes to reduce false green builds.",
     "Backend and frontend validation gates pass for touched surfaces."
   ],
   "assumptions": [
@@ -139,6 +140,16 @@
         "frontend/src/components/policies/EditLocalRouteModal.tsx"
       ],
       "notes": "Local Route create/edit modals now render interface selectors with description-first labels for ethernet interfaces."
+    },
+    {
+      "id": "T12",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "frontend/scripts/check-runtime.sh",
+        "frontend/scripts/smoke-ui.mjs"
+      ],
+      "notes": "Expanded smoke-route probes to include policy/firewall/system pages touched in recent slices and reran runtime smoke successfully."
     }
   ],
   "commands": {
