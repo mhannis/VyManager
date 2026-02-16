@@ -14,6 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { showService } from "@/lib/api/show";
+import { ethernetService } from "@/lib/api/ethernet";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 import { serviceWrappersApi } from "@/lib/api/service-wrappers";
 import { asString, objectKeys, quoteCliValue, toRecord, uniqueNonEmpty } from "./serviceTabHelpers";
 
@@ -57,6 +60,11 @@ interface InterfaceConfig {
 interface RouterAdvertState {
   enabled: boolean;
   interfaces: InterfaceConfig[];
+}
+
+interface InterfaceOption {
+  value: string;
+  label: string;
 }
 
 const EMPTY_INTERFACE: InterfaceConfig = {
@@ -167,6 +175,7 @@ function parseRouterAdvertConfig(serviceNode: Record<string, unknown>): RouterAd
 
 export function RouterAdvertServiceTab({ canEdit, active, refreshNonce }: RouterAdvertServiceTabProps) {
   const [config, setConfig] = useState<RouterAdvertState>(EMPTY_STATE);
+  const [interfaceOptions, setInterfaceOptions] = useState<InterfaceOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -187,9 +196,40 @@ export function RouterAdvertServiceTab({ canEdit, active, refreshNonce }: Router
     }
   };
 
+  const loadInterfaceOptions = async () => {
+    try {
+      const [allInterfaces, ethernetConfig] = await Promise.all([
+        showService.getAllInterfaces(),
+        ethernetService.getConfig(),
+      ]);
+
+      const descriptionByInterface = new Map<string, string>();
+      for (const iface of ethernetConfig.interfaces || []) {
+        const name = iface.name?.trim();
+        const description = iface.description?.trim();
+        if (!name || !description) continue;
+        descriptionByInterface.set(name, description);
+      }
+
+      const options = (allInterfaces.interfaces || [])
+        .map((entry) => entry.name?.trim())
+        .filter((name): name is string => Boolean(name))
+        .map((name) => ({
+          value: name,
+          label: formatInterfaceDisplayName(name, descriptionByInterface.get(name)),
+        }))
+        .sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: "base" }));
+
+      setInterfaceOptions(options);
+    } catch {
+      setInterfaceOptions([]);
+    }
+  };
+
   useEffect(() => {
     if (!active) return;
     loadConfig(false);
+    loadInterfaceOptions();
   }, [active]);
 
   useEffect(() => {
@@ -473,6 +513,20 @@ export function RouterAdvertServiceTab({ canEdit, active, refreshNonce }: Router
                   Add Interface
                 </Button>
               </div>
+              {interfaceOptions.length > 0 ? (
+                <>
+                  <datalist id="router-advert-interface-options">
+                    {interfaceOptions.map((option) => (
+                      <option key={option.value} value={option.value} label={option.label}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </datalist>
+                  <p className="text-[11px] text-muted-foreground">
+                    Interface suggestions show descriptions first when available.
+                  </p>
+                </>
+              ) : null}
 
               {config.interfaces.length === 0 ? (
                 <p className="text-xs text-muted-foreground">No router advertisement interfaces configured.</p>
@@ -482,6 +536,7 @@ export function RouterAdvertServiceTab({ canEdit, active, refreshNonce }: Router
                     <div key={`router-advert-interface-${interfaceIndex}`} className="rounded-md border p-4 space-y-4">
                       <div className="grid gap-3 xl:grid-cols-[1fr_auto]">
                         <Input
+                          list="router-advert-interface-options"
                           value={iface.name}
                           onChange={(event) =>
                             updateInterface(interfaceIndex, { name: event.target.value })
@@ -863,4 +918,3 @@ export function RouterAdvertServiceTab({ canEdit, active, refreshNonce }: Router
     </Card>
   );
 }
-
