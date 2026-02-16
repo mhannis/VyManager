@@ -1,18 +1,18 @@
 {
-  "feature_id": "firewall-zones-policy-textarea-ux-hardening-2026-02-16",
-  "title": "Firewall zones policy textarea UX hardening",
+  "feature_id": "firewall-rule-modal-action-target-validation-2026-02-16",
+  "title": "Firewall rule modal action-target validation",
   "status": "done",
   "acceptance_criteria": [
-    "Zones policy textarea enforces `FROM_ZONE:FIREWALL_NAME` format per non-empty line.",
-    "Zones create/edit forms reject duplicate from-zone mappings before API submission.",
-    "Zones create/edit forms block save when policy textarea contains malformed lines.",
-    "Zones guided setup blocks WAN/LAN preset apply when selected interfaces are already assigned to other non-target zones.",
-    "Zones form helper text explicitly documents one mapping per from-zone and `LOCAL` support.",
-    "Frontend typecheck/build/runtime smoke pass after the UI validation changes."
+    "Create Rule modal rejects `jump` action submissions without a jump target.",
+    "Create Rule modal rejects `offload` action submissions without a flowtable target.",
+    "Edit Rule modal rejects `jump` action submissions without a jump target.",
+    "Edit Rule modal rejects `offload` action submissions without a flowtable target.",
+    "UI shows clear error messages for missing action-dependent targets before API calls.",
+    "Frontend typecheck/build/runtime smoke pass after modal validation changes."
   ],
   "assumptions": [
-    "Most operator policy-entry mistakes are line format or duplicate from-zone errors and should be caught in UI before backend rejection.",
-    "UI validation should align with backend cross-zone constraints without changing existing API contracts.",
+    "Action-specific target requirements should be enforced client-side to prevent avoidable failed writes.",
+    "Backend contract remains unchanged; this slice is UX validation only.",
     "Browser e2e smoke remains out-of-gate on this host until Playwright shared libraries are installed."
   ],
   "tasks": [
@@ -21,25 +21,28 @@
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/firewall/zones/page.tsx"
+        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
+        "frontend/src/components/firewall/EditFirewallRuleModal.tsx"
       ],
-      "notes": "Added strict policy textarea parser, guided setup interface ownership preflight checks, and pre-submit validation for malformed/duplicate mappings."
+      "notes": "Added action-dependent target validation for jump/offload in create/edit submit handlers."
     },
     {
       "id": "T2",
       "owner_role": "Test",
       "status": "done",
       "files": [
-        "frontend/src/app/firewall/zones/page.tsx"
+        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
+        "frontend/src/components/firewall/EditFirewallRuleModal.tsx"
       ],
-      "notes": "Validated via frontend gates (`tsc`, `build`, `smoke:runtime`) after UI parser changes."
+      "notes": "Validated via frontend gates (`tsc`, `build`, `smoke:runtime`) after modal validation changes."
     },
     {
       "id": "T3",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/app/firewall/zones/page.tsx"
+        "frontend/src/components/firewall/CreateFirewallRuleModal.tsx",
+        "frontend/src/components/firewall/EditFirewallRuleModal.tsx"
       ],
       "notes": "Manual review completed in-process. APPROVED."
     }

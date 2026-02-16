@@ -62,31 +62,30 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Maintain thin-wrapper backend contracts while expanding reproducible verification.
 
 ## Current Feature Spec
-Feature: **Firewall zones policy-textarea UX hardening (`F-06` depth pass)**
+Feature: **Firewall rule modal action-target validation (`F-01`/`F-02` UX depth pass)**
 
 Acceptance criteria:
-- Enforce strict `FROM_ZONE:FIREWALL_NAME` parsing for non-empty policy textarea lines.
-- Reject duplicate `from_zone` mappings in create/edit forms before API submission.
-- Block create/save submission when policy textarea contains malformed entries.
-- Block guided WAN/LAN preset apply when selected interfaces are still assigned to non-target zones.
-- Surface concise, actionable policy parsing errors to the operator.
-- Add inline helper copy clarifying one mapping per from-zone and `LOCAL` support.
+- Require a jump target when rule action is `jump` in create/edit modals.
+- Require a flowtable target when rule action is `offload` in create/edit modals.
+- Block submission and display actionable inline error messages for missing action-dependent targets.
+- Preserve existing API contracts and backend behavior (UI-only validation).
 - Pass backend+frontend validation gates.
 
 Assumptions:
-- Most operator errors in policy text entry are line-format and duplicate-zone issues.
-- Aligning UI validation to backend constraints reduces failed writes and operator confusion without API changes.
+- A significant portion of failed rule writes for advanced actions are missing jump/offload targets.
+- Early client-side validation improves operator clarity and reduces avoidable failed API calls.
 - Browser smoke still depends on host Playwright system libraries (`libnspr4.so` currently missing).
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: firewall zones policy-textarea UX hardening slice completed locally and queued for commit/push.
-- Backlog audit (2026-02-16, strict option-level tracker): `F-06` progressed with frontend pre-submit policy validation and clearer operator guidance.
+- Status: firewall rule modal action-target validation slice completed locally and queued for commit/push.
+- Backlog audit (2026-02-16, strict option-level tracker): `F-01`/`F-02` progressed with frontend action-dependent target enforcement in rule create/edit flows.
 - Working tree is dirty with unrelated pre-existing changes outside this slice.
 
 ### Files Touched This Cycle
-- `frontend/src/app/firewall/zones/page.tsx`
-- `AGENT_REPORTS/2026-02-16-firewall-zones-policy-textarea-ux-hardening.md`
+- `frontend/src/components/firewall/CreateFirewallRuleModal.tsx`
+- `frontend/src/components/firewall/EditFirewallRuleModal.tsx`
+- `AGENT_REPORTS/2026-02-16-firewall-rule-modal-action-target-validation.md`
 - `CURRENT_FEATURE.md`
 - `FEATURE_STATE.json`
 - `PROJECT_MEMORY.md`
@@ -118,6 +117,7 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui`).
 
 ## Agent Handoff Notes
+- Firewall rule create/edit modals now enforce action-dependent targets (`jump` requires jump target chain, `offload` requires flowtable) and block submit with explicit UI errors when missing.
 - Firewall zones create/edit flows now pre-validate policy textarea rows (`FROM_ZONE:FIREWALL_NAME`) and block submit for malformed lines or duplicate from-zones, reducing backend round-trip failures.
 - Firewall zones policy textareas now include guidance for one mapping per from-zone and explicit `LOCAL` pseudo-zone usage.
 - Firewall zones guided setup now runs a local interface-ownership preflight and blocks preset apply when interfaces are still bound to other zones, with conflict details shown in the UI error banner.

@@ -543,6 +543,16 @@ export function EditFirewallRuleModal({
       return;
     }
 
+    if (action === "jump" && !jumpTarget.trim()) {
+      setError("Jump action requires a jump target chain.");
+      return;
+    }
+
+    if (action === "offload" && !offloadTarget.trim()) {
+      setError("Offload action requires a flowtable target.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
