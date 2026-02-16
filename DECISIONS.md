@@ -326,3 +326,4 @@
 - 2026-02-16: Added DNS endpoint regression tests to ensure stricter validation remains compatible with hostname-based upstream resolvers and to lock in `400` behavior for invalid local domain names.
 - 2026-02-16: Added LLDP/mDNS pre-submit validation in `System Services` tab (LLDP management address IP checks, mDNS browse domain token validation, mDNS service filter whitespace guard, integer cache entries) to prevent avoidable backend rejections.
 - 2026-02-16: Updated LLDP service/runtime UI to display local interfaces using description-first labels for consistency with global interface naming conventions.
+- 2026-02-16: Added inline edit-state helper copy on `System -> Containers` so `New Container` behavior is explicit while editing (`reset + switch to create`) instead of appearing as a no-op.

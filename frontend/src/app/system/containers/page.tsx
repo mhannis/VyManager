@@ -2229,7 +2229,8 @@ export default function SystemContainersPage() {
               </div>
             )}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-1">
+            <div className="flex flex-wrap gap-2">
             <PageGuideDialog guide={pageGuides.containers} />
             <Button
               variant="outline"
@@ -2246,6 +2247,14 @@ export default function SystemContainersPage() {
               <Plus className="h-4 w-4 mr-2" />
               New Container
             </Button>
+            </div>
+            {selectedContainerName && (
+              <p className="text-xs text-muted-foreground">
+                Editing <span className="font-medium text-foreground">{selectedContainerName}</span>. Click{" "}
+                <span className="font-medium text-foreground">New Container</span> to reset the form and switch to
+                create mode.
+              </p>
+            )}
           </div>
         </div>
 

@@ -409,3 +409,4 @@ Assumptions:
 - 2026-02-16: Runtime/browser smoke route probes now include `/firewall/policies`, `/firewall/bridge`, `/firewall/global-options`, `/policies/route`, `/policies/local-route`, and `/system/acceleration` so route-level regressions in recently touched areas are caught pre-handoff.
 - 2026-02-16: `System -> Containers` New Container now provides explicit UX feedback by switching to create mode, scrolling the create card into view, and focusing Name input after reset.
 - 2026-02-16: `VPN -> WireGuard` now renders interface names as `Description (wgX)` where description metadata is present, keeping list/header identity consistent with the global interface naming convention.
+- 2026-02-16: `System -> Containers` now also shows an inline editing-state hint under action buttons (`Editing <name> ... New Container ...`) so the New Container intent is explicit when exiting edit mode.
