@@ -38,11 +38,14 @@ interface BridgeFormState {
   name: string;
   description: string;
   addressesText: string;
+  mac: string;
   mtu: string;
   vrf: string;
   aging: string;
   protocol: string;
   disable: boolean;
+  disableFlowControl: boolean;
+  disableLinkDetect: boolean;
   enableVlan: boolean;
   igmpSnooping: boolean;
   igmpQuerier: boolean;
@@ -60,11 +63,14 @@ const EMPTY_FORM: BridgeFormState = {
   name: "",
   description: "",
   addressesText: "",
+  mac: "",
   mtu: "",
   vrf: "",
   aging: "",
   protocol: "",
   disable: false,
+  disableFlowControl: false,
+  disableLinkDetect: false,
   enableVlan: false,
   igmpSnooping: false,
   igmpQuerier: false,
@@ -103,6 +109,12 @@ function parseAddressLines(raw: string): string[] {
 
 function parseMembersText(raw: string): string[] {
   return uniqueNonEmpty(raw.split(/[\n,]/));
+}
+
+function isValidMacAddress(value: string): boolean {
+  const candidate = value.trim();
+  if (!candidate) return true;
+  return /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(candidate);
 }
 
 function syncScalar(
@@ -154,11 +166,14 @@ function toFormState(value: BridgeInterfaceConfig, choices: InterfaceChoice[]): 
     name: value.name,
     description: value.description,
     addressesText: value.addresses.join("\n"),
+    mac: value.mac,
     mtu: value.mtu,
     vrf: value.vrf,
     aging: value.aging,
     protocol: value.protocol,
     disable: value.disable,
+    disableFlowControl: value.disableFlowControl,
+    disableLinkDetect: value.disableLinkDetect,
     enableVlan: value.enableVlan,
     igmpSnooping: value.igmpSnooping,
     igmpQuerier: value.igmpQuerier,
@@ -197,9 +212,12 @@ function buildBridgeOperations(candidate: BridgeFormState, current: BridgeInterf
       name: candidate.name.trim(),
       description: "",
       addresses: [],
+      mac: "",
       mtu: "",
       vrf: "",
       disable: false,
+      disableFlowControl: false,
+      disableLinkDetect: false,
       aging: "",
       protocol: "",
       enableVlan: false,
@@ -214,6 +232,7 @@ function buildBridgeOperations(candidate: BridgeFormState, current: BridgeInterf
     } satisfies BridgeInterfaceConfig);
 
   syncScalar(operations, base, "description", candidate.description.trim(), currentSafe.description);
+  syncScalar(operations, base, "mac", candidate.mac.trim(), currentSafe.mac);
   syncScalar(operations, base, "mtu", candidate.mtu.trim(), currentSafe.mtu);
   syncScalar(operations, base, "vrf", candidate.vrf.trim(), currentSafe.vrf);
   syncScalar(operations, base, "aging", candidate.aging.trim(), currentSafe.aging);
@@ -235,6 +254,20 @@ function buildBridgeOperations(candidate: BridgeFormState, current: BridgeInterf
 
   if (candidate.disable !== currentSafe.disable) {
     operations.push(candidate.disable ? `set ${base} disable` : `delete ${base} disable`);
+  }
+  if (candidate.disableFlowControl !== currentSafe.disableFlowControl) {
+    operations.push(
+      candidate.disableFlowControl
+        ? `set ${base} disable-flow-control`
+        : `delete ${base} disable-flow-control`,
+    );
+  }
+  if (candidate.disableLinkDetect !== currentSafe.disableLinkDetect) {
+    operations.push(
+      candidate.disableLinkDetect
+        ? `set ${base} disable-link-detect`
+        : `delete ${base} disable-link-detect`,
+    );
   }
   if (candidate.enableVlan !== currentSafe.enableVlan) {
     operations.push(candidate.enableVlan ? `set ${base} enable-vlan` : `delete ${base} enable-vlan`);
@@ -387,6 +420,10 @@ export default function BridgeInterfacesPage() {
     }
     if (editingName && editingName !== name) {
       setError("Renaming bridge interfaces is not supported. Create a new bridge and delete the old one.");
+      return;
+    }
+    if (!isValidMacAddress(form.mac)) {
+      setError("MAC must use canonical format (aa:bb:cc:dd:ee:ff).");
       return;
     }
 
@@ -715,7 +752,16 @@ export default function BridgeInterfacesPage() {
                 />
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label>MAC</Label>
+                  <Input
+                    value={form.mac}
+                    onChange={(event) => setForm((prev) => ({ ...prev, mac: event.target.value }))}
+                    placeholder="02:00:00:00:10:10"
+                    disabled={saving}
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label>MTU</Label>
                   <Input
@@ -781,6 +827,22 @@ export default function BridgeInterfacesPage() {
                     disabled={saving}
                   />
                   Disable interface
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.disableFlowControl}
+                    onCheckedChange={(checked) => setForm((prev) => ({ ...prev, disableFlowControl: Boolean(checked) }))}
+                    disabled={saving}
+                  />
+                  Disable flow control
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.disableLinkDetect}
+                    onCheckedChange={(checked) => setForm((prev) => ({ ...prev, disableLinkDetect: Boolean(checked) }))}
+                    disabled={saving}
+                  />
+                  Disable link detect
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
@@ -859,4 +921,3 @@ export default function BridgeInterfacesPage() {
     </AppLayout>
   );
 }
-

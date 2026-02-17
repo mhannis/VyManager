@@ -41,9 +41,12 @@ export interface BridgeInterfaceConfig {
   name: string;
   description: string;
   addresses: string[];
+  mac: string;
   mtu: string;
   vrf: string;
   disable: boolean;
+  disableFlowControl: boolean;
+  disableLinkDetect: boolean;
   aging: string;
   protocol: string;
   enableVlan: boolean;
@@ -93,9 +96,12 @@ class BridgeInterfaceService {
         name,
         description: asString(node.description),
         addresses: readTagValues(node.address),
+        mac: asString(node.mac),
         mtu: asString(node.mtu),
         vrf: asString(node.vrf),
         disable: Object.prototype.hasOwnProperty.call(node, "disable"),
+        disableFlowControl: Object.prototype.hasOwnProperty.call(node, "disable-flow-control"),
+        disableLinkDetect: Object.prototype.hasOwnProperty.call(node, "disable-link-detect"),
         aging: asString(node.aging),
         protocol: asString(node.protocol),
         enableVlan: Object.prototype.hasOwnProperty.call(node, "enable-vlan"),
@@ -119,4 +125,3 @@ class BridgeInterfaceService {
 }
 
 export const bridgeInterfaceService = new BridgeInterfaceService();
-
