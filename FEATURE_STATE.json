@@ -56,30 +56,295 @@
     },
     {
       "id": "T5",
-      "owner_role": "Backend/UI",
-      "status": "doing",
+      "owner_role": "Backend/UI/Test",
+      "status": "done",
       "files": [
         "backend/routers/system.py",
-        "backend/tests/test_system_login_config.py",
+        "backend/tests/test_system_local_users_parity.py",
         "frontend/src/app/system/users/page.tsx",
         "frontend/src/lib/api/system.ts"
       ],
-      "notes": "SYS-09 parity depth for login auth controls (source/vrf/disable complete; remaining local-user auth leaves pending)."
+      "notes": "SYS-09 parity completed (structured SSH key entries + OTP rate-time) and moved to verify."
     },
     {
       "id": "T6",
       "owner_role": "Planner",
-      "status": "todo",
+      "status": "doing",
       "files": [
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
       ],
-      "notes": "Continue converting remaining partial items to verify in guide order."
+      "notes": "Continue reducing remaining partial items (firewall/interfaces/load-balancing/nat/policy/protocols/traffic-policy/vpn + X-05)."
+    },
+    {
+      "id": "T7",
+      "owner_role": "Planner",
+      "status": "done",
+      "files": [
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
+      ],
+      "notes": "Marked SYS-17 implementation complete (verify pending live multi-version validation)."
+    },
+    {
+      "id": "T8",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/network/high-availability/page.tsx"
+      ],
+      "notes": "HA-01 closed: added VRRP/sync-group edit/update UX with rename-safe behavior and guide-aligned startup/GARP/health validation."
+    },
+    {
+      "id": "T9",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/components/system/RouterAdvertServiceTab.tsx"
+      ],
+      "notes": "SVC-02 closed: router-advert validation depth added (IPv6 CIDR, NAT64 allowed masks, interval consistency, duplicate guardrails, DNSSL/captive portal checks)."
+    },
+    {
+      "id": "T10",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/proxy/page.tsx"
+      ],
+      "notes": "SYS-11 closed: full system proxy validation depth (URL scheme, port range, auth dependencies, no-proxy token checks)."
+    },
+    {
+      "id": "T11",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/sflow/page.tsx"
+      ],
+      "notes": "SYS-12 closed: sFlow validation depth hardened for agent/collector IPs, collector port range, and numeric field checks."
+    },
+    {
+      "id": "T12",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/sysctl/page.tsx"
+      ],
+      "notes": "SYS-13 closed: sysctl key rename flow implemented (delete old + set new) with strict key/value validation."
+    },
+    {
+      "id": "T13",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/task-scheduler/page.tsx"
+      ],
+      "notes": "SYS-15 closed: task scheduler validation hardened (interval suffixes, cron field count, exclusive schedule mode, absolute executable path)."
+    },
+    {
+      "id": "T14",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/network/high-availability/page.tsx"
+      ],
+      "notes": "HA-02 closed: added IPVS real-server IP validation and virtual-server backend-member guardrails."
+    },
+    {
+      "id": "T15",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/syslog/page.tsx"
+      ],
+      "notes": "SYS-14 closed: syslog validation hardened (IP/hostname, port range, TLS/auth consistency, octet-counted transport checks) and remote/host node-type compatibility control added."
+    },
+    {
+      "id": "T16",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/default-route/page.tsx",
+        "frontend/src/lib/api/system-default-route.ts"
+      ],
+      "notes": "SYS-03 closed: default route now supports both next-hop and next-hop-interface CRUD with distance/disable controls and validation guardrails."
+    },
+    {
+      "id": "T17",
+      "owner_role": "Backend/UI/Test",
+      "status": "done",
+      "files": [
+        "backend/routers/system.py",
+        "backend/tests/test_system_local_users_parity.py",
+        "frontend/src/lib/api/system.ts",
+        "frontend/src/app/system/users/page.tsx"
+      ],
+      "notes": "SYS-09 closed: local user parity now covers structured SSH public-key entries (identifier/key/type/options) and OTP rate-time; frontend+backend + regression tests updated."
+    },
+    {
+      "id": "T18",
+      "owner_role": "Planner",
+      "status": "done",
+      "files": [
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "frontend/src/app/system/serial-console/page.tsx",
+        "frontend/src/lib/api/system-console.ts"
+      ],
+      "notes": "SYS-02 moved to verify after command-scope audit against current console docs (device + speed only), matching existing UI/API coverage."
+    },
+    {
+      "id": "T19",
+      "owner_role": "Planner",
+      "status": "done",
+      "files": [
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "frontend/src/app/system/lcd/page.tsx",
+        "frontend/src/lib/api/system-lcd.ts"
+      ],
+      "notes": "SYS-08 moved to verify after guide command-scope audit confirmed LCD scope is only model + device, fully covered by existing page/wrapper."
+    },
+    {
+      "id": "T20",
+      "owner_role": "Planner",
+      "status": "done",
+      "files": [
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "frontend/src/app/system/frr/page.tsx",
+        "frontend/src/lib/api/system-frr.ts",
+        "frontend/src/app/system/ip/page.tsx",
+        "frontend/src/lib/api/system-ip.ts",
+        "frontend/src/app/system/ipv6/page.tsx",
+        "frontend/src/lib/api/system-ipv6.ts"
+      ],
+      "notes": "SYS-05/06/07 moved to verify after command-scope audit against current docs confirmed full UI/API coverage for listed leaves."
+    },
+    {
+      "id": "T21",
+      "owner_role": "Planner",
+      "status": "done",
+      "files": [
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "frontend/src/app/system/flow-accounting/page.tsx",
+        "frontend/src/lib/api/system-flow-accounting.ts"
+      ],
+      "notes": "SYS-04 moved to verify after command-scope audit confirmed flow-accounting guide leaves are fully represented by existing page/wrapper."
+    },
+    {
+      "id": "T22",
+      "owner_role": "Planner",
+      "status": "done",
+      "files": [
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "frontend/src/components/routing/SegmentRoutingContent.tsx",
+        "frontend/src/lib/api/segment-routing.ts"
+      ],
+      "notes": "PR-03 moved to verify after docs command-scope audit confirmed existing Segment Routing UI/API covers all currently documented leaves."
+    },
+    {
+      "id": "T23",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/lib/api/vrf.ts",
+        "frontend/src/app/network/vrf/page.tsx",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "VRF-01 complete: added ip/ipv6 nht no-resolve-via-default and per-family protocol route-map controls; moved VRF-01 and VRF-02 to verify."
+    },
+    {
+      "id": "T24",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/lib/api/system-conntrack.ts",
+        "frontend/src/app/system/conntrack/page.tsx",
+        "frontend/src/lib/help/pageGuides.ts",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "SYS-01 complete: expanded conntrack page/API for timeout defaults, custom timeout rules, ignore rules, and logging controls with validation; moved to verify."
+    },
+    {
+      "id": "T25",
+      "owner_role": "Planner",
+      "status": "done",
+      "files": [
+        "frontend/src/components/services/DhcpServerWorkspace.tsx",
+        "frontend/src/components/services/CreateDHCPServerModal.tsx",
+        "frontend/src/components/services/EditDHCPServerModal.tsx",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "SVC-03 moved to verify after DHCP parity audit (shared-network/subnet/range/static workflows, template prefill, gateway DNS fallback, network move/edit)."
+    },
+    {
+      "id": "T26",
+      "owner_role": "Planner",
+      "status": "done",
+      "files": [
+        "frontend/src/components/system/DnsServiceTab.tsx",
+        "backend/routers/system.py",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "SVC-04 moved to verify after DNS forwarder/resolver/authoritative/reverse-zone workflow audit with validation."
+    },
+    {
+      "id": "T27",
+      "owner_role": "Planner",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/services/page.tsx",
+        "frontend/src/components/system",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "SVC-05 moved to verify after consolidated services tab audit (form-driven per-service configuration coverage)."
+    },
+    {
+      "id": "T28",
+      "owner_role": "Planner",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/pki/page.tsx",
+        "frontend/src/lib/api/pki.ts",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "PKI-01 and PKI-02 moved to verify after configuration-scope audit against current guide command tree."
+    },
+    {
+      "id": "T29",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json",
+        "backend/tests/test_domain_config_snapshots.py",
+        "backend/tests/snapshots/domain_config_snapshots.json"
+      ],
+      "notes": "Cross-cutting depth improved: added advanced conntrack fixture loop and richer conntrack snapshot coverage; pytest suite passed."
+    },
+    {
+      "id": "T30",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/test_fixture_save_apply_reload_loops.py",
+        "backend/tests/fixtures/config_apply_loops.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "X-02/X-03 command-delta depth pass: loop tests now assert emitted command deltas for set/delete operations; backlog items promoted to verify."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_login_config.py tests/test_system_services_ssh_dns.py && cd ../frontend && npx tsc --noEmit --pretty false && npx eslint src/app/system/users/page.tsx src/lib/api/system.ts && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py tests/test_system_local_users_parity.py && cd ../frontend && npx tsc --noEmit --pretty false && npx eslint src/app/system/conntrack/page.tsx src/lib/api/system-conntrack.ts src/app/network/vrf/page.tsx src/lib/api/vrf.ts && npm run -s build && npm run -s smoke:runtime",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [

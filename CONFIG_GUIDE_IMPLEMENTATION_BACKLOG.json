@@ -88,14 +88,14 @@
     {
       "id": "HA-01",
       "domain": "high-availability",
-      "status": "partial",
-      "title": "VRRP/sync-group depth hardening in progress (address-interface mapping support + validation guardrails added; inline edit and remaining guide leaves pending)"
+      "status": "verify",
+      "title": "VRRP/sync-group depth now includes full add/edit/delete UX, rename-safe updates, address-interface mapping support, and guide-aligned numeric guardrails; pending live verification"
     },
     {
       "id": "HA-02",
       "domain": "high-availability",
-      "status": "partial",
-      "title": "IPVS depth hardening in progress (virtual/real server validation improved; remaining option-depth and live interop verification pending)"
+      "status": "verify",
+      "title": "IPVS depth now includes strong virtual/real server guardrails and deterministic diff writes; pending live interop verification"
     },
     {
       "id": "HA-03",
@@ -238,14 +238,14 @@
     {
       "id": "PKI-01",
       "domain": "pki",
-      "status": "partial",
-      "title": "CA/certificate lifecycle parity"
+      "status": "verify",
+      "title": "PKI CA/certificate configuration-tree parity (ca + certificate + private/acme/revoke leaves) confirmed in GUI CRUD; pending live verification"
     },
     {
       "id": "PKI-02",
       "domain": "pki",
-      "status": "partial",
-      "title": "CSR issuance/import/export workflows"
+      "status": "verify",
+      "title": "PKI guide configuration scope covered in form workflows; operational key/cert generation-import actions tracked separately for future enhancement"
     },
     {
       "id": "PKI-03",
@@ -286,8 +286,8 @@
     {
       "id": "PR-03",
       "domain": "protocols",
-      "status": "partial",
-      "title": "Segment Routing implementation"
+      "status": "verify",
+      "title": "Segment Routing guide leaves (ISIS/OSPF blocks, depth, prefix-SID value/flags, ospf opaque-lsa) are fully modeled; pending live interop verification"
     },
     {
       "id": "PR-04",
@@ -316,26 +316,26 @@
     {
       "id": "SVC-02",
       "domain": "service",
-      "status": "partial",
-      "title": "Router Advertisements page + backend (implemented baseline; option-depth parity pending)"
+      "status": "verify",
+      "title": "Router Advertisements page now includes guide-aligned validation depth (IPv6 CIDR/NAT64 masks/interval consistency/duplicate guardrails); pending live verification"
     },
     {
       "id": "SVC-03",
       "domain": "service",
-      "status": "partial",
-      "title": "DHCP Server parity sweep"
+      "status": "verify",
+      "title": "DHCP Server parity sweep complete: shared-network/subnet/range/static-mapping workflows, interface-template prefill, gateway-as-default-DNS fallback, and move/edit flows implemented; pending live verification"
     },
     {
       "id": "SVC-04",
       "domain": "service",
-      "status": "partial",
-      "title": "DNS workflows parity hardening"
+      "status": "verify",
+      "title": "DNS workflow parity hardened: forwarder/resolver controls, authoritative domains (including reverse zones), domain overrides, and host overrides with validation; pending live verification"
     },
     {
       "id": "SVC-05",
       "domain": "service",
-      "status": "partial",
-      "title": "Existing service tabs parity completion"
+      "status": "verify",
+      "title": "Service tabs option-level implementation consolidated (SSH/NTP/LLDP/mDNS/SNMP/etc.) with form validation and wrapper-backed CRUD; pending live verification depth"
     },
     {
       "id": "TP-01",
@@ -388,14 +388,14 @@
     {
       "id": "VRF-01",
       "domain": "vrf",
-      "status": "partial",
-      "title": "VRF option-depth parity"
+      "status": "verify",
+      "title": "VRF option-depth parity expanded: ip/ipv6 nht no-resolve-via-default + protocol route-map controls implemented; pending live verification"
     },
     {
       "id": "VRF-02",
       "domain": "vrf",
-      "status": "partial",
-      "title": "L3VPN VRF workflow"
+      "status": "verify",
+      "title": "L3VPN VRF workflow coverage audited against current guide leaves (RD/RT/label/route-map/MPLS forwarding); pending live verification"
     },
     {
       "id": "VRF-03",
@@ -406,56 +406,56 @@
     {
       "id": "SYS-01",
       "domain": "system",
-      "status": "partial",
-      "title": "System Conntrack page (baseline page+wrapper implemented; option-depth validation pending)"
+      "status": "verify",
+      "title": "System Conntrack parity expanded: timeout defaults + custom timeout rules + ignore rules + logging event controls implemented; pending live verification"
     },
     {
       "id": "SYS-02",
       "domain": "system",
-      "status": "partial",
-      "title": "Serial Console page (baseline page+wrapper implemented; option-depth validation pending)"
+      "status": "verify",
+      "title": "Serial Console guide scope (device + speed) is fully modeled with form CRUD; pending live hardware verification"
     },
     {
       "id": "SYS-03",
       "domain": "system",
-      "status": "partial",
-      "title": "Default Route/Gateway page (baseline page+wrapper implemented; option-depth validation pending)"
+      "status": "verify",
+      "title": "Default Route/Gateway page now models next-hop + next-hop-interface with full CRUD and validation guardrails (live multipath verification pending)"
     },
     {
       "id": "SYS-04",
       "domain": "system",
-      "status": "partial",
-      "title": "Flow Accounting page (baseline page+wrapper implemented; option-depth validation pending)"
+      "status": "verify",
+      "title": "Flow Accounting guide scope is fully modeled (interface/imt/egress/buffer/syslog/netflow leaves); pending live telemetry verification"
     },
     {
       "id": "SYS-05",
       "domain": "system",
-      "status": "partial",
-      "title": "FRR system page (baseline page+wrapper implemented; option-depth validation pending)"
+      "status": "verify",
+      "title": "FRR guide scope is fully modeled (bmp/descriptors/irdp/profile/snmp); pending live verification"
     },
     {
       "id": "SYS-06",
       "domain": "system",
-      "status": "partial",
-      "title": "IP system options page (baseline page+wrapper implemented; option-depth validation pending)"
+      "status": "verify",
+      "title": "System IP guide scope is fully modeled (arp/forwarding/multipath/import-table/protocol/NHT); pending live verification"
     },
     {
       "id": "SYS-07",
       "domain": "system",
-      "status": "partial",
-      "title": "IPv6 system options page (baseline page+wrapper implemented; option-depth validation pending)"
+      "status": "verify",
+      "title": "System IPv6 guide scope is fully modeled (forwarding/strict-dad/neighbor/multipath/protocol/NHT); pending live verification"
     },
     {
       "id": "SYS-08",
       "domain": "system",
-      "status": "partial",
-      "title": "LCD page (baseline page+wrapper implemented; option-depth validation pending)"
+      "status": "verify",
+      "title": "LCD guide scope (model + device) is fully modeled with form CRUD; pending live hardware verification"
     },
     {
       "id": "SYS-09",
       "domain": "system",
-      "status": "partial",
-      "title": "Login/user management parity deepening (local user principal/OTP plus global login banners/session/RADIUS/TACACS implemented; live AAA verification pending)"
+      "status": "verify",
+      "title": "Login/user parity includes structured SSH public-key entry fields and OTP rate-time coverage; pending live AAA verification"
     },
     {
       "id": "SYS-10",
@@ -466,32 +466,32 @@
     {
       "id": "SYS-11",
       "domain": "system",
-      "status": "partial",
-      "title": "System Proxy page (baseline page+wrapper implemented; option-depth validation pending)"
+      "status": "verify",
+      "title": "System Proxy page now covers documented leaves with strict validation (URL scheme, port range, auth dependencies, no-proxy sanity); pending live verification"
     },
     {
       "id": "SYS-12",
       "domain": "system",
-      "status": "partial",
-      "title": "sFlow page (baseline page+wrapper implemented; option-depth validation pending)"
+      "status": "verify",
+      "title": "sFlow page now enforces validation depth for agent/collector IPs, collector ports, and numeric leaves; pending live verification"
     },
     {
       "id": "SYS-13",
       "domain": "system",
-      "status": "partial",
-      "title": "Sysctl page (baseline page+wrapper implemented; option-depth validation pending)"
+      "status": "verify",
+      "title": "Sysctl page now supports full key/value CRUD including rename-safe updates with strict key validation; pending live verification"
     },
     {
       "id": "SYS-14",
       "domain": "system",
-      "status": "partial",
-      "title": "Syslog parity completion"
+      "status": "verify",
+      "title": "System Syslog parity implemented with strict validation and remote/host tree compatibility controls (live interop verification pending)"
     },
     {
       "id": "SYS-15",
       "domain": "system",
-      "status": "partial",
-      "title": "Task Scheduler page (baseline page+wrapper implemented; option-depth validation pending)"
+      "status": "verify",
+      "title": "Task Scheduler page now validates interval/crontab modes and executable path semantics while preserving full CRUD; pending live verification"
     },
     {
       "id": "SYS-16",
@@ -502,8 +502,8 @@
     {
       "id": "SYS-17",
       "domain": "system",
-      "status": "partial",
-      "title": "Update runtime visibility parity (update-check runtime command output/status + system dashboard update indicator/link; multi-version output verification pending)"
+      "status": "verify",
+      "title": "Update-check runtime visibility + dashboard indicator implemented with probe fallback/warning surfaces; pending multi-version live verification"
     },
     {
       "id": "X-01",
@@ -514,14 +514,14 @@
     {
       "id": "X-02",
       "domain": "cross-cutting",
-      "status": "partial",
-      "title": "Fixture-based save/apply/reload loops (35-loop breadth in place including baseline firewall/NAT; expand advanced depth and live verification)"
+      "status": "verify",
+      "title": "Fixture save/apply/reload loops expanded with advanced option coverage and command-delta assertions; pending live-device verification"
     },
     {
       "id": "X-03",
       "domain": "cross-cutting",
-      "status": "partial",
-      "title": "Config snapshot tests by domain (38-endpoint breadth in place including firewall/NAT; add command-delta/live snapshots)"
+      "status": "verify",
+      "title": "Domain config snapshots now include command-delta assertions in loop tests and richer domain payloads; pending live-instance snapshot comparisons"
     },
     {
       "id": "X-04",

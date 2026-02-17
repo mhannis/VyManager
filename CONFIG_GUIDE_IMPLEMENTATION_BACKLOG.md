@@ -56,8 +56,8 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `F-06` (`partial`): Zone workflow hardening in progress (cross-zone validation added: interface overlap protection + `from_zone` existence/canonicalization with `LOCAL`; UI now pre-validates policy textarea format/duplicates and guided preset interface conflicts before apply; remaining onboarding/UX depth pending).
 
 ### High Availability (`highavailability/index.html`)
-- `HA-01` (`partial`): VRRP depth pass improved: per-address interface bindings are now parsed, editable in form input (`address=interface` mapping), and emitted in save diffs; added VRRP/sync-group semantic guards (required address, VRID/priority/interval ranges, unknown sync members). Remaining work: inline edit UX and any uncovered leaves from guide audit.
-- `HA-02` (`partial`): IPVS depth pass improved: stricter virtual/real server validation for port/fwmark/timeouts before command generation. Remaining work: complete remaining option-depth audit and live interop verification.
+- `HA-01` (`verify`): VRRP/sync-group depth now includes full add/edit/delete UX (including rename-safe updates), per-address interface bindings (`address=interface`) with deterministic save diffs, and guide-aligned numeric guardrails for startup/GARP/health fields. Pending live-node verification.
+- `HA-02` (`verify`): IPVS depth now includes stronger virtual/real server guardrails (address validation, required backend members, numeric constraints, and deterministic diff writes) in the existing HA editor. Pending live interop verification.
 - `HA-03` (`verify`): Dual-node failover verification playbook and smoke tests.
 
 ### Interfaces (`interfaces/*`)
@@ -89,8 +89,8 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `NAT-04` (`partial`): CGNAT parity completion.
 
 ### PKI (`pki/index.html`)
-- `PKI-01` (`partial`): Complete CA/certificate lifecycle parity (import/export/sign/revoke/CRL operations).
-- `PKI-02` (`partial`): Add CSR and cert issuance workflows with validation helpers.
+- `PKI-01` (`verify`): PKI configuration-tree parity confirmed for CA/certificate/private/acme/revoke/CRL leaves with form-based CRUD; pending live verification.
+- `PKI-02` (`verify`): Current guide configuration scope is covered; operational key/cert generation/import/export workflows are tracked as a separate enhancement stream.
 - `PKI-03` (`verify`): Cross-page consumers (VPN/services) correctly consume PKI objects.
 
 ### Policy (`policy/*`)
@@ -101,17 +101,17 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 ### Protocols (`protocols/*`)
 - `PR-01` (`partial`): BGP full-depth parity pass (neighbors/AFI-SAFI/policy hooks/advanced timers/features).
 - `PR-02` (`partial`): OSPF/IS-IS/OpenFabric/RIP depth parity audit and missing leaves implementation.
-- `PR-03` (`partial`): Segment Routing page + backend parity implemented; option-depth validation and live interop verification remain.
+- `PR-03` (`verify`): Segment Routing page fully models currently documented IS-IS/OSPF segment-routing leaves (global/local blocks, maximum label depth, prefix-SID index value/flags, and OSPF `opaque-lsa`) with form-based diff operations. Pending live interop verification.
 - `PR-04` (`partial`): Static/failover advanced options parity completion.
 - `PR-05` (`partial`): Multicast stack depth parity (IGMP Proxy/PIM/PIM6 advanced leaves).
 - `PR-06` (`partial`): RPKI and MPLS option-level parity completion.
 
 ### Service (`service/*`)
 - `SVC-01` (`verify`): Config Sync guide leaves (`mode`, `secondary address/key/port/timeout`, `section`) are now represented with form-based CRUD and wrapper-backed writes; pending live-node verification.
-- `SVC-02` (`partial`): Router Advertisements service page + backend wrapper implemented; continue option-depth parity audit and validation.
-- `SVC-03` (`partial`): DHCP Server parity sweep vs guide (shared networks/subnets/options/UX guardrails).
-- `SVC-04` (`partial`): DNS forwarder/resolver authoritative/reverse-lookup UX parity hardening.
-- `SVC-05` (`partial`): Existing service tabs (SSH/NTP/LLDP/mDNS/SNMP/etc.) option-level completion.
+- `SVC-02` (`verify`): Router Advertisements service page now enforces guide-aligned validation depth (IPv6 CIDR checks, NAT64 allowed masks, interval consistency, duplicate guardrails, DNSSL/captive-portal sanity) on top of full form-based CRUD. Pending live-node verification.
+- `SVC-03` (`verify`): DHCP Server parity sweep completed (shared-network/subnet/range/static-mapping workflows, interface-template prefill, gateway-as-default-DNS fallback, and shared-network move/edit flows); pending live verification.
+- `SVC-04` (`verify`): DNS workflow parity hardened (forwarder/resolver controls, authoritative domains including reverse zones, domain overrides, and host overrides with validation); pending live verification.
+- `SVC-05` (`verify`): Existing service tabs (SSH/NTP/LLDP/mDNS/SNMP/etc.) are consolidated with form validation and wrapper-backed CRUD; pending live verification depth.
 
 ### Traffic Policy (`trafficpolicy/index.html`)
 - `TP-01` (`partial`): Complete remaining policy-type leaves and class defaults not yet modeled.
@@ -126,34 +126,34 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `VPN-05` (`verify`): End-to-end tunnel bring-up and diagnostics workflows (GUI-first).
 
 ### VRF (`vrf/index.html`)
-- `VRF-01` (`partial`): Full VRF static and control-plane option-depth parity.
-- `VRF-02` (`partial`): L3VPN/VRF operational workflow implemented on the VRF page; live interop and deep option validation remain.
+- `VRF-01` (`verify`): VRF option-depth parity expanded with `ip/ipv6 nht no-resolve-via-default` and per-family protocol route-map controls; pending live verification.
+- `VRF-02` (`verify`): L3VPN VRF workflow audited against current guide leaves (RD/route-target/label/route-map/MPLS forwarding); pending live verification.
 - `VRF-03` (`verify`): Interactions with policy, interfaces, and routing protocols.
 
 ### System (`system/*`) — **last by request**
-- `SYS-01` (`partial`): System Conntrack page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
-- `SYS-02` (`partial`): Serial Console page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
-- `SYS-03` (`partial`): Default Route/Gateway page + backend wrapper are implemented; option-depth parity and multi-path validation remain.
-- `SYS-04` (`partial`): Build Flow Accounting page. Baseline form-first page + backend wrapper are implemented; option-depth parity and live telemetry validation remain.
-- `SYS-05` (`partial`): FRR system page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
-- `SYS-06` (`partial`): IP system options page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
-- `SYS-07` (`partial`): IPv6 system options page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
-- `SYS-08` (`partial`): LCD page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
-- `SYS-09` (`partial`): Login/user management parity deepening in progress: local user CRUD now includes `authentication principal` + OTP controls (`key`, `rate-limit`, `window-size`), and global `system login` page coverage now includes pre/post-login banners, max sessions, timeout, RADIUS source address/server set, and TACACS server set with form-based UI + backend validation/tests. Remaining depth: advanced multi-auth edge behavior and live end-to-end verification against real AAA backends.
+- `SYS-01` (`verify`): System Conntrack parity expanded with timeout defaults, custom timeout rules, ignore rules, and log event controls; pending live verification.
+- `SYS-02` (`verify`): Serial Console coverage matches current guide scope (`set/delete system console device <device>` and `speed`) with full form CRUD and wrapper-backed operations. Pending live hardware validation only.
+- `SYS-03` (`verify`): Default Route/Gateway page now models both documented trees (`next-hop` and `next-hop-interface`) with full form CRUD, distance/disable controls, rename-safe edits, and validation guardrails (IPv4 gateway and interface token checks, distance range). Pending live multipath verification.
+- `SYS-04` (`verify`): Flow Accounting page matches current guide scope (`interface`, `disable-imt`, `enable-egress`, `buffer-size`, `syslog-facility`, and NetFlow leaves including version/server/source/engine-id/sampling/timeout/max-flows) with form CRUD and wrapper-backed operations. Pending live telemetry verification.
+- `SYS-05` (`verify`): FRR system page matches current guide scope (`bmp`, `descriptors`, `irdp`, `profile`, `snmp`) with form CRUD and wrapper-backed operations. Pending live workflow verification.
+- `SYS-06` (`verify`): System IP page matches current guide scope (`arp table-size`, forwarding flags, multipath hash, import-table distance/route-map, protocol route-map, NHT behavior) with form CRUD and wrapper-backed operations. Pending live workflow verification.
+- `SYS-07` (`verify`): System IPv6 page matches current guide scope (forwarding/strict-DAD flags, neighbor table-size, multipath hash, protocol route-map, NHT behavior) with form CRUD and wrapper-backed operations. Pending live workflow verification.
+- `SYS-08` (`verify`): LCD page fully covers current guide scope (`system lcd model` and `system lcd device`) with form-based CRUD and wrapper-backed writes. Pending live hardware verification.
+- `SYS-09` (`verify`): Login/user management parity now includes structured local SSH public-key entry controls (`identifier`, `key`, `type`, `options`) plus OTP depth (`key`, `rate-limit`, `rate-time`, `window-size`) and global `system login` controls (banners, session limits, RADIUS/TACACS source+VRF+server sets) with form-based UI, backend validation, and regression tests. Pending live AAA backend verification.
 - `SYS-10` (`verify`): Name-server ownership cleanup completed: `system/config` now treats `name_servers` as optional and preserves existing `system name-server` entries unless explicitly provided, so System Identification no longer risks resolver-side DNS drift.
-- `SYS-11` (`partial`): Build System Proxy page. Baseline form-first page + backend wrapper are implemented; option-depth parity and live validation remain.
-- `SYS-12` (`partial`): sFlow page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
-- `SYS-13` (`partial`): Build Sysctl page. Baseline parameter CRUD page + backend wrapper are implemented; option-depth parity and live validation remain.
-- `SYS-14` (`partial`): System Syslog page + backend wrapper now implemented with global marker/FQDN/source controls and structured console/file/remote destination rule editing (including remote protocol/port/format/TLS baseline). Remaining depth: advanced archive/template leaves and exhaustive interop validation.
-- `SYS-15` (`partial`): Task Scheduler page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
+- `SYS-11` (`verify`): System Proxy page now covers all documented leaves (`url`, `port`, `username`, `password`) with strict form validation (URL scheme, port range, auth dependencies, no-proxy token sanity) on top of wrapper-backed writes. Pending live-node verification.
+- `SYS-12` (`verify`): sFlow page now enforces guide-aligned validation depth for agent/collector addressing (IPv4/IPv6), collector port ranges, and numeric fields while preserving full form-based coverage of documented leaves. Pending live-node verification.
+- `SYS-13` (`verify`): Sysctl page now supports full key/value CRUD with rename-safe edit flow (delete old + set new) and strict parameter-key validation, covering documented `system sysctl parameter <parameter> value <value>` workflows. Pending live-node verification.
+- `SYS-14` (`verify`): System Syslog page now includes guide-aligned form CRUD for global marker/FQDN/source settings plus console/file/remote rules, with stronger validation (IP/hostname checks, port range, TLS/auth consistency, octet-counted transport checks) and explicit `remote`/`host` destination-tree control for compatibility. Pending live interop verification.
+- `SYS-15` (`verify`): Task Scheduler page now enforces guide-aligned schedule validation (interval supports numeric with optional `m|h|d`, cron requires five fields, exclusive schedule mode) plus absolute executable path checks, with full task CRUD via wrapper-backed writes. Pending live-node verification.
 - `SYS-16` (`verify`): Time-zone/update/watchdog implementation coverage now matches guide leaves (`system time-zone`, `system update-check auto-check/url`, `system watchdog module/timeout/shutdown-timeout/reboot-timeout`) with form-based controls; pending live verification.
-- `SYS-17` (`partial`): Update runtime visibility parity in progress: `System -> Update Check` now shows live command output/status (up-to-date vs update available) using `show/generate system updates` probes, and `Dashboard -> System Information` surfaces update state with link-through to Update Check. Remaining work: multi-version output-shape validation on additional VyOS targets.
+- `SYS-17` (`verify`): Update runtime visibility implementation is complete: `System -> Update Check` shows live command output/status (up-to-date vs update available) with fallback probes and warning surfaces, and `Dashboard -> System Information` exposes update state with link-through. Pending multi-version live verification only.
 
 ---
 
 ## Program-Level Cross-Cutting Backlog
 - `X-01` (`verify`): Option-level parity scorer is now enforced via threshold gate (`scripts/check_option_parity_thresholds.py` + `scripts/option_parity_thresholds.json`) and CI workflow (`.github/workflows/option-parity.yml`); pending long-run tuning of thresholds as coverage increases.
-- `X-02` (`partial`): Added fixture-driven save/apply/reload loops (`backend/tests/fixtures/config_apply_loops.json`, `backend/tests/test_fixture_save_apply_reload_loops.py`, `backend/tests/test_firewall_nat_save_apply_reload_loops.py`) across 35 domains/endpoints (protocols, services, VPN, DMVPN, PKI, QoS, system wrappers, baseline firewall/NAT); remaining work is advanced-option depth and live-device runs.
-- `X-03` (`partial`): Added domain config snapshot tests (`backend/tests/snapshots/domain_config_snapshots.json`, `backend/tests/test_domain_config_snapshots.py`, `backend/tests/snapshots/firewall_nat_config_snapshots.json`, `backend/tests/test_firewall_nat_config_snapshots.py`) across 38 endpoints; remaining work is command-delta snapshots and live-instance comparisons.
+- `X-02` (`verify`): Fixture save/apply/reload loops expanded with advanced-option coverage and explicit command-delta assertions in loop responses; pending live-device verification.
+- `X-03` (`verify`): Domain config snapshots expanded with richer payloads and loop-level command-delta assertions; pending live-instance snapshot comparisons.
 - `X-04` (`verify`): Browser/runtime smoke route coverage now includes every current app page route (with route-appropriate exclusions), pending ongoing verification as new pages are added.
 - `X-05` (`partial`): Added reproducible robustness relook runner (`scripts/run_robustness_relook.py`) and generated baseline report (`ROBUSTNESS_RELOOK_REPORT.md`); remaining work is broadening to full parity-domain live verification before final sign-off.

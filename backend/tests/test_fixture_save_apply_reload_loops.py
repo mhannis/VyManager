@@ -384,7 +384,9 @@ def test_fixture_save_apply_reload_loop(app, allow_permissions, mutable_service,
 
     apply_set = client.post(batch_endpoint, json={"operations": set_operations})
     assert apply_set.status_code == 200
-    assert apply_set.json().get("success") is True
+    apply_set_payload = apply_set.json()
+    assert apply_set_payload.get("success") is True
+    assert apply_set_payload.get("data", {}).get("commands") == set_operations
 
     mid = client.get(config_endpoint, params={"refresh": "true"})
     assert mid.status_code == 200
@@ -393,7 +395,9 @@ def test_fixture_save_apply_reload_loop(app, allow_permissions, mutable_service,
 
     apply_delete = client.post(batch_endpoint, json={"operations": delete_operations})
     assert apply_delete.status_code == 200
-    assert apply_delete.json().get("success") is True
+    apply_delete_payload = apply_delete.json()
+    assert apply_delete_payload.get("success") is True
+    assert apply_delete_payload.get("data", {}).get("commands") == delete_operations
 
     after = client.get(config_endpoint, params={"refresh": "true"})
     assert after.status_code == 200

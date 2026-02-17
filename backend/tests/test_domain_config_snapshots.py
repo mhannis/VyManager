@@ -215,6 +215,40 @@ class SnapshotDummyService:
                 },
                 "conntrack": {
                     "table-size": "262144",
+                    "timeout": {
+                        "tcp": {
+                            "established": "600",
+                            "time-wait": "120",
+                        },
+                        "custom": {
+                            "ipv4": {
+                                "rule": {
+                                    "10": {
+                                        "protocol": "tcp",
+                                        "source": {
+                                            "address": "192.0.2.0/24",
+                                        },
+                                        "timeout": "300",
+                                    }
+                                }
+                            }
+                        },
+                    },
+                    "ignore": {
+                        "ipv4": {
+                            "rule": {
+                                "20": {
+                                    "protocol": "udp",
+                                }
+                            }
+                        }
+                    },
+                    "log": {
+                        "invalid-state": {},
+                        "tcp": {
+                            "established": {},
+                        },
+                    },
                 },
                 "frr": {
                     "profile": "traditional",

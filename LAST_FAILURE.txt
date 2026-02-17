@@ -1,9 +1,10 @@
-timestamp: 2026-02-17T00:45:15+00:00
-failing_command: cd frontend && npm run -s smoke:ui
-error_summary: Browser smoke failed after route coverage expansion because /onboarding redirects to login in authenticated runtime flow, which smoke treated as a failure.
-last_output:
-UI smoke test FAILED:
-- /onboarding: redirected to login
-Artifacts: smoke-artifacts/
-suspected_cause: /onboarding is not a stable post-login route for smoke checks.
-next_step: Remove /onboarding from browser smoke route set and rerun npm run -s smoke:ui.
+2026-02-17T02:49:17Z
+failing command: cd frontend && npx eslint src/app/system/conntrack/page.tsx src/lib/api/system-conntrack.ts
+error summary: ESLint failed after the conntrack page rewrite because two draft types were declared as empty interfaces, violating `@typescript-eslint/no-empty-object-type`.
+last relevant output:
+/home/redhot/VyOS/VyManager/frontend/src/app/system/conntrack/page.tsx
+  72:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+  73:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+✖ 2 problems (2 errors, 0 warnings)
+suspected cause + next step: replace the empty interfaces with type aliases (`type CustomRuleDraft = ...`, `type IgnoreRuleDraft = ...`), then rerun eslint and proceed to build/smoke.

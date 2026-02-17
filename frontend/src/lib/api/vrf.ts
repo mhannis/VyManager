@@ -4,6 +4,11 @@ export interface VrfRouteInterface {
   vrf: string;
 }
 
+export interface VrfProtocolRouteMapEntry {
+  protocol: string;
+  route_map: string;
+}
+
 export interface VrfRoute {
   destination: string;
   interface: Record<string, VrfRouteInterface>;
@@ -43,6 +48,10 @@ export interface VRF {
   name: string;
   table: string;
   description: string | null;
+  ip_nht_no_resolve_via_default: boolean;
+  ipv6_nht_no_resolve_via_default: boolean;
+  ip_protocol_route_maps: VrfProtocolRouteMapEntry[];
+  ipv6_protocol_route_maps: VrfProtocolRouteMapEntry[];
   protocols: VRFProtocols;
   l3vpn: VrfL3vpnConfig;
 }
@@ -135,6 +144,21 @@ function parseAddressFamilyConfig(rawRoot: unknown): VrfBgpAddressFamilyConfig {
   };
 }
 
+function parseProtocolRouteMaps(rawRoot: unknown): VrfProtocolRouteMapEntry[] {
+  const root = asObject(rawRoot);
+  const protocolRoot = asObject(root.protocol);
+  return Object.keys(protocolRoot)
+    .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }))
+    .map((protocol) => {
+      const node = asObject(protocolRoot[protocol]);
+      return {
+        protocol,
+        route_map: asString(node["route-map"] ?? node.route_map),
+      };
+    })
+    .filter((entry) => entry.protocol.length > 0 && entry.route_map.length > 0);
+}
+
 function emptyAddressFamilyConfig(): VrfBgpAddressFamilyConfig {
   return {
     rd_vpn_export: null,
@@ -169,6 +193,10 @@ class VRFService {
     const vrfs: Record<string, VRF> = {};
     for (const [name, value] of Object.entries(names)) {
       const root = asObject(value);
+      const ipRoot = asObject(root.ip);
+      const ipv6Root = asObject(root.ipv6);
+      const ipNhtRoot = asObject(ipRoot.nht);
+      const ipv6NhtRoot = asObject(ipv6Root.nht);
       const protocolsRoot = asObject(root.protocols);
       const staticRoot = asObject(protocolsRoot.static);
       const routeRoot = asObject(staticRoot.route);
@@ -214,6 +242,16 @@ class VRFService {
         name,
         table: asString(root.table),
         description: asString(root.description) || null,
+        ip_nht_no_resolve_via_default: Object.prototype.hasOwnProperty.call(
+          ipNhtRoot,
+          "no-resolve-via-default",
+        ),
+        ipv6_nht_no_resolve_via_default: Object.prototype.hasOwnProperty.call(
+          ipv6NhtRoot,
+          "no-resolve-via-default",
+        ),
+        ip_protocol_route_maps: parseProtocolRouteMaps(ipRoot),
+        ipv6_protocol_route_maps: parseProtocolRouteMaps(ipv6Root),
         protocols: {
           static: {
             routes,
@@ -268,4 +306,3 @@ class VRFService {
 }
 
 export const vrfService = new VRFService();
-

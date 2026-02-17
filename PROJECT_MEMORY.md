@@ -1,6 +1,6 @@
 # PROJECT_MEMORY.md
 
-Last updated: 2026-02-16
+Last updated: 2026-02-17
 Repo: https://github.com/mhannis/VyManager/tree/dev
 
 ## Repo Facts
@@ -97,6 +97,30 @@ Assumptions:
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
 - `cd frontend && npm run -s smoke:ui` passed after restarting `vm-ui` on the fresh build.
+
+
+- High Availability (`/network/high-availability`) now supports full VRRP + sync-group edit/update workflows (not add/delete only), including safe rename behavior that updates sync-group members when a VRRP group name changes.
+- Added guide-aligned HA numeric validation for startup/GARP/health fields before save/apply to reduce invalid commit attempts.
+- Router Advertisements (`RouterAdvertServiceTab`) now enforces IPv6 CIDR validation for prefixes/auto-ignore, NAT64 prefix mask allowlist (`/32,/40,/48,/56,/64,/96`), interval min<=max checks, duplicate prefix protection, DNSSL token validation, and HTTP/HTTPS captive portal URL validation.
+- Validation pass for this cycle: `tsc`, targeted `eslint` (HA + Router Advert), `build`, `smoke:runtime`, `smoke:ui` all passed after standard `vm-ui` restart post-build.
+
+- System Proxy (`/system/proxy`) validation depth now enforces guide-aligned inputs: URL scheme (`http|https|ftp`), port range (`1-65535`), and auth dependency guardrails (URL required for auth; username required for password).
+
+- System sFlow (`/system/sflow`) now validates guide-leaf inputs more strictly: agent and collector addresses must be IPv4/IPv6, collector ports must be `1-65535`, and numeric leaves reject non-integer payloads before apply.
+
+- System Sysctl (`/system/sysctl`) now supports rename-safe parameter edits in one apply (delete old key + set new key) while retaining strict key/value validation; this closes a prior CRUD gap.
+
+- System Task Scheduler (`/system/task-scheduler`) validation now matches guide semantics more closely: interval accepts numeric with optional `m|h|d`, cron requires 5 fields, interval/crontab are mutually exclusive, and executable path must be absolute.
+
+- High Availability IPVS workflows now block invalid backend states before apply (real-server IP format validation and required non-empty real-server set per virtual server), reducing failed commits and empty-service misconfigurations.
+- System Syslog page now includes stronger validation depth (marker > 0, source/remote IP checks, hostname validation, port range, TLS/auth and octet-counted transport consistency) and explicit remote tree selection (`remote` vs `host`) for syntax compatibility.
+- System Default Route now supports both `next-hop <address>` and `next-hop-interface <interface>` workflows in one UI with full CRUD, distance/disable controls, and validation guardrails.
+- System Users local-user parity now includes structured SSH public-key entries (`identifier`, `key`, `type`, `options`) and OTP `rate-time` alongside `rate-limit`/`window-size`, with matching backend parsing/write logic and regression tests.
+- Serial Console was re-audited against current docs (`system console`): guide scope is `device` + `speed`, and existing page/API already provide full CRUD for that scope.
+- LCD was re-audited against current docs (`system lcd`): guide scope is `model` + `device`, and existing page/API already provide full CRUD for that scope.
+- FRR, System IP, and System IPv6 were re-audited against current docs and moved to verify where existing pages/wrappers already cover all currently documented command leaves.
+- Flow Accounting was re-audited against current docs and moved to verify where existing page/wrapper coverage already matches documented leaves.
+- Segment Routing (IS-IS/OSPF) was re-audited against current docs and moved to verify where existing `SegmentRoutingContent` coverage already matches documented leaves.
 
 ## Risks / Open Questions
 - Frontend lint warning debt remains high outside this slice.
@@ -491,3 +515,57 @@ Assumptions:
   - `python3 scripts/score_option_parity.py && python3 scripts/check_option_parity_thresholds.py` (pass)
 - Open active slice:
   - `SYS-09` remains `partial`; latest depth work added RADIUS/TACACS source/VRF and server disable controls, but user auth-key option/type + OTP rate-time parity leaves still need completion before moving to `verify`.
+
+## Cycle Update (2026-02-17 backlog sweep #2b)
+- Backlog status moved to `verify` for `SYS-17` after confirming implementation completeness for update-check runtime status + dashboard linkage; remaining requirement is live multi-version verification.
+
+## Cycle Update (2026-02-17)
+
+### Objective Update
+- Continue reducing `partial` backlog items by either implementing missing guide-command leaves or promoting to `verify` after explicit code-scope audit.
+
+### Completed This Cycle
+- `VRF-01` implemented and moved to `verify`.
+- `VRF-02` audited and moved to `verify`.
+- `SYS-01` implemented (conntrack depth) and moved to `verify`.
+- `SVC-03`, `SVC-04`, `SVC-05` audited and moved to `verify`.
+- `PKI-01`, `PKI-02` audited and moved to `verify`.
+- Cross-cutting tests deepened for conntrack advanced leaves (`X-02`/`X-03` progress).
+
+### Current Backlog Counts
+- `verify`: 43
+- `partial`: 43
+- `missing`: 0
+
+### Runtime Notes
+- `vm-api` and `vm-ui` tmux sessions can disappear between cycles; recreate before smoke gates.
+- After `frontend` build, restart/recreate `vm-ui` before `smoke:ui` to avoid stale-chunk runtime errors.
+
+### Files Touched This Cycle (high-signal)
+- `frontend/src/lib/api/vrf.ts`
+- `frontend/src/app/network/vrf/page.tsx`
+- `frontend/src/lib/api/system-conntrack.ts`
+- `frontend/src/app/system/conntrack/page.tsx`
+- `frontend/src/lib/help/pageGuides.ts`
+- `backend/tests/fixtures/config_apply_loops.json`
+- `backend/tests/test_domain_config_snapshots.py`
+- `backend/tests/snapshots/domain_config_snapshots.json`
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
+- `FEATURE_STATE.json`
+- `CURRENT_FEATURE.md`
+- `DECISIONS.md`
+- `LAST_FAILURE.txt`
+
+### Validation Run This Cycle
+- `cd frontend && npx tsc --noEmit --pretty false`
+- `cd frontend && npx eslint src/app/network/vrf/page.tsx src/lib/api/vrf.ts`
+- `cd frontend && npx eslint src/app/system/conntrack/page.tsx src/lib/api/system-conntrack.ts src/lib/help/pageGuides.ts`
+- `cd frontend && npm run -s build`
+- `cd frontend && npm run -s smoke:runtime`
+- `cd frontend && timeout 180 npm run -s smoke:ui`
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py`
+
+### Cycle Update Addendum (2026-02-17)
+- Promoted `X-02` and `X-03` to `verify` after adding explicit command-delta assertions in fixture save/apply/reload loops and expanding conntrack snapshot payload depth.
+- Updated backlog counts: `verify=45`, `partial=41`, `missing=0`.

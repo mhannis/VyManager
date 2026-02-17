@@ -810,14 +810,17 @@ export const pageGuides: Record<
   systemConntrack: {
     title: "System Conntrack How-To",
     summary:
-      "Tune connection tracking table size, TCP behavior, and helper modules for your traffic profile.",
+      "Tune connection tracking table size, timeout defaults, custom/ignore rules, logging behavior, and helper modules for your traffic profile.",
     docsUrl: "https://docs.vyos.io/en/latest/configuration/system/conntrack.html",
     sections: [
       {
         title: "Recommended Setup Order",
         items: [
           "Set global table sizing first (`table-size`, `expect-table-size`, `hash-size`).",
+          "Set default timeout values (`timeout` subtree) before creating per-rule custom timeout entries.",
           "Adjust TCP behavior (`half-open-connections`, `loose`, `max-retrans`) based on workload.",
+          "Add custom timeout and ignore rules only for specific traffic classes that need exceptions.",
+          "Enable conntrack logging events selectively to avoid noisy logs under load.",
           "Enable only required helper modules to reduce unnecessary protocol parsing.",
         ],
       },
@@ -825,6 +828,8 @@ export const pageGuides: Record<
         title: "Validation",
         items: [
           "Save changes and refresh to confirm values persist.",
+          "Verify rule IDs and address-family entries in the Custom Timeout Rules and Ignore Rules tables after save.",
+          "Confirm logging queue-size and event selections match your operational logging policy.",
           "Monitor connection stability and expected session capacity after tuning.",
         ],
       },
@@ -832,6 +837,9 @@ export const pageGuides: Record<
         title: "Troubleshooting",
         items: [
           "Too-small tables can cause dropped sessions under load.",
+          "If specific flows are still timing out unexpectedly, validate that custom timeout rule criteria are specific and IDs are unique.",
+          "If expected traffic is bypassing state tracking, re-check Ignore Rule match criteria and TCP flag selections.",
+          "If logs are excessive, reduce conntrack log event selections or lower log verbosity.",
           "If specific application flows break, review helper module requirements and TCP loose mode.",
         ],
       },

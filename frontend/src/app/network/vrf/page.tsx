@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   Select,
@@ -38,7 +39,19 @@ type VrfEntry = {
   name: string;
   table: string;
   description: string;
+  ipNhtNoResolveViaDefault: boolean;
+  ipv6NhtNoResolveViaDefault: boolean;
+  ipProtocolRouteMapsText: string;
+  ipv6ProtocolRouteMapsText: string;
 };
+
+type VrfProtocolRouteMapEntry = {
+  protocol: string;
+  routeMap: string;
+};
+
+const RE_VRF_PROTOCOL_NAME = /^[A-Za-z0-9._-]+$/;
+const RE_VRF_ROUTE_MAP_NAME = /^[A-Za-z0-9._-]+$/;
 
 type VrfRouteEntry = {
   vrf: string;
@@ -76,6 +89,10 @@ const EMPTY_VRF_DRAFT: VrfEntry = {
   name: "",
   table: "",
   description: "",
+  ipNhtNoResolveViaDefault: false,
+  ipv6NhtNoResolveViaDefault: false,
+  ipProtocolRouteMapsText: "",
+  ipv6ProtocolRouteMapsText: "",
 };
 
 const EMPTY_ROUTE_DRAFT: VrfRouteEntry = {
@@ -132,6 +149,59 @@ function listToInputString(values: string[]): string {
   return values.join(", ");
 }
 
+function normalizeProtocolRouteMapEntries(
+  entries: VrfProtocolRouteMapEntry[],
+): VrfProtocolRouteMapEntry[] {
+  const dedupe = new Map<string, string>();
+  for (const entry of entries) {
+    const protocol = normalizeText(entry.protocol).toLowerCase();
+    const routeMap = normalizeText(entry.routeMap);
+    if (!protocol || !routeMap) continue;
+    dedupe.set(protocol, routeMap);
+  }
+  return Array.from(dedupe.entries())
+    .map(([protocol, routeMap]) => ({ protocol, routeMap }))
+    .sort((left, right) => left.protocol.localeCompare(right.protocol, undefined, { numeric: true }));
+}
+
+function parseProtocolRouteMapsText(value: string, strict = false): VrfProtocolRouteMapEntry[] {
+  const rows: VrfProtocolRouteMapEntry[] = [];
+  const lines = value.split(/\n+/);
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const trimmed = normalizeText(line);
+    if (!trimmed) continue;
+    const [protocol, ...routeMapParts] = trimmed.split(/\s+/);
+    const routeMap = routeMapParts.join(" ").trim();
+    if (!protocol || !routeMap) {
+      if (strict) {
+        throw new Error(`Protocol route-map line ${index + 1} must be '<protocol> <route-map>'.`);
+      }
+      continue;
+    }
+    if (!RE_VRF_PROTOCOL_NAME.test(protocol)) {
+      if (strict) {
+        throw new Error(`Protocol route-map line ${index + 1} has invalid protocol '${protocol}'.`);
+      }
+      continue;
+    }
+    if (!RE_VRF_ROUTE_MAP_NAME.test(routeMap)) {
+      if (strict) {
+        throw new Error(`Protocol route-map line ${index + 1} has invalid route-map '${routeMap}'.`);
+      }
+      continue;
+    }
+    rows.push({ protocol: protocol.toLowerCase(), routeMap });
+  }
+  return normalizeProtocolRouteMapEntries(rows);
+}
+
+function protocolRouteMapsToText(entries: VrfProtocolRouteMapEntry[]): string {
+  return normalizeProtocolRouteMapEntries(entries)
+    .map((entry) => `${entry.protocol} ${entry.routeMap}`)
+    .join("\n");
+}
+
 function routeKey(route: VrfRouteEntry): string {
   return `${route.vrf}\u001f${route.destination}\u001f${route.interface}`;
 }
@@ -145,10 +215,18 @@ function mplsForwardingKey(entry: VrfMplsForwardingEntry): string {
 }
 
 function vrfEqual(left: VrfEntry, right: VrfEntry): boolean {
+  const leftIpRouteMaps = protocolRouteMapsToText(parseProtocolRouteMapsText(left.ipProtocolRouteMapsText));
+  const rightIpRouteMaps = protocolRouteMapsToText(parseProtocolRouteMapsText(right.ipProtocolRouteMapsText));
+  const leftIpv6RouteMaps = protocolRouteMapsToText(parseProtocolRouteMapsText(left.ipv6ProtocolRouteMapsText));
+  const rightIpv6RouteMaps = protocolRouteMapsToText(parseProtocolRouteMapsText(right.ipv6ProtocolRouteMapsText));
   return (
     left.name === right.name &&
     left.table === right.table &&
-    left.description === right.description
+    left.description === right.description &&
+    left.ipNhtNoResolveViaDefault === right.ipNhtNoResolveViaDefault &&
+    left.ipv6NhtNoResolveViaDefault === right.ipv6NhtNoResolveViaDefault &&
+    leftIpRouteMaps === rightIpRouteMaps &&
+    leftIpv6RouteMaps === rightIpv6RouteMaps
   );
 }
 
@@ -452,6 +530,20 @@ export default function VRFPage() {
           name: normalizeText(entry.name),
           table: normalizeText(entry.table),
           description: normalizeText(entry.description || ""),
+          ipNhtNoResolveViaDefault: Boolean(entry.ip_nht_no_resolve_via_default),
+          ipv6NhtNoResolveViaDefault: Boolean(entry.ipv6_nht_no_resolve_via_default),
+          ipProtocolRouteMapsText: protocolRouteMapsToText(
+            (entry.ip_protocol_route_maps || []).map((item) => ({
+              protocol: normalizeText(item.protocol || ""),
+              routeMap: normalizeText(item.route_map || ""),
+            })),
+          ),
+          ipv6ProtocolRouteMapsText: protocolRouteMapsToText(
+            (entry.ipv6_protocol_route_maps || []).map((item) => ({
+              protocol: normalizeText(item.protocol || ""),
+              routeMap: normalizeText(item.route_map || ""),
+            })),
+          ),
         }))
         .filter((entry) => entry.name)
         .sort((left, right) => left.name.localeCompare(right.name, undefined, { numeric: true }));
@@ -615,10 +707,28 @@ export default function VRFPage() {
   const addVrf = () => {
     setError(null);
 
+    let ipRouteMapText: string;
+    let ipv6RouteMapText: string;
+    try {
+      ipRouteMapText = protocolRouteMapsToText(
+        parseProtocolRouteMapsText(vrfDraft.ipProtocolRouteMapsText, true),
+      );
+      ipv6RouteMapText = protocolRouteMapsToText(
+        parseProtocolRouteMapsText(vrfDraft.ipv6ProtocolRouteMapsText, true),
+      );
+    } catch (validationError) {
+      setError(validationError instanceof Error ? validationError.message : "Invalid protocol route-map format.");
+      return;
+    }
+
     const draft: VrfEntry = {
       name: normalizeText(vrfDraft.name),
       table: normalizeText(vrfDraft.table),
       description: normalizeText(vrfDraft.description),
+      ipNhtNoResolveViaDefault: Boolean(vrfDraft.ipNhtNoResolveViaDefault),
+      ipv6NhtNoResolveViaDefault: Boolean(vrfDraft.ipv6NhtNoResolveViaDefault),
+      ipProtocolRouteMapsText: ipRouteMapText,
+      ipv6ProtocolRouteMapsText: ipv6RouteMapText,
     };
 
     if (!draft.name) {
@@ -828,6 +938,67 @@ export default function VRFPage() {
         } else if (currentEntry?.description) {
           operations.push(`delete vrf name ${name} description`);
         }
+
+        const syncNhtNoResolve = (
+          family: "ip" | "ipv6",
+          desiredValue: boolean,
+          currentValue: boolean,
+        ) => {
+          if (desiredValue === currentValue) return;
+          if (desiredValue) {
+            operations.push(`set vrf name ${name} ${family} nht no-resolve-via-default`);
+          } else {
+            operations.push(`delete vrf name ${name} ${family} nht no-resolve-via-default`);
+          }
+        };
+
+        syncNhtNoResolve(
+          "ip",
+          desiredEntry.ipNhtNoResolveViaDefault,
+          Boolean(currentEntry?.ipNhtNoResolveViaDefault),
+        );
+        syncNhtNoResolve(
+          "ipv6",
+          desiredEntry.ipv6NhtNoResolveViaDefault,
+          Boolean(currentEntry?.ipv6NhtNoResolveViaDefault),
+        );
+
+        const syncProtocolRouteMaps = (
+          family: "ip" | "ipv6",
+          desiredRaw: string,
+          currentRaw: string,
+        ) => {
+          const desiredMaps = parseProtocolRouteMapsText(desiredRaw);
+          const currentMaps = parseProtocolRouteMapsText(currentRaw);
+          const desiredMap = new Map(desiredMaps.map((entry) => [entry.protocol, entry.routeMap]));
+          const currentMap = new Map(currentMaps.map((entry) => [entry.protocol, entry.routeMap]));
+
+          for (const [protocol, currentRouteMap] of currentMap.entries()) {
+            const desiredRouteMap = desiredMap.get(protocol);
+            if (!desiredRouteMap || desiredRouteMap !== currentRouteMap) {
+              operations.push(`delete vrf name ${name} ${family} protocol ${protocol} route-map`);
+            }
+          }
+
+          for (const [protocol, desiredRouteMap] of desiredMap.entries()) {
+            const currentRouteMap = currentMap.get(protocol);
+            if (currentRouteMap === desiredRouteMap) continue;
+            operations.push(
+              `set vrf name ${name} ${family} protocol ${protocol} route-map ${desiredRouteMap}`,
+            );
+          }
+        };
+
+        syncProtocolRouteMaps(
+          "ip",
+          desiredEntry.ipProtocolRouteMapsText,
+          currentEntry?.ipProtocolRouteMapsText || "",
+        );
+        syncProtocolRouteMaps(
+          "ipv6",
+          desiredEntry.ipv6ProtocolRouteMapsText,
+          currentEntry?.ipv6ProtocolRouteMapsText || "",
+        );
       }
 
       const currentRouteMap = new Map(currentRoutes.map((entry) => [routeKey(entry), entry]));
@@ -1049,6 +1220,68 @@ export default function VRFPage() {
                     />
                   </div>
                 </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                    <Checkbox
+                      checked={vrfDraft.ipNhtNoResolveViaDefault}
+                      onCheckedChange={(checked) =>
+                        setVrfDraft((previous) => ({
+                          ...previous,
+                          ipNhtNoResolveViaDefault: Boolean(checked),
+                        }))
+                      }
+                      disabled={!canEdit}
+                    />
+                    IPv4 NHT no-resolve-via-default
+                  </label>
+                  <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                    <Checkbox
+                      checked={vrfDraft.ipv6NhtNoResolveViaDefault}
+                      onCheckedChange={(checked) =>
+                        setVrfDraft((previous) => ({
+                          ...previous,
+                          ipv6NhtNoResolveViaDefault: Boolean(checked),
+                        }))
+                      }
+                      disabled={!canEdit}
+                    />
+                    IPv6 NHT no-resolve-via-default
+                  </label>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="vrf-ip-route-maps">IPv4 Protocol Route-Maps</Label>
+                    <Textarea
+                      id="vrf-ip-route-maps"
+                      value={vrfDraft.ipProtocolRouteMapsText}
+                      onChange={(event) =>
+                        setVrfDraft((previous) => ({
+                          ...previous,
+                          ipProtocolRouteMapsText: event.target.value,
+                        }))
+                      }
+                      placeholder={"ospf RM-OSPF-IN\nbgp RM-BGP-IN"}
+                      className="min-h-[88px] font-mono text-xs"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="vrf-ipv6-route-maps">IPv6 Protocol Route-Maps</Label>
+                    <Textarea
+                      id="vrf-ipv6-route-maps"
+                      value={vrfDraft.ipv6ProtocolRouteMapsText}
+                      onChange={(event) =>
+                        setVrfDraft((previous) => ({
+                          ...previous,
+                          ipv6ProtocolRouteMapsText: event.target.value,
+                        }))
+                      }
+                      placeholder={"ospf6 RM-OSPF6-IN\nbgp RM-BGP6-IN"}
+                      className="min-h-[88px] font-mono text-xs"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
                 <div>
                   <Button type="button" variant="outline" onClick={addVrf} disabled={!canEdit}>
                     <Plus className="mr-2 h-4 w-4" />
@@ -1062,13 +1295,15 @@ export default function VRFPage() {
                       <TableHead>Name</TableHead>
                       <TableHead>Table</TableHead>
                       <TableHead>Description</TableHead>
+                      <TableHead>NHT</TableHead>
+                      <TableHead>Protocol Route-Maps</TableHead>
                       <TableHead className="w-[120px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {vrfs.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-muted-foreground">
+                        <TableCell colSpan={6} className="text-muted-foreground">
                           No VRF instances configured.
                         </TableCell>
                       </TableRow>
@@ -1078,6 +1313,15 @@ export default function VRFPage() {
                           <TableCell className="font-medium">{entry.name}</TableCell>
                           <TableCell>{entry.table}</TableCell>
                           <TableCell>{entry.description || "-"}</TableCell>
+                          <TableCell className="text-xs">
+                            {entry.ipNhtNoResolveViaDefault || entry.ipv6NhtNoResolveViaDefault
+                              ? `${entry.ipNhtNoResolveViaDefault ? "IPv4" : ""}${entry.ipNhtNoResolveViaDefault && entry.ipv6NhtNoResolveViaDefault ? ", " : ""}${entry.ipv6NhtNoResolveViaDefault ? "IPv6" : ""}`
+                              : "-"}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            IPv4: {parseProtocolRouteMapsText(entry.ipProtocolRouteMapsText).length} | IPv6:{" "}
+                            {parseProtocolRouteMapsText(entry.ipv6ProtocolRouteMapsText).length}
+                          </TableCell>
                           <TableCell className="text-right">
                             <Button
                               variant="ghost"

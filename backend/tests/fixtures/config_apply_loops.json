@@ -404,6 +404,29 @@
       "delete_operations": [
         "delete vpn ipsec profile NHRPVPN bind tunnel"
       ]
+    },
+    {
+      "id": "LOOP-32",
+      "name": "System Conntrack advanced loop",
+      "config_endpoint": "/vyos/system-conntrack/config",
+      "batch_endpoint": "/vyos/system-conntrack/batch",
+      "response_key": "conntrack",
+      "set_operations": [
+        "set system conntrack timeout tcp established 600",
+        "set system conntrack timeout custom ipv4 rule 10 protocol tcp",
+        "set system conntrack timeout custom ipv4 rule 10 source address 192.0.2.0/24",
+        "set system conntrack timeout custom ipv4 rule 10 timeout 300",
+        "set system conntrack ignore ipv4 rule 20 protocol udp",
+        "set system conntrack log invalid-state",
+        "set system conntrack log tcp established"
+      ],
+      "delete_operations": [
+        "delete system conntrack log tcp established",
+        "delete system conntrack log invalid-state",
+        "delete system conntrack ignore ipv4 rule 20",
+        "delete system conntrack timeout custom ipv4 rule 10",
+        "delete system conntrack timeout tcp established"
+      ]
     }
   ]
 }
