@@ -643,6 +643,16 @@ class DnsServiceConfigRequest(BaseModel):
     host_overrides: List[DnsHostOverride] = Field(default_factory=list)
 
 
+class SystemResolverConfigResponse(BaseModel):
+    name_servers: List[str] = Field(default_factory=list)
+    domain_search: List[str] = Field(default_factory=list)
+
+
+class SystemResolverConfigRequest(BaseModel):
+    name_servers: List[str] = Field(default_factory=list)
+    domain_search: List[str] = Field(default_factory=list)
+
+
 DEFAULT_DNS_ALLOW_FROM_NETWORKS: tuple[str, ...] = ("0.0.0.0/0",)
 
 
@@ -1159,6 +1169,14 @@ def _parse_dns_service_config(full_config: Dict[str, Any]) -> DnsServiceConfigRe
         authoritative_domains=_extract_tag_values(forwarding_root, ["authoritative-domain"]),
         domain_overrides=domain_overrides,
         host_overrides=host_overrides,
+    )
+
+
+def _parse_system_resolver_config(full_config: Dict[str, Any]) -> SystemResolverConfigResponse:
+    system_root = _as_dict(full_config.get("system"))
+    return SystemResolverConfigResponse(
+        name_servers=_extract_tag_values(system_root, ["name-server"]),
+        domain_search=_extract_tag_values(system_root, ["domain-search"]),
     )
 
 
@@ -3028,6 +3046,73 @@ async def update_dns_config(request: Request, body: DnsServiceConfigRequest) -> 
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error updating DNS configuration: {str(exc)}")
+
+
+@router.get("/resolver-config", response_model=SystemResolverConfigResponse)
+async def get_system_resolver_config(request: Request, refresh: bool = False) -> SystemResolverConfigResponse:
+    """Get `system name-server` and `system domain-search` values."""
+    await require_read_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        return _parse_system_resolver_config(full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving system resolver configuration: {str(exc)}")
+
+
+@router.put("/resolver-config", response_model=SystemResolverConfigResponse)
+async def update_system_resolver_config(
+    request: Request, body: SystemResolverConfigRequest
+) -> SystemResolverConfigResponse:
+    """Update `system name-server` and `system domain-search` values."""
+    await require_write_permission(request, FeatureGroup.SYSTEM)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        current = _parse_system_resolver_config(full_config)
+
+        desired_name_servers = set(
+            _normalize_dns_server_or_400(name_server, field_name="system DNS name server")
+            for name_server in _normalize_unique_strings(body.name_servers)
+        )
+        desired_domain_search = set(
+            _normalize_hostname_or_400(domain, field_name="system domain-search value")
+            for domain in _normalize_unique_strings(body.domain_search)
+        )
+
+        operations: List[Dict[str, Any]] = []
+
+        current_name_servers = set(current.name_servers)
+        for value in sorted(current_name_servers - desired_name_servers):
+            operations.append({"op": "delete", "path": ["system", "name-server", value]})
+        for value in sorted(desired_name_servers - current_name_servers):
+            operations.append({"op": "set", "path": ["system", "name-server", value]})
+
+        current_domain_search = set(current.domain_search)
+        for value in sorted(current_domain_search - desired_domain_search):
+            operations.append({"op": "delete", "path": ["system", "domain-search", value]})
+        for value in sorted(desired_domain_search - current_domain_search):
+            operations.append({"op": "set", "path": ["system", "domain-search", value]})
+
+        if operations:
+            response = await run_in_threadpool(service.apply_operations, operations)
+            if response.status != 200:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to update system resolver configuration: {response.error or 'Unknown VyOS error'}",
+                )
+            await run_in_threadpool(service.get_full_config, refresh=True)
+
+        updated_full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        return _parse_system_resolver_config(updated_full_config)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating system resolver configuration: {str(exc)}")
 
 
 @router.get("/dynamic-dns-config", response_model=DynamicDnsConfigResponse)

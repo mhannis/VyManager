@@ -282,7 +282,7 @@ export const SIDEBAR_VISIBILITY_ITEMS: SidebarVisibilityItem[] = [
       },
       {
         id: "system-guided-setup",
-        label: "Guided Setup",
+        label: "Options",
         href: "/system/options",
         canHide: true,
       },

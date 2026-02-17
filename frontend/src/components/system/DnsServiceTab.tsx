@@ -479,15 +479,13 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
       }
     }
 
-    const payload: DnsConfig = {
+    const payload = {
       enabled: config.enabled,
       local_domain_name: normalizedLocalDomain,
       listen_addresses: normalizedListenAddresses,
       allow_from: normalizedAllowFrom,
       name_servers: normalizedNameServers,
       use_system_name_servers: config.use_system_name_servers,
-      system_name_servers: normalizedSystemNameServers,
-      system_domain_search: normalizedSystemDomainSearch,
       cache_size: config.cache_size,
       authoritative_domains: normalizedAuthoritativeDomains,
       domain_overrides: normalizedDomainOverrides
@@ -506,7 +504,7 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
     setError(null);
     setSuccess(null);
     try {
-      const updated = await systemService.updateDnsConfig(payload);
+      const updated = await systemService.updateDnsConfig(payload as DnsConfig);
       setConfig(updated);
       setSuccess("DNS configuration updated.");
     } catch (err) {
@@ -610,6 +608,10 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
                 />
                 <Label className="text-sm font-medium">Enable DNS service</Label>
               </div>
+              <p className="text-xs text-muted-foreground">
+                System resolver defaults (`system name-server` and `system domain-search`) are configured under
+                System Options.
+              </p>
 
               <div className="grid gap-4 xl:grid-cols-2">
                 <div className="space-y-2">
@@ -644,45 +646,6 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
                     placeholder="150"
                     disabled={!canEdit || saving || !config.enabled}
                   />
-                </div>
-              </div>
-
-              <div className="grid gap-4 xl:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>System Name Servers (comma separated)</Label>
-                  <Input
-                    value={toCsv(config.system_name_servers ?? [])}
-                    onChange={(event) =>
-                      setConfig((previous) =>
-                        previous
-                          ? { ...previous, system_name_servers: fromCsv(event.target.value) }
-                          : previous
-                      )
-                    }
-                    placeholder="1.1.1.1, 9.9.9.9"
-                    disabled={!canEdit || saving}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Writes `system name-server ...` and is shared with other resolver-aware services.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label>System Domain Search (comma separated)</Label>
-                  <Input
-                    value={toCsv(config.system_domain_search ?? [])}
-                    onChange={(event) =>
-                      setConfig((previous) =>
-                        previous
-                          ? { ...previous, system_domain_search: fromCsv(event.target.value) }
-                          : previous
-                      )
-                    }
-                    placeholder="lab.local, corp.example.com"
-                    disabled={!canEdit || saving}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Writes `system domain-search ...` suffixes for host resolution lookups.
-                  </p>
                 </div>
               </div>
 

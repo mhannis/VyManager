@@ -299,6 +299,71 @@ def test_update_dns_config_defaults_allow_from_when_omitted(monkeypatch, app, al
     assert ("service", "dns", "forwarding", "name-server", "1.1.1.1") in op_paths
 
 
+def test_get_system_resolver_config_parses_values(monkeypatch, app, allow_permissions):
+    service = DummyService(
+        full_config={
+            "system": {
+                "name-server": {"1.1.1.1": {}, "9.9.9.9": {}},
+                "domain-search": {"lab.local": {}, "corp.example.com": {}},
+            }
+        }
+    )
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    resp = client.get("/vyos/system/resolver-config")
+    assert resp.status_code == 200
+    data = resp.json()
+
+    assert sorted(data["name_servers"]) == ["1.1.1.1", "9.9.9.9"]
+    assert sorted(data["domain_search"]) == ["corp.example.com", "lab.local"]
+
+
+def test_update_system_resolver_config_emits_expected_operations(monkeypatch, app, allow_permissions):
+    service = DummyService(
+        full_config={
+            "system": {
+                "name-server": {"1.1.1.1": {}, "4.4.4.4": {}},
+                "domain-search": {"old.local": {}},
+            }
+        }
+    )
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    body = {
+        "name_servers": ["1.1.1.1", "9.9.9.9"],
+        "domain_search": ["lab.local"],
+    }
+
+    resp = client.put("/vyos/system/resolver-config", json=body)
+    assert resp.status_code == 200
+    assert service.device.configure_calls, "Expected configure operation call"
+
+    operations = service.device.configure_calls[-1]
+    op_paths = [tuple(op.get("path") or []) for op in operations]
+
+    assert ("system", "name-server", "4.4.4.4") in op_paths
+    assert ("system", "name-server", "9.9.9.9") in op_paths
+    assert ("system", "domain-search", "lab.local") in op_paths
+    assert ("system", "domain-search", "old.local") in op_paths
+
+
+def test_update_system_resolver_config_rejects_invalid_domain_search(monkeypatch, app, allow_permissions):
+    service = DummyService(full_config={"system": {}})
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    body = {
+        "name_servers": ["1.1.1.1"],
+        "domain_search": ["invalid domain"],
+    }
+
+    resp = client.put("/vyos/system/resolver-config", json=body)
+    assert resp.status_code == 400
+    assert "system domain-search value" in resp.json().get("detail", "")
+
+
 def test_get_dns_config_includes_system_name_servers_and_domain_search(monkeypatch, app, allow_permissions):
     service = DummyService(
         full_config={

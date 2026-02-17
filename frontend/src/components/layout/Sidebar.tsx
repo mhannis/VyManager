@@ -373,7 +373,7 @@ const navigation: NavItem[] = [
       },
       {
         id: "system-guided-setup",
-        title: "Guided Setup",
+        title: "Options",
         href: "/system/options",
         requiredPermission: FeatureGroup.SYSTEM,
       },
