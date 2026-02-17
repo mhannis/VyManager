@@ -49,6 +49,7 @@ export interface GeneveInterfaceConfig {
   name: string;
   description: string;
   addresses: string[];
+  mac: string;
   mtu: string;
   remote: string;
   sourceAddress: string;
@@ -56,6 +57,9 @@ export interface GeneveInterfaceConfig {
   vni: string;
   port: string;
   disable: boolean;
+  disableFlowControl: boolean;
+  disableLinkDetect: boolean;
+  ipSourceValidation: string;
   ipAdjustMssClamp: boolean;
   ipAdjustMssValue: string;
   ipv6AdjustMssClamp: boolean;
@@ -88,6 +92,7 @@ class GeneveService {
         name,
         description: asString(node.description),
         addresses: readTagValues(node.address),
+        mac: asString(node.mac),
         mtu: asString(node.mtu),
         remote: asString(node.remote),
         sourceAddress: asString(node["source-address"]),
@@ -95,6 +100,9 @@ class GeneveService {
         vni: asString(node.vni),
         port: asString(node.port),
         disable: Object.prototype.hasOwnProperty.call(node, "disable"),
+        disableFlowControl: Object.prototype.hasOwnProperty.call(node, "disable-flow-control"),
+        disableLinkDetect: Object.prototype.hasOwnProperty.call(node, "disable-link-detect"),
+        ipSourceValidation: asString(ipNode["source-validation"]),
         ipAdjustMssClamp: ipAdjustMss.clamp,
         ipAdjustMssValue: ipAdjustMss.value,
         ipv6AdjustMssClamp: ipv6AdjustMss.clamp,
@@ -111,4 +119,3 @@ class GeneveService {
 }
 
 export const geneveService = new GeneveService();
-

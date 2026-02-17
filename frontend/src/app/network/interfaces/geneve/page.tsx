@@ -34,6 +34,7 @@ interface GeneveFormState {
   name: string;
   description: string;
   addressesText: string;
+  mac: string;
   mtu: string;
   remote: string;
   sourceAddress: string;
@@ -41,6 +42,9 @@ interface GeneveFormState {
   vni: string;
   port: string;
   disable: boolean;
+  disableFlowControl: boolean;
+  disableLinkDetect: boolean;
+  ipSourceValidation: string;
   ipAdjustMssClamp: boolean;
   ipAdjustMssValue: string;
   ipv6AdjustMssClamp: boolean;
@@ -51,6 +55,7 @@ const EMPTY_FORM: GeneveFormState = {
   name: "",
   description: "",
   addressesText: "",
+  mac: "",
   mtu: "",
   remote: "",
   sourceAddress: "",
@@ -58,11 +63,16 @@ const EMPTY_FORM: GeneveFormState = {
   vni: "",
   port: "",
   disable: false,
+  disableFlowControl: false,
+  disableLinkDetect: false,
+  ipSourceValidation: "",
   ipAdjustMssClamp: false,
   ipAdjustMssValue: "",
   ipv6AdjustMssClamp: false,
   ipv6AdjustMssValue: "",
 };
+
+const SOURCE_VALIDATION_OPTIONS = ["strict", "loose", "disable"] as const;
 
 function quoteCliValue(value: string): string {
   const trimmed = value.trim();
@@ -87,6 +97,12 @@ function parseAddressLines(raw: string): string[] {
   return uniqueNonEmpty(raw.split("\n"));
 }
 
+function isValidMacAddress(value: string): boolean {
+  const candidate = value.trim();
+  if (!candidate) return true;
+  return /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(candidate);
+}
+
 function getInterfaceChoices(interfaces: EthernetInterface[]): InterfaceChoice[] {
   return interfaces
     .map((iface) => ({
@@ -101,6 +117,7 @@ function toFormState(value: GeneveInterfaceConfig): GeneveFormState {
     name: value.name,
     description: value.description,
     addressesText: value.addresses.join("\n"),
+    mac: value.mac,
     mtu: value.mtu,
     remote: value.remote,
     sourceAddress: value.sourceAddress,
@@ -108,6 +125,9 @@ function toFormState(value: GeneveInterfaceConfig): GeneveFormState {
     vni: value.vni,
     port: value.port,
     disable: value.disable,
+    disableFlowControl: value.disableFlowControl,
+    disableLinkDetect: value.disableLinkDetect,
+    ipSourceValidation: value.ipSourceValidation,
     ipAdjustMssClamp: value.ipAdjustMssClamp,
     ipAdjustMssValue: value.ipAdjustMssValue,
     ipv6AdjustMssClamp: value.ipv6AdjustMssClamp,
@@ -176,6 +196,7 @@ function buildGeneveOperations(candidate: GeneveFormState, current: GeneveInterf
       name: candidate.name.trim(),
       description: "",
       addresses: [],
+      mac: "",
       mtu: "",
       remote: "",
       sourceAddress: "",
@@ -183,6 +204,9 @@ function buildGeneveOperations(candidate: GeneveFormState, current: GeneveInterf
       vni: "",
       port: "",
       disable: false,
+      disableFlowControl: false,
+      disableLinkDetect: false,
+      ipSourceValidation: "",
       ipAdjustMssClamp: false,
       ipAdjustMssValue: "",
       ipv6AdjustMssClamp: false,
@@ -190,6 +214,7 @@ function buildGeneveOperations(candidate: GeneveFormState, current: GeneveInterf
     } satisfies GeneveInterfaceConfig);
 
   syncScalar(operations, base, "description", candidate.description.trim(), currentSafe.description);
+  syncScalar(operations, base, "mac", candidate.mac.trim(), currentSafe.mac);
   syncScalar(operations, base, "mtu", candidate.mtu.trim(), currentSafe.mtu);
   syncScalar(operations, base, "remote", candidate.remote.trim(), currentSafe.remote);
   syncScalar(
@@ -208,6 +233,13 @@ function buildGeneveOperations(candidate: GeneveFormState, current: GeneveInterf
   );
   syncScalar(operations, base, "vni", candidate.vni.trim(), currentSafe.vni);
   syncScalar(operations, base, "port", candidate.port.trim(), currentSafe.port);
+  syncScalar(
+    operations,
+    base,
+    "ip source-validation",
+    candidate.ipSourceValidation.trim(),
+    currentSafe.ipSourceValidation,
+  );
 
   const desiredAddresses = parseAddressLines(candidate.addressesText);
   const currentAddressSet = new Set(currentSafe.addresses);
@@ -225,6 +257,20 @@ function buildGeneveOperations(candidate: GeneveFormState, current: GeneveInterf
 
   if (candidate.disable !== currentSafe.disable) {
     operations.push(candidate.disable ? `set ${base} disable` : `delete ${base} disable`);
+  }
+  if (candidate.disableFlowControl !== currentSafe.disableFlowControl) {
+    operations.push(
+      candidate.disableFlowControl
+        ? `set ${base} disable-flow-control`
+        : `delete ${base} disable-flow-control`,
+    );
+  }
+  if (candidate.disableLinkDetect !== currentSafe.disableLinkDetect) {
+    operations.push(
+      candidate.disableLinkDetect
+        ? `set ${base} disable-link-detect`
+        : `delete ${base} disable-link-detect`,
+    );
   }
 
   syncAdjustMss(
@@ -328,6 +374,10 @@ export default function GeneveInterfacesPage() {
       setError("Renaming Geneve interfaces is not supported. Create a new interface and delete the old one.");
       return;
     }
+    if (!isValidMacAddress(form.mac)) {
+      setError("MAC must use canonical format (aa:bb:cc:dd:ee:ff).");
+      return;
+    }
     if (!form.remote.trim()) {
       setError("Remote endpoint is required.");
       return;
@@ -338,6 +388,13 @@ export default function GeneveInterfacesPage() {
     }
     if (!form.sourceAddress.trim() && !form.sourceInterface.trim()) {
       setError("Set either source address or source interface.");
+      return;
+    }
+    if (
+      form.ipSourceValidation.trim() &&
+      !SOURCE_VALIDATION_OPTIONS.includes(form.ipSourceValidation.trim() as (typeof SOURCE_VALIDATION_OPTIONS)[number])
+    ) {
+      setError("IP source validation must be one of strict, loose, or disable.");
       return;
     }
 
@@ -590,7 +647,30 @@ export default function GeneveInterfacesPage() {
                 </div>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>IP Source Validation</Label>
+                <Select
+                  value={form.ipSourceValidation || "none"}
+                  onValueChange={(value) =>
+                    setForm((prev) => ({ ...prev, ipSourceValidation: value === "none" ? "" : value }))
+                  }
+                  disabled={saving}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Default" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Default</SelectItem>
+                    {SOURCE_VALIDATION_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
                 <div className="space-y-2">
                   <Label>MTU</Label>
                   <Input
@@ -606,6 +686,15 @@ export default function GeneveInterfacesPage() {
                     value={form.port}
                     onChange={(event) => setForm((prev) => ({ ...prev, port: event.target.value }))}
                     placeholder="6081"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>MAC</Label>
+                  <Input
+                    value={form.mac}
+                    onChange={(event) => setForm((prev) => ({ ...prev, mac: event.target.value }))}
+                    placeholder="02:00:00:00:10:10"
                     disabled={saving}
                   />
                 </div>
@@ -662,14 +751,36 @@ export default function GeneveInterfacesPage() {
                 />
               </div>
 
-              <label className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  checked={form.disable}
-                  onCheckedChange={(checked) => setForm((prev) => ({ ...prev, disable: Boolean(checked) }))}
-                  disabled={saving}
-                />
-                Disable interface
-              </label>
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.disable}
+                    onCheckedChange={(checked) => setForm((prev) => ({ ...prev, disable: Boolean(checked) }))}
+                    disabled={saving}
+                  />
+                  Disable interface
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.disableFlowControl}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, disableFlowControl: Boolean(checked) }))
+                    }
+                    disabled={saving}
+                  />
+                  Disable flow control
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.disableLinkDetect}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, disableLinkDetect: Boolean(checked) }))
+                    }
+                    disabled={saving}
+                  />
+                  Disable link detect
+                </label>
+              </div>
 
               <div className="pt-2">
                 <Button onClick={saveInterface} disabled={saving}>
@@ -693,4 +804,3 @@ export default function GeneveInterfacesPage() {
     </AppLayout>
   );
 }
-
