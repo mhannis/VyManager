@@ -50,14 +50,32 @@ def run_step(name: str, command: str, timeout: int) -> StepResult:
 def build_steps(skip_ui_smoke: bool) -> list[tuple[str, str]]:
     steps = [
         (
-            "Backend protocol + wrapper tests",
+            "Backend robustness test suite",
             "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q "
             "tests/test_protocol_capabilities.py "
             "tests/test_config_tree_wrapper_capabilities.py "
             "tests/test_firewall_nat_save_apply_reload_loops.py "
             "tests/test_fixture_save_apply_reload_loops.py "
             "tests/test_firewall_nat_config_snapshots.py "
-            "tests/test_domain_config_snapshots.py",
+            "tests/test_domain_config_snapshots.py "
+            "tests/test_nat_reorder_static.py "
+            "tests/test_system_update_check_status.py "
+            "tests/test_system_services_ssh_dns.py "
+            "tests/test_firewall_flowtables_validation.py",
+        ),
+        (
+            "Frontend lint (critical surfaces)",
+            "cd frontend && npx eslint "
+            "src/app/page.tsx "
+            "src/app/network/nat/page.tsx "
+            "src/app/network/load-balancing/page.tsx "
+            "src/app/system/services/page.tsx "
+            "src/app/vpn/ipsec/page.tsx "
+            "src/components/dashboard/SystemInformationCard.tsx "
+            "src/components/network/EditSourceNATModal.tsx "
+            "src/components/network/EditDestinationNATModal.tsx "
+            "src/components/network/EditStaticNATModal.tsx "
+            "src/lib/api/nat.ts",
         ),
         (
             "Frontend TypeScript",
@@ -75,8 +93,10 @@ def build_steps(skip_ui_smoke: bool) -> list[tuple[str, str]]:
     if not skip_ui_smoke:
         steps.append(
             (
-                "Frontend browser smoke",
-                "cd frontend && npm run -s smoke:ui",
+                "Frontend browser smoke (high-risk routes)",
+                "cd frontend && SMOKE_ROUTES=/,/network/interfaces,/network/nat,/network/load-balancing,"
+                "/network/traffic-policy,/routing/static-failover,/vpn/ipsec,/system/services,/system/users "
+                "npm run -s smoke:ui",
             )
         )
     return steps

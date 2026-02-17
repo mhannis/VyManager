@@ -156,4 +156,4 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `X-02` (`verify`): Fixture save/apply/reload loops expanded with advanced-option coverage and explicit command-delta assertions in loop responses; pending live-device verification.
 - `X-03` (`verify`): Domain config snapshots expanded with richer payloads and loop-level command-delta assertions; pending live-instance snapshot comparisons.
 - `X-04` (`verify`): Browser/runtime smoke route coverage now includes every current app page route (with route-appropriate exclusions), pending ongoing verification as new pages are added.
-- `X-05` (`partial`): Added reproducible robustness relook runner (`scripts/run_robustness_relook.py`) and generated baseline report (`ROBUSTNESS_RELOOK_REPORT.md`); remaining work is broadening to full parity-domain live verification before final sign-off.
+- `X-05` (`verify`): Robustness relook runner now expanded to broader backend suites + critical frontend lint/ts/build/runtime/browser smoke routes, with regenerated report artifact (`ROBUSTNESS_RELOOK_REPORT.md`). Pending live parity-domain sign-off.

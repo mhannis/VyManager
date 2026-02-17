@@ -532,8 +532,8 @@
     {
       "id": "X-05",
       "domain": "cross-cutting",
-      "status": "partial",
-      "title": "Final robustness relook pass (baseline runner/report in place; broaden final parity sweep)"
+      "status": "verify",
+      "title": "Robustness relook runner expanded to broad backend suites + critical frontend lint/ts/build/runtime/browser smoke routes with regenerated report artifact; pending live parity-domain sign-off"
     }
   ]
 }
