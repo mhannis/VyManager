@@ -43,6 +43,7 @@ const ROUTES = (
     "/network/load-balancing",
     "/network/high-availability",
     "/network/nat",
+    "/network/nat/cgnat",
     "/network/routes",
     "/network/traffic-policy",
     "/network/interfaces?group=core-l2",
