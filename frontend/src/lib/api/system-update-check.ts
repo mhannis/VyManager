@@ -1,4 +1,5 @@
 import { ConfigTreeApi } from "./config-tree";
+import { apiClient } from "./client";
 
 function asObject(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
@@ -13,6 +14,19 @@ function asString(value: unknown): string {
 export interface SystemUpdateCheckConfig {
   autoCheck: boolean;
   url: string;
+}
+
+export interface SystemUpdateCheckStatus {
+  available: boolean;
+  checked_at: string;
+  command_used: string | null;
+  current_version: string | null;
+  update_available: boolean | null;
+  update_version: string | null;
+  update_url: string | null;
+  summary: string | null;
+  raw_output: string | null;
+  warnings: string[];
 }
 
 class SystemUpdateCheckService {
@@ -32,6 +46,12 @@ class SystemUpdateCheckService {
 
   async batchConfigure(operations: string[]) {
     return this.api.configure(operations);
+  }
+
+  async getStatus(refresh: boolean = false): Promise<SystemUpdateCheckStatus> {
+    return apiClient.get<SystemUpdateCheckStatus>("/vyos/system-update-check/status", {
+      refresh: refresh.toString(),
+    });
   }
 }
 

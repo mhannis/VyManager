@@ -55,31 +55,35 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Continue guide-order backlog execution with high-availability option-depth parity and robust GUI-first validation.
-- Keep changes additive to existing wrappers/services while improving correctness of generated HA command operations.
+- Continue guide-order backlog execution while closing system update visibility gaps in UI/dashboard.
+- Keep changes additive to existing wrappers/services while improving runtime observability of update state.
 - Maintain deterministic gates on each slice (`pytest` + `tsc` + targeted `eslint` + `build` + runtime/browser smoke).
 
 ## Current Feature Spec
-Feature: **High Availability parity depth (`HA-01` and `HA-02` option hardening slice)**.
+Feature: **System update runtime visibility + dashboard indicator (`SYS-17` slice)**.
 
 Acceptance criteria:
-- VRRP group editor supports per-address interface bindings (`address ... interface <if>`) and preserves existing bindings from config.
-- HA save diff logic correctly handles address-interface rebinding through deterministic delete/recreate command generation.
-- VRRP/IPVS forms enforce core numeric and semantic validation before apply (VRID/priority/intervals, port/fwmark ranges, sync member existence, dual-stack guardrails).
-- Validation gates pass (`tsc`, targeted `eslint`, `build`, runtime/browser smoke).
+- `System -> Update Check` displays runtime update probe result (up-to-date vs update available) with raw command output and warnings.
+- Backend exposes structured update status endpoint using best-effort `show/generate system updates` probes and graceful fallbacks.
+- `Dashboard -> System Information` shows update state and links to `/system/update-check` when an update is available.
+- Validation gates pass (`pytest` targeted suite, `tsc`, targeted `eslint`, `build`, `smoke:runtime`, `smoke:ui`).
 
 Assumptions:
-- This slice advances `HA-01`/`HA-02` but does not close full high-availability parity; live dual-node verification remains.
-- Current VRRP group/sync-group flows remain add/remove based (no inline edit modal) in this cycle.
+- Update status command output varies across VyOS versions/images; parser remains best-effort and returns warnings when probes fail/are unsupported.
+- This slice adds visibility and does not perform image installs or upgrades.
 
 ## Work In Progress
 - Branch: `feature/containers-automation-v1`
-- Status: high-availability depth hardening implemented and validated; next queue continues remaining HA and adjacent backlog slices.
+- Status: update-check runtime visibility implemented and validated; backlog continues with HA depth and remaining option parity.
 - Runtime smoke process still requires `vm-ui` restart after `next build` to avoid stale chunk manifest failures.
 - Working tree remains dirty with unrelated pre-existing files outside this slice (`CONFIG_COVERAGE_PHASE1.*`, existing untracked artifacts).
 
 ### Files Touched This Cycle
-- `frontend/src/app/network/high-availability/page.tsx`
+- `backend/routers/system_update_check.py`
+- `backend/tests/test_system_update_check_status.py`
+- `frontend/src/lib/api/system-update-check.ts`
+- `frontend/src/app/system/update-check/page.tsx`
+- `frontend/src/components/dashboard/SystemInformationCard.tsx`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CURRENT_FEATURE.md`
@@ -87,8 +91,9 @@ Assumptions:
 - `PROJECT_MEMORY.md`
 
 ### Validation This Cycle
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_update_check_status.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
-- `cd frontend && npx eslint src/app/network/high-availability/page.tsx` passed (`0 errors`).
+- `cd frontend && npx eslint src/app/system/update-check/page.tsx src/components/dashboard/SystemInformationCard.tsx src/lib/api/system-update-check.ts` passed (`0 errors`).
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
 - `cd frontend && npm run -s smoke:ui` passed after restarting `vm-ui` on the fresh build.
@@ -113,6 +118,10 @@ Assumptions:
 - Keep runtime gate sequence for every slice (`build -> restart vm-ui -> smoke:runtime -> smoke:ui` where deps permit).
 
 ## Agent Handoff Notes
+- `System -> Update Check` now includes a runtime status card with parsed command output (`current_version`, `update_available`, `update_version`, `update_url`), warning surfaces, and raw probe output.
+- New backend endpoint `GET /vyos/system-update-check/status` performs best-effort probes in order (`show/generate system updates`, `show/generate system update-check`, `show/generate system image`) and returns structured status with non-fatal warnings when unsupported.
+- `Dashboard -> System Information` now fetches update status alongside system summary and displays an `Update Available` badge with direct link to `/system/update-check`.
+- Added regression coverage in `backend/tests/test_system_update_check_status.py` for update available, up-to-date, generate fallback, and all-probes-fail behavior.
 - High Availability page now parses VRRP address-interface bindings from config (`address <cidr> interface <if>`) and preserves them in GUI state instead of flattening to plain address strings.
 - VRRP save-diff logic now detects interface rebinding per address and emits deterministic delete/recreate commands so interface-specific address bindings round-trip correctly.
 - HA forms now include pre-submit validation for VRRP/IPVS numeric ranges and sync-group member existence, reducing invalid apply attempts before command generation.

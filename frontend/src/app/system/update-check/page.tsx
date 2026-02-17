@@ -13,7 +13,11 @@ import { Label } from "@/components/ui/label";
 import { usePermissions } from "@/hooks/usePermissions";
 import { FeatureGroup } from "@/lib/api/user-management";
 import { pageGuides } from "@/lib/help/pageGuides";
-import { systemUpdateCheckService, type SystemUpdateCheckConfig } from "@/lib/api/system-update-check";
+import {
+  systemUpdateCheckService,
+  type SystemUpdateCheckConfig,
+  type SystemUpdateCheckStatus,
+} from "@/lib/api/system-update-check";
 
 interface FormState {
   autoCheck: boolean;
@@ -70,18 +74,52 @@ export default function SystemUpdateCheckPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
   const [config, setConfig] = useState<SystemUpdateCheckConfig | null>(null);
+  const [status, setStatus] = useState<SystemUpdateCheckStatus | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+
+  const loadStatus = async (refresh: boolean) => {
+    try {
+      setStatusError(null);
+      setRefreshing(true);
+      const response = await systemUpdateCheckService.getStatus(refresh);
+      setStatus(response);
+    } catch (err) {
+      setStatus(null);
+      setStatusError(err instanceof Error ? err.message : "Failed to retrieve runtime update status.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const loadData = async (refresh: boolean) => {
     try {
       setError(null);
+      setStatusError(null);
       setRefreshing(true);
-      const response = await systemUpdateCheckService.getConfig(refresh);
-      setConfig(response);
-      setForm(toFormState(response));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load system update-check settings.");
+      const [configResult, statusResult] = await Promise.allSettled([
+        systemUpdateCheckService.getConfig(refresh),
+        systemUpdateCheckService.getStatus(refresh),
+      ]);
+
+      if (configResult.status === "fulfilled") {
+        setConfig(configResult.value);
+        setForm(toFormState(configResult.value));
+      } else {
+        setError(
+          configResult.reason instanceof Error
+            ? configResult.reason.message
+            : "Failed to load system update-check settings."
+        );
+      }
+
+      if (statusResult.status === "fulfilled") {
+        setStatus(statusResult.value);
+      } else {
+        setStatus(null);
+        setStatusError(statusResult.reason instanceof Error ? statusResult.reason.message : "Failed to retrieve runtime update status.");
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -96,6 +134,19 @@ export default function SystemUpdateCheckPage() {
     if (!config) return false;
     return form.autoCheck !== config.autoCheck || form.url.trim() !== config.url.trim();
   }, [config, form.autoCheck, form.url]);
+
+  const runtimeBadge = useMemo(() => {
+    if (!status || !status.available) {
+      return { label: "Unavailable", variant: "secondary" as const };
+    }
+    if (status.update_available === true) {
+      return { label: "Update Available", variant: "destructive" as const };
+    }
+    if (status.update_available === false) {
+      return { label: "Up To Date", variant: "default" as const };
+    }
+    return { label: "Unknown", variant: "secondary" as const };
+  }, [status]);
 
   const saveConfig = async () => {
     const desired = form.url.trim();
@@ -170,6 +221,88 @@ export default function SystemUpdateCheckPage() {
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Runtime Update Status</CardTitle>
+            <CardDescription>
+              Live output from update-check command probes to determine whether this system is up to date.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <Badge variant={runtimeBadge.variant}>{runtimeBadge.label}</Badge>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void loadStatus(true)}
+                disabled={refreshing || saving}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                Check Now
+              </Button>
+            </div>
+
+            {statusError ? (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {statusError}
+              </div>
+            ) : status ? (
+              <>
+                <div className="text-sm">
+                  {status.summary || "No status summary was returned by the device."}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 text-xs">
+                  <div>
+                    <p className="text-muted-foreground">Current Version</p>
+                    <p className="font-medium">{status.current_version || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Available Update</p>
+                    <p className="font-medium">{status.update_version || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Update URL</p>
+                    <p className="font-medium break-all">{status.update_url || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Command Used</p>
+                    <p className="font-medium">{status.command_used || "-"}</p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <p className="text-muted-foreground">Last Checked</p>
+                    <p className="font-medium">
+                      {status.checked_at ? new Date(status.checked_at).toLocaleString() : "-"}
+                    </p>
+                  </div>
+                </div>
+
+                {status.warnings.length > 0 && (
+                  <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+                    <p className="font-medium mb-1">Probe Warnings</p>
+                    <ul className="list-disc pl-4 space-y-1">
+                      {status.warnings.map((warning, index) => (
+                        <li key={`${warning}-${index}`}>{warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {status.raw_output && (
+                  <div className="space-y-2">
+                    <Label>Raw Command Output</Label>
+                    <pre className="max-h-64 overflow-auto rounded-md border bg-muted/30 p-3 text-xs leading-relaxed whitespace-pre-wrap">
+                      {status.raw_output}
+                    </pre>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-sm text-muted-foreground">No runtime status available yet.</div>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

@@ -1,74 +1,87 @@
 {
-  "feature_id": "high-availability-parity-depth-2026-02-16",
-  "title": "High Availability parity depth (HA-01/HA-02)",
+  "feature_id": "system-update-runtime-visibility-2026-02-17",
+  "title": "System update runtime visibility and dashboard indicator (SYS-17)",
   "status": "in_progress",
   "acceptance_criteria": [
-    "VRRP groups support per-address interface bindings and preserve them from existing config.",
-    "HA save diff emits correct set/delete operations when an address interface binding changes.",
-    "VRRP, sync-group, virtual-server, and real-server forms reject invalid numeric/semantic combinations before apply.",
-    "Build/runtime gates pass: frontend typecheck, targeted eslint, production build, runtime smoke, UI smoke."
+    "System Update Check page shows runtime command output indicating up-to-date vs update-available state.",
+    "Backend exposes best-effort structured update status endpoint with non-fatal warnings for unsupported probes.",
+    "System Information dashboard card shows update status and links to update page when update is available.",
+    "Validation gates pass: backend pytest slice, frontend typecheck/eslint/build/runtime smoke/UI smoke."
   ],
   "assumptions": [
-    "This slice deepens HA option parity but does not complete full HA guide parity.",
-    "Live dual-node failover behavior verification remains for HA-03."
+    "VyOS image/update probe output can vary by build; parser remains best-effort with warnings.",
+    "This slice adds visibility only and does not perform image download/install workflows."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "UI",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/src/app/network/high-availability/page.tsx"
+        "backend/routers/system_update_check.py"
       ],
-      "notes": "Added VRRP address-interface mapping support and diff-safe command generation for rebinding."
+      "notes": "Added /status runtime endpoint with ordered show/generate probe fallbacks and structured parsing."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/network/high-availability/page.tsx"
+        "frontend/src/app/system/update-check/page.tsx",
+        "frontend/src/lib/api/system-update-check.ts"
       ],
-      "notes": "Added pre-submit validation for VRRP/IPVS/sync-group semantics and numeric ranges."
+      "notes": "Added runtime status section with warnings/raw output and preserved config-edit workflow."
     },
     {
       "id": "T3",
-      "owner_role": "Test",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/network/high-availability/page.tsx"
+        "frontend/src/components/dashboard/SystemInformationCard.tsx"
       ],
-      "notes": "Validated with typecheck, targeted eslint, build, runtime smoke, and browser smoke after vm-ui restart."
+      "notes": "Added update indicator in system information card with link to /system/update-check."
     },
     {
       "id": "T4",
-      "owner_role": "Planner",
-      "status": "todo",
+      "owner_role": "Test",
+      "status": "done",
       "files": [
-        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
-        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
+        "backend/tests/test_system_update_check_status.py"
       ],
-      "notes": "Continue HA-01/HA-02 depth (inline edit UX and remaining guide leaves), then move to HA-03 verification artifacts."
+      "notes": "Added endpoint tests and executed all required validation gates for this slice."
     },
     {
       "id": "T5",
       "owner_role": "Reviewer",
       "status": "done",
       "files": [
-        "frontend/src/app/network/high-availability/page.tsx"
+        "backend/routers/system_update_check.py",
+        "frontend/src/app/system/update-check/page.tsx",
+        "frontend/src/components/dashboard/SystemInformationCard.tsx",
+        "frontend/src/lib/api/system-update-check.ts"
       ],
-      "notes": "Reviewer-agent spawn hit thread cap; manual in-process review completed with APPROVED verdict after gate reruns."
+      "notes": "Reviewer-agent unavailable due thread cap; manual in-process review completed with APPROVED verdict."
+    },
+    {
+      "id": "T6",
+      "owner_role": "Planner",
+      "status": "todo",
+      "files": [
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
+      ],
+      "notes": "Continue remaining backlog sequence after SYS-17 with HA-01/HA-02 depth and broader option parity."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd frontend && npx tsc --noEmit --pretty false && npx eslint src/app/network/high-availability/page.tsx && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_update_check_status.py && cd ../frontend && npx tsc --noEmit --pretty false && npx eslint src/app/system/update-check/page.tsx src/components/dashboard/SystemInformationCard.tsx src/lib/api/system-update-check.ts && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "High Availability option-depth parity and validation hardening",
+      "purpose": "System update runtime status visibility and dashboard integration",
       "status": "active"
     }
   ]

@@ -366,3 +366,8 @@
 - 2026-02-16: Implemented VRRP per-address interface binding support in the existing High Availability page (`address=interface` mapping input + parser/save diff updates) instead of adding a new backend endpoint, preserving thin-wrapper API contracts.
 - 2026-02-16: Added stricter client-side HA validation (VRRP/IPVS ranges, sync-member existence, dual-stack address guardrail) to reduce failed apply attempts before command generation.
 - 2026-02-16: Reviewer agent spawn failed due active thread cap; completed manual in-process review for HA slice and accepted as APPROVED after validation-gate reruns.
+- 2026-02-17: Added dedicated runtime endpoint `GET /vyos/system-update-check/status` instead of expanding existing config-only wrapper responses, preserving config-tree API contracts while enabling live update observability.
+- 2026-02-17: Runtime update status probes use ordered best-effort fallbacks (`show/generate system updates`, `system update-check`, `system image`) with warnings instead of hard failure, because command availability differs across VyOS images.
+- 2026-02-17: System Information dashboard card integrates update status via separate update-check API call rather than mutating `/vyos/system/dashboard-summary` schema, minimizing cross-card/regression risk.
+- 2026-02-17: Fixed UX regression where runtime `Check Now` reset unsaved update-check form edits by splitting status refresh from full config reload.
+- 2026-02-17: Reviewer-agent spawn remained unavailable due thread cap; manual in-process review completed with APPROVED verdict after full validation gate reruns.

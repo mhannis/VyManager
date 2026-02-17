@@ -500,6 +500,12 @@
       "title": "Time-zone/update/watchdog parity deepening (auto-check + watchdog hardware controls added; remaining depth/verification pending)"
     },
     {
+      "id": "SYS-17",
+      "domain": "system",
+      "status": "partial",
+      "title": "Update runtime visibility parity (update-check runtime command output/status + system dashboard update indicator/link; multi-version output verification pending)"
+    },
+    {
       "id": "X-01",
       "domain": "cross-cutting",
       "status": "partial",

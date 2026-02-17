@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,10 @@ import {
   X,
 } from "lucide-react";
 import { systemService, type SystemDashboardSummary } from "@/lib/api/system";
+import {
+  systemUpdateCheckService,
+  type SystemUpdateCheckStatus,
+} from "@/lib/api/system-update-check";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,12 +48,20 @@ export function SystemInformationCard({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [updateStatus, setUpdateStatus] = useState<SystemUpdateCheckStatus | null>(null);
 
   const loadData = async () => {
     try {
       setError(null);
       const response = await systemService.getDashboardSummary();
       setSummary(response);
+
+      try {
+        const status = await systemUpdateCheckService.getStatus(false);
+        setUpdateStatus(status);
+      } catch {
+        setUpdateStatus(null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load system information");
     } finally {
@@ -61,7 +74,9 @@ export function SystemInformationCard({
 
     if (!autoRefresh) return;
 
-    const interval = setInterval(loadData, 15000);
+    const interval = setInterval(() => {
+      void loadData();
+    }, 15000);
     return () => clearInterval(interval);
   }, [autoRefresh]);
 
@@ -162,6 +177,35 @@ export function SystemInformationCard({
                       }% / ${summary.load_15m_percent?.toFixed(1) ?? "-"}%`
                     : "-"}
                 </p>
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <p className="text-muted-foreground">Update Status</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  {!updateStatus || !updateStatus.available ? (
+                    <Badge variant="secondary">Unavailable</Badge>
+                  ) : updateStatus.update_available === true ? (
+                    <>
+                      <Badge variant="destructive">Update Available</Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {displayOrDash(updateStatus.update_version)}
+                      </span>
+                      <Button asChild size="sm" variant="outline">
+                        <Link href="/system/update-check">Open Update Check</Link>
+                      </Button>
+                    </>
+                  ) : updateStatus.update_available === false ? (
+                    <Badge variant="default">Up To Date</Badge>
+                  ) : (
+                    <>
+                      <Badge variant="secondary">Unknown</Badge>
+                      {updateStatus.summary ? (
+                        <span className="text-xs text-muted-foreground truncate max-w-[360px]">
+                          {updateStatus.summary}
+                        </span>
+                      ) : null}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
