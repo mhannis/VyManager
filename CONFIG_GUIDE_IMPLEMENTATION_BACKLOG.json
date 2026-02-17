@@ -142,8 +142,8 @@
     {
       "id": "IF-07",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add pseudo-ethernet editor (baseline implemented; VLAN-depth and edge-option verification remains)"
+      "status": "verify",
+      "title": "Pseudo-ethernet parity deepened with guide-covered interface controls (MAC, flow/link toggles, IPv4 MSS/ARP/filter/forwarding/source-validation, proxy-arp options, and IPv6 autoconf/eui64/no-default-link-local/forwarding) plus parser/diff-save support; pending live verification"
     },
     {
       "id": "IF-08",
