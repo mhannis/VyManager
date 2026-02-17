@@ -358,8 +358,8 @@
     {
       "id": "VPN-01",
       "domain": "vpn",
-      "status": "partial",
-      "title": "IPsec phase1/phase2 option parity"
+      "status": "verify",
+      "title": "IPsec site-to-site workflow provides form-driven Phase 1/2 depth (peer auth/IDs, IKE+ESP proposal editors, VTI bindings, selectors/priority/protocol, wizard baseline); pending live interoperability verification"
     },
     {
       "id": "VPN-02",
