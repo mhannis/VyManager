@@ -277,7 +277,6 @@ def test_update_dns_config_defaults_allow_from_when_empty(monkeypatch, app, allo
     operations = service.device.configure_calls[-1]
     op_paths = [tuple(op.get("path") or []) for op in operations]
     assert ("service", "dns", "forwarding", "allow-from", "0.0.0.0/0") in op_paths
-    assert ("service", "dns", "forwarding", "allow-from", "::/0") in op_paths
 
 
 def test_update_dns_config_defaults_allow_from_when_omitted(monkeypatch, app, allow_permissions):
@@ -297,7 +296,6 @@ def test_update_dns_config_defaults_allow_from_when_omitted(monkeypatch, app, al
     operations = service.device.configure_calls[-1]
     op_paths = [tuple(op.get("path") or []) for op in operations]
     assert ("service", "dns", "forwarding", "allow-from", "0.0.0.0/0") in op_paths
-    assert ("service", "dns", "forwarding", "allow-from", "::/0") in op_paths
     assert ("service", "dns", "forwarding", "name-server", "1.1.1.1") in op_paths
 
 

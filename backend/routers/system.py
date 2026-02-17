@@ -643,7 +643,7 @@ class DnsServiceConfigRequest(BaseModel):
     host_overrides: List[DnsHostOverride] = Field(default_factory=list)
 
 
-DEFAULT_DNS_ALLOW_FROM_NETWORKS: tuple[str, ...] = ("0.0.0.0/0", "::/0")
+DEFAULT_DNS_ALLOW_FROM_NETWORKS: tuple[str, ...] = ("0.0.0.0/0",)
 
 
 # ========================================================================

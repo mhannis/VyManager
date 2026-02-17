@@ -209,6 +209,7 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
   const [listenAddressOptions, setListenAddressOptions] = useState<ResolverListenAddressOption[]>([]);
   const [listenAddressOptionsError, setListenAddressOptionsError] = useState<string | null>(null);
   const [inferredWanInterfaceName, setInferredWanInterfaceName] = useState<string | null>(null);
+  const [inferredGatewayDnsServer, setInferredGatewayDnsServer] = useState<string | null>(null);
 
   const loadConfig = async (refresh: boolean) => {
     setLoading(true);
@@ -257,8 +258,13 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
           gatewayResult.value.configured_ipv4_default?.dhcp_interfaces?.[0] ??
           null;
         setInferredWanInterfaceName(wanCandidate ? wanCandidate.trim() : null);
+        const gatewayDnsCandidate = gatewayResult.value.ipv4_default?.next_hop?.trim() ?? null;
+        setInferredGatewayDnsServer(
+          gatewayDnsCandidate && isValidIPv4(gatewayDnsCandidate) ? gatewayDnsCandidate : null
+        );
       } else {
         setInferredWanInterfaceName(null);
+        setInferredGatewayDnsServer(null);
       }
 
       setListenAddressOptions(
@@ -269,6 +275,7 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
       setListenAddressOptions([]);
       setListenAddressOptionsError(message);
       setInferredWanInterfaceName(null);
+      setInferredGatewayDnsServer(null);
     }
   };
 
@@ -533,7 +540,13 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
     const nextListenAddresses =
       config.listen_addresses.length > 0 ? fromCsv(toCsv(config.listen_addresses)) : suggestedListen;
     const nextAllowFrom =
-      config.allow_from.length > 0 ? fromCsv(toCsv(config.allow_from)) : ["0.0.0.0/0", "::/0"];
+      config.allow_from.length > 0 ? fromCsv(toCsv(config.allow_from)) : ["0.0.0.0/0"];
+    const nextNameServers =
+      config.name_servers.length > 0
+        ? fromCsv(toCsv(config.name_servers))
+        : normalizedSystemNameServers.length === 0 && inferredGatewayDnsServer
+          ? [inferredGatewayDnsServer]
+          : [];
     const nextLocalDomain =
       config.local_domain_name?.trim() ||
       (normalizedSystemSearch.length > 0 ? normalizedSystemSearch[0] : null);
@@ -551,10 +564,12 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
         enabled: true,
         listen_addresses: nextListenAddresses,
         allow_from: nextAllowFrom,
+        name_servers: nextNameServers,
         local_domain_name: nextLocalDomain,
         authoritative_domains: nextAuthoritativeDomains,
         use_system_name_servers:
-          previous.use_system_name_servers || (previous.name_servers.length === 0 && normalizedSystemNameServers.length > 0),
+          previous.use_system_name_servers ||
+          (nextNameServers.length === 0 && normalizedSystemNameServers.length > 0),
       };
     });
     setError(null);
