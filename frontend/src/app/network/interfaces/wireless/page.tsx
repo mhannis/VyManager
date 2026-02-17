@@ -77,6 +77,13 @@ interface WirelessFormState {
   capVhtBeamformSingleUserBeamformee: boolean;
   capVhtBeamformMultiUserBeamformer: boolean;
   capVhtBeamformMultiUserBeamformee: boolean;
+  capHeAntennaPatternFixed: boolean;
+  capHeBssColor: string;
+  capHeCenterChannelFreq1: string;
+  capHeChannelSetWidth: string[];
+  capHeBeamformSingleUserBeamformer: boolean;
+  capHeBeamformSingleUserBeamformee: boolean;
+  capHeBeamformMultiUserBeamformer: boolean;
 }
 
 const TYPE_OPTIONS = ["access-point", "station", "monitor"] as const;
@@ -90,6 +97,7 @@ const HT_SMPS_OPTIONS = ["off", "static", "dynamic"] as const;
 const VHT_SHORT_GI_OPTIONS = ["80", "160"] as const;
 const VHT_CHANNEL_SET_WIDTH_OPTIONS = ["80", "80+80", "160"] as const;
 const VHT_LINK_ADAPTATION_OPTIONS = ["2", "3"] as const;
+const HE_CHANNEL_SET_WIDTH_OPTIONS = ["81", "134"] as const;
 
 const EMPTY_FORM: WirelessFormState = {
   name: "",
@@ -141,6 +149,13 @@ const EMPTY_FORM: WirelessFormState = {
   capVhtBeamformSingleUserBeamformee: false,
   capVhtBeamformMultiUserBeamformer: false,
   capVhtBeamformMultiUserBeamformee: false,
+  capHeAntennaPatternFixed: false,
+  capHeBssColor: "",
+  capHeCenterChannelFreq1: "",
+  capHeChannelSetWidth: [],
+  capHeBeamformSingleUserBeamformer: false,
+  capHeBeamformSingleUserBeamformee: false,
+  capHeBeamformMultiUserBeamformer: false,
 };
 
 function quoteCliValue(value: string): string {
@@ -233,6 +248,13 @@ function toFormState(value: WirelessInterfaceConfig): WirelessFormState {
     capVhtBeamformSingleUserBeamformee: value.capVhtBeamformSingleUserBeamformee,
     capVhtBeamformMultiUserBeamformer: value.capVhtBeamformMultiUserBeamformer,
     capVhtBeamformMultiUserBeamformee: value.capVhtBeamformMultiUserBeamformee,
+    capHeAntennaPatternFixed: value.capHeAntennaPatternFixed,
+    capHeBssColor: value.capHeBssColor,
+    capHeCenterChannelFreq1: value.capHeCenterChannelFreq1,
+    capHeChannelSetWidth: value.capHeChannelSetWidth,
+    capHeBeamformSingleUserBeamformer: value.capHeBeamformSingleUserBeamformer,
+    capHeBeamformSingleUserBeamformee: value.capHeBeamformSingleUserBeamformee,
+    capHeBeamformMultiUserBeamformer: value.capHeBeamformMultiUserBeamformer,
   };
 }
 
@@ -344,6 +366,13 @@ function buildWirelessOperations(
       capVhtBeamformSingleUserBeamformee: false,
       capVhtBeamformMultiUserBeamformer: false,
       capVhtBeamformMultiUserBeamformee: false,
+      capHeAntennaPatternFixed: false,
+      capHeBssColor: "",
+      capHeCenterChannelFreq1: "",
+      capHeChannelSetWidth: [],
+      capHeBeamformSingleUserBeamformer: false,
+      capHeBeamformSingleUserBeamformee: false,
+      capHeBeamformMultiUserBeamformer: false,
     } satisfies WirelessInterfaceConfig);
 
   syncScalar(operations, base, "description", candidate.description.trim(), currentSafe.description);
@@ -452,6 +481,20 @@ function buildWirelessOperations(
     candidate.capVhtMaxAmpduExp.trim(),
     currentSafe.capVhtMaxAmpduExp,
   );
+  syncScalar(
+    operations,
+    base,
+    "capabilities he bss-color",
+    candidate.capHeBssColor.trim(),
+    currentSafe.capHeBssColor,
+  );
+  syncScalar(
+    operations,
+    base,
+    "capabilities he center-channel-freq freq-1",
+    candidate.capHeCenterChannelFreq1.trim(),
+    currentSafe.capHeCenterChannelFreq1,
+  );
 
   syncTagList(operations, base, "address", parseLines(candidate.addressesText), currentSafe.addresses);
   syncTagList(operations, base, "security wpa cipher", candidate.wpaCiphers, currentSafe.wpaCiphers);
@@ -475,6 +518,13 @@ function buildWirelessOperations(
     "capabilities vht short-gi",
     candidate.capVhtShortGi,
     currentSafe.capVhtShortGi,
+  );
+  syncTagList(
+    operations,
+    base,
+    "capabilities he channel-set-width",
+    candidate.capHeChannelSetWidth,
+    currentSafe.capHeChannelSetWidth,
   );
 
   syncFlag(operations, base, "disable", candidate.disable, currentSafe.disable);
@@ -592,6 +642,34 @@ function buildWirelessOperations(
     "capabilities vht beamform multi-user-beamformee",
     candidate.capVhtBeamformMultiUserBeamformee,
     currentSafe.capVhtBeamformMultiUserBeamformee,
+  );
+  syncFlag(
+    operations,
+    base,
+    "capabilities he antenna-pattern-fixed",
+    candidate.capHeAntennaPatternFixed,
+    currentSafe.capHeAntennaPatternFixed,
+  );
+  syncFlag(
+    operations,
+    base,
+    "capabilities he beamform single-user-beamformer",
+    candidate.capHeBeamformSingleUserBeamformer,
+    currentSafe.capHeBeamformSingleUserBeamformer,
+  );
+  syncFlag(
+    operations,
+    base,
+    "capabilities he beamform single-user-beamformee",
+    candidate.capHeBeamformSingleUserBeamformee,
+    currentSafe.capHeBeamformSingleUserBeamformee,
+  );
+  syncFlag(
+    operations,
+    base,
+    "capabilities he beamform multi-user-beamformer",
+    candidate.capHeBeamformMultiUserBeamformer,
+    currentSafe.capHeBeamformMultiUserBeamformer,
   );
 
   const currentRadius = new Map(currentSafe.wpaRadiusServers.map((entry) => [entry.host, entry]));
@@ -748,6 +826,8 @@ export default function WirelessInterfacesPage() {
       { label: "VHT center-channel-freq-2", value: form.capVhtCenterChannelFreq2 },
       { label: "VHT max-mpdu-exp", value: form.capVhtMaxMpduExp },
       { label: "VHT max-a-mpdu-exp", value: form.capVhtMaxAmpduExp },
+      { label: "HE BSS color", value: form.capHeBssColor },
+      { label: "HE center-channel-freq-1", value: form.capHeCenterChannelFreq1 },
     ];
     for (const field of numericFields) {
       const trimmed = field.value.trim();
@@ -1492,6 +1572,53 @@ export default function WirelessInterfacesPage() {
                 />
               </div>
 
+              <div className="space-y-3">
+                <Label>HE Capability Sets</Label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {HE_CHANNEL_SET_WIDTH_OPTIONS.map((value) => (
+                    <label key={value} className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={form.capHeChannelSetWidth.includes(value)}
+                        onCheckedChange={(checked) =>
+                          setForm((previous) => ({
+                            ...previous,
+                            capHeChannelSetWidth: checked
+                              ? uniqueNonEmpty([...previous.capHeChannelSetWidth, value])
+                              : previous.capHeChannelSetWidth.filter((entry) => entry !== value),
+                          }))
+                        }
+                      />
+                      channel-set-width {value}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="wireless-he-bss-color">HE BSS Color</Label>
+                  <Input
+                    id="wireless-he-bss-color"
+                    value={form.capHeBssColor}
+                    onChange={(event) =>
+                      setForm((previous) => ({ ...previous, capHeBssColor: event.target.value }))
+                    }
+                    placeholder="13"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="wireless-he-center-channel-freq-1">HE Center Channel Freq 1</Label>
+                  <Input
+                    id="wireless-he-center-channel-freq-1"
+                    value={form.capHeCenterChannelFreq1}
+                    onChange={(event) =>
+                      setForm((previous) => ({ ...previous, capHeCenterChannelFreq1: event.target.value }))
+                    }
+                    placeholder="15"
+                  />
+                </div>
+              </div>
+
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
@@ -1573,6 +1700,51 @@ export default function WirelessInterfacesPage() {
                     }
                   />
                   Require HE
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.capHeAntennaPatternFixed}
+                    onCheckedChange={(checked) =>
+                      setForm((previous) => ({ ...previous, capHeAntennaPatternFixed: Boolean(checked) }))
+                    }
+                  />
+                  HE antenna-pattern-fixed
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.capHeBeamformSingleUserBeamformer}
+                    onCheckedChange={(checked) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        capHeBeamformSingleUserBeamformer: Boolean(checked),
+                      }))
+                    }
+                  />
+                  HE SU Beamformer
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.capHeBeamformSingleUserBeamformee}
+                    onCheckedChange={(checked) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        capHeBeamformSingleUserBeamformee: Boolean(checked),
+                      }))
+                    }
+                  />
+                  HE SU Beamformee
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.capHeBeamformMultiUserBeamformer}
+                    onCheckedChange={(checked) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        capHeBeamformMultiUserBeamformer: Boolean(checked),
+                      }))
+                    }
+                  />
+                  HE MU Beamformer
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox

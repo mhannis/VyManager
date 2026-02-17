@@ -62,6 +62,9 @@ export interface BondingInterface {
   mac: string;
   systemMac: string;
   systemPriority: string;
+  evpnUplink: boolean;
+  mirrorIngress: string;
+  mirrorEgress: string;
   disable: boolean;
   members: string[];
 }
@@ -85,6 +88,8 @@ class BondingService {
       const node = asObject(root[name]);
       const memberNode = asObject(node.member);
       const arpMonitorNode = asObject(node["arp-monitor"]);
+      const evpnNode = asObject(node.evpn);
+      const mirrorNode = asObject(node.mirror);
 
       bonds.push({
         name,
@@ -105,6 +110,9 @@ class BondingService {
         mac: asString(node.mac),
         systemMac: asString(node["system-mac"]),
         systemPriority: asString(node["system-priority"]),
+        evpnUplink: Object.prototype.hasOwnProperty.call(evpnNode, "uplink"),
+        mirrorIngress: asString(mirrorNode.ingress),
+        mirrorEgress: asString(mirrorNode.egress),
         disable: Object.prototype.hasOwnProperty.call(node, "disable"),
         members: readTagValues(memberNode.interface),
       });

@@ -657,14 +657,22 @@ export default function WwanInterfacesPage() {
   const [form, setForm] = useState<WwanFormState>(EMPTY_FORM);
   const [detectedInterfaceNames, setDetectedInterfaceNames] = useState<string[]>([]);
   const [allInterfaceNames, setAllInterfaceNames] = useState<string[]>([]);
+  const [runtimeByInterface, setRuntimeByInterface] = useState<
+    Record<string, { ipv4: string[]; ipv6: string[] }>
+  >({});
+  const [physicalByInterface, setPhysicalByInterface] = useState<
+    Record<string, { linkUp: boolean | null; speed: string; duplex: string; driver: string; nicModel: string }>
+  >({});
 
   const loadData = async (refresh: boolean) => {
     try {
       setError(null);
       setRefreshing(true);
-      const [config, allInterfaces] = await Promise.all([
+      const [config, allInterfaces, runtimeAddresses, physicalDetails] = await Promise.all([
         wwanService.getConfig(refresh),
         showService.getAllInterfaces().catch(() => ({ interfaces: [], total: 0 })),
+        showService.getInterfaceRuntimeAddresses().catch(() => ({ interfaces: [], total: 0 })),
+        showService.getInterfacePhysical().catch(() => ({ interfaces: [], total: 0 })),
       ]);
       setInterfaces(config.interfaces);
       const names = allInterfaces.interfaces
@@ -681,6 +689,30 @@ export default function WwanInterfacesPage() {
           ),
         ).sort((left, right) => left.localeCompare(right)),
       );
+
+      const nextRuntimeByInterface: Record<string, { ipv4: string[]; ipv6: string[] }> = {};
+      for (const runtime of runtimeAddresses.interfaces) {
+        nextRuntimeByInterface[runtime.interface] = {
+          ipv4: runtime.ipv4_addresses || [],
+          ipv6: runtime.ipv6_addresses || [],
+        };
+      }
+      setRuntimeByInterface(nextRuntimeByInterface);
+
+      const nextPhysicalByInterface: Record<
+        string,
+        { linkUp: boolean | null; speed: string; duplex: string; driver: string; nicModel: string }
+      > = {};
+      for (const physical of physicalDetails.interfaces) {
+        nextPhysicalByInterface[physical.interface] = {
+          linkUp: typeof physical.link_up === "boolean" ? physical.link_up : null,
+          speed: physical.speed ? String(physical.speed) : "",
+          duplex: physical.duplex ? String(physical.duplex) : "",
+          driver: physical.driver ? String(physical.driver) : "",
+          nicModel: physical.nic_model ? String(physical.nic_model) : "",
+        };
+      }
+      setPhysicalByInterface(nextPhysicalByInterface);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load WWAN interface data.");
     } finally {
@@ -922,6 +954,7 @@ export default function WwanInterfacesPage() {
                       <TableHead>Interface</TableHead>
                       <TableHead>APN</TableHead>
                       <TableHead>Addressing</TableHead>
+                      <TableHead>Runtime / Link</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-[140px] text-right">Actions</TableHead>
                     </TableRow>
@@ -929,17 +962,54 @@ export default function WwanInterfacesPage() {
                   <TableBody>
                     {interfaces.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                        <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
                           No WWAN interfaces configured.
                         </TableCell>
                       </TableRow>
                     ) : (
                       interfaces.map((entry) => (
                         <TableRow key={entry.name}>
+                          {(() => {
+                            const runtime = runtimeByInterface[entry.name];
+                            const physical = physicalByInterface[entry.name];
+                            const runtimeIpv4 = runtime?.ipv4?.join(", ") || "";
+                            const runtimeIpv6 = runtime?.ipv6?.join(", ") || "";
+                            const hasRuntime = Boolean(runtimeIpv4 || runtimeIpv6);
+                            const linkSummary =
+                              physical?.linkUp === null || physical?.linkUp === undefined
+                                ? "Unknown"
+                                : physical.linkUp
+                                  ? "Up"
+                                  : "Down";
+                            const speedDuplex = [physical?.speed || "", physical?.duplex || ""]
+                              .filter((value) => value.length > 0)
+                              .join(" / ");
+
+                            return (
+                              <>
                           <TableCell className="font-medium">{entry.name}</TableCell>
                           <TableCell>{entry.apn || "-"}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">
                             {entry.addresses.length > 0 ? entry.addresses.join(", ") : "No IPv4 address"}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {hasRuntime ? (
+                              <div className="space-y-1">
+                                {runtimeIpv4 && <div>IPv4: {runtimeIpv4}</div>}
+                                {runtimeIpv6 && <div>IPv6: {runtimeIpv6}</div>}
+                                <div>
+                                  Link: {linkSummary}
+                                  {speedDuplex ? ` (${speedDuplex})` : ""}
+                                </div>
+                                {(physical?.driver || physical?.nicModel) && (
+                                  <div>
+                                    {physical?.driver || physical?.nicModel}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span>No runtime data</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             {entry.disable ? (
@@ -963,6 +1033,9 @@ export default function WwanInterfacesPage() {
                               </Button>
                             </div>
                           </TableCell>
+                              </>
+                            );
+                          })()}
                         </TableRow>
                       ))
                     )}

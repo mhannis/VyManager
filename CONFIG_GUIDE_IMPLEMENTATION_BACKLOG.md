@@ -61,9 +61,9 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `HA-03` (`verify`): Dual-node failover verification playbook and smoke tests.
 
 ### Interfaces (`interfaces/*`)
-- `IF-01` (`partial`): Add robust `bonding` editor (members/mode/hash/lacp settings). Baseline page implemented; advanced option-depth verification remains.
-- `IF-02` (`partial`): Add robust interface `bridge` editor (ports/stp/bridge options). Baseline page implemented; advanced option-depth verification remains.
-- `IF-03` (`partial`): Add robust `geneve` editor. Baseline page implemented; advanced option-depth verification remains.
+- `IF-01` (`verify`): Bonding editor parity deepened with advanced leaves beyond baseline (`evpn uplink`, mirror ingress/egress, plus existing member/mode/hash/lacp/arp-monitor controls) and parser/diff-save support; pending live verification.
+- `IF-02` (`verify`): Bridge editor parity deepened with per-member VLAN leaves (`native-vlan`, `allowed-vlan`) and bridge mirror ingress/egress controls in parser/form/diff-save workflow on top of existing STP/IGMP/member options; pending live verification.
+- `IF-03` (`verify`): Geneve parity deepened with guide-covered IPv4/IPv6 interface controls (`ip arp-cache-timeout`, ARP/filter/forwarding/proxy toggles, `ipv6 accept-dad`, `ipv6 address autoconf/eui64/no-default-link-local`, `ipv6 dup-addr-detect-transmits`, `ipv6 disable-forwarding`) plus parser/diff-save support. Pending live verification.
 - `IF-04` (`verify`): L2TPv3 command-scope audit against current guide confirms full coverage of documented leaves (`address`, `description`, `disable`) in the existing form workflow; pending live verification.
 - `IF-05` (`verify`): MACsec command-scope audit confirms documented interface leaves (`address`, `description`, `disable`, `mtu`, `mac`, `disable-flow-control`, `disable-link-detect`) are covered in parser + form + diff-save workflow; pending live verification.
 - `IF-06` (`verify`): OpenVPN interface command-scope audit against current guide confirms documented leaves are covered by the existing form-driven editor (authentication, device type, encryption/hash, and IP tuning controls). Pending live verification.
@@ -73,8 +73,8 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `IF-10` (`verify`): Virtual-ethernet parity deepened with full `vif` subinterface editor (VLAN ID, addresses, description, disable/disable-link-detect, MTU, MAC, `ip adjust-mss`, `ip arp-cache-timeout`, ARP/filter/forwarding toggles) plus parser/diff-save support. Pending live verification.
 - `IF-11` (`verify`): VTI command-scope audit against current guide confirms coverage of documented workflow (interface addressing) in the existing form editor with optional description/mtu/vrf/disable controls. Pending live IPsec interop verification.
 - `IF-12` (`verify`): VXLAN parity deepened with full guide-covered interface controls (MAC, flow/link detect toggles, IPv4/IPv6 MSS controls, ARP/filter/forwarding toggles, source-validation, IPv6 autoconf/eui64/no-default-link-local) plus parser/diff-save support. Pending live verification.
-- `IF-13` (`partial`): Add robust `wireless` editor. Baseline form-first page is implemented with core WLAN, WPA/RADIUS, HT capabilities, and country-code support; advanced 802.11 capability depth still needs parity sweep.
-- `IF-14` (`partial`): Add robust `wwan` editor. Form-first page now covers APN, addressing, advanced IPv4/IPv6 tuning, DHCPv4 extras, and DHCPv6 prefix delegation rows; modem operational workflows still need parity sweep.
+- `IF-13` (`verify`): Wireless parity deepened with HE capability controls (`antenna-pattern-fixed`, `beamform` modes, `bss-color`, `center-channel-freq freq-1`, `channel-set-width`) in parser/form/diff-save workflow on top of existing WLAN/WPA/HT/VHT controls; pending live verification.
+- `IF-14` (`verify`): WWAN parity now covers guide command leaves (APN, addressing, IPv4/IPv6 tuning, DHCPv4 extras, DHCPv6 PD rows/flags/duid) and includes runtime telemetry on the page (runtime IPs/link/driver details) for operational visibility; pending live modem verification.
 - `IF-15` (`verify`): Existing ethernet/pppoe/loopback/wireguard parity sweep completed. Loopback command-scope audit against current guide confirms full coverage (`address`, `description`) in form-driven workflow; pending live verification.
 
 ### Load Balancing (`loadbalancing/*`)

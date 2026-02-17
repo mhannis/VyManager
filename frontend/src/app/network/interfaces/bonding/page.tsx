@@ -56,6 +56,9 @@ interface BondingCandidate {
   mac: string;
   systemMac: string;
   systemPriority: string;
+  evpnUplink: boolean;
+  mirrorIngress: string;
+  mirrorEgress: string;
   disable: boolean;
   members: string[];
 }
@@ -79,6 +82,9 @@ interface BondingFormState {
   mac: string;
   systemMac: string;
   systemPriority: string;
+  evpnUplink: boolean;
+  mirrorIngress: string;
+  mirrorEgress: string;
   disable: boolean;
   selectedMembers: string[];
   extraMembersText: string;
@@ -106,6 +112,9 @@ const EMPTY_FORM: BondingFormState = {
   mac: "",
   systemMac: "",
   systemPriority: "",
+  evpnUplink: false,
+  mirrorIngress: "",
+  mirrorEgress: "",
   disable: false,
   selectedMembers: [],
   extraMembersText: "",
@@ -188,6 +197,9 @@ function normalizeCandidate(form: BondingFormState): BondingCandidate {
     mac: form.mac.trim(),
     systemMac: form.systemMac.trim(),
     systemPriority: form.systemPriority.trim(),
+    evpnUplink: form.evpnUplink,
+    mirrorIngress: form.mirrorIngress.trim(),
+    mirrorEgress: form.mirrorEgress.trim(),
     disable: form.disable,
     members,
   };
@@ -217,6 +229,9 @@ function toFormState(value: BondingInterface, choices: InterfaceChoice[]): Bondi
     mac: value.mac,
     systemMac: value.systemMac,
     systemPriority: value.systemPriority,
+    evpnUplink: value.evpnUplink,
+    mirrorIngress: value.mirrorIngress,
+    mirrorEgress: value.mirrorEgress,
     disable: value.disable,
     selectedMembers,
     extraMembersText: extraMembers.join(", "),
@@ -260,6 +275,9 @@ function buildBondingOperations(candidate: BondingCandidate, current: BondingInt
     mac: "",
     systemMac: "",
     systemPriority: "",
+    evpnUplink: false,
+    mirrorIngress: "",
+    mirrorEgress: "",
     disable: false,
     members: [],
   };
@@ -272,6 +290,8 @@ function buildBondingOperations(candidate: BondingCandidate, current: BondingInt
   syncScalar(operations, base, "mac", candidate.mac, currentSafe.mac);
   syncScalar(operations, base, "system-mac", candidate.systemMac, currentSafe.systemMac);
   syncScalar(operations, base, "system-priority", candidate.systemPriority, currentSafe.systemPriority);
+  syncScalar(operations, base, "mirror ingress", candidate.mirrorIngress, currentSafe.mirrorIngress);
+  syncScalar(operations, base, "mirror egress", candidate.mirrorEgress, currentSafe.mirrorEgress);
 
   const supportsHashPolicy = candidate.mode === "802.3ad" || candidate.mode === "balance-xor";
   const desiredHash = supportsHashPolicy ? candidate.hashPolicy : "";
@@ -324,6 +344,10 @@ function buildBondingOperations(candidate: BondingCandidate, current: BondingInt
 
   if (candidate.disable !== currentSafe.disable) {
     operations.push(candidate.disable ? `set ${base} disable` : `delete ${base} disable`);
+  }
+
+  if (candidate.evpnUplink !== currentSafe.evpnUplink) {
+    operations.push(candidate.evpnUplink ? `set ${base} evpn uplink` : `delete ${base} evpn uplink`);
   }
 
   const addressChanges = listDifference(currentSafe.addresses, candidate.addresses);
@@ -452,6 +476,16 @@ export default function BondingInterfacesPage() {
     for (const target of candidate.arpMonitorTargets) {
       if (!isValidIpToken(target)) {
         setError(`ARP monitor target '${target}' must be an IPv4 or IPv6 address.`);
+        return;
+      }
+    }
+    for (const [direction, iface] of [
+      ["ingress", candidate.mirrorIngress],
+      ["egress", candidate.mirrorEgress],
+    ] as const) {
+      if (!iface) continue;
+      if (!/^[A-Za-z0-9._:-]+$/.test(iface)) {
+        setError(`Mirror ${direction} interface '${iface}' is invalid.`);
         return;
       }
     }
@@ -860,6 +894,27 @@ export default function BondingInterfacesPage() {
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Mirror Ingress Interface</Label>
+                  <Input
+                    value={form.mirrorIngress}
+                    onChange={(event) => setForm((prev) => ({ ...prev, mirrorIngress: event.target.value }))}
+                    placeholder="eth3"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Mirror Egress Interface</Label>
+                  <Input
+                    value={form.mirrorEgress}
+                    onChange={(event) => setForm((prev) => ({ ...prev, mirrorEgress: event.target.value }))}
+                    placeholder="eth3"
+                    disabled={saving}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={form.allMembersActive}
@@ -891,6 +946,14 @@ export default function BondingInterfacesPage() {
                     disabled={saving}
                   />
                   Disable link detect
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.evpnUplink}
+                    onCheckedChange={(checked) => setForm((prev) => ({ ...prev, evpnUplink: Boolean(checked) }))}
+                    disabled={saving}
+                  />
+                  EVPN uplink
                 </label>
               </div>
 

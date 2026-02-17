@@ -54,8 +54,10 @@ interface BridgeFormState {
   stpHelloTime: string;
   stpMaxAge: string;
   stpForwardDelay: string;
+  mirrorIngress: string;
+  mirrorEgress: string;
   selectedMembers: string[];
-  memberOverrides: Record<string, { cost: string; priority: string }>;
+  memberOverrides: Record<string, { cost: string; priority: string; nativeVlan: string; allowedVlansText: string }>;
   extraMembersText: string;
 }
 
@@ -79,6 +81,8 @@ const EMPTY_FORM: BridgeFormState = {
   stpHelloTime: "",
   stpMaxAge: "",
   stpForwardDelay: "",
+  mirrorIngress: "",
+  mirrorEgress: "",
   selectedMembers: [],
   memberOverrides: {},
   extraMembersText: "",
@@ -111,10 +115,22 @@ function parseMembersText(raw: string): string[] {
   return uniqueNonEmpty(raw.split(/[\n,]/));
 }
 
+function parseAllowedVlansText(raw: string): string[] {
+  return uniqueNonEmpty(raw.split(/[\n,]/));
+}
+
 function isValidMacAddress(value: string): boolean {
   const candidate = value.trim();
   if (!candidate) return true;
   return /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(candidate);
+}
+
+function listDifference(current: string[], desired: string[]): { toAdd: string[]; toDelete: string[] } {
+  const currentSet = new Set(current);
+  const desiredSet = new Set(desired);
+  const toAdd = desired.filter((item) => !currentSet.has(item));
+  const toDelete = current.filter((item) => !desiredSet.has(item));
+  return { toAdd, toDelete };
 }
 
 function syncScalar(
@@ -145,12 +161,17 @@ function toFormState(value: BridgeInterfaceConfig, choices: InterfaceChoice[]): 
   const known = new Set(choices.map((choice) => choice.name));
   const selectedMembers: string[] = [];
   const extraMembers: string[] = [];
-  const memberOverrides: Record<string, { cost: string; priority: string }> = {};
+  const memberOverrides: Record<
+    string,
+    { cost: string; priority: string; nativeVlan: string; allowedVlansText: string }
+  > = {};
 
   for (const member of value.members) {
     memberOverrides[member.interfaceName] = {
       cost: member.cost,
       priority: member.priority,
+      nativeVlan: member.nativeVlan,
+      allowedVlansText: member.allowedVlans.join(", "),
     };
     if (known.has(member.interfaceName)) {
       selectedMembers.push(member.interfaceName);
@@ -182,6 +203,8 @@ function toFormState(value: BridgeInterfaceConfig, choices: InterfaceChoice[]): 
     stpHelloTime: value.stpHelloTime,
     stpMaxAge: value.stpMaxAge,
     stpForwardDelay: value.stpForwardDelay,
+    mirrorIngress: value.mirrorIngress,
+    mirrorEgress: value.mirrorEgress,
     selectedMembers,
     memberOverrides,
     extraMembersText: extraMembers.join(", "),
@@ -194,11 +217,18 @@ function buildDesiredMembers(form: BridgeFormState): BridgeMember[] {
     left.localeCompare(right),
   );
   return names.map((name) => {
-    const override = form.memberOverrides[name] || { cost: "", priority: "" };
+    const override = form.memberOverrides[name] || {
+      cost: "",
+      priority: "",
+      nativeVlan: "",
+      allowedVlansText: "",
+    };
     return {
       interfaceName: name,
       cost: override.cost.trim(),
       priority: override.priority.trim(),
+      nativeVlan: override.nativeVlan.trim(),
+      allowedVlans: parseAllowedVlansText(override.allowedVlansText),
     };
   });
 }
@@ -228,6 +258,8 @@ function buildBridgeOperations(candidate: BridgeFormState, current: BridgeInterf
       stpHelloTime: "",
       stpMaxAge: "",
       stpForwardDelay: "",
+      mirrorIngress: "",
+      mirrorEgress: "",
       members: [],
     } satisfies BridgeInterfaceConfig);
 
@@ -237,6 +269,8 @@ function buildBridgeOperations(candidate: BridgeFormState, current: BridgeInterf
   syncScalar(operations, base, "vrf", candidate.vrf.trim(), currentSafe.vrf);
   syncScalar(operations, base, "aging", candidate.aging.trim(), currentSafe.aging);
   syncScalar(operations, base, "protocol", candidate.protocol.trim(), currentSafe.protocol);
+  syncScalar(operations, base, "mirror ingress", candidate.mirrorIngress.trim(), currentSafe.mirrorIngress);
+  syncScalar(operations, base, "mirror egress", candidate.mirrorEgress.trim(), currentSafe.mirrorEgress);
 
   const desiredAddresses = parseAddressLines(candidate.addressesText);
   const currentAddressSet = new Set(currentSafe.addresses);
@@ -316,6 +350,8 @@ function buildBridgeOperations(candidate: BridgeFormState, current: BridgeInterf
 
     const currentCost = existing?.cost?.trim() || "";
     const currentPriority = existing?.priority?.trim() || "";
+    const currentNativeVlan = existing?.nativeVlan?.trim() || "";
+    const currentAllowedVlans = existing?.allowedVlans || [];
     if (desiredMember.cost !== currentCost) {
       if (desiredMember.cost) {
         operations.push(
@@ -337,6 +373,30 @@ function buildBridgeOperations(candidate: BridgeFormState, current: BridgeInterf
           `delete ${base} member interface ${quoteCliValue(desiredMember.interfaceName)} priority`,
         );
       }
+    }
+
+    if (desiredMember.nativeVlan !== currentNativeVlan) {
+      if (desiredMember.nativeVlan) {
+        operations.push(
+          `set ${base} member interface ${quoteCliValue(desiredMember.interfaceName)} native-vlan ${quoteCliValue(desiredMember.nativeVlan)}`,
+        );
+      } else if (currentNativeVlan) {
+        operations.push(
+          `delete ${base} member interface ${quoteCliValue(desiredMember.interfaceName)} native-vlan`,
+        );
+      }
+    }
+
+    const allowedVlanChanges = listDifference(currentAllowedVlans, desiredMember.allowedVlans);
+    for (const allowedVlan of allowedVlanChanges.toDelete) {
+      operations.push(
+        `delete ${base} member interface ${quoteCliValue(desiredMember.interfaceName)} allowed-vlan ${quoteCliValue(allowedVlan)}`,
+      );
+    }
+    for (const allowedVlan of allowedVlanChanges.toAdd) {
+      operations.push(
+        `set ${base} member interface ${quoteCliValue(desiredMember.interfaceName)} allowed-vlan ${quoteCliValue(allowedVlan)}`,
+      );
     }
   }
 
@@ -455,6 +515,28 @@ export default function BridgeInterfacesPage() {
       }
       if (member.priority && !/^\d+$/.test(member.priority)) {
         setError(`Member priority must be a whole number (${member.interfaceName}).`);
+        return;
+      }
+      if (member.nativeVlan && !/^\d+$/.test(member.nativeVlan)) {
+        setError(`Member native VLAN must be a whole number (${member.interfaceName}).`);
+        return;
+      }
+      for (const allowedVlan of member.allowedVlans) {
+        if (!/^\d+(?:-\d+)?$/.test(allowedVlan)) {
+          setError(`Allowed VLAN '${allowedVlan}' is invalid (${member.interfaceName}).`);
+          return;
+        }
+      }
+    }
+
+    for (const [direction, iface] of [
+      ["ingress", form.mirrorIngress],
+      ["egress", form.mirrorEgress],
+    ] as const) {
+      const trimmed = iface.trim();
+      if (!trimmed) continue;
+      if (!/^[A-Za-z0-9._:-]+$/.test(trimmed)) {
+        setError(`Mirror ${direction} interface '${trimmed}' is invalid.`);
         return;
       }
     }
@@ -695,9 +777,14 @@ export default function BridgeInterfacesPage() {
                 <div className="space-y-3 rounded-md border p-3">
                   <p className="text-sm font-medium">Per-Port Options</p>
                   {selectedMembers.map((memberName) => {
-                    const override = form.memberOverrides[memberName] || { cost: "", priority: "" };
+                    const override = form.memberOverrides[memberName] || {
+                      cost: "",
+                      priority: "",
+                      nativeVlan: "",
+                      allowedVlansText: "",
+                    };
                     return (
-                      <div key={memberName} className="grid gap-3 md:grid-cols-3">
+                      <div key={memberName} className="grid gap-3 md:grid-cols-5">
                         <div className="text-sm">
                           <span className="font-mono">{memberName}</span>
                         </div>
@@ -711,6 +798,9 @@ export default function BridgeInterfacesPage() {
                                 [memberName]: {
                                   cost: event.target.value,
                                   priority: previous.memberOverrides[memberName]?.priority || "",
+                                  nativeVlan: previous.memberOverrides[memberName]?.nativeVlan || "",
+                                  allowedVlansText:
+                                    previous.memberOverrides[memberName]?.allowedVlansText || "",
                                 },
                               },
                             }))
@@ -728,11 +818,53 @@ export default function BridgeInterfacesPage() {
                                 [memberName]: {
                                   cost: previous.memberOverrides[memberName]?.cost || "",
                                   priority: event.target.value,
+                                  nativeVlan: previous.memberOverrides[memberName]?.nativeVlan || "",
+                                  allowedVlansText:
+                                    previous.memberOverrides[memberName]?.allowedVlansText || "",
                                 },
                               },
                             }))
                           }
                           placeholder="Priority"
+                          disabled={saving}
+                        />
+                        <Input
+                          value={override.nativeVlan}
+                          onChange={(event) =>
+                            setForm((previous) => ({
+                              ...previous,
+                              memberOverrides: {
+                                ...previous.memberOverrides,
+                                [memberName]: {
+                                  cost: previous.memberOverrides[memberName]?.cost || "",
+                                  priority: previous.memberOverrides[memberName]?.priority || "",
+                                  nativeVlan: event.target.value,
+                                  allowedVlansText:
+                                    previous.memberOverrides[memberName]?.allowedVlansText || "",
+                                },
+                              },
+                            }))
+                          }
+                          placeholder="Native VLAN"
+                          disabled={saving}
+                        />
+                        <Input
+                          value={override.allowedVlansText}
+                          onChange={(event) =>
+                            setForm((previous) => ({
+                              ...previous,
+                              memberOverrides: {
+                                ...previous.memberOverrides,
+                                [memberName]: {
+                                  cost: previous.memberOverrides[memberName]?.cost || "",
+                                  priority: previous.memberOverrides[memberName]?.priority || "",
+                                  nativeVlan: previous.memberOverrides[memberName]?.nativeVlan || "",
+                                  allowedVlansText: event.target.value,
+                                },
+                              },
+                            }))
+                          }
+                          placeholder="Allowed VLANs (10,20,30-40)"
                           disabled={saving}
                         />
                       </div>
@@ -777,6 +909,27 @@ export default function BridgeInterfacesPage() {
                     value={form.vrf}
                     onChange={(event) => setForm((prev) => ({ ...prev, vrf: event.target.value }))}
                     placeholder="BLUE"
+                    disabled={saving}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Mirror Ingress Interface</Label>
+                  <Input
+                    value={form.mirrorIngress}
+                    onChange={(event) => setForm((prev) => ({ ...prev, mirrorIngress: event.target.value }))}
+                    placeholder="eth3"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Mirror Egress Interface</Label>
+                  <Input
+                    value={form.mirrorEgress}
+                    onChange={(event) => setForm((prev) => ({ ...prev, mirrorEgress: event.target.value }))}
+                    placeholder="eth3"
                     disabled={saving}
                   />
                 </div>

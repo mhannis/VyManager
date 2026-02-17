@@ -95,6 +95,13 @@ export interface WirelessInterfaceConfig {
   capVhtBeamformSingleUserBeamformee: boolean;
   capVhtBeamformMultiUserBeamformer: boolean;
   capVhtBeamformMultiUserBeamformee: boolean;
+  capHeAntennaPatternFixed: boolean;
+  capHeBssColor: string;
+  capHeCenterChannelFreq1: string;
+  capHeChannelSetWidth: string[];
+  capHeBeamformSingleUserBeamformer: boolean;
+  capHeBeamformSingleUserBeamformee: boolean;
+  capHeBeamformMultiUserBeamformer: boolean;
 }
 
 export interface WirelessConfig {
@@ -124,6 +131,9 @@ class WirelessService {
       const capHtStbc = asObject(ht.stbc);
       const vht = asObject(capabilities.vht);
       const vhtBeamform = asObject(vht.beamform);
+      const he = asObject(capabilities.he);
+      const heBeamform = asObject(he.beamform);
+      const heCenterChannelFreq = asObject(he["center-channel-freq"]);
 
       const radiusServers: WirelessRadiusServer[] = Object.keys(radius)
         .sort((left, right) => left.localeCompare(right))
@@ -197,6 +207,22 @@ class WirelessService {
         capVhtBeamformMultiUserBeamformee: Object.prototype.hasOwnProperty.call(
           vhtBeamform,
           "multi-user-beamformee",
+        ),
+        capHeAntennaPatternFixed: Object.prototype.hasOwnProperty.call(he, "antenna-pattern-fixed"),
+        capHeBssColor: asString(he["bss-color"]),
+        capHeCenterChannelFreq1: asString(heCenterChannelFreq["freq-1"]),
+        capHeChannelSetWidth: readTagValues(he["channel-set-width"]),
+        capHeBeamformSingleUserBeamformer: Object.prototype.hasOwnProperty.call(
+          heBeamform,
+          "single-user-beamformer",
+        ),
+        capHeBeamformSingleUserBeamformee: Object.prototype.hasOwnProperty.call(
+          heBeamform,
+          "single-user-beamformee",
+        ),
+        capHeBeamformMultiUserBeamformer: Object.prototype.hasOwnProperty.call(
+          heBeamform,
+          "multi-user-beamformer",
         ),
       });
     }

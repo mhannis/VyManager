@@ -35,6 +35,8 @@ export interface BridgeMember {
   interfaceName: string;
   cost: string;
   priority: string;
+  allowedVlans: string[];
+  nativeVlan: string;
 }
 
 export interface BridgeInterfaceConfig {
@@ -57,6 +59,8 @@ export interface BridgeInterfaceConfig {
   stpHelloTime: string;
   stpMaxAge: string;
   stpForwardDelay: string;
+  mirrorIngress: string;
+  mirrorEgress: string;
   members: BridgeMember[];
 }
 
@@ -80,6 +84,7 @@ class BridgeInterfaceService {
       const memberRoot = asObject(asObject(node.member).interface);
       const stpNode = asObject(node.stp);
       const igmpNode = asObject(node.igmp);
+      const mirrorNode = asObject(node.mirror);
 
       const members: BridgeMember[] = Object.keys(memberRoot)
         .sort((left, right) => left.localeCompare(right))
@@ -89,6 +94,8 @@ class BridgeInterfaceService {
             interfaceName,
             cost: asString(memberNode.cost),
             priority: asString(memberNode.priority),
+            allowedVlans: readTagValues(memberNode["allowed-vlan"]),
+            nativeVlan: asString(memberNode["native-vlan"]),
           };
         });
 
@@ -112,6 +119,8 @@ class BridgeInterfaceService {
         stpHelloTime: asString(stpNode["hello-time"]),
         stpMaxAge: asString(stpNode["max-age"]),
         stpForwardDelay: asString(stpNode["forward-delay"]),
+        mirrorIngress: asString(mirrorNode.ingress),
+        mirrorEgress: asString(mirrorNode.egress),
         members,
       });
     }

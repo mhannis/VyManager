@@ -106,20 +106,20 @@
     {
       "id": "IF-01",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add bonding editor (baseline implemented, verify advanced options)"
+      "status": "verify",
+      "title": "Bonding editor parity deepened with advanced leaves (`evpn uplink`, mirror ingress/egress) on top of existing member/mode/hash/lacp/arp-monitor controls in parser/form/diff-save workflow; pending live verification"
     },
     {
       "id": "IF-02",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add bridge interface editor (baseline implemented, verify advanced options)"
+      "status": "verify",
+      "title": "Bridge editor parity deepened with per-member VLAN leaves (`native-vlan`, `allowed-vlan`) and mirror ingress/egress controls in parser/form/diff-save workflow on top of existing STP/IGMP/member options; pending live verification"
     },
     {
       "id": "IF-03",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add geneve editor (baseline implemented, verify advanced options)"
+      "status": "verify",
+      "title": "Geneve parity deepened with guide-covered IPv4/IPv6 interface controls (ARP/filter/forwarding/proxy toggles, arp-cache-timeout, ipv6 accept-dad/address options/dup-addr-detect, ipv6 disable-forwarding) plus parser/diff-save support; pending live verification"
     },
     {
       "id": "IF-04",
@@ -178,14 +178,14 @@
     {
       "id": "IF-13",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add wireless editor"
+      "status": "verify",
+      "title": "Wireless parity deepened with HE capability controls (`antenna-pattern-fixed`, beamform modes, `bss-color`, `center-channel-freq freq-1`, `channel-set-width`) in parser/form/diff-save workflow on top of existing WLAN/WPA/HT/VHT coverage; pending live verification"
     },
     {
       "id": "IF-14",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add wwan editor (advanced IPv4/IPv6 + DHCPv6 PD depth in place; modem-op workflows pending)"
+      "status": "verify",
+      "title": "WWAN parity now covers guide command leaves (APN, addressing, IPv4/IPv6 tuning, DHCPv4 extras, DHCPv6 PD rows/flags/duid) and surfaces runtime telemetry (runtime IPs/link/driver details) on-page; pending live modem verification"
     },
     {
       "id": "IF-15",
