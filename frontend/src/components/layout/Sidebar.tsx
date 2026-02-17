@@ -272,7 +272,7 @@ const navigation: NavItem[] = [
       },
       {
         title: "DNS",
-        href: "/system/services?tab=dns&view=single",
+        href: "/system/services/dns",
         requiredPermission: FeatureGroup.SYSTEM,
       },
     ]),

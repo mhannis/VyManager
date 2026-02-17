@@ -202,8 +202,8 @@ export const SIDEBAR_VISIBILITY_ITEMS: SidebarVisibilityItem[] = [
       {
         id: "services-dns",
         label: "DNS",
-        href: "/system/services?tab=dns&view=single",
-        canHide: true,
+        href: "/system/services/dns",
+        canHide: false,
       },
     ],
   },
