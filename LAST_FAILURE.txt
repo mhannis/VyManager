@@ -1,15 +1,15 @@
-timestamp: 2026-02-17T19:46:00-05:00
-failing command: cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py
-error summary: Initial BGP save/apply loop test used command-string batch payloads, but `/vyos/bgp/batch` expects operation objects (`op` + optional `value`). The request returned HTTP 422.
+timestamp: 2026-02-17T19:58:00-05:00
+failing command: cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_static_routes_save_apply_reload_loop.py tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py
+error summary: New ARP loop assertion failed because the static-routes test service parsed ARP path tokens incorrectly and never applied the ARP set operation to mock config state.
 last output:
-_______________________ test_bgp_save_apply_reload_loop ________________________
+________________ test_static_routes_arp_save_apply_reload_loop _________________
 ...
-set_operations = ["set protocols bgp parameters router-id 2.2.2.2"]
-apply_set = client.post("/vyos/bgp/batch", json={"operations": set_operations})
->       assert apply_set.status_code == 200
-E       assert 422 == 200
-E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+mid = client.get("/vyos/static-routes/config", params={"refresh": "true"})
+assert mid.status_code == 200
+arp_entry = _find_arp_entry(mid.json(), interface, ip_address)
+>       assert arp_entry is not None
+E       assert None is not None
 ...
-FAILED tests/test_bgp_save_apply_reload_loop.py::test_bgp_save_apply_reload_loop
-1 failed, 121 passed, 1 warning in 6.56s
-suspected cause + next step: Update the BGP test to use `BgpBatchRequest` operation objects and mock `execute_batch(builder)` behavior. Re-ran suite after fix; now passing.
+FAILED tests/test_static_routes_save_apply_reload_loop.py::test_static_routes_arp_save_apply_reload_loop
+1 failed, 124 passed, 1 warning in 6.70s
+suspected cause + next step: Fix ARP path index handling (`address <ip> mac <addr>`) in test service execute_batch parser and rerun full protocol regression suite.

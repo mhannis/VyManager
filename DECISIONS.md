@@ -422,3 +422,5 @@
 - 2026-02-17: Added snapshot endpoints for PIM, PIM6, Failover, and Static protocol so protocol config payload regressions are caught deterministically in `test_domain_config_snapshots.py`.
 - 2026-02-17: Added a dedicated BGP save/apply/reload test instead of forcing BGP into the generic loop fixture because BGP batch payloads are builder operation objects (`op/value`), not direct command strings.
 - 2026-02-17: Added a dedicated static-routes save/apply/reload test because static-routes uses a richer batch schema (`destination`/`route_type` + operation objects) that is not representable by the generic command-string loop fixture.
+- 2026-02-17: Expanded static-routes regression coverage to ARP and mroute batch endpoints in the same dedicated test module to keep all static-routes schema variants validated in one place.
+- 2026-02-17: Preserved latest transient failure context in `LAST_FAILURE.txt` after ARP path-index mismatch; fixed parser and verified green suite in the same cycle.

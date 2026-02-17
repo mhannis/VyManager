@@ -169,3 +169,10 @@ current_counts:
 ### Incremental Update (static-routes batch verification)
 - Added `backend/tests/test_static_routes_save_apply_reload_loop.py` to cover the full `static-routes` batch endpoint contract (`destination` + `route_type` + operation objects) and round-trip config assertions.
 - Validation: `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_static_routes_save_apply_reload_loop.py tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py` (`123 passed`).
+
+### Incremental Update (static-routes ARP/mroute depth)
+- Extended `backend/tests/test_static_routes_save_apply_reload_loop.py` to cover:
+  - `/vyos/static-routes/arp/batch`
+  - `/vyos/static-routes/mroute/batch`
+- Fixed ARP path token parsing in the test harness (`address <ip> mac <addr>` path indexing) after an initial failing run.
+- Validation: `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_static_routes_save_apply_reload_loop.py tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py` (`125 passed`).

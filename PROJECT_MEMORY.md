@@ -758,3 +758,5 @@ Assumptions:
 - Keep adding deterministic fixtures/snapshots before moving to live-device verify phase.
 - Added `backend/tests/test_bgp_save_apply_reload_loop.py` as a dedicated regression for BGP builder-path batch semantics (`BgpBatchRequest` op/value model + `execute_batch(builder)`), since generic command-string loops do not exercise this contract.
 - Added `backend/tests/test_static_routes_save_apply_reload_loop.py` to verify `static-routes` complex batch payload behavior (`destination` + `route_type` + op/value operations) and reload-roundtrip state transitions.
+- Static-routes regression depth expanded beyond route next-hop: ARP (`/arp/batch`) and multicast route (`/mroute/batch`) batch workflows are now covered with round-trip assertions.
+- A transient ARP assertion failure was debugged to token index mismatch in the test harness path parser and fixed; details captured in `LAST_FAILURE.txt`.

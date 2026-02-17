@@ -540,6 +540,16 @@
         "backend/tests/test_static_routes_save_apply_reload_loop.py"
       ],
       "notes": "Added dedicated static-routes save/apply/reload regression covering StaticRoutesBatchRequest destination/route_type/op-value contract and config round-trip assertions."
+    },
+    {
+      "id": "T50",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/test_static_routes_save_apply_reload_loop.py",
+        "LAST_FAILURE.txt"
+      ],
+      "notes": "Extended static-routes regression to ARP and mroute batch endpoints; fixed ARP token index handling in test harness and reran protocol suite."
     }
   ],
   "commands": {
