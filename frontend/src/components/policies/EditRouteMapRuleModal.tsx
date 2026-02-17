@@ -517,6 +517,51 @@ export function EditRouteMapRuleModal({
     setError(null);
 
     try {
+      if (call.trim() && call.trim() === routeMapName.trim()) {
+        setError("Call route-map cannot reference the same route-map name.");
+        setLoading(false);
+        return;
+      }
+
+      if (continueRule.trim() && onMatchGoto.trim()) {
+        setError("Use either Continue Rule or On-Match Goto, not both.");
+        setLoading(false);
+        return;
+      }
+
+      if (onMatchNext && onMatchGoto.trim()) {
+        setError("On-Match Next and On-Match Goto cannot be enabled together.");
+        setLoading(false);
+        return;
+      }
+
+      const numericInputs: Array<{ label: string; value: string }> = [
+        { label: "Continue Rule", value: continueRule },
+        { label: "On-Match Goto", value: onMatchGoto },
+        { label: "Match Local Preference", value: matchLocalPref },
+        { label: "Match Metric", value: matchMetric },
+        { label: "Match IPv4 Prefix Length", value: matchIpAddressPrefixLen },
+        { label: "Match IPv6 Prefix Length", value: matchIpv6AddressPrefixLen },
+        { label: "Match IPv4 Next-Hop Prefix Length", value: matchIpNexthopPrefixLen },
+        { label: "Match IPv6 Next-Hop Prefix Length", value: matchIpv6NexthopPrefixLen },
+        { label: "Match Tag", value: matchTag },
+        { label: "Set AS Path Prepend Last-AS", value: setAsPathPrependLastAs },
+        { label: "Set Local Preference", value: setLocalPref },
+        { label: "Set Weight", value: setWeight },
+        { label: "Set Distance", value: setDistance },
+        { label: "Set Table", value: setTable },
+        { label: "Set Tag", value: setTag },
+      ];
+      for (const field of numericInputs) {
+        const trimmed = field.value.trim();
+        if (!trimmed) continue;
+        if (!/^\d+$/.test(trimmed)) {
+          setError(`${field.label} must be a whole number.`);
+          setLoading(false);
+          return;
+        }
+      }
+
       // Build match conditions
       const match: Partial<MatchConditions> = {};
       if (matchAsPath.trim()) match.as_path = matchAsPath.trim();

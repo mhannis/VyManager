@@ -95,7 +95,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 
 ### Policy (`policy/*`)
 - `POL-01` (`partial`): Route-map action/match coverage parity sweep against guide options.
-- `POL-02` (`partial`): Access/prefix/local-route edge-case validation parity.
+- `POL-02` (`verify`): Route-map rule edge-case validation hardened in add/edit flows (self-call guard, continue/goto/on-match exclusivity, and strict numeric-field validation before submit); pending live verification.
 - `POL-03` (`verify`): Policy object dependency checks and referential integrity hardening.
 
 ### Protocols (`protocols/*`)

@@ -262,8 +262,8 @@
     {
       "id": "POL-02",
       "domain": "policy",
-      "status": "partial",
-      "title": "Policy edge-case validation parity"
+      "status": "verify",
+      "title": "Route-map rule edge-case validation hardened (self-call guard, continue/goto/on-match exclusivity, strict numeric validation) in add/edit flows; pending live verification"
     },
     {
       "id": "POL-03",
