@@ -103,7 +103,88 @@
       "wan": {
         "interface-health": {
           "eth1": {
-            "nexthop": "203.0.113.1"
+            "nexthop": "203.0.113.1",
+            "test": {
+              "10": {
+                "type": "ping",
+                "target": "8.8.8.8"
+              }
+            }
+          }
+        },
+        "rule": {
+          "1": {
+            "inbound-interface": "eth2",
+            "interface": {
+              "eth0": {
+                "weight": "100"
+              },
+              "eth1": {
+                "weight": "50"
+              }
+            },
+            "protocol": "tcp",
+            "source": {
+              "address": "192.168.10.0/24"
+            },
+            "destination": {
+              "port": "443"
+            }
+          }
+        },
+        "flush-connections": {}
+      },
+      "haproxy": {
+        "global-parameters": {
+          "max-connections": "2000",
+          "tls-version-min": "1.2",
+          "logging": {
+            "facility": "local0",
+            "level": "info"
+          }
+        },
+        "timeout": {
+          "client": "50",
+          "connect": "10",
+          "server": "50"
+        },
+        "service": {
+          "https-in": {
+            "mode": "http",
+            "listen-address": {
+              "0.0.0.0": {}
+            },
+            "port": "443",
+            "backend": "web-backend",
+            "rule": {
+              "10": {
+                "domain-name": "app.example.com",
+                "set": {
+                  "backend": {
+                    "backend": "web-backend"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "backend": {
+          "web-backend": {
+            "mode": "http",
+            "balance": "round-robin",
+            "http-check": {
+              "method": "get",
+              "uri": "/healthz",
+              "expect": "status 200-399"
+            },
+            "server": {
+              "srv1": {
+                "address": "10.0.0.11",
+                "port": "443",
+                "check": {},
+                "send-proxy-v2": {}
+              }
+            }
           }
         }
       }

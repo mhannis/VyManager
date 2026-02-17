@@ -427,6 +427,32 @@
         "delete system conntrack timeout custom ipv4 rule 10",
         "delete system conntrack timeout tcp established"
       ]
+    },
+    {
+      "id": "LOOP-33",
+      "name": "Load balancing HAProxy advanced loop",
+      "config_endpoint": "/vyos/load-balancing/config",
+      "batch_endpoint": "/vyos/load-balancing/batch",
+      "response_key": "load_balancing",
+      "set_operations": [
+        "set load-balancing haproxy global-parameters max-connections 2000",
+        "set load-balancing haproxy service https-in listen-address 0.0.0.0",
+        "set load-balancing haproxy service https-in port 443",
+        "set load-balancing haproxy service https-in backend web-backend",
+        "set load-balancing haproxy backend web-backend mode http",
+        "set load-balancing haproxy backend web-backend server srv1 address 10.0.0.11",
+        "set load-balancing haproxy backend web-backend server srv1 port 443",
+        "set load-balancing haproxy backend web-backend server srv1 check",
+        "set load-balancing haproxy backend web-backend server srv1 send-proxy-v2"
+      ],
+      "delete_operations": [
+        "delete load-balancing haproxy backend web-backend server srv1 send-proxy-v2",
+        "delete load-balancing haproxy backend web-backend server srv1 check",
+        "delete load-balancing haproxy backend web-backend server srv1",
+        "delete load-balancing haproxy backend web-backend",
+        "delete load-balancing haproxy service https-in",
+        "delete load-balancing haproxy global-parameters max-connections"
+      ]
     }
   ]
 }
