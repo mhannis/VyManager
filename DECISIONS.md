@@ -424,3 +424,6 @@
 - 2026-02-17: Added a dedicated static-routes save/apply/reload test because static-routes uses a richer batch schema (`destination`/`route_type` + operation objects) that is not representable by the generic command-string loop fixture.
 - 2026-02-17: Expanded static-routes regression coverage to ARP and mroute batch endpoints in the same dedicated test module to keep all static-routes schema variants validated in one place.
 - 2026-02-17: Preserved latest transient failure context in `LAST_FAILURE.txt` after ARP path-index mismatch; fixed parser and verified green suite in the same cycle.
+- 2026-02-17: Ran a full verification closure pass using deterministic gates (backend full pytest + frontend tsc/build/runtime/browser smoke) and promoted all backlog IDs from `verify` to `done`.
+- 2026-02-17: Used domain-batch status promotion in `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json` after gate success to keep per-item completion auditable while avoiding one-off manual edits.
+- 2026-02-17: Added `BACKLOG_VERIFICATION_REPORT.md` as the canonical artifact summarizing verification commands/results and done-item lists by domain.

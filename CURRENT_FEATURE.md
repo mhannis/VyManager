@@ -176,3 +176,25 @@ current_counts:
   - `/vyos/static-routes/mroute/batch`
 - Fixed ARP path token parsing in the test harness (`address <ip> mac <addr>` path indexing) after an initial failing run.
 - Validation: `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_static_routes_save_apply_reload_loop.py tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py` (`125 passed`).
+
+## Verification Completion (2026-02-17)
+
+### Completed in this cycle
+- Full backlog verification pass executed and completed.
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`: all `86` items moved from `verify` to `done`.
+- `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`: status model updated to include `done`; all backlog entries marked `done`.
+- Added verification artifact: `BACKLOG_VERIFICATION_REPORT.md`.
+
+### Verification gates run
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q` (`482 passed`)
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_static_routes_save_apply_reload_loop.py tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py` (`125 passed`)
+- `cd frontend && npx tsc --noEmit --pretty false` (pass)
+- `cd frontend && npm run -s build` (pass)
+- `cd frontend && npm run -s smoke:runtime` (pass)
+- `cd frontend && npm run -s smoke:ui` (pass)
+
+### Current counts
+- done: 86
+- verify: 0
+- partial: 0
+- missing: 0

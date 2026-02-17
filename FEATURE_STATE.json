@@ -1,7 +1,7 @@
 {
   "feature_id": "backlog-partial-implementation-sweep-2026-02-17",
   "title": "Partial backlog implementation sweep (implementation first, verify deferred)",
-  "status": "in_review",
+  "status": "done",
   "acceptance_criteria": [
     "Convert partial backlog items to implementation-complete status by closing guide-leaf gaps in UI/backend.",
     "Keep UI/API workflows form-driven (no free-form CLI primary workflows).",
@@ -550,11 +550,22 @@
         "LAST_FAILURE.txt"
       ],
       "notes": "Extended static-routes regression to ARP and mroute batch endpoints; fixed ARP token index handling in test harness and reran protocol suite."
+    },
+    {
+      "id": "T51",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
+        "BACKLOG_VERIFICATION_REPORT.md"
+      ],
+      "notes": "Full backlog verification pass completed; all 86 backlog items promoted from verify to done with backend pytest + frontend tsc/build/runtime/browser smoke evidence."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_static_routes_save_apply_reload_loop.py tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
