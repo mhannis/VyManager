@@ -451,6 +451,15 @@ export default function TrafficPolicyPage() {
     [qosPolicies]
   );
 
+  const qosPolicyByName = useMemo(
+    () =>
+      qosPolicies.reduce<Record<string, QosPolicyEntry>>((acc, entry) => {
+        acc[entry.name] = entry;
+        return acc;
+      }, {}),
+    [qosPolicies]
+  );
+
   const loadData = useCallback(async (refresh = false) => {
     try {
       setLoading(true);
@@ -752,6 +761,20 @@ export default function TrafficPolicyPage() {
     if (entry.egress && !egressPolicyNames.includes(entry.egress)) {
       setError("Egress must reference an existing QoS policy name.");
       return;
+    }
+
+    const interfaceIsIfb = entry.interface.toLowerCase().startsWith("ifb");
+    if (interfaceIsIfb && entry.ingress) {
+      setError("IFB interfaces should use egress policy only. Remove ingress policy binding.");
+      return;
+    }
+
+    if (entry.egress) {
+      const egressPolicyType = qosPolicyByName[entry.egress]?.type || "";
+      if (egressPolicyType === "limiter") {
+        setError("Limiter policies are ingress policers and cannot be attached as egress policy.");
+        return;
+      }
     }
 
     if (qosInterfaces.some((item) => qosInterfaceKey(item) === qosInterfaceKey(entry))) {

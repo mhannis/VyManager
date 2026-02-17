@@ -346,8 +346,8 @@
     {
       "id": "TP-02",
       "domain": "traffic-policy",
-      "status": "partial",
-      "title": "Policy assignment incompatibility validation"
+      "status": "verify",
+      "title": "Policy assignment incompatibility validation implemented for QoS bindings (IFB ingress guard and limiter-as-egress guard) with existing policy existence checks; pending live verification"
     },
     {
       "id": "TP-03",

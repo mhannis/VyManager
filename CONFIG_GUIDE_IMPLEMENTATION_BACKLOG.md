@@ -115,7 +115,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 
 ### Traffic Policy (`trafficpolicy/index.html`)
 - `TP-01` (`partial`): Complete remaining policy-type leaves and class defaults not yet modeled.
-- `TP-02` (`partial`): Validate assignment semantics and incompatibility handling for all policy families.
+- `TP-02` (`verify`): Assignment incompatibility handling added for QoS bindings (IFB ingress guard, limiter-as-egress guard, and existing ingress/egress policy existence checks); pending live verification.
 - `TP-03` (`verify`): Throughput/latency fixture verification on representative links.
 
 ### VPN (`vpn/*`)
