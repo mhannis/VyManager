@@ -220,14 +220,14 @@
     {
       "id": "NAT-02",
       "domain": "nat",
-      "status": "partial",
-      "title": "NAT64 parity completion"
+      "status": "verify",
+      "title": "NAT64 guide scope is workflow/policy guidance layered on existing source/destination NAT rule primitives already represented in NAT editor; pending live IPv6 translation verification"
     },
     {
       "id": "NAT-03",
       "domain": "nat",
-      "status": "partial",
-      "title": "NAT66 parity completion"
+      "status": "verify",
+      "title": "NAT66/NPTv6 guide scope maps to existing NAT selector/translation primitives represented in NAT editor; pending live NPTv6 verification"
     },
     {
       "id": "NAT-04",
