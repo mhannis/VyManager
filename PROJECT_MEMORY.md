@@ -447,3 +447,20 @@ Assumptions:
 - 2026-02-16: Added dedicated `system syslog` thin wrapper router (`/vyos/system-syslog/*`) and registered it in backend app routing without changing existing service-layer contracts.
 - 2026-02-16: Added `System -> Syslog` page with structured global/console/file/remote destination editing (including remote protocol/port/format/TLS baseline fields), plus sidebar entry and smoke-route coverage for `/system/syslog`.
 - 2026-02-16 validation snapshot (syslog slice): backend `tests/test_config_tree_wrapper_capabilities.py` passed (`103 passed`), frontend typecheck/build/runtime smoke passed.
+
+## Cycle Update (2026-02-17)
+- Objective executed: triage `Not Found` regressions on `System -> Update Check` and `System -> Users`, then apply resilience fixes and runtime restart validation.
+- Implemented:
+  - `frontend/src/lib/api/system-update-check.ts`: `getStatus()` now gracefully degrades when `/vyos/system-update-check/status` returns route-level `Not Found` (stale backend build), returning an unavailable status with warning instead of surfacing a hard error.
+  - `frontend/src/app/system/users/page.tsx`: local users and global login config now load independently; if `/vyos/system/login-config` is missing, local-user CRUD remains operational and the login-config section shows a clear availability warning.
+  - `frontend/src/app/system/update-check/page.tsx`: default URL now pre-populates with `https://raw.githubusercontent.com/vyos/vyos-nightly-build/refs/heads/current/version.json` while auto-check stays disabled by default.
+- Runtime ops:
+  - Recreated `vm-api` and `vm-ui` tmux sessions after stale-process triage.
+  - Verified backend OpenAPI includes `/vyos/system-update-check/status`, `/vyos/system-update-check/config`, `/vyos/system/login-config`, and `/vyos/system/local-users`.
+- Validation:
+  - `cd frontend && npx tsc --noEmit --pretty false` (pass)
+  - `cd frontend && npx eslint src/lib/api/system-update-check.ts src/app/system/update-check/page.tsx src/app/system/users/page.tsx` (0 errors, 1 existing hooks warning)
+  - `cd frontend && npm run -s build` (pass)
+  - `cd frontend && npm run -s smoke:runtime` (pass)
+  - `cd frontend && npm run -s smoke:ui` (pass)
+- Next queue: continue converting remaining partial backlog items to complete implementation slices, then run verification sweep.

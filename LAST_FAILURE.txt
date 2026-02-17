@@ -1,12 +1,7 @@
-timestamp: 2026-02-16T23:16:17Z
-failing_command: cd frontend && npm run -s smoke:ui
-error_summary: Browser smoke failed with `ChunkLoadError` on `/firewall/policies` and `/vpn/ipsec`, showing the client-side application error banner. The UI process was serving stale chunk manifests after a fresh build.
+timestamp: 2026-02-17T00:24:45Z
+failing_command: set -e ... tmux kill-session/new-session ... ss -ltnp | rg ':3000|:8000'
+error_summary: Combined tmux restart command returned 'server exited unexpectedly' because no tmux server/socket was active at the moment of invocation. The restart sequence aborted before recreating both runtime sessions.
 last_output:
-UI smoke test FAILED:
-- /firewall/policies: rendered client-side application error banner
-- /firewall/policies: pageerror at http://localhost:3000/firewall/policies -> ChunkLoadError: Failed to load chunk /_next/static/chunks/931cb93ba2bc6d92.js
-- /vpn/ipsec: rendered client-side application error banner
-- /vpn/ipsec: pageerror at http://localhost:3000/vpn/ipsec -> ChunkLoadError: Failed to load chunk /_next/static/chunks/e5a342ce3e291b04.js
-Artifacts: smoke-artifacts/
-suspected_cause: `vm-ui` process was running with stale Next runtime assets after build.
-next_step: Restart `vm-ui` from current build output and rerun `npm run -s smoke:runtime` + `npm run -s smoke:ui`.
+server exited unexpectedly
+suspected_cause: Restart sequence assumed an active tmux server; killing sessions removed the socket and the chained command failed before recreating sessions.
+next_step: Recreate vm-api and vm-ui sessions one-by-one, verify listeners on :8000/:3000, then rerun smoke checks.

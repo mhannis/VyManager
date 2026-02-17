@@ -71,6 +71,24 @@ function parseOptionalBoundedInteger(value: string, fieldLabel: string): number 
   return parsed;
 }
 
+function getErrorStatus(error: unknown): number | null {
+  if (!error || typeof error !== "object") return null;
+  const status = (error as { status?: unknown }).status;
+  return typeof status === "number" ? status : null;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim()) return error.message;
+  if (typeof error === "string" && error.trim()) return error;
+  return fallback;
+}
+
+function isRouteNotFoundError(error: unknown): boolean {
+  const status = getErrorStatus(error);
+  const message = getErrorMessage(error, "").trim().toLowerCase();
+  return status === 404 && (message === "not found" || message === "404 not found");
+}
+
 interface LoginServerFormState {
   address: string;
   key: string;
@@ -83,6 +101,17 @@ const EMPTY_LOGIN_SERVER: LoginServerFormState = {
   key: "",
   port: "",
   timeout: "",
+};
+
+const EMPTY_LOGIN_CONFIG: LoginConfigResponse = {
+  configured: false,
+  banner_pre_login: "",
+  banner_post_login: "",
+  max_sessions_per_user: null,
+  timeout: null,
+  radius_source_address: "",
+  radius_servers: [],
+  tacacs_servers: [],
 };
 
 function toServerForm(entry: LoginAuthServerConfig): LoginServerFormState {
@@ -173,6 +202,7 @@ export default function SystemUsersPage() {
   const [editKeys, setEditKeys] = useState("");
 
   const [loginConfig, setLoginConfig] = useState<LoginConfigResponse | null>(null);
+  const [loginConfigUnavailable, setLoginConfigUnavailable] = useState<string | null>(null);
   const [bannerPreLogin, setBannerPreLogin] = useState("");
   const [bannerPostLogin, setBannerPostLogin] = useState("");
   const [maxSessionsPerUser, setMaxSessionsPerUser] = useState("");
@@ -186,33 +216,57 @@ export default function SystemUsersPage() {
     [users, selectedUserName]
   );
 
+  const syncLoginForm = (response: LoginConfigResponse) => {
+    setLoginConfig(response);
+    setBannerPreLogin(response.banner_pre_login || "");
+    setBannerPostLogin(response.banner_post_login || "");
+    setMaxSessionsPerUser(
+      typeof response.max_sessions_per_user === "number"
+        ? String(response.max_sessions_per_user)
+        : ""
+    );
+    setLoginTimeout(typeof response.timeout === "number" ? String(response.timeout) : "");
+    setRadiusSourceAddress(response.radius_source_address || "");
+    setRadiusServers((response.radius_servers || []).map(toServerForm));
+    setTacacsServers((response.tacacs_servers || []).map(toServerForm));
+  };
+
   const loadData = async () => {
     try {
       setError(null);
+      setLoginConfigUnavailable(null);
       setRefreshing(true);
-      const [usersResponse, loginResponse] = await Promise.all([
+      const [usersResult, loginResult] = await Promise.allSettled([
         systemService.getLocalUsers(true),
         systemService.getLoginConfig(true),
       ]);
 
-      const userList = usersResponse.users || [];
-      setUsers(userList);
-      if (!selectedUserName || !userList.find((user) => user.username === selectedUserName)) {
-        setSelectedUserName(userList[0]?.username || "");
+      const errors: string[] = [];
+
+      if (usersResult.status === "fulfilled") {
+        const userList = usersResult.value.users || [];
+        setUsers(userList);
+        if (!selectedUserName || !userList.find((user) => user.username === selectedUserName)) {
+          setSelectedUserName(userList[0]?.username || "");
+        }
+      } else {
+        errors.push(getErrorMessage(usersResult.reason, "Failed to load local users."));
       }
 
-      setLoginConfig(loginResponse);
-      setBannerPreLogin(loginResponse.banner_pre_login || "");
-      setBannerPostLogin(loginResponse.banner_post_login || "");
-      setMaxSessionsPerUser(
-        typeof loginResponse.max_sessions_per_user === "number"
-          ? String(loginResponse.max_sessions_per_user)
-          : ""
-      );
-      setLoginTimeout(typeof loginResponse.timeout === "number" ? String(loginResponse.timeout) : "");
-      setRadiusSourceAddress(loginResponse.radius_source_address || "");
-      setRadiusServers((loginResponse.radius_servers || []).map(toServerForm));
-      setTacacsServers((loginResponse.tacacs_servers || []).map(toServerForm));
+      if (loginResult.status === "fulfilled") {
+        syncLoginForm(loginResult.value);
+      } else if (isRouteNotFoundError(loginResult.reason)) {
+        syncLoginForm(EMPTY_LOGIN_CONFIG);
+        setLoginConfigUnavailable(
+          "Global login authentication endpoint is unavailable on this backend build. Local user management is still available."
+        );
+      } else {
+        errors.push(getErrorMessage(loginResult.reason, "Failed to load global login configuration."));
+      }
+
+      if (errors.length > 0) {
+        setError(errors.join(" "));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load user/login configuration");
     } finally {
@@ -360,6 +414,11 @@ export default function SystemUsersPage() {
 
   const handleSaveLoginConfig = async () => {
     if (!canEdit) return;
+    if (loginConfigUnavailable) {
+      setError(loginConfigUnavailable);
+      setSuccess(null);
+      return;
+    }
 
     setSavingLoginConfig(true);
     setError(null);
@@ -748,6 +807,12 @@ export default function SystemUsersPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {loginConfigUnavailable ? (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
+                {loginConfigUnavailable}
+              </div>
+            ) : (
+              <>
             <div className="grid gap-3 md:grid-cols-3">
               <div>
                 <Label>Max Sessions Per User</Label>
@@ -931,6 +996,8 @@ export default function SystemUsersPage() {
               <Save className="mr-2 h-4 w-4" />
               {savingLoginConfig ? "Saving..." : "Save Login Settings"}
             </Button>
+              </>
+            )}
           </CardContent>
         </Card>
 

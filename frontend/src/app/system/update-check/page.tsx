@@ -24,9 +24,12 @@ interface FormState {
   url: string;
 }
 
+const DEFAULT_UPDATE_CHECK_URL =
+  "https://raw.githubusercontent.com/vyos/vyos-nightly-build/refs/heads/current/version.json";
+
 const EMPTY_FORM: FormState = {
   autoCheck: false,
-  url: "",
+  url: DEFAULT_UPDATE_CHECK_URL,
 };
 
 function quoteCliValue(value: string): string {
@@ -37,9 +40,10 @@ function quoteCliValue(value: string): string {
 }
 
 function toFormState(config: SystemUpdateCheckConfig): FormState {
+  const configuredUrl = config.url.trim();
   return {
     autoCheck: config.autoCheck,
-    url: config.url,
+    url: configuredUrl || DEFAULT_UPDATE_CHECK_URL,
   };
 }
 
@@ -49,12 +53,13 @@ function buildOperations(current: SystemUpdateCheckConfig | null, form: FormStat
   const currentAutoCheck = Boolean(current?.autoCheck);
   const desiredUrl = form.url.trim();
   const currentUrl = (current?.url || "").trim();
+  const currentEffectiveUrl = currentUrl || DEFAULT_UPDATE_CHECK_URL;
 
   if (desiredAutoCheck !== currentAutoCheck) {
     operations.push(`${desiredAutoCheck ? "set" : "delete"} system update-check auto-check`);
   }
 
-  if (desiredUrl !== currentUrl) {
+  if (desiredUrl !== currentEffectiveUrl) {
     if (desiredUrl) {
       operations.push(`set system update-check url ${quoteCliValue(desiredUrl)}`);
     } else if (currentUrl) {
@@ -132,7 +137,8 @@ export default function SystemUpdateCheckPage() {
 
   const hasChanges = useMemo(() => {
     if (!config) return false;
-    return form.autoCheck !== config.autoCheck || form.url.trim() !== config.url.trim();
+    const currentUrl = config.url.trim() || DEFAULT_UPDATE_CHECK_URL;
+    return form.autoCheck !== config.autoCheck || form.url.trim() !== currentUrl;
   }, [config, form.autoCheck, form.url]);
 
   const runtimeBadge = useMemo(() => {

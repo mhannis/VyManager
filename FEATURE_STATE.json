@@ -1,87 +1,72 @@
 {
   "feature_id": "system-update-runtime-visibility-2026-02-17",
-  "title": "System update runtime visibility and dashboard indicator (SYS-17)",
+  "title": "System update/user route resilience + default update URL (SYS-17 follow-up)",
   "status": "in_progress",
   "acceptance_criteria": [
-    "System Update Check page shows runtime command output indicating up-to-date vs update-available state.",
-    "Backend exposes best-effort structured update status endpoint with non-fatal warnings for unsupported probes.",
-    "System Information dashboard card shows update status and links to update page when update is available.",
-    "Validation gates pass: backend pytest slice, frontend typecheck/eslint/build/runtime smoke/UI smoke."
+    "System Update Check page no longer hard-fails with `Not Found` when runtime status endpoint is absent; it shows an unavailable warning state.",
+    "System Users page continues to load local-user CRUD even if global login config endpoint is unavailable.",
+    "Update Check URL field is pre-populated by default with the VyOS nightly version JSON URL while auto-check remains disabled by default.",
+    "Frontend validation and smoke gates pass after runtime restart."
   ],
   "assumptions": [
-    "VyOS image/update probe output can vary by build; parser remains best-effort with warnings.",
-    "This slice adds visibility only and does not perform image download/install workflows."
+    "Route-level 404 with message `Not Found` indicates backend version/process mismatch rather than data-path failure.",
+    "Fallback behavior should preserve critical workflows (local users, status visibility) without changing backend API contracts."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "Backend",
+      "owner_role": "UI",
       "status": "done",
       "files": [
-        "backend/routers/system_update_check.py"
+        "frontend/src/lib/api/system-update-check.ts"
       ],
-      "notes": "Added /status runtime endpoint with ordered show/generate probe fallbacks and structured parsing."
+      "notes": "Added graceful fallback for `/vyos/system-update-check/status` route-level 404."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/system/update-check/page.tsx",
-        "frontend/src/lib/api/system-update-check.ts"
+        "frontend/src/app/system/users/page.tsx"
       ],
-      "notes": "Added runtime status section with warnings/raw output and preserved config-edit workflow."
+      "notes": "Changed load flow to allSettled, isolated login-config availability, and preserved local-user operations."
     },
     {
       "id": "T3",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/components/dashboard/SystemInformationCard.tsx"
+        "frontend/src/app/system/update-check/page.tsx"
       ],
-      "notes": "Added update indicator in system information card with link to /system/update-check."
+      "notes": "Set default update URL form value while keeping auto-check disabled by default."
     },
     {
       "id": "T4",
-      "owner_role": "Test",
+      "owner_role": "Build/Test",
       "status": "done",
-      "files": [
-        "backend/tests/test_system_update_check_status.py"
-      ],
-      "notes": "Added endpoint tests and executed all required validation gates for this slice."
+      "files": [],
+      "notes": "Restarted vm-api/vm-ui and passed tsc, eslint (0 errors), build, smoke:runtime, smoke:ui."
     },
     {
       "id": "T5",
-      "owner_role": "Reviewer",
-      "status": "done",
-      "files": [
-        "backend/routers/system_update_check.py",
-        "frontend/src/app/system/update-check/page.tsx",
-        "frontend/src/components/dashboard/SystemInformationCard.tsx",
-        "frontend/src/lib/api/system-update-check.ts"
-      ],
-      "notes": "Reviewer-agent unavailable due thread cap; manual in-process review completed with APPROVED verdict."
-    },
-    {
-      "id": "T6",
       "owner_role": "Planner",
       "status": "todo",
       "files": [
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
       ],
-      "notes": "Continue remaining backlog sequence after SYS-17 with HA-01/HA-02 depth and broader option parity."
+      "notes": "Continue partial-backlog implementation sweep before verification pass."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_update_check_status.py && cd ../frontend && npx tsc --noEmit --pretty false && npx eslint src/app/system/update-check/page.tsx src/components/dashboard/SystemInformationCard.tsx src/lib/api/system-update-check.ts && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
+    "test": "cd frontend && npx tsc --noEmit --pretty false && npx eslint src/lib/api/system-update-check.ts src/app/system/update-check/page.tsx src/app/system/users/page.tsx && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "System update runtime status visibility and dashboard integration",
+      "purpose": "System route resilience + default update URL, then continue partial backlog",
       "status": "active"
     }
   ]

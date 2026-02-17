@@ -11,6 +11,15 @@ function asString(value: unknown): string {
   return String(value).trim();
 }
 
+function isRouteNotFoundError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const maybe = error as { status?: unknown; message?: unknown };
+  const status = typeof maybe.status === "number" ? maybe.status : null;
+  const message =
+    typeof maybe.message === "string" ? maybe.message.trim().toLowerCase() : "";
+  return status === 404 && (message === "not found" || message === "404 not found");
+}
+
 export interface SystemUpdateCheckConfig {
   autoCheck: boolean;
   url: string;
@@ -49,9 +58,30 @@ class SystemUpdateCheckService {
   }
 
   async getStatus(refresh: boolean = false): Promise<SystemUpdateCheckStatus> {
-    return apiClient.get<SystemUpdateCheckStatus>("/vyos/system-update-check/status", {
-      refresh: refresh.toString(),
-    });
+    try {
+      return await apiClient.get<SystemUpdateCheckStatus>("/vyos/system-update-check/status", {
+        refresh: refresh.toString(),
+      });
+    } catch (error) {
+      if (!isRouteNotFoundError(error)) {
+        throw error;
+      }
+
+      return {
+        available: false,
+        checked_at: new Date().toISOString(),
+        command_used: null,
+        current_version: null,
+        update_available: null,
+        update_version: null,
+        update_url: null,
+        summary: "Runtime update status endpoint is unavailable on this backend build.",
+        raw_output: null,
+        warnings: [
+          "Backend route /vyos/system-update-check/status returned Not Found. Restart vm-api on the latest build.",
+        ],
+      };
+    }
   }
 }
 
