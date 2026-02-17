@@ -50,6 +50,14 @@ interface TunnelFormState {
   disableLinkDetect: boolean;
   ipAdjustMssClamp: boolean;
   ipAdjustMssValue: string;
+  ipArpCacheTimeout: string;
+  ipDisableArpFilter: boolean;
+  ipEnableArpAccept: boolean;
+  ipEnableArpAnnounce: boolean;
+  ipEnableArpIgnore: boolean;
+  ipEnableDirectedBroadcast: boolean;
+  ipEnableProxyArp: boolean;
+  ipProxyArpPvlan: boolean;
   ipv6AdjustMssClamp: boolean;
   ipv6AdjustMssValue: string;
   ipSourceValidation: string;
@@ -72,6 +80,14 @@ const EMPTY_FORM: TunnelFormState = {
   disableLinkDetect: false,
   ipAdjustMssClamp: false,
   ipAdjustMssValue: "",
+  ipArpCacheTimeout: "",
+  ipDisableArpFilter: false,
+  ipEnableArpAccept: false,
+  ipEnableArpAnnounce: false,
+  ipEnableArpIgnore: false,
+  ipEnableDirectedBroadcast: false,
+  ipEnableProxyArp: false,
+  ipProxyArpPvlan: false,
   ipv6AdjustMssClamp: false,
   ipv6AdjustMssValue: "",
   ipSourceValidation: "",
@@ -118,6 +134,14 @@ function toFormState(value: TunnelInterfaceConfig): TunnelFormState {
     disableLinkDetect: value.disableLinkDetect,
     ipAdjustMssClamp: value.ipAdjustMssClamp,
     ipAdjustMssValue: value.ipAdjustMssValue,
+    ipArpCacheTimeout: value.ipArpCacheTimeout,
+    ipDisableArpFilter: value.ipDisableArpFilter,
+    ipEnableArpAccept: value.ipEnableArpAccept,
+    ipEnableArpAnnounce: value.ipEnableArpAnnounce,
+    ipEnableArpIgnore: value.ipEnableArpIgnore,
+    ipEnableDirectedBroadcast: value.ipEnableDirectedBroadcast,
+    ipEnableProxyArp: value.ipEnableProxyArp,
+    ipProxyArpPvlan: value.ipProxyArpPvlan,
     ipv6AdjustMssClamp: value.ipv6AdjustMssClamp,
     ipv6AdjustMssValue: value.ipv6AdjustMssValue,
     ipSourceValidation: value.ipSourceValidation,
@@ -209,6 +233,14 @@ function buildTunnelOperations(candidate: TunnelFormState, current: TunnelInterf
       disableLinkDetect: false,
       ipAdjustMssClamp: false,
       ipAdjustMssValue: "",
+      ipArpCacheTimeout: "",
+      ipDisableArpFilter: false,
+      ipEnableArpAccept: false,
+      ipEnableArpAnnounce: false,
+      ipEnableArpIgnore: false,
+      ipEnableDirectedBroadcast: false,
+      ipEnableProxyArp: false,
+      ipProxyArpPvlan: false,
       ipv6AdjustMssClamp: false,
       ipv6AdjustMssValue: "",
       ipSourceValidation: "",
@@ -235,6 +267,13 @@ function buildTunnelOperations(candidate: TunnelFormState, current: TunnelInterf
     "ip source-validation",
     candidate.ipSourceValidation.trim(),
     currentSafe.ipSourceValidation,
+  );
+  syncScalar(
+    operations,
+    base,
+    "ip arp-cache-timeout",
+    candidate.ipArpCacheTimeout.trim(),
+    currentSafe.ipArpCacheTimeout,
   );
 
   const desiredAddresses = parseAddressLines(candidate.addressesText);
@@ -279,6 +318,55 @@ function buildTunnelOperations(candidate: TunnelFormState, current: TunnelInterf
     "ipv6 disable-forwarding",
     candidate.ipv6DisableForwarding,
     currentSafe.ipv6DisableForwarding,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip disable-arp-filter",
+    candidate.ipDisableArpFilter,
+    currentSafe.ipDisableArpFilter,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip enable-arp-accept",
+    candidate.ipEnableArpAccept,
+    currentSafe.ipEnableArpAccept,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip enable-arp-announce",
+    candidate.ipEnableArpAnnounce,
+    currentSafe.ipEnableArpAnnounce,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip enable-arp-ignore",
+    candidate.ipEnableArpIgnore,
+    currentSafe.ipEnableArpIgnore,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip enable-directed-broadcast",
+    candidate.ipEnableDirectedBroadcast,
+    currentSafe.ipEnableDirectedBroadcast,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip enable-proxy-arp",
+    candidate.ipEnableProxyArp,
+    currentSafe.ipEnableProxyArp,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip proxy-arp-pvlan",
+    candidate.ipProxyArpPvlan,
+    currentSafe.ipProxyArpPvlan,
   );
 
   syncAdjustMss(
@@ -391,6 +479,7 @@ export default function TunnelInterfacesPage() {
     const numericFields = [
       { label: "MTU", value: form.mtu },
       { label: "IP Key", value: form.ipKey },
+      { label: "ARP Cache Timeout", value: form.ipArpCacheTimeout },
       { label: "IPv4 MSS", value: form.ipAdjustMssValue, clamp: form.ipAdjustMssClamp },
       { label: "IPv6 MSS", value: form.ipv6AdjustMssValue, clamp: form.ipv6AdjustMssClamp },
     ];
@@ -675,6 +764,17 @@ export default function TunnelInterfacesPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="tunnel-ip-arp-cache-timeout">ARP Cache Timeout (seconds)</Label>
+                  <Input
+                    id="tunnel-ip-arp-cache-timeout"
+                    value={form.ipArpCacheTimeout}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, ipArpCacheTimeout: event.target.value }))
+                    }
+                    placeholder="180"
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="tunnel-ip-mss">IPv4 Adjust MSS</Label>
                   <Input
                     id="tunnel-ip-mss"
@@ -748,6 +848,69 @@ export default function TunnelInterfacesPage() {
                     }
                   />
                   IP Disable Forwarding
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipDisableArpFilter}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipDisableArpFilter: checked === true }))
+                    }
+                  />
+                  IP Disable ARP Filter
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipEnableArpAccept}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipEnableArpAccept: checked === true }))
+                    }
+                  />
+                  IP Enable ARP Accept
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipEnableArpAnnounce}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipEnableArpAnnounce: checked === true }))
+                    }
+                  />
+                  IP Enable ARP Announce
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipEnableArpIgnore}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipEnableArpIgnore: checked === true }))
+                    }
+                  />
+                  IP Enable ARP Ignore
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipEnableDirectedBroadcast}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipEnableDirectedBroadcast: checked === true }))
+                    }
+                  />
+                  IP Enable Directed Broadcast
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipEnableProxyArp}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipEnableProxyArp: checked === true }))
+                    }
+                  />
+                  IP Enable Proxy ARP
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipProxyArpPvlan}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipProxyArpPvlan: checked === true }))
+                    }
+                  />
+                  IP Proxy ARP PVLAN
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox

@@ -31,6 +31,36 @@ function readTagValues(value: unknown): string[] {
   return Object.keys(asObject(value)).sort((left, right) => left.localeCompare(right));
 }
 
+function parseAdjustMss(value: unknown): { clamp: boolean; value: string } {
+  const rawString = asString(value);
+  if (rawString) {
+    return { clamp: false, value: rawString };
+  }
+  const node = asObject(value);
+  if (Object.prototype.hasOwnProperty.call(node, "clamp-mss-to-pmtu")) {
+    return { clamp: true, value: "" };
+  }
+  return { clamp: false, value: "" };
+}
+
+export interface VirtualEthernetVifConfig {
+  id: string;
+  description: string;
+  addresses: string[];
+  mtu: string;
+  mac: string;
+  disable: boolean;
+  disableLinkDetect: boolean;
+  ipAdjustMssClamp: boolean;
+  ipAdjustMssValue: string;
+  ipArpCacheTimeout: string;
+  ipDisableArpFilter: boolean;
+  ipDisableForwarding: boolean;
+  ipEnableArpAccept: boolean;
+  ipEnableArpAnnounce: boolean;
+  ipEnableDirectedBroadcast: boolean;
+}
+
 export interface VirtualEthernetInterfaceConfig {
   name: string;
   description: string;
@@ -39,6 +69,7 @@ export interface VirtualEthernetInterfaceConfig {
   mtu: string;
   vrf: string;
   disable: boolean;
+  vifs: VirtualEthernetVifConfig[];
 }
 
 export interface VirtualEthernetConfig {
@@ -58,6 +89,43 @@ class VirtualEthernetService {
 
     for (const name of Object.keys(root).sort((left, right) => left.localeCompare(right))) {
       const node = asObject(root[name]);
+      const vifRoot = asObject(node.vif);
+      const vifs: VirtualEthernetVifConfig[] = Object.keys(vifRoot)
+        .sort((left, right) => {
+          const leftNumber = Number(left);
+          const rightNumber = Number(right);
+          if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) {
+            return leftNumber - rightNumber;
+          }
+          return left.localeCompare(right);
+        })
+        .map((id) => {
+          const vifNode = asObject(vifRoot[id]);
+          const ipNode = asObject(vifNode.ip);
+          const ipAdjustMss = parseAdjustMss(ipNode["adjust-mss"]);
+
+          return {
+            id,
+            description: asString(vifNode.description),
+            addresses: readTagValues(vifNode.address),
+            mtu: asString(vifNode.mtu),
+            mac: asString(vifNode.mac),
+            disable: Object.prototype.hasOwnProperty.call(vifNode, "disable"),
+            disableLinkDetect: Object.prototype.hasOwnProperty.call(vifNode, "disable-link-detect"),
+            ipAdjustMssClamp: ipAdjustMss.clamp,
+            ipAdjustMssValue: ipAdjustMss.value,
+            ipArpCacheTimeout: asString(ipNode["arp-cache-timeout"]),
+            ipDisableArpFilter: Object.prototype.hasOwnProperty.call(ipNode, "disable-arp-filter"),
+            ipDisableForwarding: Object.prototype.hasOwnProperty.call(ipNode, "disable-forwarding"),
+            ipEnableArpAccept: Object.prototype.hasOwnProperty.call(ipNode, "enable-arp-accept"),
+            ipEnableArpAnnounce: Object.prototype.hasOwnProperty.call(ipNode, "enable-arp-announce"),
+            ipEnableDirectedBroadcast: Object.prototype.hasOwnProperty.call(
+              ipNode,
+              "enable-directed-broadcast",
+            ),
+          };
+        });
+
       interfaces.push({
         name,
         description: asString(node.description),
@@ -66,6 +134,7 @@ class VirtualEthernetService {
         mtu: asString(node.mtu),
         vrf: asString(node.vrf),
         disable: Object.prototype.hasOwnProperty.call(node, "disable"),
+        vifs,
       });
     }
 

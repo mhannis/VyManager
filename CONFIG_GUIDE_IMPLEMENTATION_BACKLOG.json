@@ -124,14 +124,14 @@
     {
       "id": "IF-04",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add l2tpv3 editor (baseline implemented, verify advanced options)"
+      "status": "verify",
+      "title": "L2TPv3 command-scope audit confirms guide-covered leaves (`address`, `description`, `disable`) are fully represented in current parser/form workflow; pending live verification"
     },
     {
       "id": "IF-05",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add macsec editor (baseline implemented, verify advanced options)"
+      "status": "verify",
+      "title": "MACsec command-scope audit confirms guide-covered interface leaves (`address`, `description`, `disable`, `mtu`, `mac`, `disable-flow-control`, `disable-link-detect`) are represented in parser/form workflow; pending live verification"
     },
     {
       "id": "IF-06",
@@ -154,14 +154,14 @@
     {
       "id": "IF-09",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add tunnel editor (baseline implemented; advanced protocol/parameter depth verification remains)"
+      "status": "verify",
+      "title": "Tunnel editor parity deepened with guide-covered IPv4 ARP/neighbor controls (`arp-cache-timeout`, ARP filter/accept/announce/ignore, directed-broadcast, proxy-arp, proxy-arp-pvlan`) plus parser/form/diff-save support; pending live verification"
     },
     {
       "id": "IF-10",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add virtual-ethernet editor (baseline implemented; VLAN-depth verification remains)"
+      "status": "verify",
+      "title": "Virtual-ethernet parity deepened with full `vif` subinterface editor (VLAN ID, addresses, description, disable/disable-link-detect, MTU, MAC, `ip adjust-mss`, `ip arp-cache-timeout`, and ARP/forwarding toggles) plus parser/diff-save support; pending live verification"
     },
     {
       "id": "IF-11",
@@ -190,8 +190,8 @@
     {
       "id": "IF-15",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Deepen existing interface-type parity (PPPoE DHCPv6-PD, ethernet DHCP/DHCPv6/IPv6, and WireGuard peer validation depth complete; loopback edge depth pending)"
+      "status": "verify",
+      "title": "Existing ethernet/pppoe/loopback/wireguard parity sweep completed; loopback command-scope audit confirms guide-covered `address` + `description` support. Pending live verification"
     },
     {
       "id": "LB-01",

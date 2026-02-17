@@ -60,6 +60,14 @@ export interface TunnelInterfaceConfig {
   disableLinkDetect: boolean;
   ipAdjustMssClamp: boolean;
   ipAdjustMssValue: string;
+  ipArpCacheTimeout: string;
+  ipDisableArpFilter: boolean;
+  ipEnableArpAccept: boolean;
+  ipEnableArpAnnounce: boolean;
+  ipEnableArpIgnore: boolean;
+  ipEnableDirectedBroadcast: boolean;
+  ipEnableProxyArp: boolean;
+  ipProxyArpPvlan: boolean;
   ipv6AdjustMssClamp: boolean;
   ipv6AdjustMssValue: string;
   ipSourceValidation: string;
@@ -106,6 +114,17 @@ class TunnelInterfaceService {
         disableLinkDetect: Object.prototype.hasOwnProperty.call(node, "disable-link-detect"),
         ipAdjustMssClamp: ipAdjustMss.clamp,
         ipAdjustMssValue: ipAdjustMss.value,
+        ipArpCacheTimeout: asString(ipNode["arp-cache-timeout"]),
+        ipDisableArpFilter: Object.prototype.hasOwnProperty.call(ipNode, "disable-arp-filter"),
+        ipEnableArpAccept: Object.prototype.hasOwnProperty.call(ipNode, "enable-arp-accept"),
+        ipEnableArpAnnounce: Object.prototype.hasOwnProperty.call(ipNode, "enable-arp-announce"),
+        ipEnableArpIgnore: Object.prototype.hasOwnProperty.call(ipNode, "enable-arp-ignore"),
+        ipEnableDirectedBroadcast: Object.prototype.hasOwnProperty.call(
+          ipNode,
+          "enable-directed-broadcast",
+        ),
+        ipEnableProxyArp: Object.prototype.hasOwnProperty.call(ipNode, "enable-proxy-arp"),
+        ipProxyArpPvlan: Object.prototype.hasOwnProperty.call(ipNode, "proxy-arp-pvlan"),
         ipv6AdjustMssClamp: ipv6AdjustMss.clamp,
         ipv6AdjustMssValue: ipv6AdjustMss.value,
         ipSourceValidation: asString(ipNode["source-validation"]),

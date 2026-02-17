@@ -15,8 +15,27 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   virtualEthernetService,
   type VirtualEthernetInterfaceConfig,
+  type VirtualEthernetVifConfig,
 } from "@/lib/api/virtual-ethernet";
 import { pageGuides } from "@/lib/help/pageGuides";
+
+interface VirtualEthernetVifFormState {
+  id: string;
+  description: string;
+  addressesText: string;
+  mtu: string;
+  mac: string;
+  disable: boolean;
+  disableLinkDetect: boolean;
+  ipAdjustMssClamp: boolean;
+  ipAdjustMssValue: string;
+  ipArpCacheTimeout: string;
+  ipDisableArpFilter: boolean;
+  ipDisableForwarding: boolean;
+  ipEnableArpAccept: boolean;
+  ipEnableArpAnnounce: boolean;
+  ipEnableDirectedBroadcast: boolean;
+}
 
 interface VirtualEthernetFormState {
   name: string;
@@ -26,7 +45,26 @@ interface VirtualEthernetFormState {
   mtu: string;
   vrf: string;
   disable: boolean;
+  vifs: VirtualEthernetVifFormState[];
 }
+
+const EMPTY_VIF: VirtualEthernetVifFormState = {
+  id: "",
+  description: "",
+  addressesText: "",
+  mtu: "",
+  mac: "",
+  disable: false,
+  disableLinkDetect: false,
+  ipAdjustMssClamp: false,
+  ipAdjustMssValue: "",
+  ipArpCacheTimeout: "",
+  ipDisableArpFilter: false,
+  ipDisableForwarding: false,
+  ipEnableArpAccept: false,
+  ipEnableArpAnnounce: false,
+  ipEnableDirectedBroadcast: false,
+};
 
 const EMPTY_FORM: VirtualEthernetFormState = {
   name: "",
@@ -36,6 +74,7 @@ const EMPTY_FORM: VirtualEthernetFormState = {
   mtu: "",
   vrf: "",
   disable: false,
+  vifs: [],
 };
 
 function quoteCliValue(value: string): string {
@@ -61,6 +100,26 @@ function parseAddressLines(raw: string): string[] {
   return uniqueNonEmpty(raw.split("\n"));
 }
 
+function toVifFormState(value: VirtualEthernetVifConfig): VirtualEthernetVifFormState {
+  return {
+    id: value.id,
+    description: value.description,
+    addressesText: value.addresses.join("\n"),
+    mtu: value.mtu,
+    mac: value.mac,
+    disable: value.disable,
+    disableLinkDetect: value.disableLinkDetect,
+    ipAdjustMssClamp: value.ipAdjustMssClamp,
+    ipAdjustMssValue: value.ipAdjustMssValue,
+    ipArpCacheTimeout: value.ipArpCacheTimeout,
+    ipDisableArpFilter: value.ipDisableArpFilter,
+    ipDisableForwarding: value.ipDisableForwarding,
+    ipEnableArpAccept: value.ipEnableArpAccept,
+    ipEnableArpAnnounce: value.ipEnableArpAnnounce,
+    ipEnableDirectedBroadcast: value.ipEnableDirectedBroadcast,
+  };
+}
+
 function toFormState(value: VirtualEthernetInterfaceConfig): VirtualEthernetFormState {
   return {
     name: value.name,
@@ -70,6 +129,7 @@ function toFormState(value: VirtualEthernetInterfaceConfig): VirtualEthernetForm
     mtu: value.mtu,
     vrf: value.vrf,
     disable: value.disable,
+    vifs: value.vifs.map(toVifFormState),
   };
 }
 
@@ -84,6 +144,53 @@ function syncScalar(
   if (desired) {
     operations.push(`set ${base} ${token} ${quoteCliValue(desired)}`);
   } else {
+    operations.push(`delete ${base} ${token}`);
+  }
+}
+
+function syncFlag(
+  operations: string[],
+  base: string,
+  token: string,
+  desired: boolean,
+  current: boolean,
+): void {
+  if (desired === current) return;
+  operations.push(desired ? `set ${base} ${token}` : `delete ${base} ${token}`);
+}
+
+function syncAdjustMss(
+  operations: string[],
+  base: string,
+  desiredClamp: boolean,
+  desiredValue: string,
+  currentClamp: boolean,
+  currentValue: string,
+): void {
+  const token = "ip adjust-mss";
+  const trimmedDesired = desiredValue.trim();
+  const trimmedCurrent = currentValue.trim();
+
+  if (desiredClamp) {
+    if (currentClamp && !trimmedCurrent) return;
+    if (currentClamp || trimmedCurrent) {
+      operations.push(`delete ${base} ${token}`);
+    }
+    operations.push(`set ${base} ${token} clamp-mss-to-pmtu`);
+    return;
+  }
+
+  if (trimmedDesired) {
+    if (currentClamp || trimmedDesired !== trimmedCurrent) {
+      if (currentClamp) {
+        operations.push(`delete ${base} ${token}`);
+      }
+      operations.push(`set ${base} ${token} ${quoteCliValue(trimmedDesired)}`);
+    }
+    return;
+  }
+
+  if (currentClamp || trimmedCurrent) {
     operations.push(`delete ${base} ${token}`);
   }
 }
@@ -104,6 +211,7 @@ function buildVirtualEthernetOperations(
       mtu: "",
       vrf: "",
       disable: false,
+      vifs: [],
     } satisfies VirtualEthernetInterfaceConfig);
 
   syncScalar(operations, base, "description", candidate.description.trim(), currentSafe.description);
@@ -127,6 +235,107 @@ function buildVirtualEthernetOperations(
 
   if (candidate.disable !== currentSafe.disable) {
     operations.push(candidate.disable ? `set ${base} disable` : `delete ${base} disable`);
+  }
+
+  const currentVifMap = new Map(currentSafe.vifs.map((vif) => [vif.id, vif]));
+  const desiredVifs = candidate.vifs
+    .map((vif) => ({
+      ...vif,
+      id: vif.id.trim(),
+      description: vif.description.trim(),
+      mtu: vif.mtu.trim(),
+      mac: vif.mac.trim(),
+      ipAdjustMssValue: vif.ipAdjustMssValue.trim(),
+      ipArpCacheTimeout: vif.ipArpCacheTimeout.trim(),
+      addresses: parseAddressLines(vif.addressesText),
+    }))
+    .filter((vif) => vif.id.length > 0);
+  const desiredVifMap = new Map(desiredVifs.map((vif) => [vif.id, vif]));
+
+  for (const currentVifId of currentVifMap.keys()) {
+    if (!desiredVifMap.has(currentVifId)) {
+      operations.push(`delete ${base} vif ${quoteCliValue(currentVifId)}`);
+    }
+  }
+
+  for (const vif of desiredVifs) {
+    const existing = currentVifMap.get(vif.id);
+    const vifBase = `${base} vif ${quoteCliValue(vif.id)}`;
+    syncScalar(operations, vifBase, "description", vif.description, existing?.description || "");
+    syncScalar(operations, vifBase, "mtu", vif.mtu, existing?.mtu || "");
+    syncScalar(operations, vifBase, "mac", vif.mac, existing?.mac || "");
+    syncScalar(
+      operations,
+      vifBase,
+      "ip arp-cache-timeout",
+      vif.ipArpCacheTimeout,
+      existing?.ipArpCacheTimeout || "",
+    );
+    syncFlag(operations, vifBase, "disable", vif.disable, Boolean(existing?.disable));
+    syncFlag(
+      operations,
+      vifBase,
+      "disable-link-detect",
+      vif.disableLinkDetect,
+      Boolean(existing?.disableLinkDetect),
+    );
+    syncFlag(
+      operations,
+      vifBase,
+      "ip disable-arp-filter",
+      vif.ipDisableArpFilter,
+      Boolean(existing?.ipDisableArpFilter),
+    );
+    syncFlag(
+      operations,
+      vifBase,
+      "ip disable-forwarding",
+      vif.ipDisableForwarding,
+      Boolean(existing?.ipDisableForwarding),
+    );
+    syncFlag(
+      operations,
+      vifBase,
+      "ip enable-arp-accept",
+      vif.ipEnableArpAccept,
+      Boolean(existing?.ipEnableArpAccept),
+    );
+    syncFlag(
+      operations,
+      vifBase,
+      "ip enable-arp-announce",
+      vif.ipEnableArpAnnounce,
+      Boolean(existing?.ipEnableArpAnnounce),
+    );
+    syncFlag(
+      operations,
+      vifBase,
+      "ip enable-directed-broadcast",
+      vif.ipEnableDirectedBroadcast,
+      Boolean(existing?.ipEnableDirectedBroadcast),
+    );
+    syncAdjustMss(
+      operations,
+      vifBase,
+      vif.ipAdjustMssClamp,
+      vif.ipAdjustMssValue,
+      Boolean(existing?.ipAdjustMssClamp),
+      existing?.ipAdjustMssValue || "",
+    );
+
+    const currentVifAddresses = existing?.addresses || [];
+    const currentVifAddressSet = new Set(currentVifAddresses);
+    const desiredVifAddressSet = new Set(vif.addresses);
+    for (const address of currentVifAddresses) {
+      if (!desiredVifAddressSet.has(address)) {
+        operations.push(`delete ${vifBase} address ${quoteCliValue(address)}`);
+      }
+    }
+    for (const address of vif.addresses) {
+      if (!currentVifAddressSet.has(address)) {
+        operations.push(`set ${vifBase} address ${quoteCliValue(address)}`);
+      }
+    }
   }
 
   return operations;
@@ -174,6 +383,24 @@ export default function VirtualEthernetInterfacesPage() {
     setSuccess(null);
   };
 
+  const addVifRow = () => {
+    setForm((prev) => ({ ...prev, vifs: [...prev.vifs, { ...EMPTY_VIF }] }));
+  };
+
+  const removeVifRow = (index: number) => {
+    setForm((prev) => ({ ...prev, vifs: prev.vifs.filter((_, rowIndex) => rowIndex !== index) }));
+  };
+
+  const updateVifRow = (
+    index: number,
+    updater: (previous: VirtualEthernetVifFormState) => VirtualEthernetVifFormState,
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      vifs: prev.vifs.map((row, rowIndex) => (rowIndex === index ? updater(row) : row)),
+    }));
+  };
+
   const deleteInterface = async (name: string) => {
     if (!window.confirm(`Delete virtual-ethernet interface '${name}'?`)) return;
     setSaving(true);
@@ -219,6 +446,47 @@ export default function VirtualEthernetInterfacesPage() {
     if (form.mtu.trim() && !/^\d+$/.test(form.mtu.trim())) {
       setError("MTU must be a whole number.");
       return;
+    }
+
+    const vifIds = new Set<string>();
+    for (const [index, vif] of form.vifs.entries()) {
+      const vifId = vif.id.trim();
+      if (!vifId) continue;
+      if (!/^\d+$/.test(vifId)) {
+        setError(`VIF row ${index + 1}: VLAN ID must be numeric.`);
+        return;
+      }
+      const vifIdNumber = Number(vifId);
+      if (!Number.isInteger(vifIdNumber) || vifIdNumber < 1 || vifIdNumber > 4094) {
+        setError(`VIF row ${index + 1}: VLAN ID must be between 1 and 4094.`);
+        return;
+      }
+      if (vifIds.has(vifId)) {
+        setError(`Duplicate VIF VLAN ID '${vifId}'.`);
+        return;
+      }
+      vifIds.add(vifId);
+
+      if (vif.mtu.trim() && !/^\d+$/.test(vif.mtu.trim())) {
+        setError(`VIF ${vifId}: MTU must be a whole number.`);
+        return;
+      }
+      if (vif.ipArpCacheTimeout.trim() && !/^\d+$/.test(vif.ipArpCacheTimeout.trim())) {
+        setError(`VIF ${vifId}: ARP cache timeout must be a whole number.`);
+        return;
+      }
+      if (
+        !vif.ipAdjustMssClamp &&
+        vif.ipAdjustMssValue.trim() &&
+        !/^\d+$/.test(vif.ipAdjustMssValue.trim())
+      ) {
+        setError(`VIF ${vifId}: IPv4 MSS must be a whole number.`);
+        return;
+      }
+      if (vif.mac.trim() && !/^[0-9a-f]{2}(:[0-9a-f]{2}){5}$/i.test(vif.mac.trim())) {
+        setError(`VIF ${vifId}: MAC must be in format aa:bb:cc:dd:ee:ff.`);
+        return;
+      }
     }
 
     const current = interfaces.find((entry) => entry.name === name) || null;
@@ -442,6 +710,251 @@ export default function VirtualEthernetInterfacesPage() {
                   />
                 </div>
               </div>
+
+              <Card className="border-dashed">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <CardTitle className="text-base">VLAN Subinterfaces (VIF)</CardTitle>
+                      <CardDescription>
+                        Configure `vif` VLAN subinterfaces and per-VIF IP/ARP behavior.
+                      </CardDescription>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={addVifRow}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add VIF
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {form.vifs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No VIF entries configured. Add a row to define VLAN subinterfaces.
+                    </p>
+                  ) : (
+                    form.vifs.map((vif, index) => (
+                      <Card key={`vif-${index}`} className="border-muted/60">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <CardTitle className="text-sm">VIF Row {index + 1}</CardTitle>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeVifRow(index)}
+                            >
+                              <Trash2 className="mr-1 h-4 w-4" />
+                              Remove
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="grid gap-3 md:grid-cols-3">
+                            <div className="space-y-2">
+                              <Label>VLAN ID</Label>
+                              <Input
+                                value={vif.id}
+                                onChange={(event) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    id: event.target.value,
+                                  }))
+                                }
+                                placeholder="10"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>MTU</Label>
+                              <Input
+                                value={vif.mtu}
+                                onChange={(event) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    mtu: event.target.value,
+                                  }))
+                                }
+                                placeholder="1500"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>MAC</Label>
+                              <Input
+                                value={vif.mac}
+                                onChange={(event) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    mac: event.target.value,
+                                  }))
+                                }
+                                placeholder="00:53:01:02:03:04"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label>Description</Label>
+                              <Input
+                                value={vif.description}
+                                onChange={(event) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    description: event.target.value,
+                                  }))
+                                }
+                                placeholder="Users VLAN"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>ARP Cache Timeout (seconds)</Label>
+                              <Input
+                                value={vif.ipArpCacheTimeout}
+                                onChange={(event) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    ipArpCacheTimeout: event.target.value,
+                                  }))
+                                }
+                                placeholder="180"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label>IPv4 Adjust MSS</Label>
+                              <Input
+                                value={vif.ipAdjustMssValue}
+                                onChange={(event) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    ipAdjustMssValue: event.target.value,
+                                  }))
+                                }
+                                placeholder="1452"
+                                disabled={vif.ipAdjustMssClamp}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Addresses (one per line)</Label>
+                              <Textarea
+                                value={vif.addressesText}
+                                onChange={(event) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    addressesText: event.target.value,
+                                  }))
+                                }
+                                rows={3}
+                                placeholder={"192.0.2.1/24\ndhcp"}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid gap-3 md:grid-cols-3">
+                            <label className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={vif.disable}
+                                onCheckedChange={(checked) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    disable: checked === true,
+                                  }))
+                                }
+                              />
+                              Disable
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={vif.disableLinkDetect}
+                                onCheckedChange={(checked) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    disableLinkDetect: checked === true,
+                                  }))
+                                }
+                              />
+                              Disable Link Detect
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={vif.ipAdjustMssClamp}
+                                onCheckedChange={(checked) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    ipAdjustMssClamp: checked === true,
+                                  }))
+                                }
+                              />
+                              Clamp MSS to PMTU
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={vif.ipDisableArpFilter}
+                                onCheckedChange={(checked) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    ipDisableArpFilter: checked === true,
+                                  }))
+                                }
+                              />
+                              Disable ARP Filter
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={vif.ipDisableForwarding}
+                                onCheckedChange={(checked) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    ipDisableForwarding: checked === true,
+                                  }))
+                                }
+                              />
+                              Disable IP Forwarding
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={vif.ipEnableArpAccept}
+                                onCheckedChange={(checked) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    ipEnableArpAccept: checked === true,
+                                  }))
+                                }
+                              />
+                              Enable ARP Accept
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={vif.ipEnableArpAnnounce}
+                                onCheckedChange={(checked) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    ipEnableArpAnnounce: checked === true,
+                                  }))
+                                }
+                              />
+                              Enable ARP Announce
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={vif.ipEnableDirectedBroadcast}
+                                onCheckedChange={(checked) =>
+                                  updateVifRow(index, (previous) => ({
+                                    ...previous,
+                                    ipEnableDirectedBroadcast: checked === true,
+                                  }))
+                                }
+                              />
+                              Enable Directed Broadcast
+                            </label>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
 
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox

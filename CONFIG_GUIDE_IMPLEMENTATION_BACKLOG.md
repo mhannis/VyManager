@@ -64,18 +64,18 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `IF-01` (`partial`): Add robust `bonding` editor (members/mode/hash/lacp settings). Baseline page implemented; advanced option-depth verification remains.
 - `IF-02` (`partial`): Add robust interface `bridge` editor (ports/stp/bridge options). Baseline page implemented; advanced option-depth verification remains.
 - `IF-03` (`partial`): Add robust `geneve` editor. Baseline page implemented; advanced option-depth verification remains.
-- `IF-04` (`partial`): Add robust `l2tpv3` editor. Baseline page implemented; advanced option-depth verification remains.
-- `IF-05` (`partial`): Add robust `macsec` editor. Baseline page implemented; advanced option-depth verification remains.
+- `IF-04` (`verify`): L2TPv3 command-scope audit against current guide confirms full coverage of documented leaves (`address`, `description`, `disable`) in the existing form workflow; pending live verification.
+- `IF-05` (`verify`): MACsec command-scope audit confirms documented interface leaves (`address`, `description`, `disable`, `mtu`, `mac`, `disable-flow-control`, `disable-link-detect`) are covered in parser + form + diff-save workflow; pending live verification.
 - `IF-06` (`partial`): Add robust `openvpn` interface editor. Baseline page implemented; advanced option-depth verification remains.
 - `IF-07` (`partial`): Add robust `pseudo-ethernet` (macvlan) editor. Baseline page implemented; VLAN-depth and edge-option verification remains.
 - `IF-08` (`verify`): SSTP client page now matches documented interface leaves (`description`, `disable`, `mtu`, `vrf`, `no-default-route`, `default-route-distance`, `no-peer-dns`, `server`, `ip adjust-mss`, `ip disable-forwarding`, `ip source-validation`) with form CRUD. Pending live verification.
-- `IF-09` (`partial`): Add robust `tunnel` editor. Baseline page implemented; advanced protocol/parameter depth verification remains.
-- `IF-10` (`partial`): Add robust `virtual-ethernet` (veth) editor. Baseline page implemented; VLAN-depth verification remains.
+- `IF-09` (`verify`): Tunnel editor parity deepened to include guide-covered IPv4 ARP/neighbor controls (`arp-cache-timeout`, ARP filter/accept/announce/ignore, directed-broadcast, proxy-arp, proxy-arp-pvlan) with parser/form/diff-save support. Pending live verification.
+- `IF-10` (`verify`): Virtual-ethernet parity deepened with full `vif` subinterface editor (VLAN ID, addresses, description, disable/disable-link-detect, MTU, MAC, `ip adjust-mss`, `ip arp-cache-timeout`, ARP/filter/forwarding toggles) plus parser/diff-save support. Pending live verification.
 - `IF-11` (`partial`): Add robust `vti` editor. Baseline page implemented; VPN IPsec interaction and advanced parity verification remains.
 - `IF-12` (`partial`): Add robust `vxlan` editor. Baseline page implemented; advanced EVPN/SVD depth verification remains.
 - `IF-13` (`partial`): Add robust `wireless` editor. Baseline form-first page is implemented with core WLAN, WPA/RADIUS, HT capabilities, and country-code support; advanced 802.11 capability depth still needs parity sweep.
 - `IF-14` (`partial`): Add robust `wwan` editor. Form-first page now covers APN, addressing, advanced IPv4/IPv6 tuning, DHCPv4 extras, and DHCPv6 prefix delegation rows; modem operational workflows still need parity sweep.
-- `IF-15` (`partial`): Deepen existing ethernet/pppoe/loopback/wireguard option parity. PPPoE DHCPv6-PD, ethernet DHCP/DHCPv6/IPv6 option depth, and WireGuard peer validation/safety depth are now in place; remaining depth work targets loopback edge gaps.
+- `IF-15` (`verify`): Existing ethernet/pppoe/loopback/wireguard parity sweep completed. Loopback command-scope audit against current guide confirms full coverage (`address`, `description`) in form-driven workflow; pending live verification.
 
 ### Load Balancing (`loadbalancing/*`)
 - `LB-01` (`partial`): WAN load balancing full option parity (health, interface weights, policy controls).
