@@ -260,6 +260,47 @@ def test_update_dns_config_emits_forwarding_and_host_override_ops(monkeypatch, a
     ) in op_paths
 
 
+def test_update_dns_config_defaults_allow_from_when_empty(monkeypatch, app, allow_permissions):
+    service = DummyService(full_config={"service": {}, "system": {}})
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    body = {
+        "enabled": True,
+        "allow_from": [],
+    }
+
+    resp = client.put("/vyos/system/dns-config", json=body)
+    assert resp.status_code == 200
+    assert service.device.configure_calls, "Expected configure operation call"
+
+    operations = service.device.configure_calls[-1]
+    op_paths = [tuple(op.get("path") or []) for op in operations]
+    assert ("service", "dns", "forwarding", "allow-from", "0.0.0.0/0") in op_paths
+    assert ("service", "dns", "forwarding", "allow-from", "::/0") in op_paths
+
+
+def test_update_dns_config_defaults_allow_from_when_omitted(monkeypatch, app, allow_permissions):
+    service = DummyService(full_config={"service": {}, "system": {}})
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    body = {
+        "enabled": True,
+        "name_servers": ["1.1.1.1"],
+    }
+
+    resp = client.put("/vyos/system/dns-config", json=body)
+    assert resp.status_code == 200
+    assert service.device.configure_calls, "Expected configure operation call"
+
+    operations = service.device.configure_calls[-1]
+    op_paths = [tuple(op.get("path") or []) for op in operations]
+    assert ("service", "dns", "forwarding", "allow-from", "0.0.0.0/0") in op_paths
+    assert ("service", "dns", "forwarding", "allow-from", "::/0") in op_paths
+    assert ("service", "dns", "forwarding", "name-server", "1.1.1.1") in op_paths
+
+
 def test_get_dns_config_includes_system_name_servers_and_domain_search(monkeypatch, app, allow_permissions):
     service = DummyService(
         full_config={

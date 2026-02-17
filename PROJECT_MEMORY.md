@@ -642,3 +642,27 @@ Assumptions:
 ### Runtime Notes
 - Runtime reset command using broad `pkill` patterns exited unexpectedly (code `-1`) in one attempt; switched to safer, granular process/session control.
 - `vm-ui` was recreated cleanly after build and smoke gates passed on the new runtime.
+
+## Cycle Update (2026-02-17 dns allow-from default hotfix)
+
+### Objective Update
+- Fix VyOS commit failure when DNS forwarding is saved without `allow-from` entries and enforce operator-requested default "accept everything".
+
+### Completed This Cycle
+- `backend/routers/system.py`
+  - Updated `update_dns_config` allow-from handling:
+    - Uses requested `allow_from` list when provided.
+    - Uses current config list when omitted.
+    - If DNS forwarding is enabled and resulting list is empty, auto-seeds:
+      - `0.0.0.0/0`
+      - `::/0`
+  - This prevents `[ service dns forwarding ] DNS forwarding requires an allow-from network` commit failures.
+- `backend/tests/test_system_services_ssh_dns.py`
+  - Added regression tests:
+    - `test_update_dns_config_defaults_allow_from_when_empty`
+    - `test_update_dns_config_defaults_allow_from_when_omitted`
+
+### Validation Run This Cycle
+- `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_services_ssh_dns.py`
+- `cd frontend && npm run -s smoke:runtime`
+- `cd frontend && SMOKE_ROUTES=/system/services npm run -s smoke:ui`

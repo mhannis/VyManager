@@ -408,6 +408,16 @@
         "frontend/src/app/page.tsx"
       ],
       "notes": "Dashboard drag/drop fix: compaction now preserves selected target column, preventing dropped cards from snapping back."
+    },
+    {
+      "id": "T38",
+      "owner_role": "Backend/Test",
+      "status": "done",
+      "files": [
+        "backend/routers/system.py",
+        "backend/tests/test_system_services_ssh_dns.py"
+      ],
+      "notes": "DNS forwarding allow-from default hotfix: when forwarding is enabled and allow-from is empty/omitted, backend now seeds permissive defaults (0.0.0.0/0 and ::/0). Added regression tests for both empty and omitted payloads."
     }
   ],
   "commands": {

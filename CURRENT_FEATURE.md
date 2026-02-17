@@ -22,6 +22,7 @@ completed_in_cycle:
   - SVC-04 UX fix: DNS Resolver interface quick-pick now keeps selections reliably by normalizing addresses, loading ethernet descriptions for `Description (ethX)` labels, and allowing listen-address editing even when DNS service is disabled.
   - Dashboard UX fix: card drag/drop now preserves the user-selected destination column during compaction, preventing cards from snapping back after drop.
   - Dashboard Interface Overview fix: removed heuristic fallback that implicitly treated first interface (often `eth0`) as WAN; WAN badge is now inferred from gateway/default-route signals or unambiguous addressing heuristics only.
+  - SVC-04 hotfix: DNS forwarding now auto-applies permissive `allow-from` defaults (`0.0.0.0/0`, `::/0`) when the UI submits an empty/omitted list, preventing VyOS commit failures and allowing "accept everything by default" behavior.
 validation:
   - cd frontend && npx eslint src/app/system/update-check/page.tsx src/app/page.tsx src/components/routing/FailoverContent.tsx scripts/smoke-ui.mjs
   - cd frontend && npx tsc --noEmit --pretty false
@@ -49,6 +50,9 @@ validation:
   - cd frontend && npm run -s build
   - cd frontend && npm run -s smoke:runtime
   - cd frontend && SMOKE_ROUTES=/,/system/services npm run -s smoke:ui
+  - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_services_ssh_dns.py
+  - cd frontend && npm run -s smoke:runtime
+  - cd frontend && SMOKE_ROUTES=/system/services npm run -s smoke:ui
 known_limitations:
   - Full live-device verify for newly promoted `verify` items is still pending.
   - Browser smoke can false-fail with `ChunkLoadError` when runtime serves stale chunk manifests; restart frontend runtime after rebuild before running full route smoke.

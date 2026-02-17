@@ -435,6 +435,8 @@ def _model_fields_set(model: BaseModel) -> set[str]:
 
 RE_LOCAL_USERNAME = re.compile(r"^[A-Za-z_][A-Za-z0-9._-]{0,31}$")
 RE_LOCAL_LEVEL = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
+RE_LOCAL_PUBLIC_KEY_IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$")
+RE_LOCAL_PUBLIC_KEY_TYPE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9@._+-]{1,63}$")
 RE_HOSTNAME_TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,252}$")
 RE_TIMEZONE_TOKEN = re.compile(r"^[A-Za-z0-9._+-]+(?:/[A-Za-z0-9._+-]+)*$")
 
@@ -639,6 +641,9 @@ class DnsServiceConfigRequest(BaseModel):
     authoritative_domains: List[str] = Field(default_factory=list)
     domain_overrides: List[DnsForwardingDomainOverride] = Field(default_factory=list)
     host_overrides: List[DnsHostOverride] = Field(default_factory=list)
+
+
+DEFAULT_DNS_ALLOW_FROM_NETWORKS: tuple[str, ...] = ("0.0.0.0/0", "::/0")
 
 
 # ========================================================================
@@ -880,6 +885,13 @@ class LocalUserAuthState(BaseModel):
     has_principal: bool = False
 
 
+class LocalUserPublicKeyEntry(BaseModel):
+    identifier: str
+    key: str
+    key_type: Optional[str] = None
+    options: Optional[str] = None
+
+
 class LocalUserSummary(BaseModel):
     username: str
     full_name: Optional[str] = None
@@ -888,10 +900,19 @@ class LocalUserSummary(BaseModel):
     principal: Optional[str] = None
     otp_key_configured: bool = False
     otp_rate_limit: Optional[int] = None
+    otp_rate_time: Optional[int] = None
     otp_window_size: Optional[int] = None
     auth: LocalUserAuthState = Field(default_factory=LocalUserAuthState)
     public_key_names: List[str] = Field(default_factory=list)
     public_keys: List[str] = Field(default_factory=list)
+    public_key_entries: List[LocalUserPublicKeyEntry] = Field(default_factory=list)
+
+
+class LocalUserPublicKeyEntryRequest(BaseModel):
+    identifier: Optional[str] = None
+    key: str
+    key_type: Optional[str] = None
+    options: Optional[str] = None
 
 
 class LocalUsersResponse(BaseModel):
@@ -906,11 +927,13 @@ class LocalUserCreateRequest(BaseModel):
     password: Optional[str] = None
     password_type: Literal["plaintext", "encrypted"] = "plaintext"
     ssh_public_keys: List[str] = Field(default_factory=list)
+    ssh_public_key_entries: Optional[List[LocalUserPublicKeyEntryRequest]] = None
     disabled: bool = False
     principal: Optional[str] = None
     otp_key: Optional[str] = None
-    otp_rate_limit: Optional[int] = Field(default=None, ge=1, le=65535)
-    otp_window_size: Optional[int] = Field(default=None, ge=1, le=65535)
+    otp_rate_limit: Optional[int] = Field(default=None, ge=1, le=10)
+    otp_rate_time: Optional[int] = Field(default=None, ge=1, le=600)
+    otp_window_size: Optional[int] = Field(default=None, ge=1, le=21)
 
 
 class LocalUserUpdateRequest(BaseModel):
@@ -919,11 +942,13 @@ class LocalUserUpdateRequest(BaseModel):
     password: Optional[str] = None
     password_type: Literal["plaintext", "encrypted"] = "plaintext"
     ssh_public_keys: Optional[List[str]] = None
+    ssh_public_key_entries: Optional[List[LocalUserPublicKeyEntryRequest]] = None
     disabled: Optional[bool] = None
     principal: Optional[str] = None
     otp_key: Optional[str] = None
-    otp_rate_limit: Optional[int] = Field(default=None, ge=1, le=65535)
-    otp_window_size: Optional[int] = Field(default=None, ge=1, le=65535)
+    otp_rate_limit: Optional[int] = Field(default=None, ge=1, le=10)
+    otp_rate_time: Optional[int] = Field(default=None, ge=1, le=600)
+    otp_window_size: Optional[int] = Field(default=None, ge=1, le=21)
 
 
 class LocalUserOperationResponse(BaseModel):
@@ -1756,6 +1781,95 @@ def _normalize_local_otp_key_or_400(otp_key: str) -> str:
     return clean
 
 
+def _normalize_local_public_key_identifier_or_400(identifier: str) -> str:
+    clean = identifier.strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail="public key identifier is required")
+    if not RE_LOCAL_PUBLIC_KEY_IDENTIFIER.match(clean):
+        raise HTTPException(status_code=400, detail=f"Invalid public key identifier '{clean}'")
+    return clean
+
+
+def _normalize_local_public_key_type_or_400(key_type: str) -> str:
+    clean = key_type.strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail="public key type cannot be empty")
+    if not RE_LOCAL_PUBLIC_KEY_TYPE.match(clean):
+        raise HTTPException(status_code=400, detail=f"Invalid public key type '{clean}'")
+    return clean
+
+
+def _derive_public_key_type(key_value: str) -> Optional[str]:
+    first_token = key_value.strip().split(" ", 1)[0].strip()
+    if first_token and RE_LOCAL_PUBLIC_KEY_TYPE.match(first_token):
+        return first_token
+    return None
+
+
+def _normalize_local_public_key_entries_or_400(
+    explicit_entries: Optional[List[LocalUserPublicKeyEntryRequest]],
+    fallback_keys: List[str],
+) -> List[LocalUserPublicKeyEntry]:
+    normalized: List[LocalUserPublicKeyEntry] = []
+
+    if explicit_entries is not None:
+        seen_identifiers: set[str] = set()
+        for index, entry in enumerate(explicit_entries, start=1):
+            key_value = (entry.key or "").strip()
+            identifier_seed = (entry.identifier or "").strip() or f"key-{index}"
+            key_options = (entry.options or "").strip() or None
+            key_type = (entry.key_type or "").strip()
+
+            if not key_value:
+                if key_options or key_type or (entry.identifier and entry.identifier.strip()):
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"public key entry {index} requires key when identifier/options/type are provided",
+                    )
+                continue
+
+            identifier = _normalize_local_public_key_identifier_or_400(identifier_seed)
+            if identifier in seen_identifiers:
+                raise HTTPException(status_code=400, detail=f"Duplicate public key identifier '{identifier}'")
+            seen_identifiers.add(identifier)
+
+            if key_type:
+                normalized_type = _normalize_local_public_key_type_or_400(key_type)
+            else:
+                normalized_type = _derive_public_key_type(key_value)
+
+            if key_options and len(key_options) > 1024:
+                raise HTTPException(status_code=400, detail="public key options must be 1024 characters or fewer")
+
+            normalized.append(
+                LocalUserPublicKeyEntry(
+                    identifier=identifier,
+                    key=key_value,
+                    key_type=normalized_type,
+                    options=key_options,
+                )
+            )
+
+        return sorted(normalized, key=lambda item: item.identifier)
+
+    seen_keys: set[str] = set()
+    for index, key_value_raw in enumerate(fallback_keys, start=1):
+        key_value = key_value_raw.strip()
+        if not key_value or key_value in seen_keys:
+            continue
+        seen_keys.add(key_value)
+        normalized.append(
+            LocalUserPublicKeyEntry(
+                identifier=f"key-{index}",
+                key=key_value,
+                key_type=_derive_public_key_type(key_value),
+                options=None,
+            )
+        )
+
+    return normalized
+
+
 def _extract_local_users_raw(full_config: Dict[str, Any]) -> Dict[str, Any]:
     system_root = _as_dict(full_config.get("system"))
     login_root = _as_dict(system_root.get("login"))
@@ -1775,24 +1889,54 @@ def _parse_local_users(full_config: Dict[str, Any]) -> List[LocalUserSummary]:
         auth = _as_dict(data.get("authentication"))
         otp_auth = _as_dict(auth.get("otp"))
         public_keys = _as_dict(auth.get("public-keys"))
+        parsed_public_key_entries: List[LocalUserPublicKeyEntry] = []
         parsed_public_keys: List[str] = []
-        for key_entry in public_keys.values():
+        for key_name, key_entry in sorted(public_keys.items(), key=lambda item: str(item[0])):
+            key_identifier = str(key_name).strip()
+            if not key_identifier:
+                continue
             key_data = _as_dict(key_entry)
-            key_value = key_data.get("key")
-            if isinstance(key_value, str) and key_value.strip():
-                parsed_public_keys.append(key_value.strip())
+            key_value_raw = key_data.get("key")
+            key_value = key_value_raw.strip() if isinstance(key_value_raw, str) else ""
+            if not key_value:
+                continue
+            key_type_raw = key_data.get("type")
+            key_options_raw = key_data.get("options")
+            key_type = key_type_raw.strip() if isinstance(key_type_raw, str) and key_type_raw.strip() else None
+            key_options = (
+                key_options_raw.strip()
+                if isinstance(key_options_raw, str) and key_options_raw.strip()
+                else None
+            )
+            parsed_public_keys.append(key_value)
+            parsed_public_key_entries.append(
+                LocalUserPublicKeyEntry(
+                    identifier=key_identifier,
+                    key=key_value,
+                    key_type=key_type,
+                    options=key_options,
+                )
+            )
 
         principal_value = auth.get("principal")
         principal = principal_value.strip() if isinstance(principal_value, str) and principal_value.strip() else None
         otp_key_value = otp_auth.get("key")
         otp_key_configured = bool(isinstance(otp_key_value, str) and otp_key_value.strip())
         otp_rate_limit = _safe_int(otp_auth.get("rate-limit"))
-        if otp_rate_limit is not None and (otp_rate_limit < 1 or otp_rate_limit > 65535):
+        if otp_rate_limit is not None and (otp_rate_limit < 1 or otp_rate_limit > 10):
             otp_rate_limit = None
+        otp_rate_time = _safe_int(otp_auth.get("rate-time"))
+        if otp_rate_time is not None and (otp_rate_time < 1 or otp_rate_time > 600):
+            otp_rate_time = None
         otp_window_size = _safe_int(otp_auth.get("window-size"))
-        if otp_window_size is not None and (otp_window_size < 1 or otp_window_size > 65535):
+        if otp_window_size is not None and (otp_window_size < 1 or otp_window_size > 21):
             otp_window_size = None
-        has_otp = otp_key_configured or otp_rate_limit is not None or otp_window_size is not None
+        has_otp = (
+            otp_key_configured
+            or otp_rate_limit is not None
+            or otp_rate_time is not None
+            or otp_window_size is not None
+        )
 
         parsed_users.append(
             LocalUserSummary(
@@ -1803,6 +1947,7 @@ def _parse_local_users(full_config: Dict[str, Any]) -> List[LocalUserSummary]:
                 principal=principal,
                 otp_key_configured=otp_key_configured,
                 otp_rate_limit=otp_rate_limit,
+                otp_rate_time=otp_rate_time,
                 otp_window_size=otp_window_size,
                 auth=LocalUserAuthState(
                     has_plaintext_password=bool(_as_dict(auth).get("plaintext-password")),
@@ -1811,10 +1956,9 @@ def _parse_local_users(full_config: Dict[str, Any]) -> List[LocalUserSummary]:
                     has_otp=has_otp,
                     has_principal=bool(principal),
                 ),
-                public_key_names=sorted(
-                    [str(key).strip() for key in public_keys.keys() if str(key).strip()]
-                ),
+                public_key_names=sorted([entry.identifier for entry in parsed_public_key_entries]),
                 public_keys=parsed_public_keys,
+                public_key_entries=parsed_public_key_entries,
             )
         )
 
@@ -2742,11 +2886,19 @@ async def update_dns_config(request: Request, body: DnsServiceConfigRequest) -> 
                     _normalize_cidr_or_400(cidr, field_name="allow-from network")
                     for cidr in _normalize_unique_strings(body.allow_from)
                 )
-                current_allow_from = set(current.allow_from)
-                for cidr in sorted(current_allow_from - desired_allow_from):
-                    operations.append({"op": "delete", "path": ["service", "dns", "forwarding", "allow-from", cidr]})
-                for cidr in sorted(desired_allow_from - current_allow_from):
-                    operations.append({"op": "set", "path": ["service", "dns", "forwarding", "allow-from", cidr]})
+            else:
+                desired_allow_from = set(current.allow_from)
+
+            # VyOS DNS forwarding requires at least one allow-from network.
+            # Default to permissive dual-stack when empty so first-time setup works.
+            if not desired_allow_from:
+                desired_allow_from = set(DEFAULT_DNS_ALLOW_FROM_NETWORKS)
+
+            current_allow_from = set(current.allow_from)
+            for cidr in sorted(current_allow_from - desired_allow_from):
+                operations.append({"op": "delete", "path": ["service", "dns", "forwarding", "allow-from", cidr]})
+            for cidr in sorted(desired_allow_from - current_allow_from):
+                operations.append({"op": "set", "path": ["service", "dns", "forwarding", "allow-from", cidr]})
 
             if "name_servers" in fields_set:
                 desired_name_servers = set(
@@ -3188,7 +3340,9 @@ async def create_local_user(request: Request, body: LocalUserCreateRequest) -> L
     principal = (body.principal or "").strip()
     otp_key = (body.otp_key or "").strip()
     public_keys = [entry.strip() for entry in body.ssh_public_keys if entry and entry.strip()]
+    public_key_entries = _normalize_local_public_key_entries_or_400(body.ssh_public_key_entries, public_keys)
     otp_rate_limit = body.otp_rate_limit
+    otp_rate_time = body.otp_rate_time
     otp_window_size = body.otp_window_size
 
     if level:
@@ -3198,22 +3352,13 @@ async def create_local_user(request: Request, body: LocalUserCreateRequest) -> L
     if otp_key:
         otp_key = _normalize_local_otp_key_or_400(otp_key)
 
-    if not password and not public_keys:
+    if not password and not public_key_entries:
         raise HTTPException(status_code=400, detail="Provide at least a password or one SSH public key")
-    if (otp_rate_limit is not None or otp_window_size is not None) and not otp_key:
+    if (otp_rate_limit is not None or otp_rate_time is not None or otp_window_size is not None) and not otp_key:
         raise HTTPException(
             status_code=400,
-            detail="otp_key is required when otp_rate_limit or otp_window_size is provided",
+            detail="otp_key is required when otp_rate_limit, otp_rate_time, or otp_window_size is provided",
         )
-
-    # De-duplicate SSH keys while preserving order.
-    deduped_keys: List[str] = []
-    seen_keys = set()
-    for key in public_keys:
-        if key in seen_keys:
-            continue
-        seen_keys.add(key)
-        deduped_keys.append(key)
 
     try:
         service = get_session_vyos_service(request)
@@ -3267,7 +3412,7 @@ async def create_local_user(request: Request, body: LocalUserCreateRequest) -> L
                 }
             )
 
-        for index, ssh_key in enumerate(deduped_keys, start=1):
+        for key_entry in public_key_entries:
             operations.append(
                 {
                     "op": "set",
@@ -3278,12 +3423,46 @@ async def create_local_user(request: Request, body: LocalUserCreateRequest) -> L
                         username,
                         "authentication",
                         "public-keys",
-                        f"key-{index}",
+                        key_entry.identifier,
                         "key",
-                        ssh_key,
+                        key_entry.key,
                     ],
                 }
             )
+            if key_entry.key_type:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            username,
+                            "authentication",
+                            "public-keys",
+                            key_entry.identifier,
+                            "type",
+                            key_entry.key_type,
+                        ],
+                    }
+                )
+            if key_entry.options:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            username,
+                            "authentication",
+                            "public-keys",
+                            key_entry.identifier,
+                            "options",
+                            key_entry.options,
+                        ],
+                    }
+                )
 
         if otp_key:
             operations.append(
@@ -3314,6 +3493,22 @@ async def create_local_user(request: Request, body: LocalUserCreateRequest) -> L
                         "otp",
                         "rate-limit",
                         str(otp_rate_limit),
+                    ],
+                }
+            )
+        if otp_rate_time is not None:
+            operations.append(
+                {
+                    "op": "set",
+                    "path": [
+                        "system",
+                        "login",
+                        "user",
+                        username,
+                        "authentication",
+                        "otp",
+                        "rate-time",
+                        str(otp_rate_time),
                     ],
                 }
             )
@@ -3476,15 +3671,9 @@ async def update_local_user(
                     ]
                 )
 
-        if body.ssh_public_keys is not None:
-            keys = [entry.strip() for entry in body.ssh_public_keys if entry and entry.strip()]
-            deduped_keys: List[str] = []
-            seen_keys = set()
-            for key in keys:
-                if key in seen_keys:
-                    continue
-                seen_keys.add(key)
-                deduped_keys.append(key)
+        if body.ssh_public_keys is not None or body.ssh_public_key_entries is not None:
+            keys = [entry.strip() for entry in (body.ssh_public_keys or []) if entry and entry.strip()]
+            key_entries = _normalize_local_public_key_entries_or_400(body.ssh_public_key_entries, keys)
 
             operations.append(
                 {
@@ -3500,7 +3689,7 @@ async def update_local_user(
                 }
             )
 
-            for index, ssh_key in enumerate(deduped_keys, start=1):
+            for key_entry in key_entries:
                 operations.append(
                     {
                         "op": "set",
@@ -3511,12 +3700,46 @@ async def update_local_user(
                             user_name,
                             "authentication",
                             "public-keys",
-                            f"key-{index}",
+                            key_entry.identifier,
                             "key",
-                            ssh_key,
+                            key_entry.key,
                         ],
                     }
                 )
+                if key_entry.key_type:
+                    operations.append(
+                        {
+                            "op": "set",
+                            "path": [
+                                "system",
+                                "login",
+                                "user",
+                                user_name,
+                                "authentication",
+                                "public-keys",
+                                key_entry.identifier,
+                                "type",
+                                key_entry.key_type,
+                            ],
+                        }
+                    )
+                if key_entry.options:
+                    operations.append(
+                        {
+                            "op": "set",
+                            "path": [
+                                "system",
+                                "login",
+                                "user",
+                                user_name,
+                                "authentication",
+                                "public-keys",
+                                key_entry.identifier,
+                                "options",
+                                key_entry.options,
+                            ],
+                        }
+                    )
 
         if body.disabled is not None:
             if body.disabled:
@@ -3618,6 +3841,39 @@ async def update_local_user(
                             "otp",
                             "rate-limit",
                             str(body.otp_rate_limit),
+                        ],
+                    }
+                )
+
+        if "otp_rate_time" in fields_set:
+            if body.otp_rate_time is None:
+                operations.append(
+                    {
+                        "op": "delete",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            user_name,
+                            "authentication",
+                            "otp",
+                            "rate-time",
+                        ],
+                    }
+                )
+            else:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": [
+                            "system",
+                            "login",
+                            "user",
+                            user_name,
+                            "authentication",
+                            "otp",
+                            "rate-time",
+                            str(body.otp_rate_time),
                         ],
                     }
                 )
