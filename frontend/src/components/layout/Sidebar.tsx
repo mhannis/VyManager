@@ -267,7 +267,12 @@ const navigation: NavItem[] = [
     children: withChildIds([
       {
         title: "All Services",
-        href: "/system/services",
+        href: "/system/services?view=all",
+        requiredPermission: FeatureGroup.SYSTEM,
+      },
+      {
+        title: "DNS",
+        href: "/system/services?tab=dns&view=single",
         requiredPermission: FeatureGroup.SYSTEM,
       },
     ]),

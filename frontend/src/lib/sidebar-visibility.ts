@@ -196,7 +196,13 @@ export const SIDEBAR_VISIBILITY_ITEMS: SidebarVisibilityItem[] = [
       {
         id: "services-all",
         label: "All Services",
-        href: "/system/services",
+        href: "/system/services?view=all",
+        canHide: true,
+      },
+      {
+        id: "services-dns",
+        label: "DNS",
+        href: "/system/services?tab=dns&view=single",
         canHide: true,
       },
     ],
