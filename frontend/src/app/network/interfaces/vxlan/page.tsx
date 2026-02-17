@@ -10,6 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { pageGuides } from "@/lib/help/pageGuides";
@@ -28,6 +35,27 @@ interface VxlanFormState {
   sourceInterface: string;
   remote: string;
   group: string;
+  mac: string;
+  disableFlowControl: boolean;
+  disableLinkDetect: boolean;
+  ipAdjustMssClamp: boolean;
+  ipAdjustMssValue: string;
+  ipArpCacheTimeout: string;
+  ipDisableArpFilter: boolean;
+  ipDisableForwarding: boolean;
+  ipEnableArpAccept: boolean;
+  ipEnableArpAnnounce: boolean;
+  ipEnableArpIgnore: boolean;
+  ipEnableDirectedBroadcast: boolean;
+  ipEnableProxyArp: boolean;
+  ipProxyArpPvlan: boolean;
+  ipSourceValidation: string;
+  ipv6AddressAutoconf: boolean;
+  ipv6AddressEui64: string;
+  ipv6AddressNoDefaultLinkLocal: boolean;
+  ipv6AdjustMssClamp: boolean;
+  ipv6AdjustMssValue: string;
+  ipv6DisableForwarding: boolean;
   gpe: boolean;
   parametersExternal: boolean;
   parametersNeighborSuppress: boolean;
@@ -49,6 +77,27 @@ const EMPTY_FORM: VxlanFormState = {
   sourceInterface: "",
   remote: "",
   group: "",
+  mac: "",
+  disableFlowControl: false,
+  disableLinkDetect: false,
+  ipAdjustMssClamp: false,
+  ipAdjustMssValue: "",
+  ipArpCacheTimeout: "",
+  ipDisableArpFilter: false,
+  ipDisableForwarding: false,
+  ipEnableArpAccept: false,
+  ipEnableArpAnnounce: false,
+  ipEnableArpIgnore: false,
+  ipEnableDirectedBroadcast: false,
+  ipEnableProxyArp: false,
+  ipProxyArpPvlan: false,
+  ipSourceValidation: "",
+  ipv6AddressAutoconf: false,
+  ipv6AddressEui64: "",
+  ipv6AddressNoDefaultLinkLocal: false,
+  ipv6AdjustMssClamp: false,
+  ipv6AdjustMssValue: "",
+  ipv6DisableForwarding: false,
   gpe: false,
   parametersExternal: false,
   parametersNeighborSuppress: false,
@@ -112,6 +161,27 @@ function toFormState(value: VxlanInterfaceConfig): VxlanFormState {
     sourceInterface: value.sourceInterface,
     remote: value.remote,
     group: value.group,
+    mac: value.mac,
+    disableFlowControl: value.disableFlowControl,
+    disableLinkDetect: value.disableLinkDetect,
+    ipAdjustMssClamp: value.ipAdjustMssClamp,
+    ipAdjustMssValue: value.ipAdjustMssValue,
+    ipArpCacheTimeout: value.ipArpCacheTimeout,
+    ipDisableArpFilter: value.ipDisableArpFilter,
+    ipDisableForwarding: value.ipDisableForwarding,
+    ipEnableArpAccept: value.ipEnableArpAccept,
+    ipEnableArpAnnounce: value.ipEnableArpAnnounce,
+    ipEnableArpIgnore: value.ipEnableArpIgnore,
+    ipEnableDirectedBroadcast: value.ipEnableDirectedBroadcast,
+    ipEnableProxyArp: value.ipEnableProxyArp,
+    ipProxyArpPvlan: value.ipProxyArpPvlan,
+    ipSourceValidation: value.ipSourceValidation,
+    ipv6AddressAutoconf: value.ipv6AddressAutoconf,
+    ipv6AddressEui64: value.ipv6AddressEui64,
+    ipv6AddressNoDefaultLinkLocal: value.ipv6AddressNoDefaultLinkLocal,
+    ipv6AdjustMssClamp: value.ipv6AdjustMssClamp,
+    ipv6AdjustMssValue: value.ipv6AdjustMssValue,
+    ipv6DisableForwarding: value.ipv6DisableForwarding,
     gpe: value.gpe,
     parametersExternal: value.parametersExternal,
     parametersNeighborSuppress: value.parametersNeighborSuppress,
@@ -147,6 +217,43 @@ function syncFlag(
   operations.push(desired ? `set ${base} ${token}` : `delete ${base} ${token}`);
 }
 
+function syncAdjustMss(
+  operations: string[],
+  base: string,
+  family: "ip" | "ipv6",
+  desiredClamp: boolean,
+  desiredValue: string,
+  currentClamp: boolean,
+  currentValue: string,
+): void {
+  const token = `${family} adjust-mss`;
+  const trimmedDesired = desiredValue.trim();
+  const trimmedCurrent = currentValue.trim();
+
+  if (desiredClamp) {
+    if (currentClamp && !trimmedCurrent) return;
+    if (currentClamp || trimmedCurrent) {
+      operations.push(`delete ${base} ${token}`);
+    }
+    operations.push(`set ${base} ${token} clamp-mss-to-pmtu`);
+    return;
+  }
+
+  if (trimmedDesired) {
+    if (currentClamp || trimmedDesired !== trimmedCurrent) {
+      if (currentClamp) {
+        operations.push(`delete ${base} ${token}`);
+      }
+      operations.push(`set ${base} ${token} ${quoteCliValue(trimmedDesired)}`);
+    }
+    return;
+  }
+
+  if (currentClamp || trimmedCurrent) {
+    operations.push(`delete ${base} ${token}`);
+  }
+}
+
 function buildVxlanOperations(candidate: VxlanFormState, current: VxlanInterfaceConfig | null): string[] {
   const operations: string[] = [];
   const base = `interfaces vxlan ${candidate.name.trim()}`;
@@ -165,6 +272,27 @@ function buildVxlanOperations(candidate: VxlanFormState, current: VxlanInterface
       sourceInterface: "",
       remote: "",
       group: "",
+      mac: "",
+      disableFlowControl: false,
+      disableLinkDetect: false,
+      ipAdjustMssClamp: false,
+      ipAdjustMssValue: "",
+      ipArpCacheTimeout: "",
+      ipDisableArpFilter: false,
+      ipDisableForwarding: false,
+      ipEnableArpAccept: false,
+      ipEnableArpAnnounce: false,
+      ipEnableArpIgnore: false,
+      ipEnableDirectedBroadcast: false,
+      ipEnableProxyArp: false,
+      ipProxyArpPvlan: false,
+      ipSourceValidation: "",
+      ipv6AddressAutoconf: false,
+      ipv6AddressEui64: "",
+      ipv6AddressNoDefaultLinkLocal: false,
+      ipv6AdjustMssClamp: false,
+      ipv6AdjustMssValue: "",
+      ipv6DisableForwarding: false,
       gpe: false,
       parametersExternal: false,
       parametersNeighborSuppress: false,
@@ -194,6 +322,28 @@ function buildVxlanOperations(candidate: VxlanFormState, current: VxlanInterface
   );
   syncScalar(operations, base, "remote", candidate.remote.trim(), currentSafe.remote);
   syncScalar(operations, base, "group", candidate.group.trim(), currentSafe.group);
+  syncScalar(operations, base, "mac", candidate.mac.trim(), currentSafe.mac);
+  syncScalar(
+    operations,
+    base,
+    "ip arp-cache-timeout",
+    candidate.ipArpCacheTimeout.trim(),
+    currentSafe.ipArpCacheTimeout,
+  );
+  syncScalar(
+    operations,
+    base,
+    "ip source-validation",
+    candidate.ipSourceValidation.trim(),
+    currentSafe.ipSourceValidation,
+  );
+  syncScalar(
+    operations,
+    base,
+    "ipv6 address eui64",
+    candidate.ipv6AddressEui64.trim(),
+    currentSafe.ipv6AddressEui64,
+  );
 
   const desiredAddresses = parseAddressLines(candidate.addressesText);
   const currentAddressSet = new Set(currentSafe.addresses);
@@ -210,6 +360,97 @@ function buildVxlanOperations(candidate: VxlanFormState, current: VxlanInterface
   }
 
   syncFlag(operations, base, "disable", candidate.disable, currentSafe.disable);
+  syncFlag(
+    operations,
+    base,
+    "disable-flow-control",
+    candidate.disableFlowControl,
+    currentSafe.disableFlowControl,
+  );
+  syncFlag(
+    operations,
+    base,
+    "disable-link-detect",
+    candidate.disableLinkDetect,
+    currentSafe.disableLinkDetect,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip disable-arp-filter",
+    candidate.ipDisableArpFilter,
+    currentSafe.ipDisableArpFilter,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip disable-forwarding",
+    candidate.ipDisableForwarding,
+    currentSafe.ipDisableForwarding,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip enable-arp-accept",
+    candidate.ipEnableArpAccept,
+    currentSafe.ipEnableArpAccept,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip enable-arp-announce",
+    candidate.ipEnableArpAnnounce,
+    currentSafe.ipEnableArpAnnounce,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip enable-arp-ignore",
+    candidate.ipEnableArpIgnore,
+    currentSafe.ipEnableArpIgnore,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip enable-directed-broadcast",
+    candidate.ipEnableDirectedBroadcast,
+    currentSafe.ipEnableDirectedBroadcast,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip enable-proxy-arp",
+    candidate.ipEnableProxyArp,
+    currentSafe.ipEnableProxyArp,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ip proxy-arp-pvlan",
+    candidate.ipProxyArpPvlan,
+    currentSafe.ipProxyArpPvlan,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ipv6 address autoconf",
+    candidate.ipv6AddressAutoconf,
+    currentSafe.ipv6AddressAutoconf,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ipv6 address no-default-link-local",
+    candidate.ipv6AddressNoDefaultLinkLocal,
+    currentSafe.ipv6AddressNoDefaultLinkLocal,
+  );
+  syncFlag(
+    operations,
+    base,
+    "ipv6 disable-forwarding",
+    candidate.ipv6DisableForwarding,
+    currentSafe.ipv6DisableForwarding,
+  );
   syncFlag(operations, base, "gpe", candidate.gpe, currentSafe.gpe);
   syncFlag(
     operations,
@@ -238,6 +479,24 @@ function buildVxlanOperations(candidate: VxlanFormState, current: VxlanInterface
     "parameters vni-filter",
     candidate.parametersVniFilter,
     currentSafe.parametersVniFilter,
+  );
+  syncAdjustMss(
+    operations,
+    base,
+    "ip",
+    candidate.ipAdjustMssClamp,
+    candidate.ipAdjustMssValue,
+    currentSafe.ipAdjustMssClamp,
+    currentSafe.ipAdjustMssValue,
+  );
+  syncAdjustMss(
+    operations,
+    base,
+    "ipv6",
+    candidate.ipv6AdjustMssClamp,
+    candidate.ipv6AdjustMssValue,
+    currentSafe.ipv6AdjustMssClamp,
+    currentSafe.ipv6AdjustMssValue,
   );
 
   const currentVlanMap = new Map(currentSafe.vlanToVni.map((entry) => [entry.vlan, entry.vni]));
@@ -354,14 +613,30 @@ export default function VxlanInterfacesPage() {
       { label: "VNI", value: form.vni },
       { label: "Port", value: form.port },
       { label: "MTU", value: form.mtu },
+      { label: "ARP Cache Timeout", value: form.ipArpCacheTimeout },
+      { label: "IPv4 MSS", value: form.ipAdjustMssValue, clamp: form.ipAdjustMssClamp },
+      { label: "IPv6 MSS", value: form.ipv6AdjustMssValue, clamp: form.ipv6AdjustMssClamp },
     ];
     for (const field of numericFields) {
       const trimmed = field.value.trim();
       if (!trimmed) continue;
+      if ("clamp" in field && field.clamp) continue;
       if (!/^\d+$/.test(trimmed)) {
         setError(`${field.label} must be a whole number.`);
         return;
       }
+    }
+
+    if (form.mac.trim() && !/^[0-9a-f]{2}(:[0-9a-f]{2}){5}$/i.test(form.mac.trim())) {
+      setError("MAC must be in format aa:bb:cc:dd:ee:ff.");
+      return;
+    }
+    if (
+      form.ipSourceValidation.trim() &&
+      !["strict", "loose", "disable"].includes(form.ipSourceValidation.trim())
+    ) {
+      setError("IP source validation must be one of: strict, loose, disable.");
+      return;
     }
 
     for (const pair of normalizeVlanToVni(form.vlanToVni)) {
@@ -654,6 +929,85 @@ export default function VxlanInterfacesPage() {
                 </div>
               </div>
 
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="vxlan-mac">MAC Address</Label>
+                  <Input
+                    id="vxlan-mac"
+                    value={form.mac}
+                    onChange={(event) => setForm((prev) => ({ ...prev, mac: event.target.value }))}
+                    placeholder="00:53:01:02:03:04"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vxlan-ip-arp-cache-timeout">ARP Cache Timeout</Label>
+                  <Input
+                    id="vxlan-ip-arp-cache-timeout"
+                    value={form.ipArpCacheTimeout}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, ipArpCacheTimeout: event.target.value }))
+                    }
+                    placeholder="180"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>IP Source Validation</Label>
+                  <Select
+                    value={form.ipSourceValidation || "__empty__"}
+                    onValueChange={(value) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        ipSourceValidation: value === "__empty__" ? "" : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__empty__">Default</SelectItem>
+                      <SelectItem value="strict">strict</SelectItem>
+                      <SelectItem value="loose">loose</SelectItem>
+                      <SelectItem value="disable">disable</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="vxlan-ip-adjust-mss">IPv4 Adjust MSS</Label>
+                  <Input
+                    id="vxlan-ip-adjust-mss"
+                    value={form.ipAdjustMssValue}
+                    onChange={(event) => setForm((prev) => ({ ...prev, ipAdjustMssValue: event.target.value }))}
+                    placeholder="1452"
+                    disabled={form.ipAdjustMssClamp}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vxlan-ipv6-address-eui64">IPv6 EUI64 Prefix</Label>
+                  <Input
+                    id="vxlan-ipv6-address-eui64"
+                    value={form.ipv6AddressEui64}
+                    onChange={(event) => setForm((prev) => ({ ...prev, ipv6AddressEui64: event.target.value }))}
+                    placeholder="2001:db8:beef::/64"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vxlan-ipv6-adjust-mss">IPv6 Adjust MSS</Label>
+                  <Input
+                    id="vxlan-ipv6-adjust-mss"
+                    value={form.ipv6AdjustMssValue}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, ipv6AdjustMssValue: event.target.value }))
+                    }
+                    placeholder="1432"
+                    disabled={form.ipv6AdjustMssClamp}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="vxlan-addresses">Interface Addresses</Label>
                 <Textarea
@@ -717,10 +1071,145 @@ export default function VxlanInterfacesPage() {
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
+                    checked={form.disableFlowControl}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, disableFlowControl: checked === true }))
+                    }
+                  />
+                  Disable Flow Control
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.disableLinkDetect}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, disableLinkDetect: checked === true }))
+                    }
+                  />
+                  Disable Link Detect
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
                     checked={form.gpe}
                     onCheckedChange={(checked) => setForm((prev) => ({ ...prev, gpe: checked === true }))}
                   />
                   Enable GPE
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipAdjustMssClamp}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipAdjustMssClamp: checked === true }))
+                    }
+                  />
+                  Clamp IPv4 MSS to PMTU
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipv6AdjustMssClamp}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipv6AdjustMssClamp: checked === true }))
+                    }
+                  />
+                  Clamp IPv6 MSS to PMTU
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipDisableArpFilter}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipDisableArpFilter: checked === true }))
+                    }
+                  />
+                  Disable ARP Filter
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipDisableForwarding}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipDisableForwarding: checked === true }))
+                    }
+                  />
+                  Disable IPv4 Forwarding
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipEnableArpAccept}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipEnableArpAccept: checked === true }))
+                    }
+                  />
+                  Enable ARP Accept
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipEnableArpAnnounce}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipEnableArpAnnounce: checked === true }))
+                    }
+                  />
+                  Enable ARP Announce
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipEnableArpIgnore}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipEnableArpIgnore: checked === true }))
+                    }
+                  />
+                  Enable ARP Ignore
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipEnableDirectedBroadcast}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipEnableDirectedBroadcast: checked === true }))
+                    }
+                  />
+                  Enable Directed Broadcast
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipEnableProxyArp}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipEnableProxyArp: checked === true }))
+                    }
+                  />
+                  Enable Proxy ARP
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipProxyArpPvlan}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipProxyArpPvlan: checked === true }))
+                    }
+                  />
+                  Proxy ARP PVLAN
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipv6AddressAutoconf}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipv6AddressAutoconf: checked === true }))
+                    }
+                  />
+                  IPv6 Address Autoconf
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipv6AddressNoDefaultLinkLocal}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipv6AddressNoDefaultLinkLocal: checked === true }))
+                    }
+                  />
+                  IPv6 No Default Link-Local
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.ipv6DisableForwarding}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, ipv6DisableForwarding: checked === true }))
+                    }
+                  />
+                  Disable IPv6 Forwarding
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox

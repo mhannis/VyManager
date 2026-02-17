@@ -166,14 +166,14 @@
     {
       "id": "IF-11",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add vti editor (baseline implemented; VPN IPsec interaction and advanced parity verification remains)"
+      "status": "verify",
+      "title": "VTI command-scope audit confirms guide-covered interface addressing workflow is represented in current form editor (with optional description/mtu/vrf/disable controls); pending live IPsec interop verification"
     },
     {
       "id": "IF-12",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add vxlan editor (baseline implemented; advanced EVPN/SVD depth verification remains)"
+      "status": "verify",
+      "title": "VXLAN parity deepened with guide-covered interface controls (MAC, flow/link toggles, IPv4/IPv6 MSS, ARP/filter/forwarding toggles, source-validation, IPv6 autoconf/eui64/no-default-link-local) plus parser/diff-save support; pending live verification"
     },
     {
       "id": "IF-13",
