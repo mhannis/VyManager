@@ -232,8 +232,8 @@
     {
       "id": "NAT-04",
       "domain": "nat",
-      "status": "partial",
-      "title": "CGNAT parity completion"
+      "status": "verify",
+      "title": "CGNAT parity completion implemented with dedicated form-driven editor (global enable/log-allocation, external/internal pool CRUD, range seq support, and source/translation pool rule mapping); pending live carrier-grade verification"
     },
     {
       "id": "PKI-01",

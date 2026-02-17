@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -322,6 +323,10 @@ export default function NATPage() {
                 <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               </Button>
             </div>
+
+            <Button variant="outline" size="sm" className="w-full justify-start" asChild>
+              <Link href="/network/nat/cgnat">Open CGNAT</Link>
+            </Button>
           </div>
 
           <Separator />

@@ -86,7 +86,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `NAT-01` (`verify`): NAT44 parity hardened for reliable CRUD/update workflows (field-clear delete semantics for source/destination/static edits, static rule update op-name parity, and static reorder builder parity). Pending live verification.
 - `NAT-02` (`verify`): NAT64 guide scope is primarily workflow/policy guidance layered onto NAT source/destination rule primitives already covered by the NAT44 editor (address/port/protocol/translation selectors). Pending live IPv6 translation-path verification.
 - `NAT-03` (`verify`): NAT66/NPTv6 guide scope is primarily workflow guidance layered onto existing NAT rule primitives; current editor supports required selector/translation inputs for the documented flows. Pending live NPTv6 verification.
-- `NAT-04` (`partial`): CGNAT parity completion.
+- `NAT-04` (`verify`): CGNAT parity completion implemented with a dedicated form-driven editor (`/network/nat/cgnat`) covering global enable/log-allocation, external/internal pool CRUD, range/seq support, and source->translation pool rule mapping. Pending live carrier-grade verification.
 
 ### PKI (`pki/index.html`)
 - `PKI-01` (`verify`): PKI configuration-tree parity confirmed for CA/certificate/private/acme/revoke/CRL leaves with form-based CRUD; pending live verification.
