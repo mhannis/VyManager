@@ -157,14 +157,14 @@ export default function SystemIdentificationPage() {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              DNS server management lives under{" "}
+              System resolver defaults live under{" "}
               <Link
-                href="/system/services?tab=dns&view=single"
+                href="/system/options"
                 className="text-primary hover:text-primary/80"
               >
-                Services - DNS
+                System - Options
               </Link>
-              .
+              . DNS forwarding/resolver service behavior is configured under Services - DNS.
             </p>
 
             {!canEditSystem && (
