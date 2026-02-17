@@ -1,6 +1,4 @@
 "use client";
-
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -155,17 +153,6 @@ export default function SystemIdentificationPage() {
                 disabled={!canEditSystem || loading || saving}
               />
             </div>
-
-            <p className="text-xs text-muted-foreground">
-              System resolver defaults live under{" "}
-              <Link
-                href="/system/options"
-                className="text-primary hover:text-primary/80"
-              >
-                System - Options
-              </Link>
-              . DNS forwarding/resolver service behavior is configured under Services - DNS.
-            </p>
 
             {!canEditSystem && (
               <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-700">
