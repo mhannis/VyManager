@@ -1,6 +1,6 @@
-2026-02-17T13:37:06Z
-failing command: ad-hoc Playwright dashboard drag verification script
-error summary: Dashboard drag check could not run because no draggable cards were present in the smoke user's rendered dashboard state.
-last relevant output:
-Error: No draggable cards found
-suspected cause + next step: smoke user session landed on a dashboard state without active cards/instance context; verify drag fix via user workflow on active instance and keep code-level DnD collision strategy update in place.
+timestamp: 2026-02-17T09:21:29-05:00
+failing command: jq '.tasks[-8:]' FEATURE_STATE.json
+error summary: The command failed because jq is not installed in this environment (/bin/bash: jq: command not found). This was a tooling failure during state inspection, not a code/runtime failure.
+last output:
+/bin/bash: line 1: jq: command not found
+suspected cause + next step: Host does not include jq. Use sed/python for JSON inspection or install jq if desired.

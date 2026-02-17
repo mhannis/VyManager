@@ -18,6 +18,7 @@ completed_in_cycle:
   - SVC-05: moved to `verify` after services-tab coverage audit (SSH/NTP/LLDP/mDNS/SNMP/etc. form-driven pages).
   - PKI-01/PKI-02: moved to `verify` after PKI config-scope audit against current guide command tree.
   - X-02/X-03 depth: fixture/snapshot coverage expanded for advanced conntrack leaves.
+  - SVC-04 UX depth: DNS Resolver `Listen Addresses` now supports interface-backed selection from detected runtime interface IPs (checkbox list), while preserving manual CSV entry for advanced use cases.
 validation:
   - cd frontend && npx eslint src/app/system/update-check/page.tsx src/app/page.tsx src/components/routing/FailoverContent.tsx scripts/smoke-ui.mjs
   - cd frontend && npx tsc --noEmit --pretty false
@@ -35,9 +36,15 @@ validation:
   - cd frontend && npm run -s smoke:runtime
   - cd frontend && timeout 180 npm run -s smoke:ui
   - cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py
+  - cd frontend && npx eslint src/components/system/DnsServiceTab.tsx
+  - cd frontend && npx tsc --noEmit --pretty false
+  - cd frontend && npm run -s build
+  - cd frontend && npm run -s smoke:runtime
+  - cd frontend && SMOKE_ROUTES=/system/services npm run -s smoke:ui
 known_limitations:
   - Full live-device verify for newly promoted `verify` items is still pending.
   - Browser smoke can false-fail with `ChunkLoadError` when runtime serves stale chunk manifests; restart frontend runtime after rebuild before running full route smoke.
+  - DNS listen-address quick-select currently uses runtime interface/address discovery; description metadata is not yet included in this selector.
 next_queue:
   - Continue remaining `partial` backlog in guide order, prioritizing firewall + interfaces + NAT + VPN depth.
   - Keep converting partial items to verify only when command-tree coverage and form workflows are demonstrably complete.

@@ -13,12 +13,18 @@ import {
   type DnsForwardingDomainOverride,
   type DnsHostOverride,
 } from "@/lib/api/system";
+import { showService } from "@/lib/api/show";
 
 interface DnsServiceTabProps {
   canEdit: boolean;
   active: boolean;
   refreshNonce: number;
   mode?: "forwarder" | "resolver";
+}
+
+interface ResolverListenAddressOption {
+  interfaceName: string;
+  address: string;
 }
 
 const EMPTY_DOMAIN_OVERRIDE: DnsForwardingDomainOverride = {
@@ -112,12 +118,47 @@ function isValidDnsServerToken(value: string): boolean {
   return isValidIpAddress(candidate) || isValidHostnameLike(candidate);
 }
 
+function normalizeIpAddressToken(value: string): string {
+  return value.trim().split("/")[0].trim();
+}
+
+function buildResolverListenAddressOptions(
+  interfaces: Array<{ interface: string; ipv4_addresses: string[]; ipv6_addresses: string[] }>
+): ResolverListenAddressOption[] {
+  const seen = new Set<string>();
+  const options: ResolverListenAddressOption[] = [];
+
+  for (const entry of interfaces) {
+    const interfaceName = entry.interface.trim();
+    if (!interfaceName) continue;
+
+    for (const rawAddress of [...entry.ipv4_addresses, ...entry.ipv6_addresses]) {
+      const address = normalizeIpAddressToken(rawAddress);
+      if (!address || !isValidIpAddress(address)) continue;
+
+      const dedupeKey = `${interfaceName}|${address}`;
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+      options.push({ interfaceName, address });
+    }
+  }
+
+  return options.sort((left, right) => {
+    if (left.interfaceName !== right.interfaceName) {
+      return left.interfaceName.localeCompare(right.interfaceName, undefined, { numeric: true });
+    }
+    return left.address.localeCompare(right.address, undefined, { numeric: true });
+  });
+}
+
 export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder" }: DnsServiceTabProps) {
   const [config, setConfig] = useState<DnsConfig | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [listenAddressOptions, setListenAddressOptions] = useState<ResolverListenAddressOption[]>([]);
+  const [listenAddressOptionsError, setListenAddressOptionsError] = useState<string | null>(null);
   const resolverMode = mode === "resolver";
 
   const loadConfig = async (refresh: boolean) => {
@@ -137,14 +178,32 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
     }
   };
 
+  const loadListenAddressOptions = async () => {
+    setListenAddressOptionsError(null);
+    try {
+      const runtime = await showService.getInterfaceRuntimeAddresses();
+      setListenAddressOptions(buildResolverListenAddressOptions(runtime.interfaces || []));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load interface addresses.";
+      setListenAddressOptions([]);
+      setListenAddressOptionsError(message);
+    }
+  };
+
   useEffect(() => {
     if (!active || config) return;
     loadConfig(false);
   }, [active, config]);
 
   useEffect(() => {
+    if (!active || listenAddressOptions.length > 0) return;
+    void loadListenAddressOptions();
+  }, [active, listenAddressOptions.length]);
+
+  useEffect(() => {
     if (!active) return;
-    loadConfig(true);
+    void loadConfig(true);
+    void loadListenAddressOptions();
   }, [active, refreshNonce]);
 
   const updateDomainOverride = (index: number, update: Partial<DnsForwardingDomainOverride>) => {
@@ -364,6 +423,19 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
     }
   };
 
+  const toggleListenAddressSelection = (address: string, checked: boolean) => {
+    setConfig((previous) => {
+      if (!previous) return previous;
+      const current = new Set(previous.listen_addresses.map((entry) => entry.trim()).filter(Boolean));
+      if (checked) {
+        current.add(address);
+      } else {
+        current.delete(address);
+      }
+      return { ...previous, listen_addresses: Array.from(current) };
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -486,6 +558,42 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
                     placeholder="192.168.1.1, 10.0.0.1"
                     disabled={!canEdit || saving || !config.enabled}
                   />
+                  <div className="rounded-md border border-border/50 bg-muted/20 p-3 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Select from detected interface addresses
+                    </p>
+                    {listenAddressOptionsError ? (
+                      <p className="text-xs text-amber-500">
+                        {listenAddressOptionsError} Enter addresses manually if needed.
+                      </p>
+                    ) : listenAddressOptions.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        No runtime interface addresses detected yet.
+                      </p>
+                    ) : (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {listenAddressOptions.map((option) => {
+                          const checked = config.listen_addresses.includes(option.address);
+                          return (
+                            <label
+                              key={`${option.interfaceName}-${option.address}`}
+                              className="flex items-center gap-2 rounded border border-border/60 px-2 py-1.5 text-xs"
+                            >
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(value) =>
+                                  toggleListenAddressSelection(option.address, value === true)
+                                }
+                                disabled={!canEdit || saving || !config.enabled}
+                              />
+                              <span className="font-medium">{option.interfaceName}</span>
+                              <span className="text-muted-foreground">{option.address}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Allow-From Networks (comma separated)</Label>

@@ -401,3 +401,5 @@
 - 2026-02-17: Promoted DHCP/DNS/Services and PKI backlog items to `verify` after code-scope audits confirmed form-driven command-tree coverage; kept live-device verification deferred per current implementation-first pass.
 - 2026-02-17: Expanded cross-cutting tests for conntrack depth by adding an advanced conntrack fixture loop and richer snapshot payloads (`timeout custom`, `ignore`, `log`) to reduce regression risk on newly added UI/API leaves.
 - 2026-02-17: Promoted `X-02`/`X-03` to verify after adding loop-level command-delta assertions (`data.commands`) and expanding conntrack snapshot payload depth; live-instance verification remains explicitly deferred.
+- 2026-02-17: Implemented DNS resolver listen-address interface selection directly in `DnsServiceTab` using `show/interface-runtime-addresses` as a thin UI-only enhancement. Rationale: satisfies operator workflow without backend contract changes and keeps manual input for advanced cases.
+- 2026-02-17: Standardized stale-chunk remediation for browser smoke failures in this cycle by replacing detached `next-server` process on `:3000` with a clean `vm-ui` tmux runtime before rerunning smoke gates.

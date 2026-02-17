@@ -587,3 +587,30 @@ Assumptions:
 ### Cycle Update Addendum (2026-02-17)
 - Promoted `X-02` and `X-03` to `verify` after adding explicit command-delta assertions in fixture save/apply/reload loops and expanding conntrack snapshot payload depth.
 - Updated backlog counts: `verify=45`, `partial=41`, `missing=0`.
+
+## Cycle Update (2026-02-17 dns-resolver listen-address UX)
+
+### Objective Update
+- Implement operator-requested DNS resolver UX: make `Listen Addresses` selectable from interface addresses instead of manual-only entry.
+
+### Completed This Cycle
+- `frontend/src/components/system/DnsServiceTab.tsx`
+  - Added runtime interface-address discovery for DNS resolver listening address selection.
+  - Added quick-select checkbox list sourced from `showService.getInterfaceRuntimeAddresses()`.
+  - Kept manual CSV field intact for advanced/manual address input.
+  - Added strict normalization of interface addresses (`ip/prefix -> ip`) before selection/write.
+
+### Validation Run This Cycle
+- `cd frontend && npx eslint src/components/system/DnsServiceTab.tsx`
+- `cd frontend && npx tsc --noEmit --pretty false`
+- `cd frontend && npm run -s build`
+- `cd frontend && npm run -s smoke:runtime`
+- `cd frontend && SMOKE_ROUTES=/system/services npm run -s smoke:ui`
+
+### Runtime Notes
+- Browser smoke initially failed with `ChunkLoadError` on stale runtime chunks.
+- Replaced detached `next-server` process on `:3000` with a fresh `vm-ui` tmux session and reran smoke gates successfully.
+
+### Next Queue
+- Continue remaining partial backlog in guide order.
+- Revisit DNS selector metadata so interface descriptions are shown alongside interface names where available.
