@@ -274,14 +274,14 @@
     {
       "id": "PR-01",
       "domain": "protocols",
-      "status": "partial",
-      "title": "BGP full-depth parity"
+      "status": "verify",
+      "title": "BGP depth audited across system/neighbor/peer-group/address-family/parameter workflows with route-map and BFD hooks in form-based CRUD; pending live interoperability verification"
     },
     {
       "id": "PR-02",
       "domain": "protocols",
-      "status": "partial",
-      "title": "OSPF/IS-IS/OpenFabric/RIP depth parity"
+      "status": "verify",
+      "title": "OSPF/IS-IS/OpenFabric/RIP depth audited in dedicated protocol editors; runtime route smoke on all pages is stable, pending live neighbor interoperability verification"
     },
     {
       "id": "PR-03",

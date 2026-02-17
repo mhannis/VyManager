@@ -99,8 +99,8 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `POL-03` (`verify`): Policy object dependency checks and referential integrity hardening.
 
 ### Protocols (`protocols/*`)
-- `PR-01` (`partial`): BGP full-depth parity pass (neighbors/AFI-SAFI/policy hooks/advanced timers/features).
-- `PR-02` (`partial`): OSPF/IS-IS/OpenFabric/RIP depth parity audit and missing leaves implementation.
+- `PR-01` (`verify`): BGP depth audited across system/neighbor/peer-group/address-family/parameter workflows (including route-map and BFD hooks) with form-based CRUD; pending live interoperability verification.
+- `PR-02` (`verify`): OSPF/IS-IS/OpenFabric/RIP depth audited in existing dedicated protocol editors; runtime route smoke on all pages is stable and pending live protocol-neighbor verification.
 - `PR-03` (`verify`): Segment Routing page fully models currently documented IS-IS/OSPF segment-routing leaves (global/local blocks, maximum label depth, prefix-SID index value/flags, and OSPF `opaque-lsa`) with form-based diff operations. Pending live interop verification.
 - `PR-04` (`verify`): Static/failover advanced options parity tightened: failover `check type` now aligns to guide enum (`icmp|arp|tcp`), `check policy` is enum-backed (`any-available|all-available`), and timeout/metric numeric guardrails are enforced. Pending live verification.
 - `PR-05` (`verify`): Multicast stack depth parity is implemented across IGMP Proxy/PIM/PIM6, including joins, timers, RP/prefix-list controls, and interface-level options. Pending live verification.
