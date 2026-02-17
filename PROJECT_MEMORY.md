@@ -84,6 +84,11 @@ Assumptions:
 - `frontend/src/lib/api/system-update-check.ts`
 - `frontend/src/app/system/update-check/page.tsx`
 - `frontend/src/components/dashboard/SystemInformationCard.tsx`
+- `frontend/src/app/system/containers/page.tsx`
+- `frontend/src/app/system/update-check/page.tsx`
+- `frontend/src/app/page.tsx`
+- `frontend/src/components/routing/FailoverContent.tsx`
+- `frontend/scripts/smoke-ui.mjs`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md`
 - `CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`
 - `CURRENT_FEATURE.md`
@@ -94,9 +99,22 @@ Assumptions:
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_update_check_status.py` passed.
 - `cd frontend && npx tsc --noEmit --pretty false` passed.
 - `cd frontend && npx eslint src/app/system/update-check/page.tsx src/components/dashboard/SystemInformationCard.tsx src/lib/api/system-update-check.ts` passed (`0 errors`).
+- `cd frontend && npx eslint src/app/system/containers/page.tsx` passed (`0 errors`, existing warnings only).
+- `cd frontend && npx eslint src/app/system/update-check/page.tsx src/app/page.tsx src/components/routing/FailoverContent.tsx scripts/smoke-ui.mjs` passed (`0 errors`).
 - `cd frontend && npm run -s build` passed.
 - `cd frontend && npm run -s smoke:runtime` passed.
+- `cd frontend && SMOKE_ROUTES=/ npm run -s smoke:ui` passed on fresh runtime.
 - `cd frontend && npm run -s smoke:ui` passed after restarting `vm-ui` on the fresh build.
+
+### Latest Cycle Notes
+- Container Management layout now uses a consistent 2-column structure:
+  - Left: `Containers`
+  - Right: `Image Lifecycle`, `Container Registries`, `Container Networks`, then `Create Container`
+- The three management cards remain collapsed by default and no container runtime/apply logic changed in this layout pass.
+- System Update Check save flow now guarantees URL materialization before enabling `auto-check`; this fixes commit failures where VyOS rejected `auto-check` with `URL is required` despite a prefilled UI URL.
+- Dashboard drag/drop now uses pointer-first collision detection (`pointerWithin` with `closestCorners` fallback) to improve cross-column card movement reliability.
+- Failover protocol editor now matches current guide enums for `check type` (`icmp|arp|tcp`) and `check policy` (`any-available|all-available`) and enforces numeric guardrails for timeout/metric.
+- Full-route browser smoke still depends on a fresh runtime; stale chunk manifests can produce false `ChunkLoadError` failures until frontend runtime is restarted.
 
 
 - High Availability (`/network/high-availability`) now supports full VRRP + sync-group edit/update workflows (not add/delete only), including safe rename behavior that updates sync-group members when a VRRP group name changes.

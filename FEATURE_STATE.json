@@ -340,6 +340,46 @@
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
       ],
       "notes": "X-02/X-03 command-delta depth pass: loop tests now assert emitted command deltas for set/delete operations; backlog items promoted to verify."
+    },
+    {
+      "id": "T31",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/containers/page.tsx",
+        "CURRENT_FEATURE.md",
+        "PROJECT_MEMORY.md"
+      ],
+      "notes": "Container Management layout pass: enforced 2-column composition (Containers left; Image Lifecycle/Registries/Networks collapsed + Create Container right) with responsive ordering."
+    },
+    {
+      "id": "T32",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/components/routing/FailoverContent.tsx",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "PR-04 depth pass: failover check type aligned to guide enum (icmp|arp|tcp), check policy constrained to (any-available|all-available), timeout/metric numeric validation added; PR-04 moved to verify."
+    },
+    {
+      "id": "T33",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/update-check/page.tsx"
+      ],
+      "notes": "Fixed update-check save bug where enabling auto-check with default URL could omit URL operation; URL is now materialized before auto-check and client enforces URL-required when auto-check is enabled."
+    },
+    {
+      "id": "T34",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/page.tsx"
+      ],
+      "notes": "Dashboard drag/drop reliability fix: collision detection now prioritizes pointerWithin targets (column overlays) with closestCorners fallback for more reliable cross-column card moves."
     }
   ],
   "commands": {

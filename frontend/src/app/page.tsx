@@ -33,11 +33,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  CollisionDetection,
   DndContext,
   DragEndEvent,
   DragStartEvent,
   DragOverlay,
   closestCorners,
+  pointerWithin,
   PointerSensor,
   useSensor,
   useSensors,
@@ -356,6 +358,17 @@ export default function Home() {
         distance: 8,
       },
     })
+  );
+
+  const collisionDetectionStrategy = useCallback<CollisionDetection>(
+    (args) => {
+      const pointerHits = pointerWithin(args);
+      if (pointerHits.length > 0) {
+        return pointerHits;
+      }
+      return closestCorners(args);
+    },
+    []
   );
 
   // Load dashboard layout
@@ -862,7 +875,7 @@ export default function Home() {
         ) : (
           <DndContext
             sensors={sensors}
-            collisionDetection={closestCorners}
+            collisionDetection={collisionDetectionStrategy}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             onDragCancel={handleDragCancel}

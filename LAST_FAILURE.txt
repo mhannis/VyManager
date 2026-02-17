@@ -1,10 +1,6 @@
-2026-02-17T02:49:17Z
-failing command: cd frontend && npx eslint src/app/system/conntrack/page.tsx src/lib/api/system-conntrack.ts
-error summary: ESLint failed after the conntrack page rewrite because two draft types were declared as empty interfaces, violating `@typescript-eslint/no-empty-object-type`.
+2026-02-17T13:37:06Z
+failing command: ad-hoc Playwright dashboard drag verification script
+error summary: Dashboard drag check could not run because no draggable cards were present in the smoke user's rendered dashboard state.
 last relevant output:
-/home/redhot/VyOS/VyManager/frontend/src/app/system/conntrack/page.tsx
-  72:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
-  73:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
-
-✖ 2 problems (2 errors, 0 warnings)
-suspected cause + next step: replace the empty interfaces with type aliases (`type CustomRuleDraft = ...`, `type IgnoreRuleDraft = ...`), then rerun eslint and proceed to build/smoke.
+Error: No draggable cards found
+suspected cause + next step: smoke user session landed on a dashboard state without active cards/instance context; verify drag fix via user workflow on active instance and keep code-level DnD collision strategy update in place.

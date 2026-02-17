@@ -52,38 +52,38 @@
     {
       "id": "F-01",
       "domain": "firewall",
-      "status": "partial",
-      "title": "IPv4 rule advanced parity: protocol/action semantic checks + reorder preservation for geoip/mac/domain/remote groups + remote-group API mapping"
+      "status": "verify",
+      "title": "IPv4 rule parity hardening (semantic coupling, advanced-leaf reorder preservation, remote-group API mapping) implemented; pending live verification."
     },
     {
       "id": "F-02",
       "domain": "firewall",
-      "status": "partial",
-      "title": "IPv6 rule advanced parity: protocol/action semantic checks + reorder preservation for geoip/mac/domain/remote groups + remote-group API mapping"
+      "status": "verify",
+      "title": "IPv6 rule parity hardening (semantic coupling, advanced-leaf reorder preservation, remote-group API mapping) implemented; pending live verification."
     },
     {
       "id": "F-03",
       "domain": "firewall",
-      "status": "partial",
-      "title": "Firewall groups parity: typed validation + batch consistency checks (conflicting set/delete, duplicate ops, single remote URL)"
+      "status": "verify",
+      "title": "Firewall groups parity hardening implemented (typed validation + conflict/duplicate checks + single remote URL guardrails); pending live verification."
     },
     {
       "id": "F-04",
       "domain": "firewall",
-      "status": "partial",
-      "title": "Global options parity pass (update+batch enum/timeout validation and batch normalization added; deeper option coverage pending)"
+      "status": "verify",
+      "title": "Firewall global-options parity hardening implemented (enum/timeout validation and batch normalization); pending live verification."
     },
     {
       "id": "F-05",
       "domain": "firewall",
-      "status": "partial",
-      "title": "Flowtables parity pass: validation hardening + batch consistency checks (duplicate interfaces, conflicting offload, description length)"
+      "status": "verify",
+      "title": "Firewall flowtables parity hardening implemented (validation + duplicate/conflict checks + offload normalization); pending live verification."
     },
     {
       "id": "F-06",
       "domain": "firewall",
-      "status": "partial",
-      "title": "Zone workflow hardening (cross-zone validation + policy-textarea and guided-preset pre-validation added; onboarding/UX depth pending)"
+      "status": "verify",
+      "title": "Firewall zones hardening implemented (cross-zone checks, policy-textarea validation, guided-preset pre-validation); pending live verification."
     },
     {
       "id": "HA-01",
@@ -148,8 +148,8 @@
     {
       "id": "IF-08",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add sstp-client editor (baseline implemented; extended auth/operation-depth verification remains)"
+      "status": "verify",
+      "title": "SSTP client page now matches documented interface leaves (`description/disable/mtu/vrf/no-default-route/default-route-distance/no-peer-dns/server/ip adjust-mss/ip disable-forwarding/ip source-validation`) with form CRUD; pending live verification"
     },
     {
       "id": "IF-09",
@@ -292,20 +292,20 @@
     {
       "id": "PR-04",
       "domain": "protocols",
-      "status": "partial",
-      "title": "Static/Failover advanced options"
+      "status": "verify",
+      "title": "Static/Failover advanced options parity tightened (failover check-type/policy enums aligned to guide with numeric guardrails); pending live verification"
     },
     {
       "id": "PR-05",
       "domain": "protocols",
-      "status": "partial",
-      "title": "Multicast advanced options"
+      "status": "verify",
+      "title": "Multicast protocol pages (IGMP Proxy, PIM, PIM6) now model documented command leaves including joins, timers, RP/prefix-list controls, and interface-level options; pending live verification"
     },
     {
       "id": "PR-06",
       "domain": "protocols",
-      "status": "partial",
-      "title": "RPKI/MPLS option parity"
+      "status": "verify",
+      "title": "RPKI/MPLS parity completed: MPLS LDP now uses guide-aligned command trees (discovery timers, targeted-neighbor controls, import/export filters, allocation ACLs, explicit-null) and RPKI cache/timer coverage remains complete; pending live verification"
     },
     {
       "id": "SVC-01",

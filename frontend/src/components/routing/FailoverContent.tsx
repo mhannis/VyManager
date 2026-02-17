@@ -58,7 +58,15 @@ const EMPTY_ROUTE: FailoverRouteEntry = {
   metric: "",
 };
 
-const CHECK_TYPE_OPTIONS = ["icmp", "tcp", "bfd"];
+const CHECK_TYPE_OPTIONS = ["icmp", "arp", "tcp"] as const;
+const CHECK_POLICY_OPTIONS = ["any-available", "all-available"] as const;
+
+function asInteger(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed || !/^\d+$/.test(trimmed)) return null;
+  const parsed = Number(trimmed);
+  return Number.isInteger(parsed) ? parsed : null;
+}
 
 function asObject(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -255,6 +263,34 @@ export function FailoverContent() {
       setError("Check target is required for failover route monitoring.");
       return;
     }
+    if (
+      normalized.checkType &&
+      !CHECK_TYPE_OPTIONS.includes(normalized.checkType as (typeof CHECK_TYPE_OPTIONS)[number])
+    ) {
+      setError("Check type must be one of: icmp, arp, tcp.");
+      return;
+    }
+    if (
+      normalized.checkPolicy &&
+      !CHECK_POLICY_OPTIONS.includes(normalized.checkPolicy as (typeof CHECK_POLICY_OPTIONS)[number])
+    ) {
+      setError("Check policy must be one of: any-available, all-available.");
+      return;
+    }
+    if (normalized.checkTimeout) {
+      const timeout = asInteger(normalized.checkTimeout);
+      if (timeout === null || timeout < 1 || timeout > 300) {
+        setError("Check timeout must be an integer between 1 and 300 seconds.");
+        return;
+      }
+    }
+    if (normalized.metric) {
+      const metric = asInteger(normalized.metric);
+      if (metric === null || metric < 1) {
+        setError("Metric must be a whole number greater than or equal to 1.");
+        return;
+      }
+    }
 
     setError(null);
     setRoutes((prev) => {
@@ -408,6 +444,9 @@ export function FailoverContent() {
             <div className="space-y-2">
               <Label>Check Timeout</Label>
               <Input
+                type="number"
+                min={1}
+                max={300}
                 value={routeDraft.checkTimeout}
                 placeholder="5"
                 onChange={(event) => setRouteDraft((prev) => ({ ...prev, checkTimeout: event.target.value }))}
@@ -417,13 +456,16 @@ export function FailoverContent() {
             <div className="space-y-2">
               <Label>Check Type</Label>
               <Select
-                value={routeDraft.checkType || ""}
-                onValueChange={(value) => setRouteDraft((prev) => ({ ...prev, checkType: value }))}
+                value={routeDraft.checkType || "__default"}
+                onValueChange={(value) =>
+                  setRouteDraft((prev) => ({ ...prev, checkType: value === "__default" ? "" : value }))
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__default">Default (icmp)</SelectItem>
                   {CHECK_TYPE_OPTIONS.map((value) => (
                     <SelectItem key={value} value={value}>
                       {value.toUpperCase()}
@@ -435,11 +477,24 @@ export function FailoverContent() {
 
             <div className="space-y-2">
               <Label>Check Policy</Label>
-              <Input
-                value={routeDraft.checkPolicy}
-                placeholder="WAN-MONITOR"
-                onChange={(event) => setRouteDraft((prev) => ({ ...prev, checkPolicy: event.target.value }))}
-              />
+              <Select
+                value={routeDraft.checkPolicy || "__default"}
+                onValueChange={(value) =>
+                  setRouteDraft((prev) => ({ ...prev, checkPolicy: value === "__default" ? "" : value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select policy" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__default">Default (any-available)</SelectItem>
+                  {CHECK_POLICY_OPTIONS.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -464,6 +519,8 @@ export function FailoverContent() {
             <div className="space-y-2">
               <Label>Metric</Label>
               <Input
+                type="number"
+                min={1}
                 value={routeDraft.metric}
                 placeholder="10"
                 onChange={(event) => setRouteDraft((prev) => ({ ...prev, metric: event.target.value }))}
@@ -508,6 +565,9 @@ export function FailoverContent() {
                       <TableCell className="text-xs">
                         <div>{entry.checkType || "icmp"}</div>
                         <div className="text-muted-foreground">{entry.checkTarget || "-"}</div>
+                        <div className="text-muted-foreground">
+                          policy: {entry.checkPolicy || "any-available"}
+                        </div>
                       </TableCell>
                       <TableCell className="text-xs">
                         {entry.interface

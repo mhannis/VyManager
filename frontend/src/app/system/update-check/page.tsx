@@ -53,18 +53,19 @@ function buildOperations(current: SystemUpdateCheckConfig | null, form: FormStat
   const currentAutoCheck = Boolean(current?.autoCheck);
   const desiredUrl = form.url.trim();
   const currentUrl = (current?.url || "").trim();
-  const currentEffectiveUrl = currentUrl || DEFAULT_UPDATE_CHECK_URL;
+  const mustSetUrlBeforeAutoCheck = desiredAutoCheck && !currentUrl && Boolean(desiredUrl);
 
-  if (desiredAutoCheck !== currentAutoCheck) {
-    operations.push(`${desiredAutoCheck ? "set" : "delete"} system update-check auto-check`);
-  }
-
-  if (desiredUrl !== currentEffectiveUrl) {
+  // Always materialize URL before enabling auto-check, even if UI default matches the fallback value.
+  if (desiredUrl !== currentUrl || mustSetUrlBeforeAutoCheck) {
     if (desiredUrl) {
       operations.push(`set system update-check url ${quoteCliValue(desiredUrl)}`);
     } else if (currentUrl) {
       operations.push("delete system update-check url");
     }
+  }
+
+  if (desiredAutoCheck !== currentAutoCheck) {
+    operations.push(`${desiredAutoCheck ? "set" : "delete"} system update-check auto-check`);
   }
 
   return operations;
@@ -156,6 +157,11 @@ export default function SystemUpdateCheckPage() {
 
   const saveConfig = async () => {
     const desired = form.url.trim();
+    if (form.autoCheck && !desired) {
+      setError("URL is required when auto-check is enabled.");
+      setSuccess(null);
+      return;
+    }
     if (desired && !/^https?:\/\/[^\s]+$/i.test(desired)) {
       setError("Update-check URL must be an absolute HTTP/HTTPS URL.");
       setSuccess(null);

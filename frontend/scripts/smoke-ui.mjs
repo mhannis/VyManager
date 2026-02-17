@@ -219,19 +219,12 @@ async function run() {
       }
     }
 
-    // Route probes
-    for (const route of ROUTES) {
+    const probeRoute = async (url) => {
       const beforeErrors = pageErrors.length;
-      const url = `${BASE_URL}${route}`;
-
       await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
       await page.waitForTimeout(1200);
 
       const finalUrl = page.url();
-      if (new URL(finalUrl).pathname.startsWith("/login")) {
-        failures.push(`${route}: redirected to login`);
-      }
-
       const appCrashVisible = await page
         .getByText("Application error: a client-side exception has occurred", {
           exact: false,
@@ -240,13 +233,37 @@ async function run() {
         .isVisible()
         .catch(() => false);
 
-      if (appCrashVisible) {
+      const newErrors = pageErrors.slice(beforeErrors);
+      return { finalUrl, appCrashVisible, newErrors };
+    };
+
+    // Route probes
+    for (const route of ROUTES) {
+      const url = `${BASE_URL}${route}`;
+      let probe = await probeRoute(url);
+
+      const sawChunkLoadError =
+        probe.appCrashVisible ||
+        probe.newErrors.some((entry) =>
+          /ChunkLoadError|Failed to load chunk|Loading chunk/i.test(entry.message || "")
+        );
+
+      // Retry once with cache-busting query when Next.js chunk manifest races after rebuild.
+      if (sawChunkLoadError) {
+        const retryUrl = `${url}${url.includes("?") ? "&" : "?"}smoke_retry=${Date.now()}`;
+        probe = await probeRoute(retryUrl);
+      }
+
+      if (new URL(probe.finalUrl).pathname.startsWith("/login")) {
+        failures.push(`${route}: redirected to login`);
+      }
+
+      if (probe.appCrashVisible) {
         failures.push(`${route}: rendered client-side application error banner`);
       }
 
-      if (pageErrors.length > beforeErrors) {
-        const newErrors = pageErrors.slice(beforeErrors);
-        for (const entry of newErrors) {
+      if (probe.newErrors.length > 0) {
+        for (const entry of probe.newErrors) {
           failures.push(`${route}: pageerror at ${entry.url} -> ${entry.message}`);
         }
       }

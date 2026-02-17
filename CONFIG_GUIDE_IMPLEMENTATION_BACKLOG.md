@@ -48,12 +48,12 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `C-05` (`verify`): Validate full first-run bootstrap flow end-to-end on clean instance.
 
 ### Firewall (`firewall/*`)
-- `F-01` (`partial`): IPv4 rule coverage parity pass (advanced match conditions, state behaviors, action sub-options). Batch API now enforces protocol/action semantic coupling (ports/TCP flags/ICMP vs protocol, jump/offload target coupling), IPv4 rule reorder now preserves GeoIP + mac/domain/remote group leaves, and frontend rule APIs now map remote-group source/destination operations.
-- `F-02` (`partial`): IPv6 rule coverage parity pass in progress (canonical icmpv6/hop-limit operation wiring fixed, legacy op aliases retained for compatibility). Added protocol/action semantic coupling in `/batch`, IPv6 reorder parity for GeoIP + mac/domain/remote groups, and frontend rule API remote-group source/destination mapping.
-- `F-03` (`partial`): Firewall groups type parity in progress (typed create/edit validation + backend server-side value validation + HTTP status hardening). Added batch consistency guardrails for conflicting set/delete member ops, duplicate member ops, and single remote URL per batch.
-- `F-04` (`partial`): Global options parity pass in progress (added server-side enum/timeout validation for both `/update` and `/batch`, with explicit 400 semantics and batch value normalization; deeper option coverage still pending).
-- `F-05` (`partial`): Flowtables parity pass in progress (backend validation hardening for names/ops/interfaces/offload + dedicated tests complete). Added batch consistency validation for duplicate interface rows, conflicting offload choices, and oversize descriptions; remaining tunable-depth UX/verification pending.
-- `F-06` (`partial`): Zone workflow hardening in progress (cross-zone validation added: interface overlap protection + `from_zone` existence/canonicalization with `LOCAL`; UI now pre-validates policy textarea format/duplicates and guided preset interface conflicts before apply; remaining onboarding/UX depth pending).
+- `F-01` (`verify`): IPv4 rule parity hardening implemented (protocol/action semantic coupling, advanced-leaf reorder preservation including GeoIP/mac/domain/remote groups, and remote-group API mapping); pending live verification.
+- `F-02` (`verify`): IPv6 rule parity hardening implemented (protocol/action semantic coupling, canonical icmpv6/hop-limit handling with compatibility aliases, advanced-leaf reorder preservation, and remote-group API mapping); pending live verification.
+- `F-03` (`verify`): Firewall groups parity hardening implemented (typed validation, conflict/duplicate batch checks, single remote URL guardrail, and deterministic HTTP semantics); pending live verification.
+- `F-04` (`verify`): Firewall global-options parity hardening implemented (enum/timeout validation in update+batch paths with normalized batch values); pending live verification.
+- `F-05` (`verify`): Firewall flowtables parity hardening implemented (strict validation, duplicate/conflict checks, description bounds, and canonical offload normalization); pending live verification.
+- `F-06` (`verify`): Firewall zones hardening implemented (cross-zone interface validation, canonicalized from-zone handling including LOCAL, policy-textarea validation, and guided-preset preflight checks); pending live verification.
 
 ### High Availability (`highavailability/index.html`)
 - `HA-01` (`verify`): VRRP/sync-group depth now includes full add/edit/delete UX (including rename-safe updates), per-address interface bindings (`address=interface`) with deterministic save diffs, and guide-aligned numeric guardrails for startup/GARP/health fields. Pending live-node verification.
@@ -68,7 +68,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `IF-05` (`partial`): Add robust `macsec` editor. Baseline page implemented; advanced option-depth verification remains.
 - `IF-06` (`partial`): Add robust `openvpn` interface editor. Baseline page implemented; advanced option-depth verification remains.
 - `IF-07` (`partial`): Add robust `pseudo-ethernet` (macvlan) editor. Baseline page implemented; VLAN-depth and edge-option verification remains.
-- `IF-08` (`partial`): Add robust `sstp-client` editor. Baseline page implemented; extended auth/operation-depth verification remains.
+- `IF-08` (`verify`): SSTP client page now matches documented interface leaves (`description`, `disable`, `mtu`, `vrf`, `no-default-route`, `default-route-distance`, `no-peer-dns`, `server`, `ip adjust-mss`, `ip disable-forwarding`, `ip source-validation`) with form CRUD. Pending live verification.
 - `IF-09` (`partial`): Add robust `tunnel` editor. Baseline page implemented; advanced protocol/parameter depth verification remains.
 - `IF-10` (`partial`): Add robust `virtual-ethernet` (veth) editor. Baseline page implemented; VLAN-depth verification remains.
 - `IF-11` (`partial`): Add robust `vti` editor. Baseline page implemented; VPN IPsec interaction and advanced parity verification remains.
@@ -102,9 +102,9 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `PR-01` (`partial`): BGP full-depth parity pass (neighbors/AFI-SAFI/policy hooks/advanced timers/features).
 - `PR-02` (`partial`): OSPF/IS-IS/OpenFabric/RIP depth parity audit and missing leaves implementation.
 - `PR-03` (`verify`): Segment Routing page fully models currently documented IS-IS/OSPF segment-routing leaves (global/local blocks, maximum label depth, prefix-SID index value/flags, and OSPF `opaque-lsa`) with form-based diff operations. Pending live interop verification.
-- `PR-04` (`partial`): Static/failover advanced options parity completion.
-- `PR-05` (`partial`): Multicast stack depth parity (IGMP Proxy/PIM/PIM6 advanced leaves).
-- `PR-06` (`partial`): RPKI and MPLS option-level parity completion.
+- `PR-04` (`verify`): Static/failover advanced options parity tightened: failover `check type` now aligns to guide enum (`icmp|arp|tcp`), `check policy` is enum-backed (`any-available|all-available`), and timeout/metric numeric guardrails are enforced. Pending live verification.
+- `PR-05` (`verify`): Multicast stack depth parity is implemented across IGMP Proxy/PIM/PIM6, including joins, timers, RP/prefix-list controls, and interface-level options. Pending live verification.
+- `PR-06` (`verify`): RPKI/MPLS option parity is implemented: MPLS LDP uses guide-aligned command trees (discovery timers, targeted-neighbor controls, import/export filters, allocation ACLs, explicit-null), and RPKI cache/timer coverage remains complete. Pending live verification.
 
 ### Service (`service/*`)
 - `SVC-01` (`verify`): Config Sync guide leaves (`mode`, `secondary address/key/port/timeout`, `section`) are now represented with form-based CRUD and wrapper-backed writes; pending live-node verification.
