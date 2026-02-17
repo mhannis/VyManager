@@ -531,11 +531,20 @@
         "backend/tests/test_bgp_save_apply_reload_loop.py"
       ],
       "notes": "Added dedicated BGP save/apply/reload integration test to cover op/value batch semantics and builder execution path not represented in generic command-string loops."
+    },
+    {
+      "id": "T49",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/test_static_routes_save_apply_reload_loop.py"
+      ],
+      "notes": "Added dedicated static-routes save/apply/reload regression covering StaticRoutesBatchRequest destination/route_type/op-value contract and config round-trip assertions."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_static_routes_save_apply_reload_loop.py tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [

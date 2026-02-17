@@ -421,3 +421,4 @@
 - 2026-02-17: Added protocol loop fixtures for OpenFabric, RPKI, IGMP Proxy, PIM, PIM6, Failover, and Static protocol to close a gap where these pages had capability tests but not save/apply/reload delta assertions.
 - 2026-02-17: Added snapshot endpoints for PIM, PIM6, Failover, and Static protocol so protocol config payload regressions are caught deterministically in `test_domain_config_snapshots.py`.
 - 2026-02-17: Added a dedicated BGP save/apply/reload test instead of forcing BGP into the generic loop fixture because BGP batch payloads are builder operation objects (`op/value`), not direct command strings.
+- 2026-02-17: Added a dedicated static-routes save/apply/reload test because static-routes uses a richer batch schema (`destination`/`route_type` + operation objects) that is not representable by the generic command-string loop fixture.

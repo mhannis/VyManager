@@ -165,3 +165,7 @@ current_counts:
 - Added `backend/tests/test_bgp_save_apply_reload_loop.py` to cover BGP's builder-based batch contract (`op/value` operations) with save/apply/reload behavior assertions.
 - This closes the prior gap where BGP could not be represented by the generic command-string loop harness.
 - Validation: `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py` (`122 passed`).
+
+### Incremental Update (static-routes batch verification)
+- Added `backend/tests/test_static_routes_save_apply_reload_loop.py` to cover the full `static-routes` batch endpoint contract (`destination` + `route_type` + operation objects) and round-trip config assertions.
+- Validation: `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_static_routes_save_apply_reload_loop.py tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py` (`123 passed`).
