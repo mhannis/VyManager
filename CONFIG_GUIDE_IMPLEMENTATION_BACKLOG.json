@@ -370,14 +370,14 @@
     {
       "id": "VPN-03",
       "domain": "vpn",
-      "status": "partial",
-      "title": "DMVPN/NHRP depth parity"
+      "status": "verify",
+      "title": "DMVPN workflow provides form-driven tunnel/NHRP/IPsec-profile composition with map/NHS entries and multicast/redirect/shortcut controls; pending live multi-node verification"
     },
     {
       "id": "VPN-04",
       "domain": "vpn",
-      "status": "partial",
-      "title": "L2TP/OpenConnect/PPTP/SSTP parity"
+      "status": "verify",
+      "title": "L2TP/OpenConnect/PPTP/SSTP pages provide form-driven remote-access depth (auth modes, local users, pools/ranges, DNS/WINS propagation, SSL/accounting hooks); pending live interoperability verification"
     },
     {
       "id": "VPN-05",

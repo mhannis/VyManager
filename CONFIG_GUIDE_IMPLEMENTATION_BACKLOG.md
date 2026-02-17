@@ -121,8 +121,8 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 ### VPN (`vpn/*`)
 - `VPN-01` (`partial`): IPsec site-to-site phase1/phase2 full option parity (guide-complete selectors).
 - `VPN-02` (`partial`): IPsec remote-access/mobile-clients parity and required dependent objects.
-- `VPN-03` (`partial`): DMVPN option-depth parity (NHRP/IPsec profile interactions).
-- `VPN-04` (`partial`): L2TP/OpenConnect/PPTP/SSTP option-level parity sweep.
+- `VPN-03` (`verify`): DMVPN workflow now provides form-driven tunnel/NHRP/IPsec profile composition (interface tunnel + `protocols nhrp` + IPsec profile binding) including map/NHS entries, multicast/redirect/shortcut controls, and save/apply orchestration. Pending live multi-node verification.
+- `VPN-04` (`verify`): L2TP/OpenConnect/PPTP/SSTP pages provide form-driven remote-access configuration depth (auth modes, local users, pool/range management, DNS/WINS propagation, SSL/cert leaves where applicable, and accounting hooks). Pending live interoperability verification.
 - `VPN-05` (`verify`): End-to-end tunnel bring-up and diagnostics workflows (GUI-first).
 
 ### VRF (`vrf/index.html`)
