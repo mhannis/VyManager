@@ -11,6 +11,7 @@ import routers._service_wrapper as service_wrapper_module
 import routers._vpn_wrapper as vpn_wrapper_module
 import routers.dmvpn.dmvpn as dmvpn_router
 import routers.dns.dns as dns_service_router
+import routers.failover.failover as failover_router
 import routers.high_availability.high_availability as high_availability_router
 import routers.igmp_proxy.igmp_proxy as igmp_proxy_router
 import routers.isis.isis as isis_router
@@ -22,11 +23,14 @@ import routers.ntp.ntp as ntp_service_router
 import routers.openfabric.openfabric as openfabric_router
 import routers.ospf.ospf as ospf_router
 import routers.pki.pki as pki_router
+import routers.pim.pim as pim_router
+import routers.pim6.pim6 as pim6_router
 import routers.qos.qos as qos_router
 import routers.rip.rip as rip_router
 import routers.router_advert_service.router_advert_service as router_advert_service_router
 import routers.rpki.rpki as rpki_router
 import routers.segment_routing.segment_routing as segment_routing_router
+import routers.static.static as static_protocol_router
 import routers.system_conntrack as system_conntrack_router
 import routers.system_flow_accounting as system_flow_accounting_router
 import routers.system_frr as system_frr_router
@@ -56,6 +60,10 @@ PROTOCOL_MODULES = (
     openfabric_router,
     rpki_router,
     igmp_proxy_router,
+    pim_router,
+    pim6_router,
+    failover_router,
+    static_protocol_router,
     segment_routing_router,
 )
 
@@ -145,6 +153,34 @@ class SnapshotDummyService:
                     "interface": {
                         "eth1": {
                             "role": "upstream",
+                        }
+                    }
+                },
+                "pim": {
+                    "interface": {
+                        "eth1": {
+                            "mode": "sparse",
+                        }
+                    }
+                },
+                "pim6": {
+                    "interface": {
+                        "eth1": {
+                            "mode": "sparse",
+                        }
+                    }
+                },
+                "failover": {
+                    "route": {
+                        "0.0.0.0/0": {
+                            "next-hop": "192.0.2.1",
+                        }
+                    }
+                },
+                "static": {
+                    "route": {
+                        "198.51.100.0/24": {
+                            "next-hop": "192.0.2.1",
                         }
                     }
                 },
@@ -464,6 +500,10 @@ def app():
     app.include_router(openfabric_router.router)
     app.include_router(rpki_router.router)
     app.include_router(igmp_proxy_router.router)
+    app.include_router(pim_router.router)
+    app.include_router(pim6_router.router)
+    app.include_router(failover_router.router)
+    app.include_router(static_protocol_router.router)
     app.include_router(segment_routing_router.router)
     app.include_router(vrf_router.router)
     app.include_router(load_balancing_router.router)

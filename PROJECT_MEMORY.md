@@ -666,3 +666,93 @@ Assumptions:
 - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_services_ssh_dns.py`
 - `cd frontend && npm run -s smoke:runtime`
 - `cd frontend && SMOKE_ROUTES=/system/services npm run -s smoke:ui`
+
+## Cycle Update (2026-02-17 dns service consolidation + defaults action)
+
+### Objective Update
+- Consolidate DNS Forwarder/Resolver into one service entry and provide one-click default population so first-time DNS setup can be staged quickly before save.
+
+### Completed This Cycle
+- `frontend/src/app/system/services/page.tsx`
+  - Replaced separate `dns-forwarder` and `dns-resolver` tabs with a single `dns` tab.
+  - Kept backward compatibility by mapping old query params (`dns-forwarder`, `dns-resolver`) to `dns`.
+- `frontend/src/components/system/DnsServiceTab.tsx`
+  - Unified page heading/copy for combined DNS workflow.
+  - Added `Populate Suggested Defaults` button:
+    - enables DNS service
+    - seeds listen-addresses from discovered interface runtime addresses (preferring non-WAN/private IPv4 candidates when available)
+    - seeds `allow-from` with `0.0.0.0/0` and `::/0` if empty
+    - leverages existing system domain-search/name-server context when present
+- `frontend/src/components/dashboard/ServicesStatusCard.tsx`
+  - Renamed service row to `DNS` and updated link target to `?tab=dns`.
+- `frontend/src/app/system/identification/page.tsx`
+  - Updated DNS management link target/label to combined `Services - DNS` page.
+
+### Validation Run This Cycle
+- `cd frontend && npx eslint src/app/system/services/page.tsx src/components/system/DnsServiceTab.tsx src/components/dashboard/ServicesStatusCard.tsx src/app/system/identification/page.tsx`
+- `cd frontend && npx tsc --noEmit --pretty false`
+- `cd frontend && npm run -s build`
+- `cd frontend && npm run -s smoke:runtime`
+- `cd frontend && SMOKE_ROUTES=/system/services npm run -s smoke:ui`
+
+### Runtime Notes
+- Browser smoke initially hit stale chunk runtime (`ChunkLoadError`) on `/system/services`; restarted `vm-ui` and reran smoke successfully.
+
+## Cycle Update (2026-02-17 - Interface Parity Batch)
+- Branch remained `feature/containers-automation-v1`.
+- Completed interface backlog slices and pushed:
+  - `6a91444` (`IF-09`, `IF-10`, plus backlog status updates)
+  - `8b7f130` (`IF-12`, plus `IF-11` verify promotion)
+  - `671b69f` (`IF-07`)
+- Implementation highlights:
+  - Tunnel editor: added guide-covered IPv4 ARP/neighbor controls and parser round-trip support.
+  - Virtual-ethernet editor: added robust VIF subinterface CRUD and per-VIF ARP/MSS/link controls.
+  - VXLAN editor: added MAC/link controls, IPv4/IPv6 MSS controls, ARP/filter/forwarding toggles, source-validation, and IPv6 autoconf/eui64/no-default-link-local.
+  - Pseudo-ethernet editor: added MAC/link controls, IPv4 MSS/ARP/filter/forwarding/source-validation, proxy-arp options, and IPv6 autoconf/eui64/no-default-link-local/forwarding.
+- Backlog promotions this cycle:
+  - `verify`: IF-04, IF-05, IF-07, IF-09, IF-10, IF-11, IF-12, IF-15.
+- Backlog counts after updates:
+  - `verify`: 63
+  - `partial`: 23
+- Validation gates run on each slice:
+  - targeted `eslint`, `tsc --noEmit`, `npm run -s build`, `npm run -s smoke:runtime`, and route-targeted `smoke:ui` for touched pages.
+- Known runtime caveat unchanged: smoke can false-fail with stale chunks if runtime is not restarted after build.
+- Additional promotion in this run: `IF-06` (OpenVPN interface) moved to `verify` via command-scope audit.
+- Current backlog counts after latest update: `verify=64`, `partial=22`.
+
+## Cycle Update (2026-02-17: NAT-04 + LB-02 closure)
+- Implemented `NAT-04` and promoted it to `verify`:
+  - Added `frontend/src/lib/api/nat-cgnat.ts`.
+  - Added `frontend/src/app/network/nat/cgnat/page.tsx`.
+  - Added NAT page shortcut to `/network/nat/cgnat`.
+- Implemented `LB-02` and promoted it to `verify`:
+  - Expanded HAProxy parse model in `frontend/src/lib/api/load-balancing.ts` for global/service/backend option depth.
+  - Expanded `frontend/src/app/network/load-balancing/page.tsx` with form-driven HAProxy global parameters, services/rules, backend options, and per-server check/proxy controls.
+- Backlog state after updates (`CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json`): `verify=86`, `partial=0`.
+
+### Validation (this cycle)
+- `cd frontend && npx eslint src/app/network/nat/cgnat/page.tsx src/lib/api/nat-cgnat.ts src/app/network/nat/page.tsx`
+- `cd frontend && npx tsc --noEmit --pretty false`
+- `cd frontend && npm run -s build`
+- `cd frontend && npm run -s smoke:runtime`
+- `cd frontend && SMOKE_ROUTES=/network/nat,/network/nat/cgnat npm run -s smoke:ui`
+- `cd frontend && npx eslint src/app/network/load-balancing/page.tsx src/lib/api/load-balancing.ts`
+- `cd frontend && npx tsc --noEmit --pretty false`
+- `cd frontend && npm run -s build`
+- `cd frontend && npm run -s smoke:runtime`
+- `cd frontend && SMOKE_ROUTES=/network/load-balancing npm run -s smoke:ui`
+
+### Commits
+- `6e8ed03` - nat: add form-driven cgnat editor and promote NAT-04
+- `b5b0b4b` - load-balancing: complete haproxy parity workflows (LB-02)
+
+## Cycle Update (2026-02-17 protocol verification depth)
+- Expanded cross-cutting protocol regression depth in `X-02/X-03` by adding loop fixtures for `openfabric`, `rpki`, `igmp-proxy`, `pim`, `pim6`, `failover`, and `static-protocol` wrappers.
+- Extended snapshot coverage for protocol config endpoints: `/vyos/pim/config`, `/vyos/pim6/config`, `/vyos/failover/config`, and `/vyos/static-protocol/config`.
+- Updated test harness routers/module wiring in both loop and snapshot suites so these protocol wrappers are continuously exercised in CI/local runs.
+- Validation pass for this cycle:
+  - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py` (`121 passed`).
+
+### Immediate Next Queue
+- Continue verification-depth closure for remaining guide-order protocol/routing slices not yet covered by loop-delta fixtures (focus: static-routes complex batch variants and broader routing-infrastructure edge paths).
+- Keep adding deterministic fixtures/snapshots before moving to live-device verify phase.

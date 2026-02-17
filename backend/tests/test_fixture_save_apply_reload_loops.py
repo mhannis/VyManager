@@ -13,19 +13,26 @@ import routers._vpn_wrapper as vpn_wrapper_module
 import routers.config_sync_service.config_sync_service as config_sync_service_router
 import routers.dmvpn.dmvpn as dmvpn_router
 import routers.dns.dns as dns_service_router
+import routers.failover.failover as failover_router
 import routers.high_availability.high_availability as high_availability_router
+import routers.igmp_proxy.igmp_proxy as igmp_proxy_router
 import routers.isis.isis as isis_router
 import routers.lldp.lldp as lldp_service_router
 import routers.load_balancing.load_balancing as load_balancing_router
 import routers.mpls.mpls as mpls_router
 import routers.nat.nat as nat_router
 import routers.ntp.ntp as ntp_service_router
+import routers.openfabric.openfabric as openfabric_router
 import routers.ospf.ospf as ospf_router
 import routers.pki.pki as pki_router
+import routers.pim.pim as pim_router
+import routers.pim6.pim6 as pim6_router
 import routers.qos.qos as qos_router
 import routers.rip.rip as rip_router
 import routers.router_advert_service.router_advert_service as router_advert_service_router
+import routers.rpki.rpki as rpki_router
 import routers.segment_routing.segment_routing as segment_routing_router
+import routers.static.static as static_protocol_router
 import routers.system_conntrack as system_conntrack_router
 import routers.system_flow_accounting as system_flow_accounting_router
 import routers.system_frr as system_frr_router
@@ -52,6 +59,13 @@ PROTOCOL_ROUTER_MODULES = (
     rip_router,
     isis_router,
     mpls_router,
+    openfabric_router,
+    rpki_router,
+    igmp_proxy_router,
+    pim_router,
+    pim6_router,
+    failover_router,
+    static_protocol_router,
     segment_routing_router,
 )
 
@@ -94,6 +108,13 @@ class MutableDummyService:
                 "rip": {},
                 "isis": {},
                 "mpls": {},
+                "openfabric": {},
+                "rpki": {},
+                "igmp-proxy": {},
+                "pim": {},
+                "pim6": {},
+                "failover": {},
+                "static": {},
                 "nhrp": {
                     "tunnel": {
                         "tun100": {
@@ -224,6 +245,20 @@ class MutableDummyService:
                 ] = str(self.revision)
         if tokens[:3] in (["set", "protocols", "mpls"], ["delete", "protocols", "mpls"]):
             self._config["protocols"].setdefault("mpls", {})["__rev"] = str(self.revision)
+        if tokens[:3] in (["set", "protocols", "openfabric"], ["delete", "protocols", "openfabric"]):
+            self._config["protocols"].setdefault("openfabric", {})["__rev"] = str(self.revision)
+        if tokens[:3] in (["set", "protocols", "rpki"], ["delete", "protocols", "rpki"]):
+            self._config["protocols"].setdefault("rpki", {})["__rev"] = str(self.revision)
+        if tokens[:3] in (["set", "protocols", "igmp-proxy"], ["delete", "protocols", "igmp-proxy"]):
+            self._config["protocols"].setdefault("igmp-proxy", {})["__rev"] = str(self.revision)
+        if tokens[:3] in (["set", "protocols", "pim"], ["delete", "protocols", "pim"]):
+            self._config["protocols"].setdefault("pim", {})["__rev"] = str(self.revision)
+        if tokens[:3] in (["set", "protocols", "pim6"], ["delete", "protocols", "pim6"]):
+            self._config["protocols"].setdefault("pim6", {})["__rev"] = str(self.revision)
+        if tokens[:3] in (["set", "protocols", "failover"], ["delete", "protocols", "failover"]):
+            self._config["protocols"].setdefault("failover", {})["__rev"] = str(self.revision)
+        if tokens[:3] in (["set", "protocols", "static"], ["delete", "protocols", "static"]):
+            self._config["protocols"].setdefault("static", {})["__rev"] = str(self.revision)
 
         if tokens[:2] in (["set", "vrf"], ["delete", "vrf"]):
             self._config.setdefault("vrf", {})["__rev"] = str(self.revision)
@@ -292,6 +327,13 @@ def app():
     app.include_router(rip_router.router)
     app.include_router(isis_router.router)
     app.include_router(mpls_router.router)
+    app.include_router(openfabric_router.router)
+    app.include_router(rpki_router.router)
+    app.include_router(igmp_proxy_router.router)
+    app.include_router(pim_router.router)
+    app.include_router(pim6_router.router)
+    app.include_router(failover_router.router)
+    app.include_router(static_protocol_router.router)
     app.include_router(segment_routing_router.router)
     app.include_router(vrf_router.router)
     app.include_router(load_balancing_router.router)

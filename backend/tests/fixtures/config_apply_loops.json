@@ -473,6 +473,97 @@
         "delete nat cgnat pool internal INT-POOL",
         "delete nat cgnat log-allocation"
       ]
+    },
+    {
+      "id": "LOOP-35",
+      "name": "OpenFabric loop",
+      "config_endpoint": "/vyos/openfabric/config",
+      "batch_endpoint": "/vyos/openfabric/batch",
+      "response_key": "openfabric",
+      "set_operations": [
+        "set protocols openfabric interface eth1"
+      ],
+      "delete_operations": [
+        "delete protocols openfabric interface eth1"
+      ]
+    },
+    {
+      "id": "LOOP-36",
+      "name": "RPKI loop",
+      "config_endpoint": "/vyos/rpki/config",
+      "batch_endpoint": "/vyos/rpki/batch",
+      "response_key": "rpki",
+      "set_operations": [
+        "set protocols rpki cache 192.0.2.10 port 3323"
+      ],
+      "delete_operations": [
+        "delete protocols rpki cache 192.0.2.10"
+      ]
+    },
+    {
+      "id": "LOOP-37",
+      "name": "IGMP Proxy loop",
+      "config_endpoint": "/vyos/igmp-proxy/config",
+      "batch_endpoint": "/vyos/igmp-proxy/batch",
+      "response_key": "igmp_proxy",
+      "set_operations": [
+        "set protocols igmp-proxy interface eth1 role upstream"
+      ],
+      "delete_operations": [
+        "delete protocols igmp-proxy interface eth1"
+      ]
+    },
+    {
+      "id": "LOOP-38",
+      "name": "PIM loop",
+      "config_endpoint": "/vyos/pim/config",
+      "batch_endpoint": "/vyos/pim/batch",
+      "response_key": "pim",
+      "set_operations": [
+        "set protocols pim interface eth1 mode sparse"
+      ],
+      "delete_operations": [
+        "delete protocols pim interface eth1"
+      ]
+    },
+    {
+      "id": "LOOP-39",
+      "name": "PIM6 loop",
+      "config_endpoint": "/vyos/pim6/config",
+      "batch_endpoint": "/vyos/pim6/batch",
+      "response_key": "pim6",
+      "set_operations": [
+        "set protocols pim6 interface eth1 mode sparse"
+      ],
+      "delete_operations": [
+        "delete protocols pim6 interface eth1"
+      ]
+    },
+    {
+      "id": "LOOP-40",
+      "name": "Failover loop",
+      "config_endpoint": "/vyos/failover/config",
+      "batch_endpoint": "/vyos/failover/batch",
+      "response_key": "failover",
+      "set_operations": [
+        "set protocols failover route 0.0.0.0/0 next-hop 192.0.2.1"
+      ],
+      "delete_operations": [
+        "delete protocols failover route 0.0.0.0/0"
+      ]
+    },
+    {
+      "id": "LOOP-41",
+      "name": "Static protocol loop",
+      "config_endpoint": "/vyos/static-protocol/config",
+      "batch_endpoint": "/vyos/static-protocol/batch",
+      "response_key": "static",
+      "set_operations": [
+        "set protocols static route 198.51.100.0/24 next-hop 192.0.2.1"
+      ],
+      "delete_operations": [
+        "delete protocols static route 198.51.100.0/24"
+      ]
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "feature_id": "backlog-partial-implementation-sweep-2026-02-17",
   "title": "Partial backlog implementation sweep (implementation first, verify deferred)",
-  "status": "in_progress",
+  "status": "in_review",
   "acceptance_criteria": [
     "Convert partial backlog items to implementation-complete status by closing guide-leaf gaps in UI/backend.",
     "Keep UI/API workflows form-driven (no free-form CLI primary workflows).",
@@ -69,12 +69,12 @@
     {
       "id": "T6",
       "owner_role": "Planner",
-      "status": "doing",
+      "status": "done",
       "files": [
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
       ],
-      "notes": "Continue reducing remaining partial items (firewall/interfaces/load-balancing/nat/policy/protocols/traffic-policy/vpn + X-05)."
+      "notes": "Implementation pass completed: NAT-04 and LB-02 promoted to verify; backlog now has zero partial items."
     },
     {
       "id": "T7",
@@ -418,11 +418,115 @@
         "backend/tests/test_system_services_ssh_dns.py"
       ],
       "notes": "DNS forwarding allow-from default hotfix: when forwarding is enabled and allow-from is empty/omitted, backend now seeds permissive defaults (0.0.0.0/0 and ::/0). Added regression tests for both empty and omitted payloads."
+    },
+    {
+      "id": "T39",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/system/services/page.tsx",
+        "frontend/src/components/system/DnsServiceTab.tsx",
+        "frontend/src/components/dashboard/ServicesStatusCard.tsx",
+        "frontend/src/app/system/identification/page.tsx"
+      ],
+      "notes": "Consolidated DNS Forwarder/Resolver into one DNS tab and added `Populate Suggested Defaults` action driven by discovered interface/gateway data."
+    },
+    {
+      "id": "T40",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/lib/api/tunnel-interface.ts",
+        "frontend/src/app/network/interfaces/tunnel/page.tsx",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "IF-09 completed: tunnel interface now supports guide-covered IPv4 ARP/neighbor controls (arp-cache-timeout, ARP filter/accept/announce/ignore, directed-broadcast, proxy-arp, proxy-arp-pvlan) with parser/form/diff-save; moved to verify."
+    },
+    {
+      "id": "T41",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/lib/api/virtual-ethernet.ts",
+        "frontend/src/app/network/interfaces/virtual-ethernet/page.tsx",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "IF-10 completed: virtual-ethernet gained robust VIF subinterface CRUD (VLAN ID, addresses, mtu/mac, disable/link-detect, ip adjust-mss, arp-cache-timeout, ARP/forwarding toggles); moved to verify."
+    },
+    {
+      "id": "T42",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/lib/api/vxlan.ts",
+        "frontend/src/app/network/interfaces/vxlan/page.tsx",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "IF-12 completed: VXLAN interface editor now covers guide leaves for MAC/link controls, IPv4/IPv6 MSS, ARP/filter/forwarding toggles, source-validation, and IPv6 autoconf/eui64/no-default-link-local; moved to verify."
+    },
+    {
+      "id": "T43",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/lib/api/pseudo-ethernet.ts",
+        "frontend/src/app/network/interfaces/pseudo-ethernet/page.tsx",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "IF-07 completed: pseudo-ethernet editor now covers guide leaves for MAC/link controls, IPv4 MSS/ARP/filter/forwarding/source-validation, proxy-arp options, and IPv6 autoconf/eui64/no-default-link-local/forwarding; moved to verify."
+    },
+    {
+      "id": "T44",
+      "owner_role": "Planner",
+      "status": "done",
+      "files": [
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "Command-scope audits completed for IF-04 (l2tpv3), IF-05 (macsec), IF-11 (vti), and IF-15 (loopback depth note); promoted to verify."
+    },
+    {
+      "id": "T45",
+      "owner_role": "Planner",
+      "status": "done",
+      "files": [
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json",
+        "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md"
+      ],
+      "notes": "Command-scope audit completed for IF-06 (OpenVPN interface); promoted to verify."
+    },
+    {
+      "id": "T46",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json",
+        "backend/tests/test_fixture_save_apply_reload_loops.py",
+        "backend/tests/test_domain_config_snapshots.py",
+        "backend/tests/snapshots/domain_config_snapshots.json"
+      ],
+      "notes": "Protocol verification depth pass: added loop fixtures for OpenFabric/RPKI/IGMP Proxy/PIM/PIM6 and snapshot coverage for PIM/PIM6; validated with targeted pytest suite."
+    },
+    {
+      "id": "T47",
+      "owner_role": "Test",
+      "status": "done",
+      "files": [
+        "backend/tests/fixtures/config_apply_loops.json",
+        "backend/tests/test_fixture_save_apply_reload_loops.py",
+        "backend/tests/test_domain_config_snapshots.py",
+        "backend/tests/snapshots/domain_config_snapshots.json"
+      ],
+      "notes": "Protocol static/failover verification depth: added failover + static-protocol loop fixtures and snapshots; protocol capability + loop + snapshot suites pass."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py tests/test_system_local_users_parity.py && cd ../frontend && npx tsc --noEmit --pretty false && npx eslint src/app/system/conntrack/page.tsx src/lib/api/system-conntrack.ts src/app/network/vrf/page.tsx src/lib/api/vrf.ts && npm run -s build && npm run -s smoke:runtime",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py && cd ../frontend && npx tsc --noEmit --pretty false && npm run -s build && npm run -s smoke:runtime",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [

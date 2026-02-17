@@ -65,6 +65,42 @@
       }
     }
   },
+  "/vyos/pim/config": {
+    "pim": {
+      "interface": {
+        "eth1": {
+          "mode": "sparse"
+        }
+      }
+    }
+  },
+  "/vyos/pim6/config": {
+    "pim6": {
+      "interface": {
+        "eth1": {
+          "mode": "sparse"
+        }
+      }
+    }
+  },
+  "/vyos/failover/config": {
+    "failover": {
+      "route": {
+        "0.0.0.0/0": {
+          "next-hop": "192.0.2.1"
+        }
+      }
+    }
+  },
+  "/vyos/static-protocol/config": {
+    "static": {
+      "route": {
+        "198.51.100.0/24": {
+          "next-hop": "192.0.2.1"
+        }
+      }
+    }
+  },
   "/vyos/segment-routing/config": {
     "segment_routing": {
       "isis": {
