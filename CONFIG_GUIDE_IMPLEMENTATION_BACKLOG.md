@@ -94,7 +94,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `PKI-03` (`verify`): Cross-page consumers (VPN/services) correctly consume PKI objects.
 
 ### Policy (`policy/*`)
-- `POL-01` (`partial`): Route-map action/match coverage parity sweep against guide options.
+- `POL-01` (`verify`): Route-map action/match coverage audited against current GUI implementation (broad match trees, BGP attributes, community/large-community action families, next-hop controls, and advanced flow controls) with form-driven CRUD; pending live verification.
 - `POL-02` (`verify`): Route-map rule edge-case validation hardened in add/edit flows (self-call guard, continue/goto/on-match exclusivity, and strict numeric-field validation before submit); pending live verification.
 - `POL-03` (`verify`): Policy object dependency checks and referential integrity hardening.
 

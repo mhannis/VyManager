@@ -256,8 +256,8 @@
     {
       "id": "POL-01",
       "domain": "policy",
-      "status": "partial",
-      "title": "Route-map match/set option parity"
+      "status": "verify",
+      "title": "Route-map action/match coverage audited as implemented in form workflows (broad match trees, BGP attributes, community/large-community action families, next-hop controls, and advanced flow controls); pending live verification"
     },
     {
       "id": "POL-02",
