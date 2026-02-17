@@ -18,6 +18,7 @@ import routers.isis.isis as isis_router
 import routers.lldp.lldp as lldp_service_router
 import routers.load_balancing.load_balancing as load_balancing_router
 import routers.mpls.mpls as mpls_router
+import routers.nat.nat as nat_router
 import routers.ntp.ntp as ntp_service_router
 import routers.ospf.ospf as ospf_router
 import routers.pki.pki as pki_router
@@ -72,6 +73,7 @@ VPN_ROUTER_MODULES = (
 
 DIRECT_ROUTER_MODULES = (
     dmvpn_router,
+    nat_router,
 )
 
 
@@ -102,6 +104,16 @@ class MutableDummyService:
             },
             "vrf": {},
             "load-balancing": {"wan": {}},
+            "nat": {
+                "cgnat": {
+                    "rule": {
+                        "10": {
+                            "source": {"pool": "INT-POOL"},
+                            "translation": {"pool": "EXT-POOL"},
+                        }
+                    }
+                }
+            },
             "high-availability": {"vrrp": {"group": {"WAN": {}}}},
             "traffic-policy": {"shaper": {"WAN-OUT": {}}},
             "pki": {
@@ -217,6 +229,8 @@ class MutableDummyService:
             self._config.setdefault("vrf", {})["__rev"] = str(self.revision)
         if tokens[:2] in (["set", "load-balancing"], ["delete", "load-balancing"]):
             self._config.setdefault("load-balancing", {})["__rev"] = str(self.revision)
+        if tokens[:2] in (["set", "nat"], ["delete", "nat"]):
+            self._config.setdefault("nat", {})["__rev"] = str(self.revision)
         if tokens[:2] in (["set", "high-availability"], ["delete", "high-availability"]):
             self._config.setdefault("high-availability", {})["__rev"] = str(self.revision)
         if tokens[:2] in (["set", "traffic-policy"], ["delete", "traffic-policy"]):
@@ -305,6 +319,7 @@ def app():
     app.include_router(vpn_sstp_router.router)
     app.include_router(vpn_rsa_keys_router.router)
     app.include_router(dmvpn_router.router)
+    app.include_router(nat_router.router)
     return app
 
 

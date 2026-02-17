@@ -453,6 +453,26 @@
         "delete load-balancing haproxy service https-in",
         "delete load-balancing haproxy global-parameters max-connections"
       ]
+    },
+    {
+      "id": "LOOP-34",
+      "name": "NAT CGNAT tree loop",
+      "config_endpoint": "/vyos/nat/tree-config",
+      "batch_endpoint": "/vyos/nat/tree-batch",
+      "response_key": "nat",
+      "set_operations": [
+        "set nat cgnat log-allocation",
+        "set nat cgnat pool internal INT-POOL range 100.64.0.0/24",
+        "set nat cgnat pool external EXT-POOL range 203.0.113.10/32 seq 10",
+        "set nat cgnat rule 10 source pool INT-POOL",
+        "set nat cgnat rule 10 translation pool EXT-POOL"
+      ],
+      "delete_operations": [
+        "delete nat cgnat rule 10",
+        "delete nat cgnat pool external EXT-POOL",
+        "delete nat cgnat pool internal INT-POOL",
+        "delete nat cgnat log-allocation"
+      ]
     }
   ]
 }
