@@ -71,15 +71,32 @@ function parsePrivateIpv4(cidrOrIp: string): boolean {
   return false;
 }
 
-function interfaceRoleMap(interfaces: EthernetInterface[]): Map<string, "WAN" | "LAN"> {
+function interfaceRoleMap(
+  interfaces: EthernetInterface[],
+  inferredWanInterfaceName: string | null = null
+): Map<string, "WAN" | "LAN"> {
   const roleMap = new Map<string, "WAN" | "LAN">();
   if (interfaces.length === 0) return roleMap;
 
   const sorted = [...interfaces].sort((left, right) => left.name.localeCompare(right.name));
+  const normalizedWanInterface = inferredWanInterfaceName?.trim() || null;
+  const dhcpCandidates = sorted.filter((iface) =>
+    iface.addresses.some((address) => address.trim().toLowerCase() === "dhcp")
+  );
+  const publicStaticCandidates = sorted.filter((iface) =>
+    iface.addresses.some((address) => {
+      const cleaned = address.trim();
+      return cleaned.length > 0 && cleaned.toLowerCase() !== "dhcp" && !parsePrivateIpv4(cleaned);
+    })
+  );
+
   const wan =
-    sorted.find((iface) => iface.addresses.includes("dhcp")) ??
-    sorted.find((iface) => iface.addresses.some((address) => !parsePrivateIpv4(address) && address !== "dhcp")) ??
-    sorted[0];
+    (normalizedWanInterface
+      ? sorted.find((iface) => iface.name === normalizedWanInterface)
+      : undefined) ??
+    (dhcpCandidates.length === 1 ? dhcpCandidates[0] : undefined) ??
+    (publicStaticCandidates.length === 1 ? publicStaticCandidates[0] : undefined);
+
   if (wan) {
     roleMap.set(wan.name, "WAN");
   }
@@ -225,13 +242,20 @@ export function InterfaceOverviewCard({
   const loadData = async () => {
     try {
       setError(null);
-      const [ethernetConfig, physicalResponse, runtimeResponse] = await Promise.all([
+      const [ethernetConfig, physicalResponse, runtimeResponse, gatewaySummary] = await Promise.all([
         ethernetService.getConfig(),
         showService.getInterfacePhysical().catch(() => ({ interfaces: [], total: 0 })),
         showService.getInterfaceRuntimeAddresses().catch(() => ({ interfaces: [], total: 0 })),
+        showService.getGatewaySummary().catch(() => null),
       ]);
 
-      const roleMap = interfaceRoleMap(ethernetConfig.interfaces);
+      const inferredWanInterface =
+        gatewaySummary?.ipv4_default?.interface ??
+        gatewaySummary?.interface?.name ??
+        gatewaySummary?.configured_ipv4_default?.dhcp_interfaces?.[0] ??
+        null;
+
+      const roleMap = interfaceRoleMap(ethernetConfig.interfaces, inferredWanInterface);
       const physicalByName = new Map<string, InterfacePhysical>();
       for (const detail of physicalResponse.interfaces) {
         physicalByName.set(detail.interface, detail);

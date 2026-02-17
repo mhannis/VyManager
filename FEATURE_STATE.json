@@ -389,6 +389,25 @@
         "frontend/src/components/system/DnsServiceTab.tsx"
       ],
       "notes": "DNS Resolver UX improvement: `listen-address` values can now be selected from detected interface runtime IPs (checkbox quick-pick), while keeping manual CSV input for advanced/manual entry."
+    },
+    {
+      "id": "T36",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/components/system/DnsServiceTab.tsx",
+        "frontend/src/components/dashboard/InterfaceOverviewCard.tsx"
+      ],
+      "notes": "Addressed operator-reported follow-ups: DNS quick-pick selection persistence/disabled-state issues fixed and Interface Overview WAN role no longer falls back to first interface (eth0)."
+    },
+    {
+      "id": "T37",
+      "owner_role": "UI",
+      "status": "done",
+      "files": [
+        "frontend/src/app/page.tsx"
+      ],
+      "notes": "Dashboard drag/drop fix: compaction now preserves selected target column, preventing dropped cards from snapping back."
     }
   ],
   "commands": {

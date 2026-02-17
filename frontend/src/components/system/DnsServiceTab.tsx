@@ -13,7 +13,9 @@ import {
   type DnsForwardingDomainOverride,
   type DnsHostOverride,
 } from "@/lib/api/system";
+import { ethernetService } from "@/lib/api/ethernet";
 import { showService } from "@/lib/api/show";
+import { formatInterfaceDisplayName } from "@/lib/utils";
 
 interface DnsServiceTabProps {
   canEdit: boolean;
@@ -25,6 +27,7 @@ interface DnsServiceTabProps {
 interface ResolverListenAddressOption {
   interfaceName: string;
   address: string;
+  interfaceLabel: string;
 }
 
 const EMPTY_DOMAIN_OVERRIDE: DnsForwardingDomainOverride = {
@@ -123,7 +126,8 @@ function normalizeIpAddressToken(value: string): string {
 }
 
 function buildResolverListenAddressOptions(
-  interfaces: Array<{ interface: string; ipv4_addresses: string[]; ipv6_addresses: string[] }>
+  interfaces: Array<{ interface: string; ipv4_addresses: string[]; ipv6_addresses: string[] }>,
+  interfaceDescriptions: Record<string, string | null>
 ): ResolverListenAddressOption[] {
   const seen = new Set<string>();
   const options: ResolverListenAddressOption[] = [];
@@ -131,6 +135,7 @@ function buildResolverListenAddressOptions(
   for (const entry of interfaces) {
     const interfaceName = entry.interface.trim();
     if (!interfaceName) continue;
+    const interfaceLabel = formatInterfaceDisplayName(interfaceName, interfaceDescriptions[interfaceName] ?? null);
 
     for (const rawAddress of [...entry.ipv4_addresses, ...entry.ipv6_addresses]) {
       const address = normalizeIpAddressToken(rawAddress);
@@ -139,7 +144,7 @@ function buildResolverListenAddressOptions(
       const dedupeKey = `${interfaceName}|${address}`;
       if (seen.has(dedupeKey)) continue;
       seen.add(dedupeKey);
-      options.push({ interfaceName, address });
+      options.push({ interfaceName, address, interfaceLabel });
     }
   }
 
@@ -180,9 +185,29 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
 
   const loadListenAddressOptions = async () => {
     setListenAddressOptionsError(null);
+
     try {
-      const runtime = await showService.getInterfaceRuntimeAddresses();
-      setListenAddressOptions(buildResolverListenAddressOptions(runtime.interfaces || []));
+      const [runtimeResult, ethernetResult] = await Promise.allSettled([
+        showService.getInterfaceRuntimeAddresses(),
+        ethernetService.getConfig(),
+      ]);
+
+      if (runtimeResult.status !== "fulfilled") {
+        throw runtimeResult.reason;
+      }
+
+      const interfaceDescriptions: Record<string, string | null> = {};
+      if (ethernetResult.status === "fulfilled") {
+        for (const iface of ethernetResult.value.interfaces || []) {
+          const name = iface.name?.trim();
+          if (!name) continue;
+          interfaceDescriptions[name] = iface.description ?? null;
+        }
+      }
+
+      setListenAddressOptions(
+        buildResolverListenAddressOptions(runtimeResult.value.interfaces || [], interfaceDescriptions)
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load interface addresses.";
       setListenAddressOptions([]);
@@ -426,13 +451,18 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
   const toggleListenAddressSelection = (address: string, checked: boolean) => {
     setConfig((previous) => {
       if (!previous) return previous;
-      const current = new Set(previous.listen_addresses.map((entry) => entry.trim()).filter(Boolean));
+      const current = new Set(
+        previous.listen_addresses
+          .map((entry) => normalizeIpAddressToken(entry))
+          .filter(Boolean)
+      );
+      const normalizedAddress = normalizeIpAddressToken(address);
       if (checked) {
-        current.add(address);
+        current.add(normalizedAddress);
       } else {
-        current.delete(address);
+        current.delete(normalizedAddress);
       }
-      return { ...previous, listen_addresses: Array.from(current) };
+      return { ...previous, listen_addresses: Array.from(current).sort((left, right) => left.localeCompare(right, undefined, { numeric: true })) };
     });
   };
 
@@ -556,7 +586,7 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
                       )
                     }
                     placeholder="192.168.1.1, 10.0.0.1"
-                    disabled={!canEdit || saving || !config.enabled}
+                    disabled={!canEdit || saving}
                   />
                   <div className="rounded-md border border-border/50 bg-muted/20 p-3 space-y-2">
                     <p className="text-xs font-medium text-muted-foreground">
@@ -573,7 +603,9 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
                     ) : (
                       <div className="grid gap-2 sm:grid-cols-2">
                         {listenAddressOptions.map((option) => {
-                          const checked = config.listen_addresses.includes(option.address);
+                          const checked = config.listen_addresses
+                            .map((entry) => normalizeIpAddressToken(entry))
+                            .includes(option.address);
                           return (
                             <label
                               key={`${option.interfaceName}-${option.address}`}
@@ -584,9 +616,9 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
                                 onCheckedChange={(value) =>
                                   toggleListenAddressSelection(option.address, value === true)
                                 }
-                                disabled={!canEdit || saving || !config.enabled}
+                                disabled={!canEdit || saving}
                               />
-                              <span className="font-medium">{option.interfaceName}</span>
+                              <span className="font-medium">{option.interfaceLabel}</span>
                               <span className="text-muted-foreground">{option.address}</span>
                             </label>
                           );

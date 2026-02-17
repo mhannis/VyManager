@@ -19,6 +19,9 @@ completed_in_cycle:
   - PKI-01/PKI-02: moved to `verify` after PKI config-scope audit against current guide command tree.
   - X-02/X-03 depth: fixture/snapshot coverage expanded for advanced conntrack leaves.
   - SVC-04 UX depth: DNS Resolver `Listen Addresses` now supports interface-backed selection from detected runtime interface IPs (checkbox list), while preserving manual CSV entry for advanced use cases.
+  - SVC-04 UX fix: DNS Resolver interface quick-pick now keeps selections reliably by normalizing addresses, loading ethernet descriptions for `Description (ethX)` labels, and allowing listen-address editing even when DNS service is disabled.
+  - Dashboard UX fix: card drag/drop now preserves the user-selected destination column during compaction, preventing cards from snapping back after drop.
+  - Dashboard Interface Overview fix: removed heuristic fallback that implicitly treated first interface (often `eth0`) as WAN; WAN badge is now inferred from gateway/default-route signals or unambiguous addressing heuristics only.
 validation:
   - cd frontend && npx eslint src/app/system/update-check/page.tsx src/app/page.tsx src/components/routing/FailoverContent.tsx scripts/smoke-ui.mjs
   - cd frontend && npx tsc --noEmit --pretty false
@@ -41,10 +44,15 @@ validation:
   - cd frontend && npm run -s build
   - cd frontend && npm run -s smoke:runtime
   - cd frontend && SMOKE_ROUTES=/system/services npm run -s smoke:ui
+  - cd frontend && npx eslint src/components/system/DnsServiceTab.tsx src/components/dashboard/InterfaceOverviewCard.tsx src/app/page.tsx
+  - cd frontend && npx tsc --noEmit --pretty false
+  - cd frontend && npm run -s build
+  - cd frontend && npm run -s smoke:runtime
+  - cd frontend && SMOKE_ROUTES=/,/system/services npm run -s smoke:ui
 known_limitations:
   - Full live-device verify for newly promoted `verify` items is still pending.
   - Browser smoke can false-fail with `ChunkLoadError` when runtime serves stale chunk manifests; restart frontend runtime after rebuild before running full route smoke.
-  - DNS listen-address quick-select currently uses runtime interface/address discovery; description metadata is not yet included in this selector.
+  - Dashboard drag/drop still needs explicit UI-level automation coverage for reorder persistence (manual runtime behavior fixed in this slice).
 next_queue:
   - Continue remaining `partial` backlog in guide order, prioritizing firewall + interfaces + NAT + VPN depth.
   - Keep converting partial items to verify only when command-tree coverage and form workflows are demonstrably complete.

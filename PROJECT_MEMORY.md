@@ -614,3 +614,31 @@ Assumptions:
 ### Next Queue
 - Continue remaining partial backlog in guide order.
 - Revisit DNS selector metadata so interface descriptions are shown alongside interface names where available.
+
+## Cycle Update (2026-02-17 dns + dashboard interaction fixes)
+
+### Objective Update
+- Resolve operator-reported regressions: DNS resolver interface selection failing, Interface Overview hardcoding `eth0` as WAN, and dashboard card drag/drop snapping back after drop.
+
+### Completed This Cycle
+- `frontend/src/components/system/DnsServiceTab.tsx`
+  - Added ethernet description enrichment for listen-address quick-pick labels (`Description (ethX)`).
+  - Normalized quick-pick address tokens for stable selection state (`IP/prefix` and `IP` compare consistently).
+  - Removed `enabled`-state lock on listen-address selectors/field so interface picks are possible before enabling DNS service.
+- `frontend/src/components/dashboard/InterfaceOverviewCard.tsx`
+  - WAN role inference now uses gateway/default-route signals first.
+  - Removed implicit fallback that marked first sorted interface as WAN.
+  - WAN/LAN role badges now only appear when inference is explicit/unambiguous.
+- `frontend/src/app/page.tsx`
+  - Dashboard compaction now preserves selected drop column; cards no longer jump back to previous columns after drag-drop.
+
+### Validation Run This Cycle
+- `cd frontend && npx eslint src/components/system/DnsServiceTab.tsx src/components/dashboard/InterfaceOverviewCard.tsx src/app/page.tsx`
+- `cd frontend && npx tsc --noEmit --pretty false`
+- `cd frontend && npm run -s build`
+- `cd frontend && npm run -s smoke:runtime`
+- `cd frontend && SMOKE_ROUTES=/,/system/services npm run -s smoke:ui`
+
+### Runtime Notes
+- Runtime reset command using broad `pkill` patterns exited unexpectedly (code `-1`) in one attempt; switched to safer, granular process/session control.
+- `vm-ui` was recreated cleanly after build and smoke gates passed on the new runtime.

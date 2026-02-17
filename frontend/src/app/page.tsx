@@ -107,15 +107,8 @@ function getCardSpan(card: DashboardCard, columns: number): number {
 function buildStartColumnOrder(preferredColumn: number, span: number, columns: number): number[] {
   const maxStartColumn = columns - span;
   const clampedPreferred = Math.max(0, Math.min(preferredColumn, maxStartColumn));
-  const ordered = [clampedPreferred];
-
-  for (let column = 0; column <= maxStartColumn; column++) {
-    if (column !== clampedPreferred) {
-      ordered.push(column);
-    }
-  }
-
-  return ordered;
+  // Preserve the caller-selected column. We compact vertically, not across columns.
+  return [clampedPreferred];
 }
 
 function canPlaceAt(
