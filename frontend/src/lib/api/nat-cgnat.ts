@@ -1,4 +1,4 @@
-import { ConfigTreeApi } from "./config-tree";
+import { apiClient } from "./client";
 
 export interface CgnatPoolRange {
   range: string;
@@ -52,10 +52,12 @@ function extractTags(value: unknown): string[] {
 }
 
 class NatCgnatService {
-  private readonly api = new ConfigTreeApi("nat", "nat");
-
   async getRawConfig(refresh = false): Promise<Record<string, unknown>> {
-    return this.api.getConfig<Record<string, unknown>>(refresh);
+    const payload = await apiClient.get<Record<string, unknown>>("/vyos/nat/tree-config", {
+      refresh: refresh.toString(),
+    });
+    const value = payload?.nat;
+    return (value && typeof value === "object" ? (value as Record<string, unknown>) : {});
   }
 
   async getConfig(refresh = false): Promise<CgnatConfig> {
@@ -113,7 +115,10 @@ class NatCgnatService {
   }
 
   async configure(operations: string[]) {
-    return this.api.configure(operations);
+    return apiClient.post<{ success: boolean; data?: unknown; error?: string | null }>(
+      "/vyos/nat/tree-batch",
+      { operations }
+    );
   }
 }
 

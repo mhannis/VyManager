@@ -153,6 +153,11 @@ class NATConfigResponse(BaseModel):
     by_type: Dict[str, int] = {}
 
 
+class NATTreeBatchRequest(BaseModel):
+    """Model for raw NAT tree batch operations."""
+    operations: List[str] = Field(..., description="List of set/delete commands")
+
+
 @router.get("/capabilities")
 async def get_nat_capabilities(request: Request):
     """
@@ -377,6 +382,55 @@ async def get_nat_config(http_request: Request, refresh: bool = False):
             by_type=by_type
         )
 
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Device not found in registry")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/tree-config")
+async def get_nat_tree_config(http_request: Request, refresh: bool = False):
+    """
+    Get the raw NAT configuration tree.
+
+    This endpoint is used by form-driven workflows that operate on subtrees such
+    as CGNAT and need direct access to `nat` command-tree nodes.
+    """
+    await require_read_permission(http_request, FeatureGroup.NAT)
+
+    try:
+        service = get_session_vyos_service(http_request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        nat_config = full_config.get("nat", {}) if isinstance(full_config, dict) else {}
+        return {"nat": nat_config}
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Device not found in registry")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/tree-batch", response_model=VyOSResponse)
+async def apply_nat_tree_batch(http_request: Request, request: NATTreeBatchRequest):
+    """
+    Apply raw NAT tree set/delete operations.
+
+    This endpoint complements `/config` for advanced NAT subtrees that are
+    represented by generic form workflows.
+    """
+    await require_write_permission(http_request, FeatureGroup.NAT)
+
+    operations = [op.strip() for op in request.operations if isinstance(op, str) and op.strip()]
+    if not operations:
+        raise HTTPException(status_code=400, detail="No operations provided")
+
+    try:
+        service = get_session_vyos_service(http_request)
+        result = await run_in_threadpool(service.configure_batch, operations)
+        return VyOSResponse(
+            success=result.get("success", False),
+            data=result.get("data"),
+            error=result.get("error"),
+        )
     except KeyError:
         raise HTTPException(status_code=404, detail="Device not found in registry")
     except Exception as e:
