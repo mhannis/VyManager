@@ -109,8 +109,7 @@ type ServiceTab =
   | "conntrack-sync"
   | "dhcp-server"
   | "dhcp-relay"
-  | "dns-forwarder"
-  | "dns-resolver"
+  | "dns"
   | "dynamic-dns"
   | "event-handler"
   | "https-api"
@@ -135,8 +134,7 @@ const SERVICE_TAB_VALUES: ServiceTab[] = [
   "conntrack-sync",
   "dhcp-server",
   "dhcp-relay",
-  "dns-forwarder",
-  "dns-resolver",
+  "dns",
   "dynamic-dns",
   "event-handler",
   "https-api",
@@ -176,8 +174,7 @@ const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
   monitoring: "Monitoring",
   "pppoe-server": "PPPoE Server",
   webproxy: "Webproxy",
-  "dns-forwarder": "DNS Forwarder",
-  "dns-resolver": "DNS Resolver",
+  dns: "DNS",
   "dynamic-dns": "Dynamic DNS",
   "dhcp-relay": "DHCP Relay",
   "router-advert": "Router Advert",
@@ -186,8 +183,8 @@ const SERVICE_TAB_LABELS: Record<ServiceTab, string> = {
 function normalizeServiceTab(raw: string | null): ServiceTab | null {
   if (!raw) return null;
   const normalized =
-    raw === "dns"
-      ? "dns-forwarder"
+    raw === "dns-forwarder" || raw === "dns-resolver"
+      ? "dns"
       : raw === "mdns-repeater"
         ? "mdns"
         : raw;
@@ -865,8 +862,7 @@ function SystemServicesPageContent() {
               <TabsTrigger value="conntrack-sync">Conntrack Sync</TabsTrigger>
               <TabsTrigger value="dhcp-server">DHCP Server</TabsTrigger>
               <TabsTrigger value="dhcp-relay">DHCP Relay</TabsTrigger>
-              <TabsTrigger value="dns-forwarder">DNS Forwarder</TabsTrigger>
-              <TabsTrigger value="dns-resolver">DNS Resolver</TabsTrigger>
+              <TabsTrigger value="dns">DNS</TabsTrigger>
               <TabsTrigger value="dynamic-dns">Dynamic DNS</TabsTrigger>
               <TabsTrigger value="event-handler">Event Handler</TabsTrigger>
               <TabsTrigger value="https-api">HTTP API</TabsTrigger>
@@ -1703,20 +1699,11 @@ function SystemServicesPageContent() {
             <SshServiceTab canEdit={canEditSystem} active={activeTab === "ssh"} refreshNonce={serviceRefreshNonce} />
           </TabsContent>
 
-          <TabsContent value="dns-forwarder" className="space-y-6">
+          <TabsContent value="dns" className="space-y-6">
             <DnsServiceTab
               canEdit={canEditSystem}
-              active={activeTab === "dns-forwarder"}
+              active={activeTab === "dns"}
               refreshNonce={serviceRefreshNonce}
-            />
-          </TabsContent>
-
-          <TabsContent value="dns-resolver" className="space-y-6">
-            <DnsServiceTab
-              canEdit={canEditSystem}
-              active={activeTab === "dns-resolver"}
-              refreshNonce={serviceRefreshNonce}
-              mode="resolver"
             />
           </TabsContent>
 

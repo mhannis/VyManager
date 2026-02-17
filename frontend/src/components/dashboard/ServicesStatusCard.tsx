@@ -175,21 +175,21 @@ export function ServicesStatusCard({ onRemove, span = 1, onSpanChange }: Service
         const resolverCount = dnsResult.value.name_servers?.length ?? 0;
         nextRows.push({
           key: "dns",
-          name: "DNS Forwarder",
+          name: "DNS",
           state: dnsResult.value.enabled ? "enabled" : "disabled",
           detail: dnsResult.value.enabled
             ? `${resolverCount} upstream resolver${resolverCount === 1 ? "" : "s"}`
             : "Service disabled",
-          href: "/system/services?tab=dns-forwarder&view=single",
+          href: "/system/services?tab=dns&view=single",
         });
       } else {
         failedCalls += 1;
         nextRows.push({
           key: "dns",
-          name: "DNS Forwarder",
+          name: "DNS",
           state: "unknown",
           detail: "Status unavailable",
-          href: "/system/services?tab=dns-forwarder&view=single",
+          href: "/system/services?tab=dns&view=single",
         });
       }
 

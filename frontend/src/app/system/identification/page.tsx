@@ -159,10 +159,10 @@ export default function SystemIdentificationPage() {
             <p className="text-xs text-muted-foreground">
               DNS server management lives under{" "}
               <Link
-                href="/system/services?tab=dns-resolver&view=single"
+                href="/system/services?tab=dns&view=single"
                 className="text-primary hover:text-primary/80"
               >
-                Services - DNS Resolver
+                Services - DNS
               </Link>
               .
             </p>

@@ -21,7 +21,6 @@ interface DnsServiceTabProps {
   canEdit: boolean;
   active: boolean;
   refreshNonce: number;
-  mode?: "forwarder" | "resolver";
 }
 
 interface ResolverListenAddressOption {
@@ -121,6 +120,18 @@ function isValidDnsServerToken(value: string): boolean {
   return isValidIpAddress(candidate) || isValidHostnameLike(candidate);
 }
 
+function isPrivateIPv4Address(value: string): boolean {
+  const candidate = value.trim();
+  const parts = candidate.split(".").map((part) => Number.parseInt(part, 10));
+  if (parts.length !== 4 || parts.some((part) => Number.isNaN(part) || part < 0 || part > 255)) {
+    return false;
+  }
+  if (parts[0] === 10) return true;
+  if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+  if (parts[0] === 192 && parts[1] === 168) return true;
+  return false;
+}
+
 function normalizeIpAddressToken(value: string): string {
   return value.trim().split("/")[0].trim();
 }
@@ -156,7 +167,40 @@ function buildResolverListenAddressOptions(
   });
 }
 
-export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder" }: DnsServiceTabProps) {
+function suggestListenAddresses(
+  options: ResolverListenAddressOption[],
+  inferredWanInterfaceName: string | null
+): string[] {
+  if (options.length === 0) return [];
+
+  const normalizedWan = inferredWanInterfaceName?.trim() || null;
+  let candidates = normalizedWan
+    ? options.filter((option) => option.interfaceName !== normalizedWan)
+    : [...options];
+
+  if (candidates.length === 0) {
+    candidates = [...options];
+  }
+
+  const privateIpv4Candidates = candidates.filter(
+    (option) => isValidIPv4(option.address) && isPrivateIPv4Address(option.address)
+  );
+  if (privateIpv4Candidates.length > 0) {
+    candidates = privateIpv4Candidates;
+  }
+
+  const seen = new Set<string>();
+  const suggested: string[] = [];
+  for (const option of candidates) {
+    const address = normalizeIpAddressToken(option.address);
+    if (!address || seen.has(address)) continue;
+    seen.add(address);
+    suggested.push(address);
+  }
+  return suggested;
+}
+
+export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabProps) {
   const [config, setConfig] = useState<DnsConfig | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -164,7 +208,7 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
   const [success, setSuccess] = useState<string | null>(null);
   const [listenAddressOptions, setListenAddressOptions] = useState<ResolverListenAddressOption[]>([]);
   const [listenAddressOptionsError, setListenAddressOptionsError] = useState<string | null>(null);
-  const resolverMode = mode === "resolver";
+  const [inferredWanInterfaceName, setInferredWanInterfaceName] = useState<string | null>(null);
 
   const loadConfig = async (refresh: boolean) => {
     setLoading(true);
@@ -187,9 +231,10 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
     setListenAddressOptionsError(null);
 
     try {
-      const [runtimeResult, ethernetResult] = await Promise.allSettled([
+      const [runtimeResult, ethernetResult, gatewayResult] = await Promise.allSettled([
         showService.getInterfaceRuntimeAddresses(),
         ethernetService.getConfig(),
+        showService.getGatewaySummary(),
       ]);
 
       if (runtimeResult.status !== "fulfilled") {
@@ -205,6 +250,17 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
         }
       }
 
+      if (gatewayResult.status === "fulfilled") {
+        const wanCandidate =
+          gatewayResult.value.ipv4_default?.interface ??
+          gatewayResult.value.interface?.name ??
+          gatewayResult.value.configured_ipv4_default?.dhcp_interfaces?.[0] ??
+          null;
+        setInferredWanInterfaceName(wanCandidate ? wanCandidate.trim() : null);
+      } else {
+        setInferredWanInterfaceName(null);
+      }
+
       setListenAddressOptions(
         buildResolverListenAddressOptions(runtimeResult.value.interfaces || [], interfaceDescriptions)
       );
@@ -212,6 +268,7 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
       const message = err instanceof Error ? err.message : "Failed to load interface addresses.";
       setListenAddressOptions([]);
       setListenAddressOptionsError(message);
+      setInferredWanInterfaceName(null);
     }
   };
 
@@ -466,20 +523,54 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
     });
   };
 
+  const populateSuggestedDefaults = () => {
+    if (!config) return;
+
+    const suggestedListen = suggestListenAddresses(listenAddressOptions, inferredWanInterfaceName);
+    const normalizedSystemNameServers = fromCsv(toCsv(config.system_name_servers ?? []));
+    const normalizedSystemSearch = fromCsv(toCsv(config.system_domain_search ?? []));
+
+    const nextListenAddresses =
+      config.listen_addresses.length > 0 ? fromCsv(toCsv(config.listen_addresses)) : suggestedListen;
+    const nextAllowFrom =
+      config.allow_from.length > 0 ? fromCsv(toCsv(config.allow_from)) : ["0.0.0.0/0", "::/0"];
+    const nextLocalDomain =
+      config.local_domain_name?.trim() ||
+      (normalizedSystemSearch.length > 0 ? normalizedSystemSearch[0] : null);
+    const nextAuthoritativeDomains =
+      config.authoritative_domains.length > 0
+        ? fromCsv(toCsv(config.authoritative_domains))
+        : nextLocalDomain && isValidHostnameLike(nextLocalDomain)
+          ? [nextLocalDomain]
+          : [];
+
+    setConfig((previous) => {
+      if (!previous) return previous;
+      return {
+        ...previous,
+        enabled: true,
+        listen_addresses: nextListenAddresses,
+        allow_from: nextAllowFrom,
+        local_domain_name: nextLocalDomain,
+        authoritative_domains: nextAuthoritativeDomains,
+        use_system_name_servers:
+          previous.use_system_name_servers || (previous.name_servers.length === 0 && normalizedSystemNameServers.length > 0),
+      };
+    });
+    setError(null);
+    setSuccess("Suggested DNS defaults populated from detected interfaces. Review and save.");
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5 text-primary" />
-            {resolverMode
-              ? "DNS Resolver (VyOS DNS Service)"
-              : "DNS Forwarding + Local Authoritative Entries"}
+            DNS Service (Forwarder + Resolver)
           </CardTitle>
           <CardDescription>
-            {resolverMode
-              ? "VyOS resolver behavior is configured through the same DNS service. Use this page to configure recursive forwarding, local domain, and authoritative host/domain overrides."
-              : "Configure DNS forwarding, domain overrides, and host overrides for local name resolution."}
+            Configure DNS forwarding/resolver behavior, local domain settings, and authoritative host/domain overrides from one page.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -815,10 +906,19 @@ export function DnsServiceTab({ canEdit, active, refreshNonce, mode = "forwarder
                 </div>
               )}
 
-              <Button onClick={handleSave} disabled={!canEdit || saving || loading}>
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? "Saving..." : "Save DNS Settings"}
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={populateSuggestedDefaults}
+                  disabled={!canEdit || saving || loading}
+                >
+                  Populate Suggested Defaults
+                </Button>
+                <Button onClick={handleSave} disabled={!canEdit || saving || loading}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {saving ? "Saving..." : "Save DNS Settings"}
+                </Button>
+              </div>
             </>
           )}
         </CardContent>
