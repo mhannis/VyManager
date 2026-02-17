@@ -340,8 +340,8 @@
     {
       "id": "TP-01",
       "domain": "traffic-policy",
-      "status": "partial",
-      "title": "Remaining traffic policy leaves"
+      "status": "verify",
+      "title": "Traffic-policy/QoS editor audited with full policy-family coverage (`cake`, `drop-tail`, `fair-queue`, `fq-codel`, `limiter`, `network-emulator`, `priority-queue`, `random-detect`, `rate-control`, `round-robin`, `shaper`) including class/default queue controls and interface bindings; pending live verification"
     },
     {
       "id": "TP-02",

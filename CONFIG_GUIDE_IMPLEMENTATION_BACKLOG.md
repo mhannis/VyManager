@@ -114,7 +114,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `SVC-05` (`verify`): Existing service tabs (SSH/NTP/LLDP/mDNS/SNMP/etc.) are consolidated with form validation and wrapper-backed CRUD; pending live verification depth.
 
 ### Traffic Policy (`trafficpolicy/index.html`)
-- `TP-01` (`partial`): Complete remaining policy-type leaves and class defaults not yet modeled.
+- `TP-01` (`verify`): Traffic-policy/QoS editor audited with full policy-family coverage (`cake`, `drop-tail`, `fair-queue`, `fq-codel`, `limiter`, `network-emulator`, `priority-queue`, `random-detect`, `rate-control`, `round-robin`, `shaper`) including class/default queue controls and interface bindings; pending live verification.
 - `TP-02` (`verify`): Assignment incompatibility handling added for QoS bindings (IFB ingress guard, limiter-as-egress guard, and existing ingress/egress policy existence checks); pending live verification.
 - `TP-03` (`verify`): Throughput/latency fixture verification on representative links.
 
