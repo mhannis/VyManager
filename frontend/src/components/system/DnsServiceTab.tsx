@@ -209,7 +209,6 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
   const [listenAddressOptions, setListenAddressOptions] = useState<ResolverListenAddressOption[]>([]);
   const [listenAddressOptionsError, setListenAddressOptionsError] = useState<string | null>(null);
   const [inferredWanInterfaceName, setInferredWanInterfaceName] = useState<string | null>(null);
-  const [inferredGatewayDnsServer, setInferredGatewayDnsServer] = useState<string | null>(null);
 
   const loadConfig = async (refresh: boolean) => {
     setLoading(true);
@@ -258,13 +257,8 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
           gatewayResult.value.configured_ipv4_default?.dhcp_interfaces?.[0] ??
           null;
         setInferredWanInterfaceName(wanCandidate ? wanCandidate.trim() : null);
-        const gatewayDnsCandidate = gatewayResult.value.ipv4_default?.next_hop?.trim() ?? null;
-        setInferredGatewayDnsServer(
-          gatewayDnsCandidate && isValidIPv4(gatewayDnsCandidate) ? gatewayDnsCandidate : null
-        );
       } else {
         setInferredWanInterfaceName(null);
-        setInferredGatewayDnsServer(null);
       }
 
       setListenAddressOptions(
@@ -275,7 +269,6 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
       setListenAddressOptions([]);
       setListenAddressOptionsError(message);
       setInferredWanInterfaceName(null);
-      setInferredGatewayDnsServer(null);
     }
   };
 
@@ -374,6 +367,17 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
         setSuccess(null);
         return;
       }
+    }
+
+    if (
+      config.enabled &&
+      normalizedNameServers.length === 0 &&
+      !config.use_system_name_servers &&
+      normalizedSystemNameServers.length === 0
+    ) {
+      setError("Configure at least one DNS name server or enable 'Use System Name Servers'.");
+      setSuccess(null);
+      return;
     }
 
     for (const domain of normalizedSystemDomainSearch) {
@@ -541,12 +545,7 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
       config.listen_addresses.length > 0 ? fromCsv(toCsv(config.listen_addresses)) : suggestedListen;
     const nextAllowFrom =
       config.allow_from.length > 0 ? fromCsv(toCsv(config.allow_from)) : ["0.0.0.0/0"];
-    const nextNameServers =
-      config.name_servers.length > 0
-        ? fromCsv(toCsv(config.name_servers))
-        : normalizedSystemNameServers.length === 0 && inferredGatewayDnsServer
-          ? [inferredGatewayDnsServer]
-          : [];
+    const nextNameServers = config.name_servers.length > 0 ? fromCsv(toCsv(config.name_servers)) : [];
     const nextLocalDomain =
       config.local_domain_name?.trim() ||
       (normalizedSystemSearch.length > 0 ? normalizedSystemSearch[0] : null);
@@ -573,6 +572,12 @@ export function DnsServiceTab({ canEdit, active, refreshNonce }: DnsServiceTabPr
       };
     });
     setError(null);
+    if (nextNameServers.length === 0 && normalizedSystemNameServers.length === 0) {
+      setSuccess(
+        "Suggested DNS defaults populated. Add at least one DNS name server or enable 'Use System Name Servers' before saving."
+      );
+      return;
+    }
     setSuccess("Suggested DNS defaults populated from detected interfaces. Review and save.");
   };
 
