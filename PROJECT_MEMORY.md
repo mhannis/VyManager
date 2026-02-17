@@ -1,6 +1,6 @@
 # PROJECT_MEMORY.md
 
-Last updated: 2026-02-17
+Last updated: 2026-02-17 (branch hygiene + kickoff refresh)
 Repo: https://github.com/mhannis/VyManager/tree/dev
 
 ## Repo Facts
@@ -36,6 +36,17 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Backend: `8000`
 - Postgres: `5432`
 
+### Next Build Kickoff (canonical)
+- Canonical working branch: `dev`
+- Legacy branch cleanup target: `feature/containers-automation-v1` (currently same tip as `dev`; deletion command is blocked in this execution environment and must be run from an unrestricted shell)
+- Start services:
+  - API: `cd backend && .venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --proxy-headers`
+  - UI (prod mode): `cd frontend && npm run -s build && npm run -s start -- --hostname 0.0.0.0 --port 3000`
+- Fast health checks:
+  - `curl -fsS http://127.0.0.1:8000/docs >/dev/null`
+  - `curl -fsS http://127.0.0.1:3000 >/dev/null`
+  - `cd frontend && npm run -s smoke:runtime`
+
 ## Architecture Notes
 - Frontend app routes: `frontend/src/app/*`
 - Frontend API proxy: `frontend/src/app/api/vyos/[...path]/route.ts`
@@ -55,26 +66,25 @@ Repo: https://github.com/mhannis/VyManager/tree/dev
 - Protocol execution policy from Mark: complete 3-5 protocol items per run before reporting.
 
 ## Current Objective
-- Continue guide-order backlog execution while closing system update visibility gaps in UI/dashboard.
-- Keep changes additive to existing wrappers/services while improving runtime observability of update state.
+- Keep repo memory/docs accurate so future work resumes directly from `dev` without branch ambiguity.
+- Preserve parity-complete baseline and continue new feature work in small, validated increments.
 - Maintain deterministic gates on each slice (`pytest` + `tsc` + targeted `eslint` + `build` + runtime/browser smoke).
 
 ## Current Feature Spec
-Feature: **System update runtime visibility + dashboard indicator (`SYS-17` slice)**.
+Feature: **None active (ready for next build request on `dev`)**.
 
 Acceptance criteria:
-- `System -> Update Check` displays runtime update probe result (up-to-date vs update available) with raw command output and warnings.
-- Backend exposes structured update status endpoint using best-effort `show/generate system updates` probes and graceful fallbacks.
-- `Dashboard -> System Information` shows update state and links to `/system/update-check` when an update is available.
-- Validation gates pass (`pytest` targeted suite, `tsc`, targeted `eslint`, `build`, `smoke:runtime`, `smoke:ui`).
+- Internal memory files identify current repo state, canonical branch, and startup commands.
+- Feature branch cleanup is reflected in docs and git branch state.
+- Next session can resume with no chat context loss.
 
 Assumptions:
-- Update status command output varies across VyOS versions/images; parser remains best-effort and returns warnings when probes fail/are unsupported.
-- This slice adds visibility and does not perform image installs or upgrades.
+- Dirty working tree entries outside doc updates are intentional and must be preserved.
+- Future implementation work continues directly on `dev` unless explicitly requested otherwise.
 
 ## Work In Progress
-- Branch: `feature/containers-automation-v1`
-- Status: update-check runtime visibility implemented and validated; backlog continues with HA depth and remaining option parity.
+- Branch: `dev`
+- Status: documentation and branch hygiene refresh complete; awaiting next feature implementation request.
 - Runtime smoke process still requires `vm-ui` restart after `next build` to avoid stale chunk manifest failures.
 - Working tree remains dirty with unrelated pre-existing files outside this slice (`CONFIG_COVERAGE_PHASE1.*`, existing untracked artifacts).
 
@@ -770,3 +780,11 @@ Assumptions:
 
 ### Current Objective
 - Backlog verification is complete. Next phase is operator-driven UAT and issue triage from live environment feedback.
+
+## Cycle Update (2026-02-17 branch + docs maintenance)
+- Canonical continuation branch switched to `dev` for all future work.
+- Confirmed `feature/containers-automation-v1` matches `dev` tip; branch-retirement commands are blocked in this environment and remain a manual follow-up.
+- Reset durable kickoff state:
+  - `CURRENT_FEATURE.md` set to `status: none`
+  - `FEATURE_STATE.json` slimmed to no-active-feature state with `dev` as active worktree
+  - `PROJECT_MEMORY.md` now includes explicit "Next Build Kickoff" commands/checks.

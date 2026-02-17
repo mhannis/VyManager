@@ -2,6 +2,8 @@
 
 ## Decision Log
 
+- 2026-02-17: Standardized branch flow on `dev` for upcoming work; branch-retirement commands for `feature/containers-automation-v1` were attempted but blocked by local execution policy, so removal must be done in an unrestricted shell. Both branches currently point to the same tip (`baff928`).
+- 2026-02-17: Reset durable memory state to kickoff-ready (`CURRENT_FEATURE.md` status `none`, slim `FEATURE_STATE.json`, refreshed `PROJECT_MEMORY.md` kickoff section) so future sessions can resume from repo files without prior chat context.
 - 2026-02-16: Prioritized a WireGuard peer safety slice within `IF-15` to prevent invalid but common tunnel misconfigurations (duplicate allowed-ips, conflicting endpoint fields) using additive validation in existing peer batch endpoints and modals.
 - 2026-02-16: Implemented backend peer-batch preflight validation in `backend/routers/wireguard/wireguard.py` rather than adding a new API endpoint, so existing `/vyos/vpn/wireguard/peer/batch` contracts remain stable while safety improves.
 - 2026-02-16: Enforced matching frontend validation in Create/Edit peer modals to keep operator feedback immediate and reduce backend round-trip failures.

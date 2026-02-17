@@ -1,15 +1,7 @@
-timestamp: 2026-02-17T19:58:00-05:00
-failing command: cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_static_routes_save_apply_reload_loop.py tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py
-error summary: New ARP loop assertion failed because the static-routes test service parsed ARP path tokens incorrectly and never applied the ARP set operation to mock config state.
-last output:
-________________ test_static_routes_arp_save_apply_reload_loop _________________
-...
-mid = client.get("/vyos/static-routes/config", params={"refresh": "true"})
-assert mid.status_code == 200
-arp_entry = _find_arp_entry(mid.json(), interface, ip_address)
->       assert arp_entry is not None
-E       assert None is not None
-...
-FAILED tests/test_static_routes_save_apply_reload_loop.py::test_static_routes_arp_save_apply_reload_loop
-1 failed, 124 passed, 1 warning in 6.70s
-suspected cause + next step: Fix ARP path index handling (`address <ip> mac <addr>`) in test service execute_batch parser and rerun full protocol regression suite.
+timestamp: 2026-02-17T20:45:47Z
+failing_command: jq . FEATURE_STATE.json >/dev/null
+error_summary: JSON validation attempt failed because `jq` is not installed in this environment. No repo state was modified by the failure.
+last_output:
+/bin/bash: line 1: jq: command not found
+suspected_cause: Missing optional CLI dependency (`jq`).
+next_step: Validate JSON with `python3 -m json.tool FEATURE_STATE.json >/dev/null` or install jq.

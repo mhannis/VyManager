@@ -156,7 +156,7 @@ Two tiers:
 - Avoid “magic” parsing: when reading VyOS `show` output, return structured data plus `warnings[]` and keep endpoint best-effort.
 - Do not merge/finalize without tests and review.
 - Do not rewrite history (no `git reset --hard`) unless explicitly instructed.
-- All work happens on a feature branch; never commit directly to main.
+- Canonical long-lived integration branch is `dev`; use `dev` by default unless a dedicated feature branch is explicitly requested.
 - Prefer worktrees for parallel work; each HEAVY task must run in its own worktree or sequentially.
 - When running commands on the host, record OS and toolchain versions (node/python/go as applicable) and command outcomes in `PROJECT_MEMORY.md` under “Work In Progress”.
 
@@ -179,5 +179,4 @@ B) A BLOCKING QUESTION exists that cannot be resolved by (1) the docs tree or (2
 If neither A nor B is true, you MUST continue.
 
 Phase completion is only a milestone and must automatically transition into the next phase.
-
 
