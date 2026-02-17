@@ -40,10 +40,40 @@ type WanHealthEntry = {
   successCount: string;
 };
 
+type WanHealthTestEntry = {
+  interface: string;
+  testId: string;
+  type: string;
+  target: string;
+  respTime: string;
+  ttlLimit: string;
+  testScript: string;
+};
+
+type WanGlobalSettings = {
+  disableSourceNat: boolean;
+  flushConnections: boolean;
+  stickyConnectionsInbound: boolean;
+  hookScriptName: string;
+};
+
 type WanRuleEntry = {
   ruleId: string;
   inboundInterface: string;
   outboundInterfaces: string[];
+  outboundWeights: Record<string, string>;
+  sourceAddress: string;
+  sourcePort: string;
+  destinationAddress: string;
+  destinationPort: string;
+  protocol: string;
+  exclude: boolean;
+  failover: boolean;
+  perPacketBalancing: boolean;
+  limitRate: string;
+  limitBurst: string;
+  limitThreshold: string;
+  limitPeriod: string;
 };
 
 type HaproxyFrontendEntry = {
@@ -66,10 +96,40 @@ const EMPTY_HEALTH_DRAFT: WanHealthEntry = {
   successCount: "",
 };
 
+const EMPTY_HEALTH_TEST_DRAFT: WanHealthTestEntry = {
+  interface: "",
+  testId: "",
+  type: "",
+  target: "",
+  respTime: "",
+  ttlLimit: "",
+  testScript: "",
+};
+
+const EMPTY_WAN_GLOBAL_DRAFT: WanGlobalSettings = {
+  disableSourceNat: false,
+  flushConnections: false,
+  stickyConnectionsInbound: false,
+  hookScriptName: "",
+};
+
 const EMPTY_RULE_DRAFT: WanRuleEntry = {
   ruleId: "",
   inboundInterface: "",
   outboundInterfaces: [],
+  outboundWeights: {},
+  sourceAddress: "",
+  sourcePort: "",
+  destinationAddress: "",
+  destinationPort: "",
+  protocol: "",
+  exclude: false,
+  failover: false,
+  perPacketBalancing: false,
+  limitRate: "",
+  limitBurst: "",
+  limitThreshold: "",
+  limitPeriod: "",
 };
 
 const EMPTY_FRONTEND_DRAFT: HaproxyFrontendEntry = {
@@ -107,6 +167,38 @@ function parseCsvList(value: string): string[] {
 
 function serializeCsvList(values: string[]): string {
   return uniqueList(values).join(", ");
+}
+
+function parseOutboundWeightList(value: string): Record<string, string> {
+  const output: Record<string, string> = {};
+  const chunks = value
+    .split(",")
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+
+  for (const chunk of chunks) {
+    const [rawName, rawWeight] = chunk.split("=");
+    const name = normalizeText(rawName || "");
+    const weight = normalizeText(rawWeight || "");
+    if (!name || !weight) continue;
+    output[name] = weight;
+  }
+
+  return output;
+}
+
+function serializeOutboundWeightList(weights: Record<string, string>): string {
+  return Object.entries(weights)
+    .filter(([, weight]) => normalizeText(weight))
+    .map(([name, weight]) => `${name}=${weight}`)
+    .join(", ");
+}
+
+function weightMapEquals(left: Record<string, string>, right: Record<string, string>): boolean {
+  const leftNames = Object.keys(left).sort();
+  const rightNames = Object.keys(right).sort();
+  if (!arrayEquals(leftNames, rightNames)) return false;
+  return leftNames.every((name) => left[name] === right[name]);
 }
 
 function parseServerListInput(
@@ -172,19 +264,25 @@ export default function LoadBalancingPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  const [wanGlobal, setWanGlobal] = useState<WanGlobalSettings>(EMPTY_WAN_GLOBAL_DRAFT);
   const [wanHealth, setWanHealth] = useState<WanHealthEntry[]>([]);
+  const [wanHealthTests, setWanHealthTests] = useState<WanHealthTestEntry[]>([]);
   const [wanRules, setWanRules] = useState<WanRuleEntry[]>([]);
   const [frontends, setFrontends] = useState<HaproxyFrontendEntry[]>([]);
   const [backends, setBackends] = useState<HaproxyBackendEntry[]>([]);
 
+  const [currentWanGlobal, setCurrentWanGlobal] = useState<WanGlobalSettings>(EMPTY_WAN_GLOBAL_DRAFT);
   const [currentWanHealth, setCurrentWanHealth] = useState<WanHealthEntry[]>([]);
+  const [currentWanHealthTests, setCurrentWanHealthTests] = useState<WanHealthTestEntry[]>([]);
   const [currentWanRules, setCurrentWanRules] = useState<WanRuleEntry[]>([]);
   const [currentFrontends, setCurrentFrontends] = useState<HaproxyFrontendEntry[]>([]);
   const [currentBackends, setCurrentBackends] = useState<HaproxyBackendEntry[]>([]);
 
   const [healthDraft, setHealthDraft] = useState<WanHealthEntry>(EMPTY_HEALTH_DRAFT);
+  const [healthTestDraft, setHealthTestDraft] = useState<WanHealthTestEntry>(EMPTY_HEALTH_TEST_DRAFT);
   const [ruleDraft, setRuleDraft] = useState<WanRuleEntry>(EMPTY_RULE_DRAFT);
   const [ruleOutboundInput, setRuleOutboundInput] = useState("");
+  const [ruleOutboundWeightsInput, setRuleOutboundWeightsInput] = useState("");
   const [frontendDraft, setFrontendDraft] = useState<HaproxyFrontendEntry>(EMPTY_FRONTEND_DRAFT);
   const [backendDraft, setBackendDraft] = useState<HaproxyBackendEntry>(EMPTY_BACKEND_DRAFT);
   const [backendServersInput, setBackendServersInput] = useState("");
@@ -221,6 +319,13 @@ export default function LoadBalancingPage() {
         showService.getAllInterfaces().catch(() => ({ interfaces: [], total: 0 })),
       ]);
 
+      const parsedWanGlobal: WanGlobalSettings = {
+        disableSourceNat: config.wan.global["disable-source-nat"],
+        flushConnections: config.wan.global["flush-connections"],
+        stickyConnectionsInbound: config.wan.global["sticky-connections-inbound"],
+        hookScriptName: normalizeText(config.wan.global["hook-script-name"] || ""),
+      };
+
       const parsedWanHealth = Object.values(config.wan["interface-health"])
         .map((entry) => ({
           interface: normalizeText(entry.interface_name),
@@ -231,11 +336,54 @@ export default function LoadBalancingPage() {
         .filter((entry) => entry.interface)
         .sort((left, right) => left.interface.localeCompare(right.interface, undefined, { numeric: true }));
 
+      const parsedWanHealthTests = Object.values(config.wan["interface-health"])
+        .flatMap((entry) =>
+          Object.values(entry.tests).map((test) => ({
+            interface: normalizeText(entry.interface_name),
+            testId: normalizeText(test.test_id),
+            type: normalizeText(test.type),
+            target: normalizeText(test.target),
+            respTime: normalizeText(test["resp-time"] || ""),
+            ttlLimit: normalizeText(test["ttl-limit"] || ""),
+            testScript: normalizeText(test["test-script"] || ""),
+          }))
+        )
+        .filter((entry) => entry.interface && entry.testId)
+        .sort((left, right) => {
+          const interfaceComparison = left.interface.localeCompare(right.interface, undefined, {
+            numeric: true,
+          });
+          if (interfaceComparison !== 0) return interfaceComparison;
+          return left.testId.localeCompare(right.testId, undefined, { numeric: true });
+        });
+
       const parsedWanRules = Object.values(config.wan.rules)
         .map((entry) => ({
           ruleId: normalizeText(entry.rule_id),
           inboundInterface: normalizeText(entry["inbound-interface"]),
           outboundInterfaces: Object.keys(entry.interfaces).map((name) => normalizeText(name)),
+          outboundWeights: Object.entries(entry.interfaces).reduce<Record<string, string>>(
+            (acc, [name, value]) => {
+              const normalizedWeight = normalizeText(value.weight || "");
+              if (normalizedWeight) {
+                acc[normalizeText(name)] = normalizedWeight;
+              }
+              return acc;
+            },
+            {}
+          ),
+          sourceAddress: normalizeText(entry["source-address"] || ""),
+          sourcePort: normalizeText(entry["source-port"] || ""),
+          destinationAddress: normalizeText(entry["destination-address"] || ""),
+          destinationPort: normalizeText(entry["destination-port"] || ""),
+          protocol: normalizeText(entry.protocol || ""),
+          exclude: entry.exclude,
+          failover: entry.failover,
+          perPacketBalancing: entry["per-packet-balancing"],
+          limitRate: normalizeText(entry["limit-rate"] || ""),
+          limitBurst: normalizeText(entry["limit-burst"] || ""),
+          limitThreshold: normalizeText(entry["limit-threshold"] || ""),
+          limitPeriod: normalizeText(entry["limit-period"] || ""),
         }))
         .filter((entry) => entry.ruleId)
         .sort((left, right) => left.ruleId.localeCompare(right.ruleId, undefined, { numeric: true }));
@@ -286,22 +434,31 @@ export default function LoadBalancingPage() {
         .sort((left, right) => left.label.localeCompare(right.label, undefined, { numeric: true }));
 
       setInterfaceOptions(normalizedOptions);
+      setWanGlobal(parsedWanGlobal);
       setWanHealth(parsedWanHealth);
+      setWanHealthTests(parsedWanHealthTests);
       setWanRules(parsedWanRules);
       setFrontends(parsedFrontends);
       setBackends(parsedBackends);
 
+      setCurrentWanGlobal(parsedWanGlobal);
       setCurrentWanHealth(parsedWanHealth);
+      setCurrentWanHealthTests(parsedWanHealthTests);
       setCurrentWanRules(parsedWanRules);
       setCurrentFrontends(parsedFrontends);
       setCurrentBackends(parsedBackends);
 
       setHealthDraft({ ...EMPTY_HEALTH_DRAFT, interface: normalizedOptions[0]?.value || "" });
+      setHealthTestDraft({
+        ...EMPTY_HEALTH_TEST_DRAFT,
+        interface: normalizedOptions[0]?.value || "",
+      });
       setRuleDraft({
         ...EMPTY_RULE_DRAFT,
         inboundInterface: normalizedOptions[0]?.value || "",
       });
       setRuleOutboundInput("");
+      setRuleOutboundWeightsInput("");
       setFrontendDraft(EMPTY_FRONTEND_DRAFT);
       setBackendDraft(EMPTY_BACKEND_DRAFT);
       setBackendServersInput("");
@@ -347,20 +504,93 @@ export default function LoadBalancingPage() {
 
   const removeHealthEntry = (iface: string) => {
     setWanHealth((previous) => previous.filter((item) => item.interface !== iface));
+    setWanHealthTests((previous) => previous.filter((item) => item.interface !== iface));
+  };
+
+  const addHealthTestEntry = () => {
+    setError(null);
+
+    const entry: WanHealthTestEntry = {
+      interface: normalizeText(healthTestDraft.interface),
+      testId: normalizeText(healthTestDraft.testId),
+      type: normalizeText(healthTestDraft.type),
+      target: normalizeText(healthTestDraft.target),
+      respTime: normalizeText(healthTestDraft.respTime),
+      ttlLimit: normalizeText(healthTestDraft.ttlLimit),
+      testScript: normalizeText(healthTestDraft.testScript),
+    };
+
+    if (!entry.interface || !entry.testId || !entry.type) {
+      setError("WAN health test requires interface, test ID, and type.");
+      return;
+    }
+
+    if (entry.respTime && !/^\d+$/.test(entry.respTime)) {
+      setError("Health test response time must be a positive integer.");
+      return;
+    }
+
+    if (entry.ttlLimit && !/^\d+$/.test(entry.ttlLimit)) {
+      setError("Health test TTL limit must be a positive integer.");
+      return;
+    }
+
+    if (wanHealthTests.some((item) => item.interface === entry.interface && item.testId === entry.testId)) {
+      setError("Health test ID already exists for this interface.");
+      return;
+    }
+
+    setWanHealthTests((previous) =>
+      [...previous, entry].sort((left, right) => {
+        const interfaceComparison = left.interface.localeCompare(right.interface, undefined, { numeric: true });
+        if (interfaceComparison !== 0) return interfaceComparison;
+        return left.testId.localeCompare(right.testId, undefined, { numeric: true });
+      })
+    );
+
+    setHealthTestDraft({
+      ...EMPTY_HEALTH_TEST_DRAFT,
+      interface: healthTestDraft.interface || interfaceOptions[0]?.value || "",
+    });
+  };
+
+  const removeHealthTestEntry = (iface: string, testId: string) => {
+    setWanHealthTests((previous) =>
+      previous.filter((item) => !(item.interface === iface && item.testId === testId))
+    );
   };
 
   const addRuleEntry = () => {
     setError(null);
 
     const availableInterfaces = new Set(interfaceOptions.map((option) => option.value));
+    const outboundWeights = parseOutboundWeightList(ruleOutboundWeightsInput);
     const entry: WanRuleEntry = {
       ruleId: normalizeText(ruleDraft.ruleId),
       inboundInterface: normalizeText(ruleDraft.inboundInterface),
       outboundInterfaces: parseCsvList(ruleOutboundInput),
+      outboundWeights,
+      sourceAddress: normalizeText(ruleDraft.sourceAddress),
+      sourcePort: normalizeText(ruleDraft.sourcePort),
+      destinationAddress: normalizeText(ruleDraft.destinationAddress),
+      destinationPort: normalizeText(ruleDraft.destinationPort),
+      protocol: normalizeText(ruleDraft.protocol),
+      exclude: ruleDraft.exclude,
+      failover: ruleDraft.failover,
+      perPacketBalancing: ruleDraft.perPacketBalancing,
+      limitRate: normalizeText(ruleDraft.limitRate),
+      limitBurst: normalizeText(ruleDraft.limitBurst),
+      limitThreshold: normalizeText(ruleDraft.limitThreshold),
+      limitPeriod: normalizeText(ruleDraft.limitPeriod),
     };
 
     if (!entry.ruleId || !entry.inboundInterface) {
       setError("Rule requires ID and inbound interface.");
+      return;
+    }
+
+    if (!/^\d+$/.test(entry.ruleId)) {
+      setError("Rule ID must be a positive integer.");
       return;
     }
 
@@ -380,6 +610,29 @@ export default function LoadBalancingPage() {
       return;
     }
 
+    const weightInterfaces = Object.keys(entry.outboundWeights);
+    const invalidWeightInterfaces = weightInterfaces.filter(
+      (iface) => !entry.outboundInterfaces.includes(iface)
+    );
+    if (invalidWeightInterfaces.length > 0) {
+      setError(
+        `Outbound weight interface(s) must be in outbound list: ${invalidWeightInterfaces.join(", ")}`
+      );
+      return;
+    }
+
+    for (const [iface, weight] of Object.entries(entry.outboundWeights)) {
+      if (!/^\d+$/.test(weight)) {
+        setError(`Weight for ${iface} must be an integer.`);
+        return;
+      }
+      const numericWeight = Number(weight);
+      if (numericWeight < 1 || numericWeight > 100) {
+        setError(`Weight for ${iface} must be between 1 and 100.`);
+        return;
+      }
+    }
+
     if (wanRules.some((item) => item.ruleId === entry.ruleId)) {
       setError("Rule ID already exists.");
       return;
@@ -391,6 +644,7 @@ export default function LoadBalancingPage() {
 
     setRuleDraft({ ...EMPTY_RULE_DRAFT, inboundInterface: interfaceOptions[0]?.value || "" });
     setRuleOutboundInput("");
+    setRuleOutboundWeightsInput("");
   };
 
   const removeRuleEntry = (ruleId: string) => {
@@ -403,6 +657,14 @@ export default function LoadBalancingPage() {
       ? serializeCsvList([...current, interfaceName])
       : serializeCsvList(current.filter((value) => value !== interfaceName));
     setRuleOutboundInput(next);
+
+    if (!checked) {
+      const currentWeights = parseOutboundWeightList(ruleOutboundWeightsInput);
+      if (Object.prototype.hasOwnProperty.call(currentWeights, interfaceName)) {
+        delete currentWeights[interfaceName];
+        setRuleOutboundWeightsInput(serializeOutboundWeightList(currentWeights));
+      }
+    }
   };
 
   const addFrontendEntry = () => {
@@ -473,6 +735,40 @@ export default function LoadBalancingPage() {
 
       const operations: string[] = [];
 
+      if (wanGlobal.disableSourceNat !== currentWanGlobal.disableSourceNat) {
+        operations.push(
+          wanGlobal.disableSourceNat
+            ? "set load-balancing wan disable-source-nat"
+            : "delete load-balancing wan disable-source-nat"
+        );
+      }
+
+      if (wanGlobal.flushConnections !== currentWanGlobal.flushConnections) {
+        operations.push(
+          wanGlobal.flushConnections
+            ? "set load-balancing wan flush-connections"
+            : "delete load-balancing wan flush-connections"
+        );
+      }
+
+      if (wanGlobal.stickyConnectionsInbound !== currentWanGlobal.stickyConnectionsInbound) {
+        operations.push(
+          wanGlobal.stickyConnectionsInbound
+            ? "set load-balancing wan sticky-connections inbound"
+            : "delete load-balancing wan sticky-connections inbound"
+        );
+      }
+
+      const desiredHookScriptName = normalizeText(wanGlobal.hookScriptName);
+      const currentHookScriptName = normalizeText(currentWanGlobal.hookScriptName);
+      if (desiredHookScriptName !== currentHookScriptName) {
+        if (desiredHookScriptName) {
+          operations.push(`set load-balancing wan hook script-name ${desiredHookScriptName}`);
+        } else if (currentHookScriptName) {
+          operations.push("delete load-balancing wan hook script-name");
+        }
+      }
+
       const currentHealthMap = new Map(currentWanHealth.map((entry) => [entry.interface, entry]));
       const desiredHealthMap = new Map(wanHealth.map((entry) => [entry.interface, entry]));
 
@@ -508,6 +804,64 @@ export default function LoadBalancingPage() {
         }
       }
 
+      const currentHealthTestMap = new Map(
+        currentWanHealthTests.map((entry) => [`${entry.interface}::${entry.testId}`, entry])
+      );
+      const desiredHealthTestMap = new Map(
+        wanHealthTests.map((entry) => [`${entry.interface}::${entry.testId}`, entry])
+      );
+
+      for (const [key, current] of currentHealthTestMap.entries()) {
+        if (!desiredHealthTestMap.has(key)) {
+          operations.push(
+            `delete load-balancing wan interface-health ${current.interface} test ${current.testId}`
+          );
+        }
+      }
+
+      for (const [key, desired] of desiredHealthTestMap.entries()) {
+        const current = currentHealthTestMap.get(key);
+        const testPrefix = `load-balancing wan interface-health ${desired.interface} test ${desired.testId}`;
+
+        if (current && current.type === desired.type) {
+          // no-op
+        } else if (desired.type) {
+          operations.push(`set ${testPrefix} type ${desired.type}`);
+        }
+
+        if (current && current.target === desired.target) {
+          // no-op
+        } else if (desired.target) {
+          operations.push(`set ${testPrefix} target ${desired.target}`);
+        } else if (current?.target) {
+          operations.push(`delete ${testPrefix} target`);
+        }
+
+        if (current && current.respTime === desired.respTime) {
+          // no-op
+        } else if (desired.respTime) {
+          operations.push(`set ${testPrefix} resp-time ${desired.respTime}`);
+        } else if (current?.respTime) {
+          operations.push(`delete ${testPrefix} resp-time`);
+        }
+
+        if (current && current.ttlLimit === desired.ttlLimit) {
+          // no-op
+        } else if (desired.ttlLimit) {
+          operations.push(`set ${testPrefix} ttl-limit ${desired.ttlLimit}`);
+        } else if (current?.ttlLimit) {
+          operations.push(`delete ${testPrefix} ttl-limit`);
+        }
+
+        if (current && current.testScript === desired.testScript) {
+          // no-op
+        } else if (desired.testScript) {
+          operations.push(`set ${testPrefix} test-script ${desired.testScript}`);
+        } else if (current?.testScript) {
+          operations.push(`delete ${testPrefix} test-script`);
+        }
+      }
+
       const currentRuleMap = new Map(currentWanRules.map((entry) => [entry.ruleId, entry]));
       const desiredRuleMap = new Map(wanRules.map((entry) => [entry.ruleId, entry]));
 
@@ -526,7 +880,20 @@ export default function LoadBalancingPage() {
           arrayEquals(
             [...current.outboundInterfaces].sort(),
             [...desired.outboundInterfaces].sort()
-          )
+          ) &&
+          weightMapEquals(current.outboundWeights, desired.outboundWeights) &&
+          current.sourceAddress === desired.sourceAddress &&
+          current.sourcePort === desired.sourcePort &&
+          current.destinationAddress === desired.destinationAddress &&
+          current.destinationPort === desired.destinationPort &&
+          current.protocol === desired.protocol &&
+          current.exclude === desired.exclude &&
+          current.failover === desired.failover &&
+          current.perPacketBalancing === desired.perPacketBalancing &&
+          current.limitRate === desired.limitRate &&
+          current.limitBurst === desired.limitBurst &&
+          current.limitThreshold === desired.limitThreshold &&
+          current.limitPeriod === desired.limitPeriod
         ) {
           continue;
         }
@@ -546,6 +913,98 @@ export default function LoadBalancingPage() {
           if (!currentOutbounds.includes(iface)) {
             operations.push(`set load-balancing wan rule ${ruleId} interface ${iface}`);
           }
+
+          const desiredWeight = normalizeText(desired.outboundWeights[iface] || "");
+          const currentWeight = normalizeText(current?.outboundWeights[iface] || "");
+          if (desiredWeight && desiredWeight !== currentWeight) {
+            operations.push(`set load-balancing wan rule ${ruleId} interface ${iface} weight ${desiredWeight}`);
+          } else if (!desiredWeight && currentWeight) {
+            operations.push(`delete load-balancing wan rule ${ruleId} interface ${iface} weight`);
+          }
+        }
+
+        if (desired.protocol) {
+          operations.push(`set load-balancing wan rule ${ruleId} protocol ${desired.protocol}`);
+        } else if (current?.protocol) {
+          operations.push(`delete load-balancing wan rule ${ruleId} protocol`);
+        }
+
+        if (desired.sourceAddress) {
+          operations.push(`set load-balancing wan rule ${ruleId} source address ${desired.sourceAddress}`);
+        } else if (current?.sourceAddress) {
+          operations.push(`delete load-balancing wan rule ${ruleId} source address`);
+        }
+
+        if (desired.sourcePort) {
+          operations.push(`set load-balancing wan rule ${ruleId} source port ${desired.sourcePort}`);
+        } else if (current?.sourcePort) {
+          operations.push(`delete load-balancing wan rule ${ruleId} source port`);
+        }
+
+        if (desired.destinationAddress) {
+          operations.push(
+            `set load-balancing wan rule ${ruleId} destination address ${desired.destinationAddress}`
+          );
+        } else if (current?.destinationAddress) {
+          operations.push(`delete load-balancing wan rule ${ruleId} destination address`);
+        }
+
+        if (desired.destinationPort) {
+          operations.push(`set load-balancing wan rule ${ruleId} destination port ${desired.destinationPort}`);
+        } else if (current?.destinationPort) {
+          operations.push(`delete load-balancing wan rule ${ruleId} destination port`);
+        }
+
+        if (desired.limitRate) {
+          operations.push(`set load-balancing wan rule ${ruleId} limit rate ${desired.limitRate}`);
+        } else if (current?.limitRate) {
+          operations.push(`delete load-balancing wan rule ${ruleId} limit rate`);
+        }
+
+        if (desired.limitBurst) {
+          operations.push(`set load-balancing wan rule ${ruleId} limit burst ${desired.limitBurst}`);
+        } else if (current?.limitBurst) {
+          operations.push(`delete load-balancing wan rule ${ruleId} limit burst`);
+        }
+
+        if (desired.limitThreshold) {
+          operations.push(`set load-balancing wan rule ${ruleId} limit threshold ${desired.limitThreshold}`);
+        } else if (current?.limitThreshold) {
+          operations.push(`delete load-balancing wan rule ${ruleId} limit threshold`);
+        }
+
+        if (desired.limitPeriod) {
+          operations.push(`set load-balancing wan rule ${ruleId} limit period ${desired.limitPeriod}`);
+        } else if (current?.limitPeriod) {
+          operations.push(`delete load-balancing wan rule ${ruleId} limit period`);
+        }
+
+        const currentExclude = current?.exclude ?? false;
+        const currentFailover = current?.failover ?? false;
+        const currentPerPacketBalancing = current?.perPacketBalancing ?? false;
+
+        if (desired.exclude !== currentExclude) {
+          operations.push(
+            desired.exclude
+              ? `set load-balancing wan rule ${ruleId} exclude`
+              : `delete load-balancing wan rule ${ruleId} exclude`
+          );
+        }
+
+        if (desired.failover !== currentFailover) {
+          operations.push(
+            desired.failover
+              ? `set load-balancing wan rule ${ruleId} failover`
+              : `delete load-balancing wan rule ${ruleId} failover`
+          );
+        }
+
+        if (desired.perPacketBalancing !== currentPerPacketBalancing) {
+          operations.push(
+            desired.perPacketBalancing
+              ? `set load-balancing wan rule ${ruleId} per-packet-balancing`
+              : `delete load-balancing wan rule ${ruleId} per-packet-balancing`
+          );
         }
       }
 
@@ -702,6 +1161,61 @@ export default function LoadBalancingPage() {
           <TabsContent value="wan" className="space-y-4">
             <Card>
               <CardHeader>
+                <CardTitle>WAN Global Options</CardTitle>
+                <CardDescription>Control global WAN load-balancing behavior.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 text-sm">
+                    <Checkbox
+                      checked={wanGlobal.disableSourceNat}
+                      disabled={!canEdit}
+                      onCheckedChange={(checked) =>
+                        setWanGlobal((previous) => ({ ...previous, disableSourceNat: checked === true }))
+                      }
+                    />
+                    <span>Disable Source NAT</span>
+                  </label>
+                  <label className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 text-sm">
+                    <Checkbox
+                      checked={wanGlobal.flushConnections}
+                      disabled={!canEdit}
+                      onCheckedChange={(checked) =>
+                        setWanGlobal((previous) => ({ ...previous, flushConnections: checked === true }))
+                      }
+                    />
+                    <span>Flush Connections on Interface Events</span>
+                  </label>
+                  <label className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 text-sm md:col-span-2">
+                    <Checkbox
+                      checked={wanGlobal.stickyConnectionsInbound}
+                      disabled={!canEdit}
+                      onCheckedChange={(checked) =>
+                        setWanGlobal((previous) => ({
+                          ...previous,
+                          stickyConnectionsInbound: checked === true,
+                        }))
+                      }
+                    />
+                    <span>Sticky Connections (Inbound)</span>
+                  </label>
+                </div>
+                <div className="space-y-2">
+                  <Label>Hook Script Name (optional)</Label>
+                  <Input
+                    value={wanGlobal.hookScriptName}
+                    onChange={(event) =>
+                      setWanGlobal((previous) => ({ ...previous, hookScriptName: event.target.value }))
+                    }
+                    placeholder="/config/scripts/wan-hook.sh"
+                    disabled={!canEdit}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>Interface Health</CardTitle>
                 <CardDescription>Define WAN interfaces and health failover thresholds.</CardDescription>
               </CardHeader>
@@ -809,11 +1323,169 @@ export default function LoadBalancingPage() {
 
             <Card>
               <CardHeader>
+                <CardTitle>Interface Health Tests</CardTitle>
+                <CardDescription>
+                  Define test probes per WAN interface (`ping`, `ttl`, or custom script).
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3 md:grid-cols-4">
+                  <div className="space-y-2">
+                    <Label>Interface</Label>
+                    <Select
+                      value={healthTestDraft.interface || ""}
+                      onValueChange={(value) =>
+                        setHealthTestDraft((previous) => ({ ...previous, interface: value }))
+                      }
+                      disabled={!canEdit || interfaceOptions.length === 0}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select interface" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {interfaceOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Test ID</Label>
+                    <Input
+                      value={healthTestDraft.testId}
+                      onChange={(event) =>
+                        setHealthTestDraft((previous) => ({ ...previous, testId: event.target.value }))
+                      }
+                      placeholder="10"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Type</Label>
+                    <Select
+                      value={healthTestDraft.type || ""}
+                      onValueChange={(value) =>
+                        setHealthTestDraft((previous) => ({ ...previous, type: value }))
+                      }
+                      disabled={!canEdit}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ping">ping</SelectItem>
+                        <SelectItem value="ttl">ttl</SelectItem>
+                        <SelectItem value="script">script</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Target</Label>
+                    <Input
+                      value={healthTestDraft.target}
+                      onChange={(event) =>
+                        setHealthTestDraft((previous) => ({ ...previous, target: event.target.value }))
+                      }
+                      placeholder="8.8.8.8"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Response Time (ms)</Label>
+                    <Input
+                      value={healthTestDraft.respTime}
+                      onChange={(event) =>
+                        setHealthTestDraft((previous) => ({ ...previous, respTime: event.target.value }))
+                      }
+                      placeholder="1000"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>TTL Limit</Label>
+                    <Input
+                      value={healthTestDraft.ttlLimit}
+                      onChange={(event) =>
+                        setHealthTestDraft((previous) => ({ ...previous, ttlLimit: event.target.value }))
+                      }
+                      placeholder="5"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Test Script (optional)</Label>
+                    <Input
+                      value={healthTestDraft.testScript}
+                      onChange={(event) =>
+                        setHealthTestDraft((previous) => ({ ...previous, testScript: event.target.value }))
+                      }
+                      placeholder="/config/scripts/check-isp.sh"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
+                <Button type="button" variant="outline" onClick={addHealthTestEntry} disabled={!canEdit}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Health Test
+                </Button>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Interface</TableHead>
+                      <TableHead>Test ID</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Target</TableHead>
+                      <TableHead>Resp Time</TableHead>
+                      <TableHead>TTL</TableHead>
+                      <TableHead>Script</TableHead>
+                      <TableHead className="w-[120px] text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {wanHealthTests.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-muted-foreground">
+                          No WAN health tests configured.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      wanHealthTests.map((entry) => (
+                        <TableRow key={`${entry.interface}-${entry.testId}`}>
+                          <TableCell>{interfaceLabelByName[entry.interface] || entry.interface}</TableCell>
+                          <TableCell>{entry.testId}</TableCell>
+                          <TableCell>{entry.type || "-"}</TableCell>
+                          <TableCell>{entry.target || "-"}</TableCell>
+                          <TableCell>{entry.respTime || "-"}</TableCell>
+                          <TableCell>{entry.ttlLimit || "-"}</TableCell>
+                          <TableCell>{entry.testScript || "-"}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeHealthTestEntry(entry.interface, entry.testId)}
+                              disabled={!canEdit}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>WAN Rules</CardTitle>
                 <CardDescription>Map inbound traffic to one or more outbound WAN interfaces.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className="grid gap-3 md:grid-cols-4">
                   <div className="space-y-2">
                     <Label>Rule ID</Label>
                     <Input
@@ -845,6 +1517,17 @@ export default function LoadBalancingPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
+                    <Label>Protocol (optional)</Label>
+                    <Input
+                      value={ruleDraft.protocol}
+                      onChange={(event) =>
+                        setRuleDraft((previous) => ({ ...previous, protocol: event.target.value }))
+                      }
+                      placeholder="tcp"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label>Outbound Interfaces</Label>
                     <Input
                       value={ruleOutboundInput}
@@ -853,6 +1536,142 @@ export default function LoadBalancingPage() {
                       disabled={!canEdit}
                     />
                   </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-4">
+                  <div className="space-y-2">
+                    <Label>Outbound Weights (optional)</Label>
+                    <Input
+                      value={ruleOutboundWeightsInput}
+                      onChange={(event) => setRuleOutboundWeightsInput(event.target.value)}
+                      placeholder="eth1=100, eth2=50"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Source Address</Label>
+                    <Input
+                      value={ruleDraft.sourceAddress}
+                      onChange={(event) =>
+                        setRuleDraft((previous) => ({ ...previous, sourceAddress: event.target.value }))
+                      }
+                      placeholder="192.168.1.0/24"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Source Port</Label>
+                    <Input
+                      value={ruleDraft.sourcePort}
+                      onChange={(event) =>
+                        setRuleDraft((previous) => ({ ...previous, sourcePort: event.target.value }))
+                      }
+                      placeholder="1024-65535"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Destination Address</Label>
+                    <Input
+                      value={ruleDraft.destinationAddress}
+                      onChange={(event) =>
+                        setRuleDraft((previous) => ({ ...previous, destinationAddress: event.target.value }))
+                      }
+                      placeholder="0.0.0.0/0"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-4">
+                  <div className="space-y-2">
+                    <Label>Destination Port</Label>
+                    <Input
+                      value={ruleDraft.destinationPort}
+                      onChange={(event) =>
+                        setRuleDraft((previous) => ({ ...previous, destinationPort: event.target.value }))
+                      }
+                      placeholder="443"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Limit Rate</Label>
+                    <Input
+                      value={ruleDraft.limitRate}
+                      onChange={(event) =>
+                        setRuleDraft((previous) => ({ ...previous, limitRate: event.target.value }))
+                      }
+                      placeholder="1000/minute"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Limit Burst</Label>
+                    <Input
+                      value={ruleDraft.limitBurst}
+                      onChange={(event) =>
+                        setRuleDraft((previous) => ({ ...previous, limitBurst: event.target.value }))
+                      }
+                      placeholder="20"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Limit Threshold</Label>
+                    <Input
+                      value={ruleDraft.limitThreshold}
+                      onChange={(event) =>
+                        setRuleDraft((previous) => ({ ...previous, limitThreshold: event.target.value }))
+                      }
+                      placeholder="10"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-4">
+                  <div className="space-y-2">
+                    <Label>Limit Period</Label>
+                    <Input
+                      value={ruleDraft.limitPeriod}
+                      onChange={(event) =>
+                        setRuleDraft((previous) => ({ ...previous, limitPeriod: event.target.value }))
+                      }
+                      placeholder="second"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 text-sm md:col-span-1">
+                    <Checkbox
+                      checked={ruleDraft.exclude}
+                      disabled={!canEdit}
+                      onCheckedChange={(checked) =>
+                        setRuleDraft((previous) => ({ ...previous, exclude: checked === true }))
+                      }
+                    />
+                    <span>Exclude</span>
+                  </label>
+                  <label className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 text-sm md:col-span-1">
+                    <Checkbox
+                      checked={ruleDraft.failover}
+                      disabled={!canEdit}
+                      onCheckedChange={(checked) =>
+                        setRuleDraft((previous) => ({ ...previous, failover: checked === true }))
+                      }
+                    />
+                    <span>Failover</span>
+                  </label>
+                  <label className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 text-sm md:col-span-1">
+                    <Checkbox
+                      checked={ruleDraft.perPacketBalancing}
+                      disabled={!canEdit}
+                      onCheckedChange={(checked) =>
+                        setRuleDraft((previous) => ({ ...previous, perPacketBalancing: checked === true }))
+                      }
+                    />
+                    <span>Per-Packet Balancing</span>
+                  </label>
                 </div>
 
                 <div className="space-y-2 rounded-lg border border-border/60 p-3">
@@ -896,13 +1715,17 @@ export default function LoadBalancingPage() {
                       <TableHead>Rule</TableHead>
                       <TableHead>Inbound</TableHead>
                       <TableHead>Outbound Interfaces</TableHead>
+                      <TableHead>Protocol</TableHead>
+                      <TableHead>Source / Destination</TableHead>
+                      <TableHead>Options</TableHead>
+                      <TableHead>Rate Limit</TableHead>
                       <TableHead className="w-[120px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {wanRules.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-muted-foreground">
+                        <TableCell colSpan={8} className="text-muted-foreground">
                           No WAN rules configured.
                         </TableCell>
                       </TableRow>
@@ -915,8 +1738,39 @@ export default function LoadBalancingPage() {
                           <TableCell>{interfaceLabelByName[entry.inboundInterface] || entry.inboundInterface}</TableCell>
                           <TableCell>
                             {entry.outboundInterfaces
-                              .map((iface) => interfaceLabelByName[iface] || iface)
+                              .map((iface) => {
+                                const label = interfaceLabelByName[iface] || iface;
+                                const weight = normalizeText(entry.outboundWeights[iface] || "");
+                                return weight ? `${label} (w:${weight})` : label;
+                              })
                               .join(", ")}
+                          </TableCell>
+                          <TableCell>{entry.protocol || "-"}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            src: {entry.sourceAddress || "any"}
+                            {entry.sourcePort ? `:${entry.sourcePort}` : ""}
+                            <br />
+                            dst: {entry.destinationAddress || "any"}
+                            {entry.destinationPort ? `:${entry.destinationPort}` : ""}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {[
+                              entry.exclude ? "exclude" : null,
+                              entry.failover ? "failover" : null,
+                              entry.perPacketBalancing ? "per-packet" : null,
+                            ]
+                              .filter(Boolean)
+                              .join(", ") || "-"}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {[
+                              entry.limitRate ? `rate:${entry.limitRate}` : null,
+                              entry.limitBurst ? `burst:${entry.limitBurst}` : null,
+                              entry.limitThreshold ? `threshold:${entry.limitThreshold}` : null,
+                              entry.limitPeriod ? `period:${entry.limitPeriod}` : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" | ") || "-"}
                           </TableCell>
                           <TableCell className="text-right">
                             <Button

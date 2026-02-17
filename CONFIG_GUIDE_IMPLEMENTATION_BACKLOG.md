@@ -78,7 +78,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `IF-15` (`verify`): Existing ethernet/pppoe/loopback/wireguard parity sweep completed. Loopback command-scope audit against current guide confirms full coverage (`address`, `description`) in form-driven workflow; pending live verification.
 
 ### Load Balancing (`loadbalancing/*`)
-- `LB-01` (`partial`): WAN load balancing full option parity (health, interface weights, policy controls).
+- `LB-01` (`verify`): WAN load-balancing parity expanded with global options (`disable-source-nat`, `flush-connections`, `sticky-connections inbound`, `hook script-name`), interface-health test CRUD (`type/target/resp-time/ttl-limit/test-script`), rule-level advanced match/behavior fields (`protocol`, source/destination selectors, interface weights, limit fields, `exclude`, `failover`, `per-packet-balancing`). Pending live verification.
 - `LB-02` (`partial`): HAProxy parity pass (frontend/backend/listener/server-check options).
 - `LB-03` (`verify`): Validation of route/failover behavior with multi-uplink fixtures.
 

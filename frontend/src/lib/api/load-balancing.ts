@@ -4,6 +4,9 @@ export interface HealthTest {
   test_id: string;
   target: string;
   type: string;
+  "resp-time": string | null;
+  "ttl-limit": string | null;
+  "test-script": string | null;
 }
 
 export interface InterfaceHealth {
@@ -17,7 +20,19 @@ export interface InterfaceHealth {
 export interface LoadBalancingRule {
   rule_id: string;
   "inbound-interface": string;
-  interfaces: Record<string, Record<string, never>>;
+  interfaces: Record<string, { weight: string | null }>;
+  protocol: string | null;
+  "source-address": string | null;
+  "source-port": string | null;
+  "destination-address": string | null;
+  "destination-port": string | null;
+  "limit-rate": string | null;
+  "limit-burst": string | null;
+  "limit-threshold": string | null;
+  "limit-period": string | null;
+  exclude: boolean;
+  failover: boolean;
+  "per-packet-balancing": boolean;
 }
 
 export interface HaProxyFrontend {
@@ -40,6 +55,12 @@ export interface LoadBalancingConfig {
   wan: {
     "interface-health": Record<string, InterfaceHealth>;
     rules: Record<string, LoadBalancingRule>;
+    global: {
+      "disable-source-nat": boolean;
+      "flush-connections": boolean;
+      "sticky-connections-inbound": boolean;
+      "hook-script-name": string | null;
+    };
   };
   haproxy: {
     frontends: Record<string, HaProxyFrontend>;
@@ -100,6 +121,9 @@ class LoadBalancingService {
           test_id: testId,
           target: asString(testConfig.target),
           type: asString(testConfig.type),
+          "resp-time": asString(testConfig["resp-time"]) || null,
+          "ttl-limit": asString(testConfig["ttl-limit"]) || null,
+          "test-script": asString(testConfig["test-script"]) || null,
         };
       }
 
@@ -115,12 +139,40 @@ class LoadBalancingService {
     const rules: Record<string, LoadBalancingRule> = {};
     for (const [ruleId, value] of Object.entries(rulesRoot)) {
       const config = asObject(value);
+      const interfaceRoot = asObject(config.interface);
+      const interfaces: Record<string, { weight: string | null }> = {};
+      for (const [interfaceName, interfaceValue] of Object.entries(interfaceRoot)) {
+        const interfaceConfig = asObject(interfaceValue);
+        interfaces[interfaceName] = {
+          weight: asString(interfaceConfig.weight) || null,
+        };
+      }
+
+      const source = asObject(config.source);
+      const destination = asObject(config.destination);
+      const limit = asObject(config.limit);
+
       rules[ruleId] = {
         rule_id: ruleId,
         "inbound-interface": asString(config["inbound-interface"]),
-        interfaces: asObject(config.interface) as Record<string, Record<string, never>>,
+        interfaces,
+        protocol: asString(config.protocol) || null,
+        "source-address": asString(source.address) || null,
+        "source-port": asString(source.port) || null,
+        "destination-address": asString(destination.address) || null,
+        "destination-port": asString(destination.port) || null,
+        "limit-rate": asString(limit.rate) || null,
+        "limit-burst": asString(limit.burst) || null,
+        "limit-threshold": asString(limit.threshold) || null,
+        "limit-period": asString(limit.period) || null,
+        exclude: Object.prototype.hasOwnProperty.call(config, "exclude"),
+        failover: Object.prototype.hasOwnProperty.call(config, "failover"),
+        "per-packet-balancing": Object.prototype.hasOwnProperty.call(config, "per-packet-balancing"),
       };
     }
+
+    const stickyConnections = asObject(wan["sticky-connections"]);
+    const hook = asObject(wan.hook);
 
     const haproxy = asObject(root.haproxy);
     const frontendRoot = asObject(haproxy.frontend);
@@ -159,6 +211,12 @@ class LoadBalancingService {
       wan: {
         "interface-health": interfaceHealth,
         rules,
+        global: {
+          "disable-source-nat": Object.prototype.hasOwnProperty.call(wan, "disable-source-nat"),
+          "flush-connections": Object.prototype.hasOwnProperty.call(wan, "flush-connections"),
+          "sticky-connections-inbound": Object.prototype.hasOwnProperty.call(stickyConnections, "inbound"),
+          "hook-script-name": asString(hook["script-name"]) || null,
+        },
       },
       haproxy: {
         frontends,

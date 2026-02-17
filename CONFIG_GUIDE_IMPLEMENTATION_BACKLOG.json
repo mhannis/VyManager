@@ -196,8 +196,8 @@
     {
       "id": "LB-01",
       "domain": "load-balancing",
-      "status": "partial",
-      "title": "WAN load-balancing full option parity"
+      "status": "verify",
+      "title": "WAN load-balancing parity expanded with global options, interface-health test CRUD, and advanced rule selectors/weights/limits/flags; pending live verification"
     },
     {
       "id": "LB-02",
