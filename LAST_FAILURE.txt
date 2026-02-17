@@ -1,6 +1,15 @@
-timestamp: 2026-02-17T09:31:45-05:00
-failing command: tmux kill-session -t vm-ui || true; pkill -f 'next-server \(v16\.1\.6\)' || true; pkill -f 'next start --hostname 0.0.0.0 --port 3000' || true; ...
-error summary: Process orchestration command exited unexpectedly with code -1 and no stdout/stderr. Likely caused by aggressive pkill pattern affecting the controlling shell/session.
+timestamp: 2026-02-17T19:46:00-05:00
+failing command: cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py
+error summary: Initial BGP save/apply loop test used command-string batch payloads, but `/vyos/bgp/batch` expects operation objects (`op` + optional `value`). The request returned HTTP 422.
 last output:
-(no output captured)
-suspected cause + next step: Split runtime reset into smaller commands (inspect listeners, kill specific PIDs, then start vm-ui session) to avoid killing the orchestrator shell.
+_______________________ test_bgp_save_apply_reload_loop ________________________
+...
+set_operations = ["set protocols bgp parameters router-id 2.2.2.2"]
+apply_set = client.post("/vyos/bgp/batch", json={"operations": set_operations})
+>       assert apply_set.status_code == 200
+E       assert 422 == 200
+E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+...
+FAILED tests/test_bgp_save_apply_reload_loop.py::test_bgp_save_apply_reload_loop
+1 failed, 121 passed, 1 warning in 6.56s
+suspected cause + next step: Update the BGP test to use `BgpBatchRequest` operation objects and mock `execute_batch(builder)` behavior. Re-ran suite after fix; now passing.

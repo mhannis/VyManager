@@ -160,3 +160,8 @@ current_counts:
 ### Result
 - Protocol verification stack is green (`121 passed`).
 - This closes 6 additional protocol verification slices in automated regression depth (OpenFabric, RPKI, IGMP Proxy, PIM, PIM6, Failover) plus static-protocol coverage.
+
+### Incremental Update (BGP verification depth)
+- Added `backend/tests/test_bgp_save_apply_reload_loop.py` to cover BGP's builder-based batch contract (`op/value` operations) with save/apply/reload behavior assertions.
+- This closes the prior gap where BGP could not be represented by the generic command-string loop harness.
+- Validation: `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_bgp_save_apply_reload_loop.py tests/test_protocol_capabilities.py tests/test_fixture_save_apply_reload_loops.py tests/test_domain_config_snapshots.py` (`122 passed`).

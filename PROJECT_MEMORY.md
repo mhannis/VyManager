@@ -756,3 +756,4 @@ Assumptions:
 ### Immediate Next Queue
 - Continue verification-depth closure for remaining guide-order protocol/routing slices not yet covered by loop-delta fixtures (focus: static-routes complex batch variants and broader routing-infrastructure edge paths).
 - Keep adding deterministic fixtures/snapshots before moving to live-device verify phase.
+- Added `backend/tests/test_bgp_save_apply_reload_loop.py` as a dedicated regression for BGP builder-path batch semantics (`BgpBatchRequest` op/value model + `execute_batch(builder)`), since generic command-string loops do not exercise this contract.
