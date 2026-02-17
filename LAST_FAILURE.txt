@@ -1,7 +1,9 @@
-timestamp: 2026-02-17T00:24:45Z
-failing_command: set -e ... tmux kill-session/new-session ... ss -ltnp | rg ':3000|:8000'
-error_summary: Combined tmux restart command returned 'server exited unexpectedly' because no tmux server/socket was active at the moment of invocation. The restart sequence aborted before recreating both runtime sessions.
+timestamp: 2026-02-17T00:45:15+00:00
+failing_command: cd frontend && npm run -s smoke:ui
+error_summary: Browser smoke failed after route coverage expansion because /onboarding redirects to login in authenticated runtime flow, which smoke treated as a failure.
 last_output:
-server exited unexpectedly
-suspected_cause: Restart sequence assumed an active tmux server; killing sessions removed the socket and the chained command failed before recreating sessions.
-next_step: Recreate vm-api and vm-ui sessions one-by-one, verify listeners on :8000/:3000, then rerun smoke checks.
+UI smoke test FAILED:
+- /onboarding: redirected to login
+Artifacts: smoke-artifacts/
+suspected_cause: /onboarding is not a stable post-login route for smoke checks.
+next_step: Remove /onboarding from browser smoke route set and rerun npm run -s smoke:ui.

@@ -310,8 +310,8 @@
     {
       "id": "SVC-01",
       "domain": "service",
-      "status": "partial",
-      "title": "Config Sync service page + backend (implemented baseline; parity validation pending)"
+      "status": "verify",
+      "title": "Config Sync service leaves (mode + secondary + section) are fully modeled with form CRUD and wrapper writes; pending live verification"
     },
     {
       "id": "SVC-02",
@@ -460,8 +460,8 @@
     {
       "id": "SYS-10",
       "domain": "system",
-      "status": "partial",
-      "title": "Name-server/resolver ownership cleanup"
+      "status": "verify",
+      "title": "Name-server/resolver ownership cleanup implemented (system/config now preserves name servers unless explicitly provided)"
     },
     {
       "id": "SYS-11",
@@ -496,8 +496,8 @@
     {
       "id": "SYS-16",
       "domain": "system",
-      "status": "partial",
-      "title": "Time-zone/update/watchdog parity deepening (auto-check + watchdog hardware controls added; remaining depth/verification pending)"
+      "status": "verify",
+      "title": "Time-zone/update/watchdog parity implemented (time-zone + update-check auto-check/url + watchdog hardware timeout/module controls), pending live verification"
     },
     {
       "id": "SYS-17",
@@ -508,8 +508,8 @@
     {
       "id": "X-01",
       "domain": "cross-cutting",
-      "status": "partial",
-      "title": "Option-level parity scorer"
+      "status": "verify",
+      "title": "Option-level parity scorer now has threshold enforcement script/config plus CI workflow gate (pending threshold tuning as coverage grows)"
     },
     {
       "id": "X-02",
@@ -526,8 +526,8 @@
     {
       "id": "X-04",
       "domain": "cross-cutting",
-      "status": "partial",
-      "title": "Smoke route coverage for all new pages"
+      "status": "verify",
+      "title": "Smoke route coverage expanded to all current app pages (runtime + browser sets), pending ongoing verification"
     },
     {
       "id": "X-05",

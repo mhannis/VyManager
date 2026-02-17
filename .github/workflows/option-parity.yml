@@ -1,0 +1,25 @@
+name: Option Parity Thresholds
+
+on:
+  pull_request:
+    branches: ["dev", "beta"]
+  push:
+    branches: ["dev", "beta"]
+
+jobs:
+  parity-thresholds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate option parity scorecard
+        run: python3 scripts/score_option_parity.py
+
+      - name: Enforce option parity thresholds
+        run: python3 scripts/check_option_parity_thresholds.py

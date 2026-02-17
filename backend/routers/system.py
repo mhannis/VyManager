@@ -467,7 +467,7 @@ class SystemConfigRequest(BaseModel):
     """Mutable subset of system configuration exposed in GUI."""
     hostname: Optional[str] = None
     timezone: Optional[str] = None
-    name_servers: list[str] = Field(default_factory=list)
+    name_servers: Optional[list[str]] = None
     domain_name: Optional[str] = None
 
 
@@ -937,6 +937,7 @@ class LoginAuthServerConfig(BaseModel):
     key: str
     port: Optional[int] = Field(default=None, ge=1, le=65535)
     timeout: Optional[int] = Field(default=None, ge=1, le=65535)
+    disabled: bool = False
 
 
 class LoginConfigResponse(BaseModel):
@@ -946,6 +947,9 @@ class LoginConfigResponse(BaseModel):
     max_sessions_per_user: Optional[int] = Field(default=None, ge=1, le=65535)
     timeout: Optional[int] = Field(default=None, ge=1, le=65535)
     radius_source_address: Optional[str] = None
+    radius_vrf: Optional[str] = None
+    tacacs_source_address: Optional[str] = None
+    tacacs_vrf: Optional[str] = None
     radius_servers: List[LoginAuthServerConfig] = Field(default_factory=list)
     tacacs_servers: List[LoginAuthServerConfig] = Field(default_factory=list)
 
@@ -956,6 +960,9 @@ class LoginConfigRequest(BaseModel):
     max_sessions_per_user: Optional[int] = Field(default=None, ge=1, le=65535)
     timeout: Optional[int] = Field(default=None, ge=1, le=65535)
     radius_source_address: Optional[str] = None
+    radius_vrf: Optional[str] = None
+    tacacs_source_address: Optional[str] = None
+    tacacs_vrf: Optional[str] = None
     radius_servers: List[LoginAuthServerConfig] = Field(default_factory=list)
     tacacs_servers: List[LoginAuthServerConfig] = Field(default_factory=list)
 
@@ -1838,12 +1845,14 @@ def _parse_login_auth_servers(raw_server_block: Any) -> List[LoginAuthServerConf
         timeout = _safe_int(options.get("timeout"))
         if timeout is not None and (timeout < 1 or timeout > 65535):
             timeout = None
+        disabled = "disable" in options
         parsed.append(
             LoginAuthServerConfig(
                 address=server_address,
                 key=key,
                 port=port,
                 timeout=timeout,
+                disabled=disabled,
             )
         )
     return parsed
@@ -1865,6 +1874,7 @@ def _normalize_login_auth_servers_or_400(
             key=key,
             port=entry.port,
             timeout=entry.timeout,
+            disabled=bool(entry.disabled),
         )
     return [dedupe[address] for address in sorted(dedupe.keys())]
 
@@ -1893,6 +1903,24 @@ def _parse_login_config(full_config: Dict[str, Any]) -> LoginConfigResponse:
     else:
         radius_source_address = None
 
+    radius_vrf = radius_root.get("vrf")
+    if isinstance(radius_vrf, str):
+        radius_vrf = radius_vrf.strip() or None
+    else:
+        radius_vrf = None
+
+    tacacs_source_address = tacacs_root.get("source-address")
+    if isinstance(tacacs_source_address, str):
+        tacacs_source_address = tacacs_source_address.strip() or None
+    else:
+        tacacs_source_address = None
+
+    tacacs_vrf = tacacs_root.get("vrf")
+    if isinstance(tacacs_vrf, str):
+        tacacs_vrf = tacacs_vrf.strip() or None
+    else:
+        tacacs_vrf = None
+
     return LoginConfigResponse(
         configured=True,
         banner_pre_login=_string_or_none(banner_root.get("pre-login")),
@@ -1900,6 +1928,9 @@ def _parse_login_config(full_config: Dict[str, Any]) -> LoginConfigResponse:
         max_sessions_per_user=max_sessions_per_user,
         timeout=timeout,
         radius_source_address=radius_source_address,
+        radius_vrf=radius_vrf,
+        tacacs_source_address=tacacs_source_address,
+        tacacs_vrf=tacacs_vrf,
         radius_servers=_parse_login_auth_servers(radius_root.get("server")),
         tacacs_servers=_parse_login_auth_servers(tacacs_root.get("server")),
     )
@@ -2129,7 +2160,7 @@ async def update_system_config(request: Request, body: SystemConfigRequest) -> S
     Supports:
     - system host-name
     - system time-zone
-    - system name-server (list)
+    - system name-server (list, only when explicitly provided)
     - system domain-name
     """
     await require_write_permission(request, FeatureGroup.SYSTEM)
@@ -2138,7 +2169,11 @@ async def update_system_config(request: Request, body: SystemConfigRequest) -> S
         desired_hostname = _string_or_none(body.hostname)
         desired_timezone = _string_or_none(body.timezone)
         desired_domain = _string_or_none(body.domain_name)
-        desired_name_servers = _normalize_unique_strings(body.name_servers)
+        desired_name_servers = (
+            _normalize_unique_strings(body.name_servers)
+            if body.name_servers is not None
+            else None
+        )
 
         if desired_hostname:
             desired_hostname = _normalize_hostname_or_400(desired_hostname, field_name="hostname")
@@ -2147,8 +2182,9 @@ async def update_system_config(request: Request, body: SystemConfigRequest) -> S
         if desired_domain:
             desired_domain = _normalize_hostname_or_400(desired_domain, field_name="domain name")
 
-        for name_server in desired_name_servers:
-            _normalize_token_or_400(name_server, field_name="name server")
+        if desired_name_servers is not None:
+            for name_server in desired_name_servers:
+                _normalize_token_or_400(name_server, field_name="name server")
 
         service = get_session_vyos_service(request)
         full_config = await run_in_threadpool(service.get_full_config, refresh=True)
@@ -2178,12 +2214,13 @@ async def update_system_config(request: Request, body: SystemConfigRequest) -> S
             elif current_domain:
                 operations.append({"op": "delete", "path": ["system", "domain-name"]})
 
-        current_name_server_set = set(current_name_servers)
-        desired_name_server_set = set(desired_name_servers)
-        for name_server in sorted(current_name_server_set - desired_name_server_set):
-            operations.append({"op": "delete", "path": ["system", "name-server", name_server]})
-        for name_server in sorted(desired_name_server_set - current_name_server_set):
-            operations.append({"op": "set", "path": ["system", "name-server", name_server]})
+        if desired_name_servers is not None:
+            current_name_server_set = set(current_name_servers)
+            desired_name_server_set = set(desired_name_servers)
+            for name_server in sorted(current_name_server_set - desired_name_server_set):
+                operations.append({"op": "delete", "path": ["system", "name-server", name_server]})
+            for name_server in sorted(desired_name_server_set - current_name_server_set):
+                operations.append({"op": "set", "path": ["system", "name-server", name_server]})
 
         if operations:
             response = await run_in_threadpool(service.apply_operations, operations)
@@ -3701,12 +3738,33 @@ async def update_login_config(request: Request, body: LoginConfigRequest) -> Log
         desired_max_sessions = body.max_sessions_per_user
         desired_timeout = body.timeout
         desired_radius_source = (body.radius_source_address or "").strip()
+        desired_radius_vrf = (body.radius_vrf or "").strip()
+        desired_tacacs_source = (body.tacacs_source_address or "").strip()
+        desired_tacacs_vrf = (body.tacacs_vrf or "").strip()
         if desired_radius_source:
             desired_radius_source = _normalize_ip_address_or_400(
                 desired_radius_source, field_name="radius_source_address"
             )
         else:
             desired_radius_source = ""
+        if desired_radius_vrf:
+            desired_radius_vrf = _normalize_token_or_400(
+                desired_radius_vrf, field_name="radius_vrf"
+            )
+        else:
+            desired_radius_vrf = ""
+        if desired_tacacs_source:
+            desired_tacacs_source = _normalize_ip_address_or_400(
+                desired_tacacs_source, field_name="tacacs_source_address"
+            )
+        else:
+            desired_tacacs_source = ""
+        if desired_tacacs_vrf:
+            desired_tacacs_vrf = _normalize_token_or_400(
+                desired_tacacs_vrf, field_name="tacacs_vrf"
+            )
+        else:
+            desired_tacacs_vrf = ""
 
         service = get_session_vyos_service(request)
         full_config = await run_in_threadpool(service.get_full_config, refresh=True)
@@ -3785,8 +3843,46 @@ async def update_login_config(request: Request, body: LoginConfigRequest) -> Log
                     {"op": "delete", "path": ["system", "login", "radius", "source-address"]}
                 )
 
-        def _server_signature(server: LoginAuthServerConfig) -> tuple[str, Optional[int], Optional[int]]:
-            return (server.key, server.port, server.timeout)
+        current_radius_vrf = (current.radius_vrf or "").strip()
+        if desired_radius_vrf != current_radius_vrf:
+            if desired_radius_vrf:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["system", "login", "radius", "vrf", desired_radius_vrf],
+                    }
+                )
+            else:
+                operations.append({"op": "delete", "path": ["system", "login", "radius", "vrf"]})
+
+        current_tacacs_source = (current.tacacs_source_address or "").strip()
+        if desired_tacacs_source != current_tacacs_source:
+            if desired_tacacs_source:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["system", "login", "tacacs", "source-address", desired_tacacs_source],
+                    }
+                )
+            else:
+                operations.append(
+                    {"op": "delete", "path": ["system", "login", "tacacs", "source-address"]}
+                )
+
+        current_tacacs_vrf = (current.tacacs_vrf or "").strip()
+        if desired_tacacs_vrf != current_tacacs_vrf:
+            if desired_tacacs_vrf:
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": ["system", "login", "tacacs", "vrf", desired_tacacs_vrf],
+                    }
+                )
+            else:
+                operations.append({"op": "delete", "path": ["system", "login", "tacacs", "vrf"]})
+
+        def _server_signature(server: LoginAuthServerConfig) -> tuple[str, Optional[int], Optional[int], bool]:
+            return (server.key, server.port, server.timeout, bool(server.disabled))
 
         def _sync_auth_servers(
             subtree: str,
@@ -3849,6 +3945,20 @@ async def update_login_config(request: Request, body: LoginConfigRequest) -> Log
                                 address,
                                 "timeout",
                                 str(desired_server.timeout),
+                            ],
+                        }
+                    )
+                if desired_server.disabled:
+                    operations.append(
+                        {
+                            "op": "set",
+                            "path": [
+                                "system",
+                                "login",
+                                subtree,
+                                "server",
+                                address,
+                                "disable",
                             ],
                         }
                     )

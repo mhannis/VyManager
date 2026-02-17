@@ -94,6 +94,7 @@ interface LoginServerFormState {
   key: string;
   port: string;
   timeout: string;
+  disabled: boolean;
 }
 
 const EMPTY_LOGIN_SERVER: LoginServerFormState = {
@@ -101,6 +102,7 @@ const EMPTY_LOGIN_SERVER: LoginServerFormState = {
   key: "",
   port: "",
   timeout: "",
+  disabled: false,
 };
 
 const EMPTY_LOGIN_CONFIG: LoginConfigResponse = {
@@ -110,6 +112,9 @@ const EMPTY_LOGIN_CONFIG: LoginConfigResponse = {
   max_sessions_per_user: null,
   timeout: null,
   radius_source_address: "",
+  radius_vrf: "",
+  tacacs_source_address: "",
+  tacacs_vrf: "",
   radius_servers: [],
   tacacs_servers: [],
 };
@@ -120,6 +125,7 @@ function toServerForm(entry: LoginAuthServerConfig): LoginServerFormState {
     key: entry.key || "",
     port: typeof entry.port === "number" ? String(entry.port) : "",
     timeout: typeof entry.timeout === "number" ? String(entry.timeout) : "",
+    disabled: entry.disabled === true,
   };
 }
 
@@ -157,7 +163,7 @@ function normalizeLoginServerRows(
       }
     }
 
-    dedupe.set(address, { address, key, port, timeout });
+    dedupe.set(address, { address, key, port, timeout, disabled: row.disabled === true });
   }
   return Array.from(dedupe.entries())
     .sort((left, right) => left[0].localeCompare(right[0]))
@@ -208,6 +214,9 @@ export default function SystemUsersPage() {
   const [maxSessionsPerUser, setMaxSessionsPerUser] = useState("");
   const [loginTimeout, setLoginTimeout] = useState("");
   const [radiusSourceAddress, setRadiusSourceAddress] = useState("");
+  const [radiusVrf, setRadiusVrf] = useState("");
+  const [tacacsSourceAddress, setTacacsSourceAddress] = useState("");
+  const [tacacsVrf, setTacacsVrf] = useState("");
   const [radiusServers, setRadiusServers] = useState<LoginServerFormState[]>([]);
   const [tacacsServers, setTacacsServers] = useState<LoginServerFormState[]>([]);
 
@@ -227,6 +236,9 @@ export default function SystemUsersPage() {
     );
     setLoginTimeout(typeof response.timeout === "number" ? String(response.timeout) : "");
     setRadiusSourceAddress(response.radius_source_address || "");
+    setRadiusVrf(response.radius_vrf || "");
+    setTacacsSourceAddress(response.tacacs_source_address || "");
+    setTacacsVrf(response.tacacs_vrf || "");
     setRadiusServers((response.radius_servers || []).map(toServerForm));
     setTacacsServers((response.tacacs_servers || []).map(toServerForm));
   };
@@ -393,7 +405,7 @@ export default function SystemUsersPage() {
     collection: "radius" | "tacacs",
     index: number,
     key: keyof LoginServerFormState,
-    value: string,
+    value: string | boolean,
   ) => {
     const updater =
       collection === "radius" ? setRadiusServers : setTacacsServers;
@@ -437,21 +449,15 @@ export default function SystemUsersPage() {
         max_sessions_per_user: parsedMaxSessions,
         timeout: parsedTimeout,
         radius_source_address: radiusSourceAddress.trim() || null,
+        radius_vrf: radiusVrf.trim() || null,
+        tacacs_source_address: tacacsSourceAddress.trim() || null,
+        tacacs_vrf: tacacsVrf.trim() || null,
         radius_servers: normalizeLoginServerRows(radiusServers, "RADIUS"),
         tacacs_servers: normalizeLoginServerRows(tacacsServers, "TACACS"),
       };
 
       const response = await systemService.updateLoginConfig(payload);
-      setLoginConfig(response);
-      setBannerPreLogin(response.banner_pre_login || "");
-      setBannerPostLogin(response.banner_post_login || "");
-      setMaxSessionsPerUser(
-        typeof response.max_sessions_per_user === "number" ? String(response.max_sessions_per_user) : ""
-      );
-      setLoginTimeout(typeof response.timeout === "number" ? String(response.timeout) : "");
-      setRadiusSourceAddress(response.radius_source_address || "");
-      setRadiusServers((response.radius_servers || []).map(toServerForm));
-      setTacacsServers((response.tacacs_servers || []).map(toServerForm));
+      syncLoginForm(response);
       setSuccess("Global login authentication settings updated.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save login configuration");
@@ -843,6 +849,36 @@ export default function SystemUsersPage() {
               </div>
             </div>
 
+            <div className="grid gap-3 md:grid-cols-3">
+              <div>
+                <Label>RADIUS VRF</Label>
+                <Input
+                  value={radiusVrf}
+                  onChange={(event) => setRadiusVrf(event.target.value)}
+                  placeholder="Optional VRF name"
+                  disabled={!canEdit || saving || savingLoginConfig}
+                />
+              </div>
+              <div>
+                <Label>TACACS Source Address</Label>
+                <Input
+                  value={tacacsSourceAddress}
+                  onChange={(event) => setTacacsSourceAddress(event.target.value)}
+                  placeholder="Optional IPv4/IPv6 address"
+                  disabled={!canEdit || saving || savingLoginConfig}
+                />
+              </div>
+              <div>
+                <Label>TACACS VRF</Label>
+                <Input
+                  value={tacacsVrf}
+                  onChange={(event) => setTacacsVrf(event.target.value)}
+                  placeholder="Optional VRF name"
+                  disabled={!canEdit || saving || savingLoginConfig}
+                />
+              </div>
+            </div>
+
             <div className="grid gap-3 md:grid-cols-2">
               <div>
                 <Label>Pre-login Banner</Label>
@@ -897,7 +933,7 @@ export default function SystemUsersPage() {
                           value={row.key}
                           onChange={(event) => updateServerRow("radius", index, "key", event.target.value)}
                           placeholder="Shared key"
-                          className="md:col-span-4"
+                          className="md:col-span-3"
                           disabled={!canEdit || saving || savingLoginConfig}
                         />
                         <Input
@@ -914,6 +950,16 @@ export default function SystemUsersPage() {
                           className="md:col-span-2"
                           disabled={!canEdit || saving || savingLoginConfig}
                         />
+                        <label className="md:col-span-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          <Checkbox
+                            checked={row.disabled}
+                            onCheckedChange={(checked) =>
+                              updateServerRow("radius", index, "disabled", checked === true)
+                            }
+                            disabled={!canEdit || saving || savingLoginConfig}
+                          />
+                          Disabled
+                        </label>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -959,7 +1005,7 @@ export default function SystemUsersPage() {
                           value={row.key}
                           onChange={(event) => updateServerRow("tacacs", index, "key", event.target.value)}
                           placeholder="Shared key"
-                          className="md:col-span-4"
+                          className="md:col-span-3"
                           disabled={!canEdit || saving || savingLoginConfig}
                         />
                         <Input
@@ -976,6 +1022,16 @@ export default function SystemUsersPage() {
                           className="md:col-span-2"
                           disabled={!canEdit || saving || savingLoginConfig}
                         />
+                        <label className="md:col-span-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          <Checkbox
+                            checked={row.disabled}
+                            onCheckedChange={(checked) =>
+                              updateServerRow("tacacs", index, "disabled", checked === true)
+                            }
+                            disabled={!canEdit || saving || savingLoginConfig}
+                          />
+                          Disabled
+                        </label>
                         <Button
                           variant="ghost"
                           size="icon"

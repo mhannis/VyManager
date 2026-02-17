@@ -1,72 +1,91 @@
 {
-  "feature_id": "system-update-runtime-visibility-2026-02-17",
-  "title": "System update/user route resilience + default update URL (SYS-17 follow-up)",
+  "feature_id": "backlog-partial-implementation-sweep-2026-02-17",
+  "title": "Partial backlog implementation sweep (implementation first, verify deferred)",
   "status": "in_progress",
   "acceptance_criteria": [
-    "System Update Check page no longer hard-fails with `Not Found` when runtime status endpoint is absent; it shows an unavailable warning state.",
-    "System Users page continues to load local-user CRUD even if global login config endpoint is unavailable.",
-    "Update Check URL field is pre-populated by default with the VyOS nightly version JSON URL while auto-check remains disabled by default.",
-    "Frontend validation and smoke gates pass after runtime restart."
+    "Convert partial backlog items to implementation-complete status by closing guide-leaf gaps in UI/backend.",
+    "Keep UI/API workflows form-driven (no free-form CLI primary workflows).",
+    "Run validation gates after each completed slice (pytest + tsc/eslint + build + smoke).",
+    "Defer live-environment verification to explicit verify phase after implementation backlog closure."
   ],
   "assumptions": [
-    "Route-level 404 with message `Not Found` indicates backend version/process mismatch rather than data-path failure.",
-    "Fallback behavior should preserve critical workflows (local users, status visibility) without changing backend API contracts."
+    "Backlog status `verify` is the implementation-complete state for this pass.",
+    "Live dual-node or hardware-specific validation remains outside this implementation pass."
   ],
   "tasks": [
     {
       "id": "T1",
-      "owner_role": "UI",
+      "owner_role": "Backend",
       "status": "done",
       "files": [
-        "frontend/src/lib/api/system-update-check.ts"
+        "backend/routers/system.py",
+        "backend/tests/test_system_services_ssh_dns.py"
       ],
-      "notes": "Added graceful fallback for `/vyos/system-update-check/status` route-level 404."
+      "notes": "SYS-10 DNS ownership cleanup (optional name_servers in system/config)."
     },
     {
       "id": "T2",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/system/users/page.tsx"
+        "frontend/src/app/system/identification/page.tsx",
+        "frontend/src/lib/api/system.ts"
       ],
-      "notes": "Changed load flow to allSettled, isolated login-config availability, and preserved local-user operations."
+      "notes": "System Identification no longer pushes resolver-owned name-server state."
     },
     {
       "id": "T3",
       "owner_role": "UI",
       "status": "done",
       "files": [
-        "frontend/src/app/system/update-check/page.tsx"
+        "frontend/scripts/check-runtime.sh",
+        "frontend/scripts/smoke-ui.mjs"
       ],
-      "notes": "Set default update URL form value while keeping auto-check disabled by default."
+      "notes": "X-04 smoke route coverage expanded to all current static app pages; browser exclusion for onboarding redirect flow."
     },
     {
       "id": "T4",
-      "owner_role": "Build/Test",
+      "owner_role": "Tooling",
       "status": "done",
-      "files": [],
-      "notes": "Restarted vm-api/vm-ui and passed tsc, eslint (0 errors), build, smoke:runtime, smoke:ui."
+      "files": [
+        "scripts/check_option_parity_thresholds.py",
+        "scripts/option_parity_thresholds.json",
+        ".github/workflows/option-parity.yml"
+      ],
+      "notes": "X-01 parity thresholds now enforced in CI."
     },
     {
       "id": "T5",
+      "owner_role": "Backend/UI",
+      "status": "doing",
+      "files": [
+        "backend/routers/system.py",
+        "backend/tests/test_system_login_config.py",
+        "frontend/src/app/system/users/page.tsx",
+        "frontend/src/lib/api/system.ts"
+      ],
+      "notes": "SYS-09 parity depth for login auth controls (source/vrf/disable complete; remaining local-user auth leaves pending)."
+    },
+    {
+      "id": "T6",
       "owner_role": "Planner",
       "status": "todo",
       "files": [
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.md",
         "CONFIG_GUIDE_IMPLEMENTATION_BACKLOG.json"
       ],
-      "notes": "Continue partial-backlog implementation sweep before verification pass."
+      "notes": "Continue converting remaining partial items to verify in guide order."
     }
   ],
   "commands": {
     "build": "cd frontend && npm run -s build",
-    "test": "cd frontend && npx tsc --noEmit --pretty false && npx eslint src/lib/api/system-update-check.ts src/app/system/update-check/page.tsx src/app/system/users/page.tsx && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
+    "test": "cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_login_config.py tests/test_system_services_ssh_dns.py && cd ../frontend && npx tsc --noEmit --pretty false && npx eslint src/app/system/users/page.tsx src/lib/api/system.ts && npm run -s build && npm run -s smoke:runtime && npm run -s smoke:ui",
     "lint": "cd frontend && npm run -s lint"
   },
   "worktrees_or_threads": [
     {
       "name": "feature/containers-automation-v1",
-      "purpose": "System route resilience + default update URL, then continue partial backlog",
+      "purpose": "Partial backlog implementation sweep",
       "status": "active"
     }
   ]

@@ -300,6 +300,16 @@ npm run build:docker     # Build Docker images
 npm run clean            # Clean all build artifacts and containers
 ```
 
+### Parity Quality Gates
+
+```bash
+# Generate option-level parity scorecard from docs/config matrix
+python3 scripts/score_option_parity.py
+
+# Enforce configured non-regression thresholds
+python3 scripts/check_option_parity_thresholds.py
+```
+
 ---
 
 ## 🔍 Managing Multiple VyOS Instances

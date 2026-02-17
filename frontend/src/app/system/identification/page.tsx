@@ -65,8 +65,6 @@ export default function SystemIdentificationPage() {
         hostname: hostname.trim() || null,
         timezone: timezone.trim() || null,
         domain_name: domainName.trim() || null,
-        // Name servers are managed under Services > DNS Resolver to avoid split ownership.
-        name_servers: config?.name_servers ?? [],
       });
       setConfig(updated);
       setHostname(updated.hostname || "");

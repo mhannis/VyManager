@@ -1,12 +1,12 @@
 # OPTION_PARITY_SCORECARD.md
 
-Generated: 2026-02-16T13:50:21+00:00
+Generated: 2026-02-17T00:52:16+00:00
 
 ## Summary
 - Pages: 129
 - Documented cfgcmd leaves: 3513
-- Matched in repo command paths: 293
-- Coverage: 8.34%
+- Matched in repo command paths: 296
+- Coverage: 8.43%
 
 ## Domain Coverage
 
@@ -23,7 +23,7 @@ Generated: 2026-02-16T13:50:21+00:00
 | policy | 234 | 29 | 12.39% | missing |
 | protocols | 436 | 114 | 26.15% | missing |
 | services | 400 | 95 | 23.75% | missing |
-| system | 184 | 12 | 6.52% | missing |
+| system | 184 | 15 | 8.15% | missing |
 | traffic_policy | 51 | 0 | 0.0% | missing |
 | vpn | 258 | 4 | 1.55% | missing |
 | vrf | 16 | 3 | 18.75% | missing |

@@ -26,7 +26,7 @@ export interface SystemConfig {
 export interface SystemConfigUpdateRequest {
   hostname: string | null;
   timezone: string | null;
-  name_servers: string[];
+  name_servers?: string[];
   domain_name: string | null;
 }
 
@@ -387,6 +387,7 @@ export interface LoginAuthServerConfig {
   key: string;
   port?: number | null;
   timeout?: number | null;
+  disabled?: boolean;
 }
 
 export interface LoginConfigResponse {
@@ -396,6 +397,9 @@ export interface LoginConfigResponse {
   max_sessions_per_user?: number | null;
   timeout?: number | null;
   radius_source_address?: string | null;
+  radius_vrf?: string | null;
+  tacacs_source_address?: string | null;
+  tacacs_vrf?: string | null;
   radius_servers: LoginAuthServerConfig[];
   tacacs_servers: LoginAuthServerConfig[];
 }
@@ -406,6 +410,9 @@ export interface LoginConfigUpdateRequest {
   max_sessions_per_user?: number | null;
   timeout?: number | null;
   radius_source_address?: string | null;
+  radius_vrf?: string | null;
+  tacacs_source_address?: string | null;
+  tacacs_vrf?: string | null;
   radius_servers: LoginAuthServerConfig[];
   tacacs_servers: LoginAuthServerConfig[];
 }

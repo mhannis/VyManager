@@ -68,15 +68,19 @@ def test_get_login_config_parses_radius_and_tacacs(monkeypatch, app, allow_permi
                     "timeout": "15",
                     "radius": {
                         "source-address": "192.0.2.10",
+                        "vrf": "mgmt",
                         "server": {
                             "198.51.100.10": {
                                 "key": "radius-key",
                                 "port": "1812",
                                 "timeout": "12",
+                                "disable": {},
                             }
                         },
                     },
                     "tacacs": {
+                        "source-address": "192.0.2.20",
+                        "vrf": "auth",
                         "server": {
                             "198.51.100.20": {
                                 "key": "tacacs-key",
@@ -102,10 +106,14 @@ def test_get_login_config_parses_radius_and_tacacs(monkeypatch, app, allow_permi
     assert data["max_sessions_per_user"] == 5
     assert data["timeout"] == 15
     assert data["radius_source_address"] == "192.0.2.10"
+    assert data["radius_vrf"] == "mgmt"
+    assert data["tacacs_source_address"] == "192.0.2.20"
+    assert data["tacacs_vrf"] == "auth"
     assert data["radius_servers"][0]["address"] == "198.51.100.10"
     assert data["radius_servers"][0]["key"] == "radius-key"
     assert data["radius_servers"][0]["port"] == 1812
     assert data["radius_servers"][0]["timeout"] == 12
+    assert data["radius_servers"][0]["disabled"] is True
     assert data["tacacs_servers"][0]["address"] == "198.51.100.20"
     assert data["tacacs_servers"][0]["key"] == "tacacs-key"
 
@@ -120,11 +128,12 @@ def test_update_login_config_emits_expected_operations(monkeypatch, app, allow_p
                     "timeout": "10",
                     "radius": {
                         "source-address": "192.0.2.10",
+                        "vrf": "old-radius",
                         "server": {
                             "198.51.100.10": {"key": "old-key", "port": "1812", "timeout": "5"}
                         },
                     },
-                    "tacacs": {"server": {}},
+                    "tacacs": {"source-address": "192.0.2.30", "vrf": "old-tacacs", "server": {}},
                 }
             }
         }
@@ -140,8 +149,11 @@ def test_update_login_config_emits_expected_operations(monkeypatch, app, allow_p
             "max_sessions_per_user": 4,
             "timeout": 30,
             "radius_source_address": "192.0.2.11",
+            "radius_vrf": "new-radius",
+            "tacacs_source_address": "192.0.2.31",
+            "tacacs_vrf": "new-tacacs",
             "radius_servers": [
-                {"address": "198.51.100.10", "key": "new-key", "port": 1812, "timeout": 8},
+                {"address": "198.51.100.10", "key": "new-key", "port": 1812, "timeout": 8, "disabled": True},
                 {"address": "198.51.100.11", "key": "new-key-2", "port": 1812, "timeout": 8},
             ],
             "tacacs_servers": [
@@ -159,8 +171,12 @@ def test_update_login_config_emits_expected_operations(monkeypatch, app, allow_p
     assert ("system", "login", "max-sessions-per-user", "4") in op_paths
     assert ("system", "login", "timeout", "30") in op_paths
     assert ("system", "login", "radius", "source-address", "192.0.2.11") in op_paths
+    assert ("system", "login", "radius", "vrf", "new-radius") in op_paths
+    assert ("system", "login", "tacacs", "source-address", "192.0.2.31") in op_paths
+    assert ("system", "login", "tacacs", "vrf", "new-tacacs") in op_paths
     assert ("system", "login", "radius", "server", "198.51.100.10") in op_paths
     assert ("system", "login", "radius", "server", "198.51.100.10", "key", "new-key") in op_paths
+    assert ("system", "login", "radius", "server", "198.51.100.10", "disable") in op_paths
     assert ("system", "login", "radius", "server", "198.51.100.11") in op_paths
     assert ("system", "login", "tacacs", "server", "198.51.100.20") in op_paths
     assert ("system", "login", "tacacs", "server", "198.51.100.20", "key", "tacacs-key") in op_paths
@@ -183,3 +199,21 @@ def test_update_login_config_rejects_server_without_key(monkeypatch, app, allow_
 
     assert response.status_code == 400
     assert "requires key" in response.json().get("detail", "")
+
+
+def test_update_login_config_rejects_invalid_radius_vrf(monkeypatch, app, allow_permissions):
+    service = DummyService(full_config={"system": {"login": {}}})
+    monkeypatch.setattr(system_router, "get_session_vyos_service", lambda _req: service)
+
+    client = TestClient(app)
+    response = client.put(
+        "/vyos/system/login-config",
+        json={
+            "radius_vrf": "bad vrf",
+            "radius_servers": [],
+            "tacacs_servers": [],
+        },
+    )
+
+    assert response.status_code == 400
+    assert "radius_vrf" in response.json().get("detail", "")

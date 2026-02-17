@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-02-16T13:50:21+00:00",
+  "generated_at": "2026-02-17T00:52:16+00:00",
   "source": "CONFIG_COVERAGE_MATRIX.json",
   "method": "docs_cfgcmd_leaf_match_against_repo_command_paths",
   "summary": {
     "total_pages": 129,
     "total_cfgcmd": 3513,
-    "matched_cfgcmd": 293,
-    "coverage_percent": 8.34
+    "matched_cfgcmd": 296,
+    "coverage_percent": 8.43
   },
   "domains": [
     {
@@ -161,8 +161,8 @@
     {
       "domain": "system",
       "total_cfgcmd": 184,
-      "matched_cfgcmd": 12,
-      "coverage_percent": 6.52,
+      "matched_cfgcmd": 15,
+      "coverage_percent": 8.15,
       "status": "missing",
       "unmatched_examples": [
         "set system acceleration qat",
@@ -2098,8 +2098,8 @@
       "domain": "system",
       "cli_scope": "system syslog",
       "total_cfgcmd": 18,
-      "matched_cfgcmd": 0,
-      "coverage_percent": 0.0,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 5.56,
       "status": "missing",
       "parse_error": null,
       "unmatched_examples": [
@@ -2107,7 +2107,7 @@
         "set system syslog file <filename> facility <keyword> level <keyword>",
         "set system syslog marker disable",
         "set system syslog marker interval <number>",
-        "set system syslog preserve-fqdn"
+        "set system syslog remote <address> facility <keyword> level <keyword>"
       ]
     },
     {
@@ -2149,13 +2149,12 @@
       "domain": "system",
       "cli_scope": "system updates",
       "total_cfgcmd": 2,
-      "matched_cfgcmd": 0,
-      "coverage_percent": 0.0,
-      "status": "missing",
+      "matched_cfgcmd": 1,
+      "coverage_percent": 50.0,
+      "status": "partial",
       "parse_error": null,
       "unmatched_examples": [
-        "set system update-check auto-check",
-        "set system update-check url <url>"
+        "set system update-check auto-check"
       ]
     },
     {
@@ -2165,12 +2164,11 @@
       "domain": "system",
       "cli_scope": "system watchdog",
       "total_cfgcmd": 5,
-      "matched_cfgcmd": 0,
-      "coverage_percent": 0.0,
+      "matched_cfgcmd": 1,
+      "coverage_percent": 20.0,
       "status": "missing",
       "parse_error": null,
       "unmatched_examples": [
-        "set system watchdog",
         "set system watchdog module <module-name>",
         "set system watchdog reboot-timeout <seconds>",
         "set system watchdog shutdown-timeout <seconds>",

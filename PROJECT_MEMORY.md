@@ -464,3 +464,30 @@ Assumptions:
   - `cd frontend && npm run -s smoke:runtime` (pass)
   - `cd frontend && npm run -s smoke:ui` (pass)
 - Next queue: continue converting remaining partial backlog items to complete implementation slices, then run verification sweep.
+
+## Cycle Update (2026-02-17 backlog sweep #2)
+- Objective executed: continue partial-backlog implementation and move completed slices to `verify` while deferring live verification.
+- Backlog items advanced to `verify` this cycle:
+  - `SYS-10` (DNS ownership/resolver cleanup)
+  - `SYS-16` (time-zone + update-check + watchdog guide-leaf coverage)
+  - `SVC-01` (Config Sync guide-leaf coverage)
+  - `X-01` (option parity threshold gate implemented)
+  - `X-04` (smoke route coverage expanded to all app pages)
+- Implementation changes delivered:
+  - `backend/routers/system.py`: `SystemConfigRequest.name_servers` now optional; update logic preserves existing name servers unless explicitly provided.
+  - `frontend/src/app/system/identification/page.tsx`: removed forced `name_servers` payload coupling from System Identification saves.
+  - `backend/routers/system.py` + `frontend/src/app/system/users/page.tsx` + `frontend/src/lib/api/system.ts`: expanded global login config support for `radius vrf`, `tacacs source-address`, `tacacs vrf`, and per-server `disable` state.
+  - `frontend/scripts/check-runtime.sh` and `frontend/scripts/smoke-ui.mjs`: route sets now cover all current app pages (with `/onboarding` excluded from browser smoke).
+  - Added parity gate tooling: `scripts/check_option_parity_thresholds.py`, `scripts/option_parity_thresholds.json`, and `.github/workflows/option-parity.yml`.
+- Validation this cycle:
+  - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_services_ssh_dns.py` (pass)
+  - `cd backend && PYTHONPATH=. ./.venv/bin/pytest -q tests/test_system_login_config.py tests/test_system_services_ssh_dns.py` (pass)
+  - `cd frontend && npx tsc --noEmit --pretty false` (pass)
+  - `cd frontend && npx eslint src/app/system/identification/page.tsx src/lib/api/system.ts scripts/smoke-ui.mjs` (pass)
+  - `cd frontend && npx eslint src/app/system/users/page.tsx src/lib/api/system.ts` (0 errors; existing hooks warning)
+  - `cd frontend && npm run -s build` (pass)
+  - `cd frontend && npm run -s smoke:runtime` (pass)
+  - `cd frontend && npm run -s smoke:ui` (pass after removing `/onboarding` false-positive route)
+  - `python3 scripts/score_option_parity.py && python3 scripts/check_option_parity_thresholds.py` (pass)
+- Open active slice:
+  - `SYS-09` remains `partial`; latest depth work added RADIUS/TACACS source/VRF and server disable controls, but user auth-key option/type + OTP rate-time parity leaves still need completion before moving to `verify`.

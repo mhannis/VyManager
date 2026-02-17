@@ -1,0 +1,10 @@
+{
+  "overall_min_coverage": 8.0,
+  "domain_min_coverage": {
+    "policy": 10.0,
+    "protocols": 20.0,
+    "services": 20.0,
+    "system": 6.0,
+    "pki": 90.0
+  }
+}

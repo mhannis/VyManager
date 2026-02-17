@@ -107,7 +107,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `PR-06` (`partial`): RPKI and MPLS option-level parity completion.
 
 ### Service (`service/*`)
-- `SVC-01` (`partial`): Config Sync service page + backend wrapper implemented; perform option-depth/UX validation on live nodes.
+- `SVC-01` (`verify`): Config Sync guide leaves (`mode`, `secondary address/key/port/timeout`, `section`) are now represented with form-based CRUD and wrapper-backed writes; pending live-node verification.
 - `SVC-02` (`partial`): Router Advertisements service page + backend wrapper implemented; continue option-depth parity audit and validation.
 - `SVC-03` (`partial`): DHCP Server parity sweep vs guide (shared networks/subnets/options/UX guardrails).
 - `SVC-04` (`partial`): DNS forwarder/resolver authoritative/reverse-lookup UX parity hardening.
@@ -140,20 +140,20 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `SYS-07` (`partial`): IPv6 system options page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-08` (`partial`): LCD page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-09` (`partial`): Login/user management parity deepening in progress: local user CRUD now includes `authentication principal` + OTP controls (`key`, `rate-limit`, `window-size`), and global `system login` page coverage now includes pre/post-login banners, max sessions, timeout, RADIUS source address/server set, and TACACS server set with form-based UI + backend validation/tests. Remaining depth: advanced multi-auth edge behavior and live end-to-end verification against real AAA backends.
-- `SYS-10` (`partial`): Name-server ownership and resolver integration cleanup.
+- `SYS-10` (`verify`): Name-server ownership cleanup completed: `system/config` now treats `name_servers` as optional and preserves existing `system name-server` entries unless explicitly provided, so System Identification no longer risks resolver-side DNS drift.
 - `SYS-11` (`partial`): Build System Proxy page. Baseline form-first page + backend wrapper are implemented; option-depth parity and live validation remain.
 - `SYS-12` (`partial`): sFlow page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
 - `SYS-13` (`partial`): Build Sysctl page. Baseline parameter CRUD page + backend wrapper are implemented; option-depth parity and live validation remain.
 - `SYS-14` (`partial`): System Syslog page + backend wrapper now implemented with global marker/FQDN/source controls and structured console/file/remote destination rule editing (including remote protocol/port/format/TLS baseline). Remaining depth: advanced archive/template leaves and exhaustive interop validation.
 - `SYS-15` (`partial`): Task Scheduler page + backend wrapper are implemented; option-depth parity and live workflow validation remain.
-- `SYS-16` (`partial`): Time-zone/update/watchdog parity deepening in progress (added `update-check auto-check` and watchdog hardware controls: `module`, `timeout`, `shutdown-timeout`, `reboot-timeout`; remaining depth + live verification still pending).
+- `SYS-16` (`verify`): Time-zone/update/watchdog implementation coverage now matches guide leaves (`system time-zone`, `system update-check auto-check/url`, `system watchdog module/timeout/shutdown-timeout/reboot-timeout`) with form-based controls; pending live verification.
 - `SYS-17` (`partial`): Update runtime visibility parity in progress: `System -> Update Check` now shows live command output/status (up-to-date vs update available) using `show/generate system updates` probes, and `Dashboard -> System Information` surfaces update state with link-through to Update Check. Remaining work: multi-version output-shape validation on additional VyOS targets.
 
 ---
 
 ## Program-Level Cross-Cutting Backlog
-- `X-01` (`partial`): Added option-level parity scorer (`scripts/score_option_parity.py`) with JSON/MD scorecards; next step is improving matching precision and enforcing per-domain thresholds in CI.
+- `X-01` (`verify`): Option-level parity scorer is now enforced via threshold gate (`scripts/check_option_parity_thresholds.py` + `scripts/option_parity_thresholds.json`) and CI workflow (`.github/workflows/option-parity.yml`); pending long-run tuning of thresholds as coverage increases.
 - `X-02` (`partial`): Added fixture-driven save/apply/reload loops (`backend/tests/fixtures/config_apply_loops.json`, `backend/tests/test_fixture_save_apply_reload_loops.py`, `backend/tests/test_firewall_nat_save_apply_reload_loops.py`) across 35 domains/endpoints (protocols, services, VPN, DMVPN, PKI, QoS, system wrappers, baseline firewall/NAT); remaining work is advanced-option depth and live-device runs.
 - `X-03` (`partial`): Added domain config snapshot tests (`backend/tests/snapshots/domain_config_snapshots.json`, `backend/tests/test_domain_config_snapshots.py`, `backend/tests/snapshots/firewall_nat_config_snapshots.json`, `backend/tests/test_firewall_nat_config_snapshots.py`) across 38 endpoints; remaining work is command-delta snapshots and live-instance comparisons.
-- `X-04`: Add browser smoke routes for every newly added/updated page.
+- `X-04` (`verify`): Browser/runtime smoke route coverage now includes every current app page route (with route-appropriate exclusions), pending ongoing verification as new pages are added.
 - `X-05` (`partial`): Added reproducible robustness relook runner (`scripts/run_robustness_relook.py`) and generated baseline report (`ROBUSTNESS_RELOOK_REPORT.md`); remaining work is broadening to full parity-domain live verification before final sign-off.
