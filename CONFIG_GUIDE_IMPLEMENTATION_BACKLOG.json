@@ -136,8 +136,8 @@
     {
       "id": "IF-06",
       "domain": "interfaces",
-      "status": "partial",
-      "title": "Add openvpn interface editor (baseline implemented; advanced option-depth verification remains)"
+      "status": "verify",
+      "title": "OpenVPN interface command-scope audit confirms current guide leaves are covered in existing form editor (authentication, device type, encryption/hash, IP tuning); pending live verification"
     },
     {
       "id": "IF-07",
