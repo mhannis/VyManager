@@ -31,6 +31,7 @@ import { Phase1Dialog } from "@/components/vpn/ipsec/Phase1Dialog";
 import { Phase2Dialog } from "@/components/vpn/ipsec/Phase2Dialog";
 import { VtiDialog } from "@/components/vpn/ipsec/VtiDialog";
 import { PskDialog } from "@/components/vpn/ipsec/PskDialog";
+import { MobileClientsTab } from "@/components/vpn/ipsec/MobileClientsTab";
 import {
   SiteToSiteWizard,
   type SiteToSiteWizardInterfaceOption,
@@ -583,6 +584,7 @@ export default function IPsecPage() {
             <TabsTrigger value="ike">IKE Groups</TabsTrigger>
             <TabsTrigger value="esp">ESP Groups</TabsTrigger>
             <TabsTrigger value="psk">PSK</TabsTrigger>
+            <TabsTrigger value="mobile">Mobile Clients</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="logs">Logs</TabsTrigger>
           </TabsList>
@@ -1191,6 +1193,10 @@ export default function IPsecPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="mobile" className="mt-4">
+            <MobileClientsTab canEdit={canEdit} />
           </TabsContent>
 
           <TabsContent value="settings" className="mt-4 space-y-4">

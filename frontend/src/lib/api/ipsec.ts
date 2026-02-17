@@ -185,6 +185,52 @@ export interface IPsecSettingsUpdateRequest {
   disable_route_autoinstall?: boolean | null;
 }
 
+export interface IPsecRemoteAccessLocalUser {
+  username: string;
+  password?: string | null;
+}
+
+export interface IPsecRemoteAccessRadiusServer {
+  address: string;
+  key?: string | null;
+  port?: string | null;
+  source_address?: string | null;
+}
+
+export interface IPsecRemoteAccessConfig {
+  enabled: boolean;
+  connection_method?: string | null;
+  ike_lifetime?: string | null;
+  esp_lifetime?: string | null;
+  pool_prefix?: string | null;
+  server_address?: string | null;
+  server_authentication?: string | null;
+  client_dns_servers: string[];
+  client_dhcp_interfaces: string[];
+  split_include_subnets: string[];
+  split_exclude_subnets: string[];
+  authentication_mode?: string | null;
+  local_users: IPsecRemoteAccessLocalUser[];
+  radius_servers: IPsecRemoteAccessRadiusServer[];
+}
+
+export interface IPsecRemoteAccessUpdateRequest {
+  enabled: boolean;
+  connection_method?: string | null;
+  ike_lifetime?: string | null;
+  esp_lifetime?: string | null;
+  pool_prefix?: string | null;
+  server_address?: string | null;
+  server_authentication?: string | null;
+  client_dns_servers?: string[] | null;
+  client_dhcp_interfaces?: string[] | null;
+  split_include_subnets?: string[] | null;
+  split_exclude_subnets?: string[] | null;
+  authentication_mode?: string | null;
+  local_users?: IPsecRemoteAccessLocalUser[] | null;
+  radius_servers?: IPsecRemoteAccessRadiusServer[] | null;
+}
+
 // Complete IPsec VPN configuration
 export interface IPsecConfig {
   "ike-group": Record<string, IKEGroup>;
@@ -240,6 +286,14 @@ class IPsecService {
 
   async updateSettings(request: IPsecSettingsUpdateRequest): Promise<IPsecOperationResponse> {
     return apiClient.put<IPsecOperationResponse>("/vyos/vpn/ipsec/settings", request);
+  }
+
+  async getRemoteAccess(): Promise<IPsecRemoteAccessConfig> {
+    return apiClient.get<IPsecRemoteAccessConfig>("/vyos/vpn/ipsec/remote-access");
+  }
+
+  async updateRemoteAccess(request: IPsecRemoteAccessUpdateRequest): Promise<IPsecOperationResponse> {
+    return apiClient.put<IPsecOperationResponse>("/vyos/vpn/ipsec/remote-access", request);
   }
 
   async upsertIkeGroup(name: string, request: IKEGroupUpsertRequest): Promise<IPsecOperationResponse> {

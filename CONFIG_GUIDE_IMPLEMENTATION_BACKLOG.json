@@ -364,8 +364,8 @@
     {
       "id": "VPN-02",
       "domain": "vpn",
-      "status": "partial",
-      "title": "IPsec remote-access/mobile parity"
+      "status": "verify",
+      "title": "IPsec remote-access (mobile clients) coverage added for enable/method/pool/server/client-network settings and local/RADIUS auth objects; pending live interoperability verification"
     },
     {
       "id": "VPN-03",

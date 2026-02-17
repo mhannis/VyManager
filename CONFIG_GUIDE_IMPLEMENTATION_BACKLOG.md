@@ -120,7 +120,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 
 ### VPN (`vpn/*`)
 - `VPN-01` (`verify`): IPsec site-to-site workflow now provides form-driven Phase 1/Phase 2 configuration depth (peer auth/IDs, IKE/ESP group proposal editors with encryption/hash/DH/PRF options, VTI bindings, tunnel selectors/priority/protocol, and wizard-assisted baseline generation). Pending live interoperability verification.
-- `VPN-02` (`partial`): IPsec remote-access/mobile-clients parity and required dependent objects.
+- `VPN-02` (`verify`): Added IPsec remote-access (mobile clients) API + UI coverage for enable/disable, connection method, pool prefix, server address/auth mode, client DNS/DHCP/split include/exclude subnets, and local/RADIUS authentication objects (users/servers). Pending live interoperability verification.
 - `VPN-03` (`verify`): DMVPN workflow now provides form-driven tunnel/NHRP/IPsec profile composition (interface tunnel + `protocols nhrp` + IPsec profile binding) including map/NHS entries, multicast/redirect/shortcut controls, and save/apply orchestration. Pending live multi-node verification.
 - `VPN-04` (`verify`): L2TP/OpenConnect/PPTP/SSTP pages provide form-driven remote-access configuration depth (auth modes, local users, pool/range management, DNS/WINS propagation, SSL/cert leaves where applicable, and accounting hooks). Pending live interoperability verification.
 - `VPN-05` (`verify`): End-to-end tunnel bring-up and diagnostics workflows (GUI-first).

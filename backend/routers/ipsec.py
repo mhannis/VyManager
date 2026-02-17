@@ -213,6 +213,64 @@ class IPsecSettingsUpdateRequest(BaseModel):
     disable_route_autoinstall: Optional[bool] = None
 
 
+class RemoteAccessLocalUser(BaseModel):
+    username: str
+    password: Optional[str] = None
+
+
+class RemoteAccessRadiusServer(BaseModel):
+    address: str
+    key: Optional[str] = None
+    port: Optional[str] = None
+    source_address: Optional[str] = None
+
+
+class RemoteAccessConfigResponse(BaseModel):
+    enabled: bool = False
+    connection_method: Optional[str] = None
+    ike_lifetime: Optional[str] = None
+    esp_lifetime: Optional[str] = None
+    pool_prefix: Optional[str] = None
+    server_address: Optional[str] = None
+    server_authentication: Optional[str] = None
+    client_dns_servers: List[str] = Field(default_factory=list)
+    client_dhcp_interfaces: List[str] = Field(default_factory=list)
+    split_include_subnets: List[str] = Field(default_factory=list)
+    split_exclude_subnets: List[str] = Field(default_factory=list)
+    authentication_mode: Optional[str] = None
+    local_users: List[RemoteAccessLocalUser] = Field(default_factory=list)
+    radius_servers: List[RemoteAccessRadiusServer] = Field(default_factory=list)
+
+
+class RemoteAccessLocalUserRequest(BaseModel):
+    username: str
+    password: Optional[str] = None
+
+
+class RemoteAccessRadiusServerRequest(BaseModel):
+    address: str
+    key: Optional[str] = None
+    port: Optional[str] = None
+    source_address: Optional[str] = None
+
+
+class RemoteAccessUpdateRequest(BaseModel):
+    enabled: bool = True
+    connection_method: Optional[str] = None
+    ike_lifetime: Optional[str] = None
+    esp_lifetime: Optional[str] = None
+    pool_prefix: Optional[str] = None
+    server_address: Optional[str] = None
+    server_authentication: Optional[str] = None
+    client_dns_servers: List[str] = Field(default_factory=list)
+    client_dhcp_interfaces: List[str] = Field(default_factory=list)
+    split_include_subnets: List[str] = Field(default_factory=list)
+    split_exclude_subnets: List[str] = Field(default_factory=list)
+    authentication_mode: Optional[str] = None
+    local_users: List[RemoteAccessLocalUserRequest] = Field(default_factory=list)
+    radius_servers: List[RemoteAccessRadiusServerRequest] = Field(default_factory=list)
+
+
 class TunnelPhase2UpsertRequest(BaseModel):
     enabled: Optional[bool] = None
     esp_group: Optional[str] = None
@@ -378,6 +436,61 @@ def _parse_site_to_site(root: Any) -> Dict[str, SiteToSitePeer]:
             tunnels=tunnels or None,
         )
     return peers
+
+
+def _parse_remote_access(root: Any) -> RemoteAccessConfigResponse:
+    remote_root = _as_dict(root)
+    if not remote_root:
+        return RemoteAccessConfigResponse(enabled=False)
+
+    server_root = _as_dict(remote_root.get("server"))
+    server_address_candidates = [value for value in _extract_tag_values(server_root) if value != "authentication"]
+    server_auth_candidates = _extract_tag_values(_as_dict(server_root.get("authentication")))
+
+    client_root = _as_dict(remote_root.get("client"))
+    split_root = _as_dict(client_root.get("split"))
+    auth_root = _as_dict(remote_root.get("authentication"))
+    local_users_root = _as_dict(_as_dict(auth_root.get("local-users")).get("username"))
+    radius_servers_root = _as_dict(_as_dict(_as_dict(auth_root.get("radius")).get("server")))
+
+    local_users: List[RemoteAccessLocalUser] = []
+    for username, user_data in sorted(local_users_root.items(), key=lambda item: str(item[0])):
+        data = _as_dict(user_data)
+        local_users.append(
+            RemoteAccessLocalUser(
+                username=str(username),
+                password=_as_str(data.get("password")),
+            )
+        )
+
+    radius_servers: List[RemoteAccessRadiusServer] = []
+    for address, server_data in sorted(radius_servers_root.items(), key=lambda item: str(item[0])):
+        data = _as_dict(server_data)
+        radius_servers.append(
+            RemoteAccessRadiusServer(
+                address=str(address),
+                key=_as_str(data.get("key")),
+                port=_as_str(data.get("port")),
+                source_address=_as_str(data.get("source-address")),
+            )
+        )
+
+    return RemoteAccessConfigResponse(
+        enabled=True,
+        connection_method=_as_str(remote_root.get("connection-method")),
+        ike_lifetime=_as_str(remote_root.get("ike-lifetime")),
+        esp_lifetime=_as_str(remote_root.get("esp-lifetime")),
+        pool_prefix=_as_str(_as_dict(remote_root.get("pool")).get("prefix")),
+        server_address=server_address_candidates[0] if server_address_candidates else None,
+        server_authentication=server_auth_candidates[0] if server_auth_candidates else None,
+        client_dns_servers=_extract_tag_values(client_root.get("dns-servers")),
+        client_dhcp_interfaces=_extract_tag_values(client_root.get("dhcp-interfaces")),
+        split_include_subnets=_extract_tag_values(split_root.get("include-subnet")),
+        split_exclude_subnets=_extract_tag_values(split_root.get("exclude-subnet")),
+        authentication_mode=_as_str(auth_root.get("mode")),
+        local_users=local_users,
+        radius_servers=radius_servers,
+    )
 
 
 def _parse_psk_secrets(root: Any) -> Dict[str, PSKAuthentication]:
@@ -589,6 +702,188 @@ async def get_ipsec_status(request: Request) -> IPsecStatusResponse:
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error retrieving IPsec status: {str(exc)}")
+
+
+@router.get("/remote-access", response_model=RemoteAccessConfigResponse)
+async def get_ipsec_remote_access(request: Request, refresh: bool = False) -> RemoteAccessConfigResponse:
+    """Get IPsec remote-access (mobile clients) configuration."""
+    await require_read_permission(request, FeatureGroup.IPSEC)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=refresh)
+        ipsec_root = _extract_ipsec_root(full_config)
+        return _parse_remote_access(ipsec_root.get("remote-access"))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error retrieving IPsec remote-access configuration: {str(exc)}")
+
+
+@router.put("/remote-access", response_model=IPsecOperationResponse)
+async def update_ipsec_remote_access(
+    request: Request,
+    body: RemoteAccessUpdateRequest,
+) -> IPsecOperationResponse:
+    """Create/update IPsec remote-access (mobile clients) configuration."""
+    await require_write_permission(request, FeatureGroup.IPSEC)
+
+    try:
+        service = get_session_vyos_service(request)
+        full_config = await run_in_threadpool(service.get_full_config, refresh=True)
+        ipsec_root = _extract_ipsec_root(full_config)
+        existing_remote_access = _as_dict(ipsec_root.get("remote-access"))
+
+        base = ["vpn", "ipsec", "remote-access"]
+        operations: List[Dict[str, Any]] = []
+
+        if existing_remote_access:
+            operations.append({"op": "delete", "path": base})
+
+        if not body.enabled:
+            if operations:
+                await _run_configure_or_500(service, operations, label="IPsec remote-access update")
+                await run_in_threadpool(service.refresh_config)
+                return IPsecOperationResponse(
+                    success=True,
+                    resource="remote-access",
+                    name="mobile-clients",
+                    message="IPsec remote-access disabled",
+                )
+            return IPsecOperationResponse(
+                success=True,
+                resource="remote-access",
+                name="mobile-clients",
+                message="No changes requested",
+            )
+
+        connection_method = _clean_optional(body.connection_method) or "ikev2"
+        if connection_method != "ikev2":
+            raise HTTPException(status_code=400, detail="connection_method must be 'ikev2'")
+
+        authentication_mode = _clean_optional(body.authentication_mode)
+        if authentication_mode not in {"local", "radius"}:
+            raise HTTPException(status_code=400, detail="authentication_mode must be 'local' or 'radius'")
+
+        pool_prefix = _clean_optional(body.pool_prefix)
+        if not pool_prefix:
+            raise HTTPException(status_code=400, detail="pool_prefix is required when remote-access is enabled")
+        normalized_pool_prefix = _normalize_cidr_or_400(pool_prefix, label="Pool prefix")
+
+        server_address = _clean_optional(body.server_address)
+        if not server_address:
+            raise HTTPException(status_code=400, detail="server_address is required when remote-access is enabled")
+        normalized_server_address = _normalize_token_or_400(
+            server_address,
+            label="Server address",
+            pattern=RE_PEER_ID,
+        )
+
+        if authentication_mode == "local" and not body.local_users:
+            raise HTTPException(status_code=400, detail="At least one local user is required for local authentication")
+        if authentication_mode == "radius" and not body.radius_servers:
+            raise HTTPException(status_code=400, detail="At least one RADIUS server is required for radius authentication")
+
+        operations.append({"op": "set", "path": base + ["connection-method", connection_method]})
+        operations.append({"op": "set", "path": base + ["pool", "prefix", normalized_pool_prefix]})
+        operations.append({"op": "set", "path": base + ["server", normalized_server_address]})
+        operations.append({"op": "set", "path": base + ["authentication", "mode", authentication_mode]})
+
+        server_authentication = _clean_optional(body.server_authentication)
+        if server_authentication:
+            if server_authentication not in {"local", "radius"}:
+                raise HTTPException(status_code=400, detail="server_authentication must be 'local' or 'radius'")
+            operations.append({"op": "set", "path": base + ["server", "authentication", server_authentication]})
+
+        ike_lifetime = _clean_optional(body.ike_lifetime)
+        if ike_lifetime:
+            operations.append({"op": "set", "path": base + ["ike-lifetime", ike_lifetime]})
+
+        esp_lifetime = _clean_optional(body.esp_lifetime)
+        if esp_lifetime:
+            operations.append({"op": "set", "path": base + ["esp-lifetime", esp_lifetime]})
+
+        for dns_server in body.client_dns_servers:
+            normalized_dns = _normalize_token_or_400(
+                dns_server,
+                label="DNS server",
+                pattern=RE_PEER_ID,
+            )
+            operations.append({"op": "set", "path": base + ["client", "dns-servers", normalized_dns]})
+
+        for dhcp_interface in body.client_dhcp_interfaces:
+            normalized_interface = _normalize_interface_name_or_400(dhcp_interface, label="DHCP interface")
+            operations.append({"op": "set", "path": base + ["client", "dhcp-interfaces", normalized_interface]})
+
+        for include_subnet in body.split_include_subnets:
+            normalized_subnet = _normalize_cidr_or_400(include_subnet, label="Split include subnet")
+            operations.append({"op": "set", "path": base + ["client", "split", "include-subnet", normalized_subnet]})
+
+        for exclude_subnet in body.split_exclude_subnets:
+            normalized_subnet = _normalize_cidr_or_400(exclude_subnet, label="Split exclude subnet")
+            operations.append({"op": "set", "path": base + ["client", "split", "exclude-subnet", normalized_subnet]})
+
+        for local_user in body.local_users:
+            username = _normalize_token_or_400(local_user.username, label="Local username", pattern=RE_GROUP_NAME)
+            password = _clean_optional(local_user.password)
+            if not password:
+                raise HTTPException(status_code=400, detail=f"Password is required for local user '{username}'")
+            operations.append(
+                {
+                    "op": "set",
+                    "path": base + ["authentication", "local-users", "username", username, "password", password],
+                }
+            )
+
+        for radius_server in body.radius_servers:
+            address = _normalize_token_or_400(radius_server.address, label="RADIUS server address", pattern=RE_PEER_ID)
+            operations.append({"op": "set", "path": base + ["authentication", "radius", "server", address]})
+
+            key = _clean_optional(radius_server.key)
+            if key:
+                operations.append({"op": "set", "path": base + ["authentication", "radius", "server", address, "key", key]})
+
+            port = _clean_optional(radius_server.port)
+            if port:
+                normalized_port = _normalize_port_or_400(port, label=f"RADIUS server '{address}' port")
+                operations.append(
+                    {"op": "set", "path": base + ["authentication", "radius", "server", address, "port", normalized_port]}
+                )
+
+            source_address = _clean_optional(radius_server.source_address)
+            if source_address:
+                normalized_source_address = _normalize_token_or_400(
+                    source_address,
+                    label=f"RADIUS server '{address}' source_address",
+                    pattern=RE_PEER_ID,
+                )
+                operations.append(
+                    {
+                        "op": "set",
+                        "path": base
+                        + [
+                            "authentication",
+                            "radius",
+                            "server",
+                            address,
+                            "source-address",
+                            normalized_source_address,
+                        ],
+                    }
+                )
+
+        await _run_configure_or_500(service, operations, label="IPsec remote-access update")
+        await run_in_threadpool(service.refresh_config)
+        return IPsecOperationResponse(
+            success=True,
+            resource="remote-access",
+            name="mobile-clients",
+            message="IPsec remote-access updated",
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error updating IPsec remote-access: {str(exc)}")
 
 
 # ========================================================================
