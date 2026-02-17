@@ -190,6 +190,41 @@
       }
     }
   },
+  "/vyos/nat/tree-config": {
+    "nat": {
+      "cgnat": {
+        "log-allocation": {},
+        "pool": {
+          "internal": {
+            "INT-POOL": {
+              "range": {
+                "100.64.0.0/24": {}
+              }
+            }
+          },
+          "external": {
+            "EXT-POOL": {
+              "range": {
+                "203.0.113.10/32": {
+                  "seq": "10"
+                }
+              }
+            }
+          }
+        },
+        "rule": {
+          "10": {
+            "source": {
+              "pool": "INT-POOL"
+            },
+            "translation": {
+              "pool": "EXT-POOL"
+            }
+          }
+        }
+      }
+    }
+  },
   "/vyos/high-availability/config": {
     "high_availability": {
       "vrrp": {

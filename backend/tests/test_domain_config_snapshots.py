@@ -17,6 +17,7 @@ import routers.isis.isis as isis_router
 import routers.lldp.lldp as lldp_service_router
 import routers.load_balancing.load_balancing as load_balancing_router
 import routers.mpls.mpls as mpls_router
+import routers.nat.nat as nat_router
 import routers.ntp.ntp as ntp_service_router
 import routers.openfabric.openfabric as openfabric_router
 import routers.ospf.ospf as ospf_router
@@ -75,6 +76,7 @@ VPN_MODULES = (
 
 DIRECT_MODULES = (
     dmvpn_router,
+    nat_router,
 )
 
 
@@ -230,6 +232,35 @@ class SnapshotDummyService:
                         }
                     },
                 },
+            },
+            "nat": {
+                "cgnat": {
+                    "log-allocation": {},
+                    "pool": {
+                        "internal": {
+                            "INT-POOL": {
+                                "range": {
+                                    "100.64.0.0/24": {},
+                                }
+                            }
+                        },
+                        "external": {
+                            "EXT-POOL": {
+                                "range": {
+                                    "203.0.113.10/32": {
+                                        "seq": "10",
+                                    }
+                                }
+                            }
+                        },
+                    },
+                    "rule": {
+                        "10": {
+                            "source": {"pool": "INT-POOL"},
+                            "translation": {"pool": "EXT-POOL"},
+                        }
+                    },
+                }
             },
             "high-availability": {
                 "vrrp": {
@@ -460,6 +491,7 @@ def app():
     app.include_router(vpn_sstp_router.router)
     app.include_router(vpn_rsa_keys_router.router)
     app.include_router(dmvpn_router.router)
+    app.include_router(nat_router.router)
     return app
 
 
