@@ -76,17 +76,76 @@ type WanRuleEntry = {
   limitPeriod: string;
 };
 
-type HaproxyFrontendEntry = {
+type HaproxyGlobalSettings = {
+  maxConnections: string;
+  sslBindCiphers: string;
+  tlsVersionMin: string;
+  loggingFacility: string;
+  loggingLevel: string;
+  timeoutCheck: string;
+  timeoutClient: string;
+  timeoutConnect: string;
+  timeoutServer: string;
+};
+
+type HaproxyServiceRuleEntry = {
+  ruleId: string;
+  domainName: string;
+  sslSni: string;
+  urlPathMatch: string;
+  urlPath: string;
+  setBackend: string;
+  redirectLocation: string;
+};
+
+type HaproxyServiceEntry = {
   name: string;
-  bind: string;
-  defaultBackend: string;
+  mode: string;
+  listenAddresses: string[];
+  port: string;
+  backend: string;
+  sslCertificates: string[];
+  httpResponseHeaders: Record<string, string>;
+  loggingFacility: string;
+  loggingLevel: string;
+  timeoutClient: string;
+  httpCompressionAlgorithm: string;
+  httpCompressionMimeTypes: string[];
+  redirectHttpToHttps: boolean;
+  rules: HaproxyServiceRuleEntry[];
+  // Legacy fallback display
+  bindLegacy: string;
+  defaultBackendLegacy: string;
+};
+
+type HaproxyBackendServerEntry = {
+  name: string;
+  address: string;
+  port: string;
+  check: boolean;
+  checkPort: string;
+  sendProxy: boolean;
+  sendProxyV2: boolean;
 };
 
 type HaproxyBackendEntry = {
   name: string;
   mode: string;
   balance: string;
-  servers: Record<string, { address: string; port: string }>;
+  sslCaCertificate: string;
+  sslNoVerify: boolean;
+  httpResponseHeaders: Record<string, string>;
+  loggingFacility: string;
+  loggingLevel: string;
+  timeoutCheck: string;
+  timeoutConnect: string;
+  timeoutServer: string;
+  httpCheckEnabled: boolean;
+  httpCheckMethod: string;
+  httpCheckUri: string;
+  httpCheckExpect: string;
+  healthCheck: string;
+  servers: Record<string, HaproxyBackendServerEntry>;
 };
 
 const EMPTY_HEALTH_DRAFT: WanHealthEntry = {
@@ -132,16 +191,74 @@ const EMPTY_RULE_DRAFT: WanRuleEntry = {
   limitPeriod: "",
 };
 
-const EMPTY_FRONTEND_DRAFT: HaproxyFrontendEntry = {
+const EMPTY_HAPROXY_GLOBAL_DRAFT: HaproxyGlobalSettings = {
+  maxConnections: "",
+  sslBindCiphers: "",
+  tlsVersionMin: "",
+  loggingFacility: "",
+  loggingLevel: "",
+  timeoutCheck: "",
+  timeoutClient: "",
+  timeoutConnect: "",
+  timeoutServer: "",
+};
+
+const EMPTY_SERVICE_RULE_DRAFT: HaproxyServiceRuleEntry = {
+  ruleId: "",
+  domainName: "",
+  sslSni: "",
+  urlPathMatch: "",
+  urlPath: "",
+  setBackend: "",
+  redirectLocation: "",
+};
+
+const EMPTY_SERVICE_DRAFT: HaproxyServiceEntry = {
   name: "",
-  bind: "",
-  defaultBackend: "",
+  mode: "",
+  listenAddresses: [],
+  port: "",
+  backend: "",
+  sslCertificates: [],
+  httpResponseHeaders: {},
+  loggingFacility: "",
+  loggingLevel: "",
+  timeoutClient: "",
+  httpCompressionAlgorithm: "",
+  httpCompressionMimeTypes: [],
+  redirectHttpToHttps: false,
+  rules: [],
+  bindLegacy: "",
+  defaultBackendLegacy: "",
+};
+
+const EMPTY_BACKEND_SERVER_DRAFT: HaproxyBackendServerEntry = {
+  name: "",
+  address: "",
+  port: "",
+  check: false,
+  checkPort: "",
+  sendProxy: false,
+  sendProxyV2: false,
 };
 
 const EMPTY_BACKEND_DRAFT: HaproxyBackendEntry = {
   name: "",
   mode: "",
   balance: "",
+  sslCaCertificate: "",
+  sslNoVerify: false,
+  httpResponseHeaders: {},
+  loggingFacility: "",
+  loggingLevel: "",
+  timeoutCheck: "",
+  timeoutConnect: "",
+  timeoutServer: "",
+  httpCheckEnabled: false,
+  httpCheckMethod: "",
+  httpCheckUri: "",
+  httpCheckExpect: "",
+  healthCheck: "",
   servers: {},
 };
 
@@ -194,6 +311,24 @@ function serializeOutboundWeightList(weights: Record<string, string>): string {
     .join(", ");
 }
 
+function parseKeyValueList(value: string): Record<string, string> {
+  const output: Record<string, string> = {};
+  const chunks = value
+    .split(",")
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+
+  for (const chunk of chunks) {
+    const [rawKey, ...rawValueParts] = chunk.split("=");
+    const key = normalizeText(rawKey || "");
+    const mappedValue = normalizeText(rawValueParts.join("=") || "");
+    if (!key) continue;
+    output[key] = mappedValue;
+  }
+
+  return output;
+}
+
 function weightMapEquals(left: Record<string, string>, right: Record<string, string>): boolean {
   const leftNames = Object.keys(left).sort();
   const rightNames = Object.keys(right).sort();
@@ -201,37 +336,17 @@ function weightMapEquals(left: Record<string, string>, right: Record<string, str
   return leftNames.every((name) => left[name] === right[name]);
 }
 
-function parseServerListInput(
-  value: string
-): Record<string, { address: string; port: string }> {
-  const output: Record<string, { address: string; port: string }> = {};
-  const chunks = value
-    .split(",")
-    .map((chunk) => chunk.trim())
-    .filter(Boolean);
-
-  for (const chunk of chunks) {
-    const [rawName, rawEndpoint] = chunk.split("=");
-    const name = normalizeText(rawName || "");
-    const endpoint = normalizeText(rawEndpoint || "");
-    if (!name || !endpoint) continue;
-
-    const [address, port] = endpoint.split(":");
-    const cleanAddress = normalizeText(address || "");
-    const cleanPort = normalizeText(port || "");
-    if (!cleanAddress || !cleanPort) continue;
-
-    output[name] = { address: cleanAddress, port: cleanPort };
-  }
-
-  return output;
-}
-
-function serializeServerList(
-  servers: Record<string, { address: string; port: string }>
-): string {
+function serializeServerList(servers: Record<string, HaproxyBackendServerEntry>): string {
   return Object.entries(servers)
-    .map(([name, value]) => `${name}=${value.address}:${value.port}`)
+    .map(([name, value]) => {
+      const attributes: string[] = [];
+      if (value.check) {
+        attributes.push(value.checkPort ? `check:${value.checkPort}` : "check");
+      }
+      if (value.sendProxy) attributes.push("send-proxy");
+      if (value.sendProxyV2) attributes.push("send-proxy-v2");
+      return `${name}=${value.address}:${value.port}${attributes.length > 0 ? ` (${attributes.join(", ")})` : ""}`;
+    })
     .join(", ");
 }
 
@@ -240,19 +355,13 @@ function arrayEquals(left: string[], right: string[]): boolean {
   return left.every((value, index) => value === right[index]);
 }
 
-function serverMapEquals(
-  left: Record<string, { address: string; port: string }>,
-  right: Record<string, { address: string; port: string }>
-): boolean {
-  const leftNames = Object.keys(left).sort();
-  const rightNames = Object.keys(right).sort();
-  if (!arrayEquals(leftNames, rightNames)) return false;
-  for (const name of leftNames) {
-    if (left[name].address !== right[name].address || left[name].port !== right[name].port) {
-      return false;
-    }
+function quoteCliValue(value: string): string {
+  const cleaned = normalizeText(value);
+  if (!cleaned) return "''";
+  if (/^[A-Za-z0-9._:/@+,-]+$/.test(cleaned)) {
+    return cleaned;
   }
-  return true;
+  return `'${cleaned.replace(/'/g, "'\\''")}'`;
 }
 
 export default function LoadBalancingPage() {
@@ -268,14 +377,18 @@ export default function LoadBalancingPage() {
   const [wanHealth, setWanHealth] = useState<WanHealthEntry[]>([]);
   const [wanHealthTests, setWanHealthTests] = useState<WanHealthTestEntry[]>([]);
   const [wanRules, setWanRules] = useState<WanRuleEntry[]>([]);
-  const [frontends, setFrontends] = useState<HaproxyFrontendEntry[]>([]);
+  const [haproxyGlobal, setHaproxyGlobal] = useState<HaproxyGlobalSettings>(EMPTY_HAPROXY_GLOBAL_DRAFT);
+  const [services, setServices] = useState<HaproxyServiceEntry[]>([]);
   const [backends, setBackends] = useState<HaproxyBackendEntry[]>([]);
 
   const [currentWanGlobal, setCurrentWanGlobal] = useState<WanGlobalSettings>(EMPTY_WAN_GLOBAL_DRAFT);
   const [currentWanHealth, setCurrentWanHealth] = useState<WanHealthEntry[]>([]);
   const [currentWanHealthTests, setCurrentWanHealthTests] = useState<WanHealthTestEntry[]>([]);
   const [currentWanRules, setCurrentWanRules] = useState<WanRuleEntry[]>([]);
-  const [currentFrontends, setCurrentFrontends] = useState<HaproxyFrontendEntry[]>([]);
+  const [currentHaproxyGlobal, setCurrentHaproxyGlobal] = useState<HaproxyGlobalSettings>(
+    EMPTY_HAPROXY_GLOBAL_DRAFT
+  );
+  const [currentServices, setCurrentServices] = useState<HaproxyServiceEntry[]>([]);
   const [currentBackends, setCurrentBackends] = useState<HaproxyBackendEntry[]>([]);
 
   const [healthDraft, setHealthDraft] = useState<WanHealthEntry>(EMPTY_HEALTH_DRAFT);
@@ -283,9 +396,20 @@ export default function LoadBalancingPage() {
   const [ruleDraft, setRuleDraft] = useState<WanRuleEntry>(EMPTY_RULE_DRAFT);
   const [ruleOutboundInput, setRuleOutboundInput] = useState("");
   const [ruleOutboundWeightsInput, setRuleOutboundWeightsInput] = useState("");
-  const [frontendDraft, setFrontendDraft] = useState<HaproxyFrontendEntry>(EMPTY_FRONTEND_DRAFT);
+  const [serviceDraft, setServiceDraft] = useState<HaproxyServiceEntry>(EMPTY_SERVICE_DRAFT);
+  const [serviceListenInput, setServiceListenInput] = useState("");
+  const [serviceSslCertificatesInput, setServiceSslCertificatesInput] = useState("");
+  const [serviceHeadersInput, setServiceHeadersInput] = useState("");
+  const [serviceMimeTypesInput, setServiceMimeTypesInput] = useState("");
+  const [serviceRuleParentName, setServiceRuleParentName] = useState("");
+  const [serviceRuleDraft, setServiceRuleDraft] = useState<HaproxyServiceRuleEntry>(
+    EMPTY_SERVICE_RULE_DRAFT
+  );
   const [backendDraft, setBackendDraft] = useState<HaproxyBackendEntry>(EMPTY_BACKEND_DRAFT);
-  const [backendServersInput, setBackendServersInput] = useState("");
+  const [backendHeadersInput, setBackendHeadersInput] = useState("");
+  const [backendServerDraft, setBackendServerDraft] = useState<HaproxyBackendServerEntry>(
+    EMPTY_BACKEND_SERVER_DRAFT
+  );
 
   const [interfaceOptions, setInterfaceOptions] = useState<Array<{ value: string; label: string }>>([]);
 
@@ -301,6 +425,10 @@ export default function LoadBalancingPage() {
   const backendNames = useMemo(
     () => backends.map((entry) => entry.name).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
     [backends]
+  );
+  const serviceNames = useMemo(
+    () => services.map((entry) => entry.name).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+    [services]
   );
   const selectedOutboundInterfaces = useMemo(
     () => new Set(parseCsvList(ruleOutboundInput)),
@@ -388,11 +516,48 @@ export default function LoadBalancingPage() {
         .filter((entry) => entry.ruleId)
         .sort((left, right) => left.ruleId.localeCompare(right.ruleId, undefined, { numeric: true }));
 
-      const parsedFrontends = Object.entries(config.haproxy.frontends)
+      const parsedHaproxyGlobal: HaproxyGlobalSettings = {
+        maxConnections: normalizeText(config.haproxy.global.max_connections || ""),
+        sslBindCiphers: normalizeText(config.haproxy.global.ssl_bind_ciphers || ""),
+        tlsVersionMin: normalizeText(config.haproxy.global.tls_version_min || ""),
+        loggingFacility: normalizeText(config.haproxy.global.logging_facility || ""),
+        loggingLevel: normalizeText(config.haproxy.global.logging_level || ""),
+        timeoutCheck: normalizeText(config.haproxy.global.timeout_check || ""),
+        timeoutClient: normalizeText(config.haproxy.global.timeout_client || ""),
+        timeoutConnect: normalizeText(config.haproxy.global.timeout_connect || ""),
+        timeoutServer: normalizeText(config.haproxy.global.timeout_server || ""),
+      };
+
+      const parsedServices = Object.entries(config.haproxy.services)
         .map(([name, entry]) => ({
           name: normalizeText(name),
-          bind: normalizeText(entry.bind),
-          defaultBackend: normalizeText(entry.default_backend),
+          mode: normalizeText(entry.mode || ""),
+          listenAddresses: uniqueList(entry.listen_addresses.map((item) => normalizeText(item))),
+          port: normalizeText(entry.port || ""),
+          backend: normalizeText(entry.backend || entry.default_backend || ""),
+          sslCertificates: uniqueList(entry.ssl_certificates.map((item) => normalizeText(item))),
+          httpResponseHeaders: entry.http_response_headers,
+          loggingFacility: normalizeText(entry.logging_facility || ""),
+          loggingLevel: normalizeText(entry.logging_level || ""),
+          timeoutClient: normalizeText(entry.timeout_client || ""),
+          httpCompressionAlgorithm: normalizeText(entry.http_compression_algorithm || ""),
+          httpCompressionMimeTypes: uniqueList(
+            entry.http_compression_mime_types.map((item) => normalizeText(item))
+          ),
+          redirectHttpToHttps: entry.redirect_http_to_https,
+          rules: Object.values(entry.rules)
+            .map((ruleEntry) => ({
+              ruleId: normalizeText(ruleEntry.rule_id),
+              domainName: normalizeText(ruleEntry.domain_name || ""),
+              sslSni: normalizeText(ruleEntry.ssl_sni || ""),
+              urlPathMatch: normalizeText(ruleEntry.url_path_match || ""),
+              urlPath: normalizeText(ruleEntry.url_path || ""),
+              setBackend: normalizeText(ruleEntry.set_backend || ""),
+              redirectLocation: normalizeText(ruleEntry.redirect_location || ""),
+            }))
+            .sort((left, right) => left.ruleId.localeCompare(right.ruleId, undefined, { numeric: true })),
+          bindLegacy: normalizeText(entry.bind || ""),
+          defaultBackendLegacy: normalizeText(entry.default_backend || ""),
         }))
         .filter((entry) => entry.name)
         .sort((left, right) => left.name.localeCompare(right.name, undefined, { numeric: true }));
@@ -400,9 +565,36 @@ export default function LoadBalancingPage() {
       const parsedBackends = Object.entries(config.haproxy.backends)
         .map(([name, entry]) => ({
           name: normalizeText(name),
-          mode: normalizeText(entry.mode),
-          balance: normalizeText(entry.balance),
-          servers: entry.servers,
+          mode: normalizeText(entry.mode || ""),
+          balance: normalizeText(entry.balance || ""),
+          sslCaCertificate: normalizeText(entry.ssl_ca_certificate || ""),
+          sslNoVerify: entry.ssl_no_verify,
+          httpResponseHeaders: entry.http_response_headers,
+          loggingFacility: normalizeText(entry.logging_facility || ""),
+          loggingLevel: normalizeText(entry.logging_level || ""),
+          timeoutCheck: normalizeText(entry.timeout_check || ""),
+          timeoutConnect: normalizeText(entry.timeout_connect || ""),
+          timeoutServer: normalizeText(entry.timeout_server || ""),
+          httpCheckEnabled: entry.http_check_enabled,
+          httpCheckMethod: normalizeText(entry.http_check_method || ""),
+          httpCheckUri: normalizeText(entry.http_check_uri || ""),
+          httpCheckExpect: normalizeText(entry.http_check_expect || ""),
+          healthCheck: normalizeText(entry.health_check || ""),
+          servers: Object.entries(entry.servers).reduce<Record<string, HaproxyBackendServerEntry>>(
+            (acc, [serverName, serverEntry]) => {
+              acc[serverName] = {
+                name: normalizeText(serverName),
+                address: normalizeText(serverEntry.address || ""),
+                port: normalizeText(serverEntry.port || ""),
+                check: serverEntry.check,
+                checkPort: normalizeText(serverEntry.check_port || ""),
+                sendProxy: serverEntry.send_proxy,
+                sendProxyV2: serverEntry.send_proxy_v2,
+              };
+              return acc;
+            },
+            {}
+          ),
         }))
         .filter((entry) => entry.name)
         .sort((left, right) => left.name.localeCompare(right.name, undefined, { numeric: true }));
@@ -438,14 +630,16 @@ export default function LoadBalancingPage() {
       setWanHealth(parsedWanHealth);
       setWanHealthTests(parsedWanHealthTests);
       setWanRules(parsedWanRules);
-      setFrontends(parsedFrontends);
+      setHaproxyGlobal(parsedHaproxyGlobal);
+      setServices(parsedServices);
       setBackends(parsedBackends);
 
       setCurrentWanGlobal(parsedWanGlobal);
       setCurrentWanHealth(parsedWanHealth);
       setCurrentWanHealthTests(parsedWanHealthTests);
       setCurrentWanRules(parsedWanRules);
-      setCurrentFrontends(parsedFrontends);
+      setCurrentHaproxyGlobal(parsedHaproxyGlobal);
+      setCurrentServices(parsedServices);
       setCurrentBackends(parsedBackends);
 
       setHealthDraft({ ...EMPTY_HEALTH_DRAFT, interface: normalizedOptions[0]?.value || "" });
@@ -459,9 +653,16 @@ export default function LoadBalancingPage() {
       });
       setRuleOutboundInput("");
       setRuleOutboundWeightsInput("");
-      setFrontendDraft(EMPTY_FRONTEND_DRAFT);
+      setServiceDraft(EMPTY_SERVICE_DRAFT);
+      setServiceListenInput("");
+      setServiceSslCertificatesInput("");
+      setServiceHeadersInput("");
+      setServiceMimeTypesInput("");
+      setServiceRuleParentName(parsedServices[0]?.name || "");
+      setServiceRuleDraft(EMPTY_SERVICE_RULE_DRAFT);
       setBackendDraft(EMPTY_BACKEND_DRAFT);
-      setBackendServersInput("");
+      setBackendHeadersInput("");
+      setBackendServerDraft(EMPTY_BACKEND_SERVER_DRAFT);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load load-balancing configuration");
     } finally {
@@ -667,33 +868,193 @@ export default function LoadBalancingPage() {
     }
   };
 
-  const addFrontendEntry = () => {
+  const addServiceEntry = () => {
     setError(null);
 
-    const entry: HaproxyFrontendEntry = {
-      name: normalizeText(frontendDraft.name),
-      bind: normalizeText(frontendDraft.bind),
-      defaultBackend: normalizeText(frontendDraft.defaultBackend),
+    const entry: HaproxyServiceEntry = {
+      name: normalizeText(serviceDraft.name),
+      mode: normalizeText(serviceDraft.mode),
+      listenAddresses: parseCsvList(serviceListenInput),
+      port: normalizeText(serviceDraft.port),
+      backend: normalizeText(serviceDraft.backend),
+      sslCertificates: parseCsvList(serviceSslCertificatesInput),
+      httpResponseHeaders: parseKeyValueList(serviceHeadersInput),
+      loggingFacility: normalizeText(serviceDraft.loggingFacility),
+      loggingLevel: normalizeText(serviceDraft.loggingLevel),
+      timeoutClient: normalizeText(serviceDraft.timeoutClient),
+      httpCompressionAlgorithm: normalizeText(serviceDraft.httpCompressionAlgorithm),
+      httpCompressionMimeTypes: parseCsvList(serviceMimeTypesInput),
+      redirectHttpToHttps: serviceDraft.redirectHttpToHttps,
+      rules: serviceDraft.rules,
+      bindLegacy: "",
+      defaultBackendLegacy: "",
     };
 
-    if (!entry.name || !entry.bind || !entry.defaultBackend) {
-      setError("HAProxy frontend requires name, bind, and default backend.");
+    if (!entry.name) {
+      setError("HAProxy service name is required.");
       return;
     }
 
-    if (frontends.some((item) => item.name === entry.name)) {
-      setError("Frontend name already exists.");
+    if (!entry.backend) {
+      setError("HAProxy service requires a backend name.");
       return;
     }
 
-    setFrontends((previous) =>
+    if (!entry.port) {
+      setError("HAProxy service requires a listen port.");
+      return;
+    }
+
+    if (services.some((item) => item.name === entry.name)) {
+      setError("Service name already exists.");
+      return;
+    }
+
+    setServices((previous) =>
       [...previous, entry].sort((left, right) => left.name.localeCompare(right.name, undefined, { numeric: true }))
     );
-    setFrontendDraft(EMPTY_FRONTEND_DRAFT);
+    setServiceDraft(EMPTY_SERVICE_DRAFT);
+    setServiceListenInput("");
+    setServiceSslCertificatesInput("");
+    setServiceHeadersInput("");
+    setServiceMimeTypesInput("");
+    setServiceRuleParentName(entry.name);
   };
 
-  const removeFrontendEntry = (name: string) => {
-    setFrontends((previous) => previous.filter((item) => item.name !== name));
+  const removeServiceEntry = (name: string) => {
+    setServices((previous) => previous.filter((item) => item.name !== name));
+    setServiceRuleParentName((previous) => (previous === name ? "" : previous));
+  };
+
+  const addServiceRuleEntry = () => {
+    setError(null);
+
+    const serviceName = normalizeText(serviceRuleParentName);
+    const rule: HaproxyServiceRuleEntry = {
+      ruleId: normalizeText(serviceRuleDraft.ruleId),
+      domainName: normalizeText(serviceRuleDraft.domainName),
+      sslSni: normalizeText(serviceRuleDraft.sslSni),
+      urlPathMatch: normalizeText(serviceRuleDraft.urlPathMatch),
+      urlPath: normalizeText(serviceRuleDraft.urlPath),
+      setBackend: normalizeText(serviceRuleDraft.setBackend),
+      redirectLocation: normalizeText(serviceRuleDraft.redirectLocation),
+    };
+
+    if (!serviceName) {
+      setError("Select a service before adding a rule.");
+      return;
+    }
+
+    if (!rule.ruleId || !/^[0-9]+$/.test(rule.ruleId)) {
+      setError("Service rule ID must be a positive integer.");
+      return;
+    }
+
+    const service = services.find((item) => item.name === serviceName);
+    if (!service) {
+      setError("Selected service was not found.");
+      return;
+    }
+
+    if (
+      !rule.domainName &&
+      !rule.sslSni &&
+      !(rule.urlPathMatch && rule.urlPath) &&
+      !rule.redirectLocation
+    ) {
+      setError("Define at least one rule match/redirect (domain, ssl, url-path, or redirect).");
+      return;
+    }
+
+    if (!rule.setBackend && !rule.redirectLocation) {
+      setError("Rule action requires either backend target or redirect location.");
+      return;
+    }
+
+    if (service.rules.some((entry) => entry.ruleId === rule.ruleId)) {
+      setError(`Rule ID ${rule.ruleId} already exists for service '${serviceName}'.`);
+      return;
+    }
+
+    setServices((previous) =>
+      previous.map((entry) => {
+        if (entry.name !== serviceName) return entry;
+        return {
+          ...entry,
+          rules: [...entry.rules, rule].sort((left, right) =>
+            left.ruleId.localeCompare(right.ruleId, undefined, { numeric: true })
+          ),
+        };
+      })
+    );
+
+    setServiceRuleDraft(EMPTY_SERVICE_RULE_DRAFT);
+  };
+
+  const removeServiceRuleEntry = (serviceName: string, ruleId: string) => {
+    setServices((previous) =>
+      previous.map((entry) =>
+        entry.name === serviceName
+          ? { ...entry, rules: entry.rules.filter((item) => item.ruleId !== ruleId) }
+          : entry
+      )
+    );
+  };
+
+  const addBackendServerDraftEntry = () => {
+    setError(null);
+
+    const entry: HaproxyBackendServerEntry = {
+      name: normalizeText(backendServerDraft.name),
+      address: normalizeText(backendServerDraft.address),
+      port: normalizeText(backendServerDraft.port),
+      check: backendServerDraft.check,
+      checkPort: normalizeText(backendServerDraft.checkPort),
+      sendProxy: backendServerDraft.sendProxy,
+      sendProxyV2: backendServerDraft.sendProxyV2,
+    };
+
+    if (!entry.name || !entry.address || !entry.port) {
+      setError("Backend server requires name, address, and port.");
+      return;
+    }
+
+    if (!/^[0-9]+$/.test(entry.port)) {
+      setError("Backend server port must be numeric.");
+      return;
+    }
+
+    if (entry.checkPort && !/^[0-9]+$/.test(entry.checkPort)) {
+      setError("Backend server check port must be numeric.");
+      return;
+    }
+
+    setBackendDraft((previous) => {
+      if (Object.prototype.hasOwnProperty.call(previous.servers, entry.name)) {
+        setError(`Server name '${entry.name}' already exists in this backend draft.`);
+        return previous;
+      }
+      return {
+        ...previous,
+        servers: {
+          ...previous.servers,
+          [entry.name]: entry,
+        },
+      };
+    });
+
+    setBackendServerDraft(EMPTY_BACKEND_SERVER_DRAFT);
+  };
+
+  const removeBackendServerDraftEntry = (name: string) => {
+    setBackendDraft((previous) => {
+      const nextServers = { ...previous.servers };
+      delete nextServers[name];
+      return {
+        ...previous,
+        servers: nextServers,
+      };
+    });
   };
 
   const addBackendEntry = () => {
@@ -703,7 +1064,20 @@ export default function LoadBalancingPage() {
       name: normalizeText(backendDraft.name),
       mode: normalizeText(backendDraft.mode),
       balance: normalizeText(backendDraft.balance),
-      servers: parseServerListInput(backendServersInput),
+      sslCaCertificate: normalizeText(backendDraft.sslCaCertificate),
+      sslNoVerify: backendDraft.sslNoVerify,
+      httpResponseHeaders: parseKeyValueList(backendHeadersInput),
+      loggingFacility: normalizeText(backendDraft.loggingFacility),
+      loggingLevel: normalizeText(backendDraft.loggingLevel),
+      timeoutCheck: normalizeText(backendDraft.timeoutCheck),
+      timeoutConnect: normalizeText(backendDraft.timeoutConnect),
+      timeoutServer: normalizeText(backendDraft.timeoutServer),
+      httpCheckEnabled: backendDraft.httpCheckEnabled,
+      httpCheckMethod: normalizeText(backendDraft.httpCheckMethod),
+      httpCheckUri: normalizeText(backendDraft.httpCheckUri),
+      httpCheckExpect: normalizeText(backendDraft.httpCheckExpect),
+      healthCheck: normalizeText(backendDraft.healthCheck),
+      servers: backendDraft.servers,
     };
 
     if (!entry.name) {
@@ -720,7 +1094,8 @@ export default function LoadBalancingPage() {
       [...previous, entry].sort((left, right) => left.name.localeCompare(right.name, undefined, { numeric: true }))
     );
     setBackendDraft(EMPTY_BACKEND_DRAFT);
-    setBackendServersInput("");
+    setBackendHeadersInput("");
+    setBackendServerDraft(EMPTY_BACKEND_SERVER_DRAFT);
   };
 
   const removeBackendEntry = (name: string) => {
@@ -1008,29 +1383,218 @@ export default function LoadBalancingPage() {
         }
       }
 
-      const currentFrontendMap = new Map(currentFrontends.map((entry) => [entry.name, entry]));
-      const desiredFrontendMap = new Map(frontends.map((entry) => [entry.name, entry]));
+      const setOrDelete = (path: string, desiredValue: string, currentValue: string) => {
+        const desired = normalizeText(desiredValue);
+        const current = normalizeText(currentValue);
+        if (desired === current) return;
+        if (desired) {
+          operations.push(`set ${path} ${quoteCliValue(desired)}`);
+        } else if (current) {
+          operations.push(`delete ${path}`);
+        }
+      };
 
-      for (const [name] of currentFrontendMap.entries()) {
-        if (!desiredFrontendMap.has(name)) {
-          operations.push(`delete load-balancing haproxy frontend ${name}`);
+      setOrDelete(
+        "load-balancing haproxy global-parameters max-connections",
+        haproxyGlobal.maxConnections,
+        currentHaproxyGlobal.maxConnections
+      );
+      setOrDelete(
+        "load-balancing haproxy global-parameters ssl-bind-ciphers",
+        haproxyGlobal.sslBindCiphers,
+        currentHaproxyGlobal.sslBindCiphers
+      );
+      setOrDelete(
+        "load-balancing haproxy global-parameters tls-version-min",
+        haproxyGlobal.tlsVersionMin,
+        currentHaproxyGlobal.tlsVersionMin
+      );
+      setOrDelete(
+        "load-balancing haproxy global-parameters logging facility",
+        haproxyGlobal.loggingFacility,
+        currentHaproxyGlobal.loggingFacility
+      );
+      setOrDelete(
+        "load-balancing haproxy global-parameters logging level",
+        haproxyGlobal.loggingLevel,
+        currentHaproxyGlobal.loggingLevel
+      );
+      setOrDelete(
+        "load-balancing haproxy timeout check",
+        haproxyGlobal.timeoutCheck,
+        currentHaproxyGlobal.timeoutCheck
+      );
+      setOrDelete(
+        "load-balancing haproxy timeout client",
+        haproxyGlobal.timeoutClient,
+        currentHaproxyGlobal.timeoutClient
+      );
+      setOrDelete(
+        "load-balancing haproxy timeout connect",
+        haproxyGlobal.timeoutConnect,
+        currentHaproxyGlobal.timeoutConnect
+      );
+      setOrDelete(
+        "load-balancing haproxy timeout server",
+        haproxyGlobal.timeoutServer,
+        currentHaproxyGlobal.timeoutServer
+      );
+
+      const currentServiceMap = new Map(currentServices.map((entry) => [entry.name, entry]));
+      const desiredServiceMap = new Map(services.map((entry) => [entry.name, entry]));
+
+      for (const [name, current] of currentServiceMap.entries()) {
+        if (!desiredServiceMap.has(name)) {
+          operations.push(`delete load-balancing haproxy service ${quoteCliValue(name)}`);
+          if (current.bindLegacy || current.defaultBackendLegacy) {
+            operations.push(`delete load-balancing haproxy frontend ${quoteCliValue(name)}`);
+          }
         }
       }
 
-      for (const [name, desired] of desiredFrontendMap.entries()) {
-        const current = currentFrontendMap.get(name);
-        if (
-          current &&
-          current.bind === desired.bind &&
-          current.defaultBackend === desired.defaultBackend
-        ) {
-          continue;
+      for (const [name, desired] of desiredServiceMap.entries()) {
+        const current = currentServiceMap.get(name);
+        const servicePrefix = `load-balancing haproxy service ${quoteCliValue(name)}`;
+
+        if (current?.bindLegacy || current?.defaultBackendLegacy) {
+          operations.push(`delete load-balancing haproxy frontend ${quoteCliValue(name)}`);
         }
 
-        operations.push(`set load-balancing haproxy frontend ${name} bind ${desired.bind}`);
-        operations.push(
-          `set load-balancing haproxy frontend ${name} default-backend ${desired.defaultBackend}`
+        setOrDelete(`${servicePrefix} mode`, desired.mode, current?.mode || "");
+        setOrDelete(`${servicePrefix} port`, desired.port, current?.port || "");
+        setOrDelete(`${servicePrefix} backend`, desired.backend, current?.backend || "");
+        setOrDelete(`${servicePrefix} timeout client`, desired.timeoutClient, current?.timeoutClient || "");
+        setOrDelete(
+          `${servicePrefix} logging facility`,
+          desired.loggingFacility,
+          current?.loggingFacility || ""
         );
+        setOrDelete(`${servicePrefix} logging level`, desired.loggingLevel, current?.loggingLevel || "");
+        setOrDelete(
+          `${servicePrefix} http-compression algorithm`,
+          desired.httpCompressionAlgorithm,
+          current?.httpCompressionAlgorithm || ""
+        );
+
+        const currentListen = uniqueList(current?.listenAddresses || []);
+        const desiredListen = uniqueList(desired.listenAddresses);
+        for (const listenAddress of currentListen) {
+          if (!desiredListen.includes(listenAddress)) {
+            operations.push(
+              `delete ${servicePrefix} listen-address ${quoteCliValue(listenAddress)}`
+            );
+          }
+        }
+        for (const listenAddress of desiredListen) {
+          if (!currentListen.includes(listenAddress)) {
+            operations.push(`set ${servicePrefix} listen-address ${quoteCliValue(listenAddress)}`);
+          }
+        }
+
+        const currentCertificates = uniqueList(current?.sslCertificates || []);
+        const desiredCertificates = uniqueList(desired.sslCertificates);
+        for (const certificate of currentCertificates) {
+          if (!desiredCertificates.includes(certificate)) {
+            operations.push(
+              `delete ${servicePrefix} ssl certificate ${quoteCliValue(certificate)}`
+            );
+          }
+        }
+        for (const certificate of desiredCertificates) {
+          if (!currentCertificates.includes(certificate)) {
+            operations.push(`set ${servicePrefix} ssl certificate ${quoteCliValue(certificate)}`);
+          }
+        }
+
+        const currentMimeTypes = uniqueList(current?.httpCompressionMimeTypes || []);
+        const desiredMimeTypes = uniqueList(desired.httpCompressionMimeTypes);
+        for (const mimeType of currentMimeTypes) {
+          if (!desiredMimeTypes.includes(mimeType)) {
+            operations.push(
+              `delete ${servicePrefix} http-compression mime-type ${quoteCliValue(mimeType)}`
+            );
+          }
+        }
+        for (const mimeType of desiredMimeTypes) {
+          if (!currentMimeTypes.includes(mimeType)) {
+            operations.push(
+              `set ${servicePrefix} http-compression mime-type ${quoteCliValue(mimeType)}`
+            );
+          }
+        }
+
+        const currentHeaders = current?.httpResponseHeaders || {};
+        const desiredHeaders = desired.httpResponseHeaders;
+        for (const headerName of Object.keys(currentHeaders)) {
+          if (!Object.prototype.hasOwnProperty.call(desiredHeaders, headerName)) {
+            operations.push(
+              `delete ${servicePrefix} http-response-headers ${quoteCliValue(headerName)}`
+            );
+          }
+        }
+        for (const [headerName, headerValue] of Object.entries(desiredHeaders)) {
+          const currentHeaderValue = normalizeText(currentHeaders[headerName] || "");
+          const desiredHeaderValue = normalizeText(headerValue || "");
+          if (desiredHeaderValue !== currentHeaderValue) {
+            operations.push(
+              `set ${servicePrefix} http-response-headers ${quoteCliValue(headerName)} value ${quoteCliValue(desiredHeaderValue)}`
+            );
+          }
+        }
+
+        const currentRedirectHttps = current?.redirectHttpToHttps ?? false;
+        if (desired.redirectHttpToHttps !== currentRedirectHttps) {
+          operations.push(
+            desired.redirectHttpToHttps
+              ? `set ${servicePrefix} redirect-http-to-https`
+              : `delete ${servicePrefix} redirect-http-to-https`
+          );
+        }
+
+        const currentRuleMap = new Map((current?.rules || []).map((rule) => [rule.ruleId, rule]));
+        const desiredRuleMap = new Map(desired.rules.map((rule) => [rule.ruleId, rule]));
+
+        for (const [ruleId] of currentRuleMap.entries()) {
+          if (!desiredRuleMap.has(ruleId)) {
+            operations.push(`delete ${servicePrefix} rule ${quoteCliValue(ruleId)}`);
+          }
+        }
+
+        for (const [ruleId, desiredRule] of desiredRuleMap.entries()) {
+          const currentRule = currentRuleMap.get(ruleId);
+          const rulePrefix = `${servicePrefix} rule ${quoteCliValue(ruleId)}`;
+
+          setOrDelete(`${rulePrefix} domain-name`, desiredRule.domainName, currentRule?.domainName || "");
+          setOrDelete(`${rulePrefix} ssl`, desiredRule.sslSni, currentRule?.sslSni || "");
+          setOrDelete(
+            `${rulePrefix} redirect-location`,
+            desiredRule.redirectLocation,
+            currentRule?.redirectLocation || ""
+          );
+          setOrDelete(
+            `${rulePrefix} set backend`,
+            desiredRule.setBackend,
+            currentRule?.setBackend || ""
+          );
+
+          const desiredMatch = normalizeText(desiredRule.urlPathMatch);
+          const currentMatch = normalizeText(currentRule?.urlPathMatch || "");
+          const desiredPath = normalizeText(desiredRule.urlPath);
+          const currentPath = normalizeText(currentRule?.urlPath || "");
+
+          if (!desiredMatch || !desiredPath) {
+            if (currentMatch || currentPath) {
+              operations.push(`delete ${rulePrefix} url-path`);
+            }
+          } else if (desiredMatch !== currentMatch || desiredPath !== currentPath) {
+            if (currentMatch || currentPath) {
+              operations.push(`delete ${rulePrefix} url-path`);
+            }
+            operations.push(
+              `set ${rulePrefix} url-path ${quoteCliValue(desiredMatch)} ${quoteCliValue(desiredPath)}`
+            );
+          }
+        }
       }
 
       const currentBackendMap = new Map(currentBackends.map((entry) => [entry.name, entry]));
@@ -1038,54 +1602,111 @@ export default function LoadBalancingPage() {
 
       for (const [name] of currentBackendMap.entries()) {
         if (!desiredBackendMap.has(name)) {
-          operations.push(`delete load-balancing haproxy backend ${name}`);
+          operations.push(`delete load-balancing haproxy backend ${quoteCliValue(name)}`);
         }
       }
 
       for (const [name, desired] of desiredBackendMap.entries()) {
         const current = currentBackendMap.get(name);
-        if (
-          current &&
-          current.mode === desired.mode &&
-          current.balance === desired.balance &&
-          serverMapEquals(current.servers, desired.servers)
-        ) {
-          continue;
+        const backendPrefix = `load-balancing haproxy backend ${quoteCliValue(name)}`;
+
+        setOrDelete(`${backendPrefix} mode`, desired.mode, current?.mode || "");
+        setOrDelete(`${backendPrefix} balance`, desired.balance, current?.balance || "");
+        setOrDelete(
+          `${backendPrefix} ssl ca-certificate`,
+          desired.sslCaCertificate,
+          current?.sslCaCertificate || ""
+        );
+        setOrDelete(`${backendPrefix} logging facility`, desired.loggingFacility, current?.loggingFacility || "");
+        setOrDelete(`${backendPrefix} logging level`, desired.loggingLevel, current?.loggingLevel || "");
+        setOrDelete(`${backendPrefix} timeout check`, desired.timeoutCheck, current?.timeoutCheck || "");
+        setOrDelete(`${backendPrefix} timeout connect`, desired.timeoutConnect, current?.timeoutConnect || "");
+        setOrDelete(`${backendPrefix} timeout server`, desired.timeoutServer, current?.timeoutServer || "");
+        setOrDelete(
+          `${backendPrefix} health-check`,
+          desired.healthCheck,
+          current?.healthCheck || ""
+        );
+
+        const currentSslNoVerify = current?.sslNoVerify ?? false;
+        if (desired.sslNoVerify !== currentSslNoVerify) {
+          operations.push(
+            desired.sslNoVerify
+              ? `set ${backendPrefix} ssl no-verify`
+              : `delete ${backendPrefix} ssl no-verify`
+          );
         }
 
-        if (desired.mode) {
-          operations.push(`set load-balancing haproxy backend ${name} mode ${desired.mode}`);
-        } else if (current?.mode) {
-          operations.push(`delete load-balancing haproxy backend ${name} mode`);
+        const currentHttpCheckEnabled = current?.httpCheckEnabled ?? false;
+        if (desired.httpCheckEnabled !== currentHttpCheckEnabled) {
+          operations.push(
+            desired.httpCheckEnabled
+              ? `set ${backendPrefix} http-check`
+              : `delete ${backendPrefix} http-check`
+          );
         }
+        setOrDelete(`${backendPrefix} http-check method`, desired.httpCheckMethod, current?.httpCheckMethod || "");
+        setOrDelete(`${backendPrefix} http-check uri`, desired.httpCheckUri, current?.httpCheckUri || "");
+        setOrDelete(
+          `${backendPrefix} http-check expect`,
+          desired.httpCheckExpect,
+          current?.httpCheckExpect || ""
+        );
 
-        if (desired.balance) {
-          operations.push(`set load-balancing haproxy backend ${name} balance ${desired.balance}`);
-        } else if (current?.balance) {
-          operations.push(`delete load-balancing haproxy backend ${name} balance`);
+        const currentHeaders = current?.httpResponseHeaders || {};
+        const desiredHeaders = desired.httpResponseHeaders;
+        for (const headerName of Object.keys(currentHeaders)) {
+          if (!Object.prototype.hasOwnProperty.call(desiredHeaders, headerName)) {
+            operations.push(
+              `delete ${backendPrefix} http-response-headers ${quoteCliValue(headerName)}`
+            );
+          }
+        }
+        for (const [headerName, headerValue] of Object.entries(desiredHeaders)) {
+          const currentHeaderValue = normalizeText(currentHeaders[headerName] || "");
+          const desiredHeaderValue = normalizeText(headerValue || "");
+          if (desiredHeaderValue !== currentHeaderValue) {
+            operations.push(
+              `set ${backendPrefix} http-response-headers ${quoteCliValue(headerName)} value ${quoteCliValue(desiredHeaderValue)}`
+            );
+          }
         }
 
         const currentServers = current?.servers || {};
         const desiredServers = desired.servers;
-
         for (const serverName of Object.keys(currentServers)) {
           if (!Object.prototype.hasOwnProperty.call(desiredServers, serverName)) {
-            operations.push(`delete load-balancing haproxy backend ${name} server ${serverName}`);
+            operations.push(`delete ${backendPrefix} server ${quoteCliValue(serverName)}`);
           }
         }
 
         for (const [serverName, server] of Object.entries(desiredServers)) {
           const currentServer = currentServers[serverName];
-          if (currentServer && currentServer.address === server.address && currentServer.port === server.port) {
-            continue;
+          const serverPrefix = `${backendPrefix} server ${quoteCliValue(serverName)}`;
+          setOrDelete(`${serverPrefix} address`, server.address, currentServer?.address || "");
+          setOrDelete(`${serverPrefix} port`, server.port, currentServer?.port || "");
+
+          const currentCheck = currentServer?.check ?? false;
+          if (server.check !== currentCheck) {
+            operations.push(server.check ? `set ${serverPrefix} check` : `delete ${serverPrefix} check`);
+          }
+          setOrDelete(`${serverPrefix} check port`, server.checkPort, currentServer?.checkPort || "");
+
+          const currentSendProxy = currentServer?.sendProxy ?? false;
+          if (server.sendProxy !== currentSendProxy) {
+            operations.push(
+              server.sendProxy ? `set ${serverPrefix} send-proxy` : `delete ${serverPrefix} send-proxy`
+            );
           }
 
-          operations.push(
-            `set load-balancing haproxy backend ${name} server ${serverName} address ${server.address}`
-          );
-          operations.push(
-            `set load-balancing haproxy backend ${name} server ${serverName} port ${server.port}`
-          );
+          const currentSendProxyV2 = currentServer?.sendProxyV2 ?? false;
+          if (server.sendProxyV2 !== currentSendProxyV2) {
+            operations.push(
+              server.sendProxyV2
+                ? `set ${serverPrefix} send-proxy-v2`
+                : `delete ${serverPrefix} send-proxy-v2`
+            );
+          }
         }
       }
 
@@ -1794,78 +2415,335 @@ export default function LoadBalancingPage() {
           <TabsContent value="haproxy" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Frontends</CardTitle>
-                <CardDescription>Define listener bindings and default backends.</CardDescription>
+                <CardTitle>HAProxy Global Parameters</CardTitle>
+                <CardDescription>Configure global limits, logging, TLS, and default timeouts.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label>Max Connections</Label>
+                  <Input
+                    value={haproxyGlobal.maxConnections}
+                    onChange={(event) =>
+                      setHaproxyGlobal((previous) => ({ ...previous, maxConnections: event.target.value }))
+                    }
+                    placeholder="2000"
+                    disabled={!canEdit}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>TLS Version Minimum</Label>
+                  <Select
+                    value={haproxyGlobal.tlsVersionMin || "__none__"}
+                    onValueChange={(value) =>
+                      setHaproxyGlobal((previous) => ({
+                        ...previous,
+                        tlsVersionMin: value === "__none__" ? "" : value,
+                      }))
+                    }
+                    disabled={!canEdit}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Default</SelectItem>
+                      <SelectItem value="1.2">1.2</SelectItem>
+                      <SelectItem value="1.3">1.3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>SSL Bind Ciphers</Label>
+                  <Input
+                    value={haproxyGlobal.sslBindCiphers}
+                    onChange={(event) =>
+                      setHaproxyGlobal((previous) => ({ ...previous, sslBindCiphers: event.target.value }))
+                    }
+                    placeholder="ECDHE-ECDSA-AES128-GCM-SHA256:..."
+                    disabled={!canEdit}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Logging Facility</Label>
+                  <Input
+                    value={haproxyGlobal.loggingFacility}
+                    onChange={(event) =>
+                      setHaproxyGlobal((previous) => ({ ...previous, loggingFacility: event.target.value }))
+                    }
+                    placeholder="local0"
+                    disabled={!canEdit}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Logging Level</Label>
+                  <Input
+                    value={haproxyGlobal.loggingLevel}
+                    onChange={(event) =>
+                      setHaproxyGlobal((previous) => ({ ...previous, loggingLevel: event.target.value }))
+                    }
+                    placeholder="info"
+                    disabled={!canEdit}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Timeout Check</Label>
+                  <Input
+                    value={haproxyGlobal.timeoutCheck}
+                    onChange={(event) =>
+                      setHaproxyGlobal((previous) => ({ ...previous, timeoutCheck: event.target.value }))
+                    }
+                    placeholder="5"
+                    disabled={!canEdit}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Timeout Client</Label>
+                  <Input
+                    value={haproxyGlobal.timeoutClient}
+                    onChange={(event) =>
+                      setHaproxyGlobal((previous) => ({ ...previous, timeoutClient: event.target.value }))
+                    }
+                    placeholder="50"
+                    disabled={!canEdit}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Timeout Connect</Label>
+                  <Input
+                    value={haproxyGlobal.timeoutConnect}
+                    onChange={(event) =>
+                      setHaproxyGlobal((previous) => ({ ...previous, timeoutConnect: event.target.value }))
+                    }
+                    placeholder="10"
+                    disabled={!canEdit}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Timeout Server</Label>
+                  <Input
+                    value={haproxyGlobal.timeoutServer}
+                    onChange={(event) =>
+                      setHaproxyGlobal((previous) => ({ ...previous, timeoutServer: event.target.value }))
+                    }
+                    placeholder="50"
+                    disabled={!canEdit}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Services</CardTitle>
+                <CardDescription>
+                  Define listener services, backend targets, headers, compression, and HTTPS redirects.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className="grid gap-3 md:grid-cols-4">
                   <div className="space-y-2">
                     <Label>Name</Label>
                     <Input
-                      value={frontendDraft.name}
+                      value={serviceDraft.name}
                       onChange={(event) =>
-                        setFrontendDraft((previous) => ({ ...previous, name: event.target.value }))
+                        setServiceDraft((previous) => ({ ...previous, name: event.target.value }))
                       }
                       placeholder="http-in"
                       disabled={!canEdit}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Bind</Label>
-                    <Input
-                      value={frontendDraft.bind}
-                      onChange={(event) =>
-                        setFrontendDraft((previous) => ({ ...previous, bind: event.target.value }))
+                    <Label>Mode</Label>
+                    <Select
+                      value={serviceDraft.mode || "__none__"}
+                      onValueChange={(value) =>
+                        setServiceDraft((previous) => ({
+                          ...previous,
+                          mode: value === "__none__" ? "" : value,
+                        }))
                       }
-                      placeholder="0.0.0.0:80"
+                      disabled={!canEdit}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Unset" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Unset</SelectItem>
+                        <SelectItem value="http">http</SelectItem>
+                        <SelectItem value="tcp">tcp</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Listen Addresses</Label>
+                    <Input
+                      value={serviceListenInput}
+                      onChange={(event) => setServiceListenInput(event.target.value)}
+                      placeholder="0.0.0.0, ::"
                       disabled={!canEdit}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Default Backend</Label>
+                    <Label>Port</Label>
                     <Input
-                      value={frontendDraft.defaultBackend}
+                      value={serviceDraft.port}
                       onChange={(event) =>
-                        setFrontendDraft((previous) => ({ ...previous, defaultBackend: event.target.value }))
+                        setServiceDraft((previous) => ({ ...previous, port: event.target.value }))
                       }
-                      placeholder="backend-main"
+                      placeholder="443"
                       disabled={!canEdit}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label>Backend</Label>
+                    <Input
+                      value={serviceDraft.backend}
+                      onChange={(event) =>
+                        setServiceDraft((previous) => ({ ...previous, backend: event.target.value }))
+                      }
+                      placeholder={backendNames[0] || "backend-main"}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>SSL Certificates</Label>
+                    <Input
+                      value={serviceSslCertificatesInput}
+                      onChange={(event) => setServiceSslCertificatesInput(event.target.value)}
+                      placeholder="cert-main, cert-alt"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Response Headers (key=value)</Label>
+                    <Input
+                      value={serviceHeadersInput}
+                      onChange={(event) => setServiceHeadersInput(event.target.value)}
+                      placeholder="X-Frame-Options=DENY, X-Service=VyManager"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Compression Algorithm</Label>
+                    <Select
+                      value={serviceDraft.httpCompressionAlgorithm || "__none__"}
+                      onValueChange={(value) =>
+                        setServiceDraft((previous) => ({
+                          ...previous,
+                          httpCompressionAlgorithm: value === "__none__" ? "" : value,
+                        }))
+                      }
+                      disabled={!canEdit}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Unset" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Unset</SelectItem>
+                        <SelectItem value="gzip">gzip</SelectItem>
+                        <SelectItem value="deflate">deflate</SelectItem>
+                        <SelectItem value="identity">identity</SelectItem>
+                        <SelectItem value="raw-deflate">raw-deflate</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Compression MIME Types</Label>
+                    <Input
+                      value={serviceMimeTypesInput}
+                      onChange={(event) => setServiceMimeTypesInput(event.target.value)}
+                      placeholder="text/html, text/css"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Timeout Client</Label>
+                    <Input
+                      value={serviceDraft.timeoutClient}
+                      onChange={(event) =>
+                        setServiceDraft((previous) => ({ ...previous, timeoutClient: event.target.value }))
+                      }
+                      placeholder="50"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Logging Facility</Label>
+                    <Input
+                      value={serviceDraft.loggingFacility}
+                      onChange={(event) =>
+                        setServiceDraft((previous) => ({ ...previous, loggingFacility: event.target.value }))
+                      }
+                      placeholder="local0"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Logging Level</Label>
+                    <Input
+                      value={serviceDraft.loggingLevel}
+                      onChange={(event) =>
+                        setServiceDraft((previous) => ({ ...previous, loggingLevel: event.target.value }))
+                      }
+                      placeholder="info"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 text-sm">
+                    <Checkbox
+                      checked={serviceDraft.redirectHttpToHttps}
+                      disabled={!canEdit}
+                      onCheckedChange={(checked) =>
+                        setServiceDraft((previous) => ({
+                          ...previous,
+                          redirectHttpToHttps: checked === true,
+                        }))
+                      }
+                    />
+                    <span>Redirect HTTP to HTTPS</span>
+                  </label>
                 </div>
 
-                <Button type="button" variant="outline" onClick={addFrontendEntry} disabled={!canEdit}>
+                <Button type="button" variant="outline" onClick={addServiceEntry} disabled={!canEdit}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Add Frontend
+                  Add Service
                 </Button>
 
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
-                      <TableHead>Bind</TableHead>
-                      <TableHead>Default Backend</TableHead>
+                      <TableHead>Listeners</TableHead>
+                      <TableHead>Mode</TableHead>
+                      <TableHead>Backend</TableHead>
+                      <TableHead>Rules</TableHead>
                       <TableHead className="w-[120px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {frontends.length === 0 ? (
+                    {services.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-muted-foreground">
-                          No HAProxy frontend configured.
+                        <TableCell colSpan={6} className="text-muted-foreground">
+                          No HAProxy services configured.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      frontends.map((entry) => (
+                      services.map((entry) => (
                         <TableRow key={entry.name}>
                           <TableCell className="font-medium">{entry.name}</TableCell>
-                          <TableCell>{entry.bind}</TableCell>
-                          <TableCell>{entry.defaultBackend}</TableCell>
+                          <TableCell>
+                            {entry.listenAddresses.length > 0
+                              ? `${entry.listenAddresses.join(", ")}${entry.port ? `:${entry.port}` : ""}`
+                              : entry.bindLegacy || "-"}
+                          </TableCell>
+                          <TableCell>{entry.mode || "-"}</TableCell>
+                          <TableCell>{entry.backend || entry.defaultBackendLegacy || "-"}</TableCell>
+                          <TableCell>{entry.rules.length}</TableCell>
                           <TableCell className="text-right">
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => removeFrontendEntry(entry.name)}
+                              onClick={() => removeServiceEntry(entry.name)}
                               disabled={!canEdit}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1876,6 +2754,201 @@ export default function LoadBalancingPage() {
                     )}
                   </TableBody>
                 </Table>
+
+                <div className="space-y-3 rounded-lg border border-border/60 p-3">
+                  <h4 className="text-sm font-semibold">Service Rules</h4>
+                  <div className="grid gap-3 md:grid-cols-4">
+                    <div className="space-y-2">
+                      <Label>Service</Label>
+                      <Select
+                        value={serviceRuleParentName || "__none__"}
+                        onValueChange={(value) =>
+                          setServiceRuleParentName(value === "__none__" ? "" : value)
+                        }
+                        disabled={!canEdit || serviceNames.length === 0}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select service" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Select service</SelectItem>
+                          {serviceNames.map((name) => (
+                            <SelectItem key={name} value={name}>
+                              {name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Rule ID</Label>
+                      <Input
+                        value={serviceRuleDraft.ruleId}
+                        onChange={(event) =>
+                          setServiceRuleDraft((previous) => ({ ...previous, ruleId: event.target.value }))
+                        }
+                        placeholder="10"
+                        disabled={!canEdit}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Domain Name</Label>
+                      <Input
+                        value={serviceRuleDraft.domainName}
+                        onChange={(event) =>
+                          setServiceRuleDraft((previous) => ({ ...previous, domainName: event.target.value }))
+                        }
+                        placeholder="app.example.com"
+                        disabled={!canEdit}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>SSL SNI Match</Label>
+                      <Select
+                        value={serviceRuleDraft.sslSni || "__none__"}
+                        onValueChange={(value) =>
+                          setServiceRuleDraft((previous) => ({
+                            ...previous,
+                            sslSni: value === "__none__" ? "" : value,
+                          }))
+                        }
+                        disabled={!canEdit}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Unset" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Unset</SelectItem>
+                          <SelectItem value="req-ssl-sni">req-ssl-sni</SelectItem>
+                          <SelectItem value="ssl-fc-sni">ssl-fc-sni</SelectItem>
+                          <SelectItem value="ssl-fc-sni-end">ssl-fc-sni-end</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>URL Path Match</Label>
+                      <Select
+                        value={serviceRuleDraft.urlPathMatch || "__none__"}
+                        onValueChange={(value) =>
+                          setServiceRuleDraft((previous) => ({
+                            ...previous,
+                            urlPathMatch: value === "__none__" ? "" : value,
+                          }))
+                        }
+                        disabled={!canEdit}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Unset" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Unset</SelectItem>
+                          <SelectItem value="begin">begin</SelectItem>
+                          <SelectItem value="end">end</SelectItem>
+                          <SelectItem value="exact">exact</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>URL Path</Label>
+                      <Input
+                        value={serviceRuleDraft.urlPath}
+                        onChange={(event) =>
+                          setServiceRuleDraft((previous) => ({ ...previous, urlPath: event.target.value }))
+                        }
+                        placeholder="/api/"
+                        disabled={!canEdit}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Set Backend</Label>
+                      <Input
+                        value={serviceRuleDraft.setBackend}
+                        onChange={(event) =>
+                          setServiceRuleDraft((previous) => ({ ...previous, setBackend: event.target.value }))
+                        }
+                        placeholder={backendNames[0] || "backend-main"}
+                        disabled={!canEdit}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Redirect Location</Label>
+                      <Input
+                        value={serviceRuleDraft.redirectLocation}
+                        onChange={(event) =>
+                          setServiceRuleDraft((previous) => ({
+                            ...previous,
+                            redirectLocation: event.target.value,
+                          }))
+                        }
+                        placeholder="https://example.com/new-path"
+                        disabled={!canEdit}
+                      />
+                    </div>
+                  </div>
+                  <Button type="button" variant="outline" onClick={addServiceRuleEntry} disabled={!canEdit}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Service Rule
+                  </Button>
+
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Service</TableHead>
+                        <TableHead>Rule</TableHead>
+                        <TableHead>Match</TableHead>
+                        <TableHead>Action</TableHead>
+                        <TableHead className="w-[120px] text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {services.flatMap((service) => service.rules.map((rule) => ({ service, rule }))).length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-muted-foreground">
+                            No service rules configured.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        services.flatMap((service) =>
+                          service.rules.map((rule) => (
+                            <TableRow key={`${service.name}-${rule.ruleId}`}>
+                              <TableCell>{service.name}</TableCell>
+                              <TableCell>{rule.ruleId}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {[
+                                  rule.domainName ? `domain:${rule.domainName}` : null,
+                                  rule.sslSni ? `ssl:${rule.sslSni}` : null,
+                                  rule.urlPathMatch && rule.urlPath
+                                    ? `path:${rule.urlPathMatch} ${rule.urlPath}`
+                                    : null,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" | ") || "-"}
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {[
+                                  rule.setBackend ? `backend:${rule.setBackend}` : null,
+                                  rule.redirectLocation ? `redirect:${rule.redirectLocation}` : null,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" | ") || "-"}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeServiceRuleEntry(service.name, rule.ruleId)}
+                                  disabled={!canEdit}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
 
@@ -1883,7 +2956,7 @@ export default function LoadBalancingPage() {
               <CardHeader>
                 <CardTitle>Backends</CardTitle>
                 <CardDescription>
-                  Define backend pools. Server format: <code>name=ip:port</code>.
+                  Define backend pools, health checks, SSL options, and backend servers.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1901,35 +2974,348 @@ export default function LoadBalancingPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Mode</Label>
-                    <Input
-                      value={backendDraft.mode}
-                      onChange={(event) =>
-                        setBackendDraft((previous) => ({ ...previous, mode: event.target.value }))
+                    <Select
+                      value={backendDraft.mode || "__none__"}
+                      onValueChange={(value) =>
+                        setBackendDraft((previous) => ({ ...previous, mode: value === "__none__" ? "" : value }))
                       }
-                      placeholder="http"
                       disabled={!canEdit}
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Unset" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Unset</SelectItem>
+                        <SelectItem value="http">http</SelectItem>
+                        <SelectItem value="tcp">tcp</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Balance</Label>
-                    <Input
-                      value={backendDraft.balance}
-                      onChange={(event) =>
-                        setBackendDraft((previous) => ({ ...previous, balance: event.target.value }))
+                    <Select
+                      value={backendDraft.balance || "__none__"}
+                      onValueChange={(value) =>
+                        setBackendDraft((previous) => ({
+                          ...previous,
+                          balance: value === "__none__" ? "" : value,
+                        }))
                       }
-                      placeholder="roundrobin"
+                      disabled={!canEdit}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Unset" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Unset</SelectItem>
+                        <SelectItem value="round-robin">round-robin</SelectItem>
+                        <SelectItem value="least-connection">least-connection</SelectItem>
+                        <SelectItem value="source-address">source-address</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Health Check Protocol</Label>
+                    <Select
+                      value={backendDraft.healthCheck || "__none__"}
+                      onValueChange={(value) =>
+                        setBackendDraft((previous) => ({
+                          ...previous,
+                          healthCheck: value === "__none__" ? "" : value,
+                        }))
+                      }
+                      disabled={!canEdit}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Unset" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Unset</SelectItem>
+                        <SelectItem value="ldap">ldap</SelectItem>
+                        <SelectItem value="redis">redis</SelectItem>
+                        <SelectItem value="mysql">mysql</SelectItem>
+                        <SelectItem value="pgsql">pgsql</SelectItem>
+                        <SelectItem value="smtp">smtp</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>SSL CA Certificate</Label>
+                    <Input
+                      value={backendDraft.sslCaCertificate}
+                      onChange={(event) =>
+                        setBackendDraft((previous) => ({
+                          ...previous,
+                          sslCaCertificate: event.target.value,
+                        }))
+                      }
+                      placeholder="ca-main"
                       disabled={!canEdit}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Servers</Label>
+                    <Label>Response Headers (key=value)</Label>
                     <Input
-                      value={backendServersInput}
-                      onChange={(event) => setBackendServersInput(event.target.value)}
-                      placeholder="app1=10.0.0.11:80, app2=10.0.0.12:80"
+                      value={backendHeadersInput}
+                      onChange={(event) => setBackendHeadersInput(event.target.value)}
+                      placeholder="X-Backend=pool-a"
                       disabled={!canEdit}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label>Logging Facility</Label>
+                    <Input
+                      value={backendDraft.loggingFacility}
+                      onChange={(event) =>
+                        setBackendDraft((previous) => ({ ...previous, loggingFacility: event.target.value }))
+                      }
+                      placeholder="local0"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Logging Level</Label>
+                    <Input
+                      value={backendDraft.loggingLevel}
+                      onChange={(event) =>
+                        setBackendDraft((previous) => ({ ...previous, loggingLevel: event.target.value }))
+                      }
+                      placeholder="info"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Timeout Check</Label>
+                    <Input
+                      value={backendDraft.timeoutCheck}
+                      onChange={(event) =>
+                        setBackendDraft((previous) => ({ ...previous, timeoutCheck: event.target.value }))
+                      }
+                      placeholder="5"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Timeout Connect</Label>
+                    <Input
+                      value={backendDraft.timeoutConnect}
+                      onChange={(event) =>
+                        setBackendDraft((previous) => ({ ...previous, timeoutConnect: event.target.value }))
+                      }
+                      placeholder="10"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Timeout Server</Label>
+                    <Input
+                      value={backendDraft.timeoutServer}
+                      onChange={(event) =>
+                        setBackendDraft((previous) => ({ ...previous, timeoutServer: event.target.value }))
+                      }
+                      placeholder="50"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 text-sm">
+                    <Checkbox
+                      checked={backendDraft.sslNoVerify}
+                      disabled={!canEdit}
+                      onCheckedChange={(checked) =>
+                        setBackendDraft((previous) => ({ ...previous, sslNoVerify: checked === true }))
+                      }
+                    />
+                    <span>SSL No Verify</span>
+                  </label>
+                  <label className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 text-sm">
+                    <Checkbox
+                      checked={backendDraft.httpCheckEnabled}
+                      disabled={!canEdit}
+                      onCheckedChange={(checked) =>
+                        setBackendDraft((previous) => ({ ...previous, httpCheckEnabled: checked === true }))
+                      }
+                    />
+                    <span>Enable HTTP Check</span>
+                  </label>
+                  <div className="space-y-2">
+                    <Label>HTTP Check Method</Label>
+                    <Select
+                      value={backendDraft.httpCheckMethod || "__none__"}
+                      onValueChange={(value) =>
+                        setBackendDraft((previous) => ({
+                          ...previous,
+                          httpCheckMethod: value === "__none__" ? "" : value,
+                        }))
+                      }
+                      disabled={!canEdit}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Unset" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Unset</SelectItem>
+                        <SelectItem value="option">option</SelectItem>
+                        <SelectItem value="get">get</SelectItem>
+                        <SelectItem value="post">post</SelectItem>
+                        <SelectItem value="put">put</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>HTTP Check URI</Label>
+                    <Input
+                      value={backendDraft.httpCheckUri}
+                      onChange={(event) =>
+                        setBackendDraft((previous) => ({ ...previous, httpCheckUri: event.target.value }))
+                      }
+                      placeholder="/healthz"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>HTTP Check Expect</Label>
+                    <Input
+                      value={backendDraft.httpCheckExpect}
+                      onChange={(event) =>
+                        setBackendDraft((previous) => ({ ...previous, httpCheckExpect: event.target.value }))
+                      }
+                      placeholder="status 200-399"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3 rounded-lg border border-border/60 p-3">
+                  <h4 className="text-sm font-semibold">Backend Servers</h4>
+                  <div className="grid gap-3 md:grid-cols-4">
+                    <div className="space-y-2">
+                      <Label>Server Name</Label>
+                      <Input
+                        value={backendServerDraft.name}
+                        onChange={(event) =>
+                          setBackendServerDraft((previous) => ({ ...previous, name: event.target.value }))
+                        }
+                        placeholder="srv1"
+                        disabled={!canEdit}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Address</Label>
+                      <Input
+                        value={backendServerDraft.address}
+                        onChange={(event) =>
+                          setBackendServerDraft((previous) => ({ ...previous, address: event.target.value }))
+                        }
+                        placeholder="10.0.0.11"
+                        disabled={!canEdit}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Port</Label>
+                      <Input
+                        value={backendServerDraft.port}
+                        onChange={(event) =>
+                          setBackendServerDraft((previous) => ({ ...previous, port: event.target.value }))
+                        }
+                        placeholder="443"
+                        disabled={!canEdit}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Check Port</Label>
+                      <Input
+                        value={backendServerDraft.checkPort}
+                        onChange={(event) =>
+                          setBackendServerDraft((previous) => ({ ...previous, checkPort: event.target.value }))
+                        }
+                        placeholder="8443"
+                        disabled={!canEdit}
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 text-sm">
+                      <Checkbox
+                        checked={backendServerDraft.check}
+                        disabled={!canEdit}
+                        onCheckedChange={(checked) =>
+                          setBackendServerDraft((previous) => ({ ...previous, check: checked === true }))
+                        }
+                      />
+                      <span>Enable Check</span>
+                    </label>
+                    <label className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 text-sm">
+                      <Checkbox
+                        checked={backendServerDraft.sendProxy}
+                        disabled={!canEdit}
+                        onCheckedChange={(checked) =>
+                          setBackendServerDraft((previous) => ({
+                            ...previous,
+                            sendProxy: checked === true,
+                          }))
+                        }
+                      />
+                      <span>Send Proxy v1</span>
+                    </label>
+                    <label className="flex items-center gap-2 rounded-md border border-border/50 px-3 py-2 text-sm">
+                      <Checkbox
+                        checked={backendServerDraft.sendProxyV2}
+                        disabled={!canEdit}
+                        onCheckedChange={(checked) =>
+                          setBackendServerDraft((previous) => ({
+                            ...previous,
+                            sendProxyV2: checked === true,
+                          }))
+                        }
+                      />
+                      <span>Send Proxy v2</span>
+                    </label>
+                  </div>
+                  <Button type="button" variant="outline" onClick={addBackendServerDraftEntry} disabled={!canEdit}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Server to Backend Draft
+                  </Button>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Address:Port</TableHead>
+                        <TableHead>Check</TableHead>
+                        <TableHead>Proxy</TableHead>
+                        <TableHead className="w-[120px] text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {Object.keys(backendDraft.servers).length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-muted-foreground">
+                            No backend servers in draft.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        Object.values(backendDraft.servers).map((server) => (
+                          <TableRow key={server.name}>
+                            <TableCell>{server.name}</TableCell>
+                            <TableCell>{server.address}:{server.port}</TableCell>
+                            <TableCell>{server.check ? server.checkPort || "enabled" : "-"}</TableCell>
+                            <TableCell>
+                              {[server.sendProxy ? "v1" : null, server.sendProxyV2 ? "v2" : null]
+                                .filter(Boolean)
+                                .join(", ") || "-"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeBackendServerDraftEntry(server.name)}
+                                disabled={!canEdit}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
 
                 <Button type="button" variant="outline" onClick={addBackendEntry} disabled={!canEdit}>
@@ -1941,8 +3327,8 @@ export default function LoadBalancingPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
-                      <TableHead>Mode</TableHead>
-                      <TableHead>Balance</TableHead>
+                      <TableHead>Mode / Balance</TableHead>
+                      <TableHead>Health</TableHead>
                       <TableHead>Servers</TableHead>
                       <TableHead className="w-[120px] text-right">Actions</TableHead>
                     </TableRow>
@@ -1958,8 +3344,16 @@ export default function LoadBalancingPage() {
                       backends.map((entry) => (
                         <TableRow key={entry.name}>
                           <TableCell className="font-medium">{entry.name}</TableCell>
-                          <TableCell>{entry.mode || "-"}</TableCell>
-                          <TableCell>{entry.balance || "-"}</TableCell>
+                          <TableCell>{[entry.mode, entry.balance].filter(Boolean).join(" / ") || "-"}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {[
+                              entry.healthCheck ? `proto:${entry.healthCheck}` : null,
+                              entry.httpCheckEnabled ? "http-check" : null,
+                              entry.sslNoVerify ? "ssl-no-verify" : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" | ") || "-"}
+                          </TableCell>
                           <TableCell>{serializeServerList(entry.servers) || "-"}</TableCell>
                           <TableCell className="text-right">
                             <Button
@@ -1976,12 +3370,6 @@ export default function LoadBalancingPage() {
                     )}
                   </TableBody>
                 </Table>
-
-                {backendNames.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Existing backend names: {backendNames.join(", ")}
-                  </p>
-                )}
               </CardContent>
             </Card>
           </TabsContent>

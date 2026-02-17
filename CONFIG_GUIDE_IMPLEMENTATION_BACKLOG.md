@@ -79,7 +79,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 
 ### Load Balancing (`loadbalancing/*`)
 - `LB-01` (`verify`): WAN load-balancing parity expanded with global options (`disable-source-nat`, `flush-connections`, `sticky-connections inbound`, `hook script-name`), interface-health test CRUD (`type/target/resp-time/ttl-limit/test-script`), rule-level advanced match/behavior fields (`protocol`, source/destination selectors, interface weights, limit fields, `exclude`, `failover`, `per-packet-balancing`). Pending live verification.
-- `LB-02` (`partial`): HAProxy parity pass (frontend/backend/listener/server-check options).
+- `LB-02` (`verify`): HAProxy parity expanded with guide-aligned global parameters, service/listener workflows, service rule actions, backend SSL/logging/timeout/http-check/health-check options, and per-server check/proxy controls in form-based workflows. Pending live verification.
 - `LB-03` (`verify`): Validation of route/failover behavior with multi-uplink fixtures.
 
 ### NAT (`nat/*`)

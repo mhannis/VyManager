@@ -202,8 +202,8 @@
     {
       "id": "LB-02",
       "domain": "load-balancing",
-      "status": "partial",
-      "title": "HAProxy full option parity"
+      "status": "verify",
+      "title": "HAProxy parity expanded with global parameters, service/listener/rule workflows, backend SSL/logging/timeout/http-check/health-check options, and per-server check/proxy controls; pending live verification"
     },
     {
       "id": "LB-03",
