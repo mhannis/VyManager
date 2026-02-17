@@ -55,6 +55,10 @@ export interface BondingInterface {
   minLinks: string;
   primary: string;
   allMembersActive: boolean;
+  disableFlowControl: boolean;
+  disableLinkDetect: boolean;
+  arpMonitorInterval: string;
+  arpMonitorTargets: string[];
   mac: string;
   systemMac: string;
   systemPriority: string;
@@ -80,6 +84,7 @@ class BondingService {
     for (const name of Object.keys(root).sort((left, right) => left.localeCompare(right))) {
       const node = asObject(root[name]);
       const memberNode = asObject(node.member);
+      const arpMonitorNode = asObject(node["arp-monitor"]);
 
       bonds.push({
         name,
@@ -93,6 +98,10 @@ class BondingService {
         minLinks: asString(node["min-links"]),
         primary: asString(node.primary),
         allMembersActive: Object.prototype.hasOwnProperty.call(node, "all-members-active"),
+        disableFlowControl: Object.prototype.hasOwnProperty.call(node, "disable-flow-control"),
+        disableLinkDetect: Object.prototype.hasOwnProperty.call(node, "disable-link-detect"),
+        arpMonitorInterval: asString(arpMonitorNode.interval),
+        arpMonitorTargets: readTagValues(arpMonitorNode.target),
         mac: asString(node.mac),
         systemMac: asString(node["system-mac"]),
         systemPriority: asString(node["system-priority"]),
@@ -110,4 +119,3 @@ class BondingService {
 }
 
 export const bondingService = new BondingService();
-

@@ -49,6 +49,10 @@ interface BondingCandidate {
   minLinks: string;
   primary: string;
   allMembersActive: boolean;
+  disableFlowControl: boolean;
+  disableLinkDetect: boolean;
+  arpMonitorInterval: string;
+  arpMonitorTargets: string[];
   mac: string;
   systemMac: string;
   systemPriority: string;
@@ -68,6 +72,10 @@ interface BondingFormState {
   minLinks: string;
   primary: string;
   allMembersActive: boolean;
+  disableFlowControl: boolean;
+  disableLinkDetect: boolean;
+  arpMonitorInterval: string;
+  arpMonitorTargetsText: string;
   mac: string;
   systemMac: string;
   systemPriority: string;
@@ -91,6 +99,10 @@ const EMPTY_FORM: BondingFormState = {
   minLinks: "",
   primary: "",
   allMembersActive: false,
+  disableFlowControl: false,
+  disableLinkDetect: false,
+  arpMonitorInterval: "",
+  arpMonitorTargetsText: "",
   mac: "",
   systemMac: "",
   systemPriority: "",
@@ -126,6 +138,22 @@ function parseMembersText(raw: string): string[] {
   return uniqueNonEmpty(raw.split(/[\n,]/));
 }
 
+function parseTargetsText(raw: string): string[] {
+  return uniqueNonEmpty(raw.split(/[\n,]/));
+}
+
+function isValidIpToken(value: string): boolean {
+  const candidate = value.trim();
+  if (!candidate) return false;
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(candidate)) {
+    return candidate
+      .split(".")
+      .every((octet) => Number.isInteger(Number.parseInt(octet, 10)) && Number.parseInt(octet, 10) >= 0 && Number.parseInt(octet, 10) <= 255);
+  }
+  if (!candidate.includes(":")) return false;
+  return /^[0-9A-Fa-f:]+$/.test(candidate);
+}
+
 function listDifference(current: string[], desired: string[]): { toAdd: string[]; toDelete: string[] } {
   const currentSet = new Set(current);
   const desiredSet = new Set(desired);
@@ -136,6 +164,7 @@ function listDifference(current: string[], desired: string[]): { toAdd: string[]
 
 function normalizeCandidate(form: BondingFormState): BondingCandidate {
   const addresses = parseAddressLines(form.addressesText);
+  const arpMonitorTargets = parseTargetsText(form.arpMonitorTargetsText);
   const members = uniqueNonEmpty([...form.selectedMembers, ...parseMembersText(form.extraMembersText)]).sort(
     (left, right) => left.localeCompare(right),
   );
@@ -152,6 +181,10 @@ function normalizeCandidate(form: BondingFormState): BondingCandidate {
     minLinks: form.minLinks.trim(),
     primary: form.primary.trim(),
     allMembersActive: form.allMembersActive,
+    disableFlowControl: form.disableFlowControl,
+    disableLinkDetect: form.disableLinkDetect,
+    arpMonitorInterval: form.arpMonitorInterval.trim(),
+    arpMonitorTargets,
     mac: form.mac.trim(),
     systemMac: form.systemMac.trim(),
     systemPriority: form.systemPriority.trim(),
@@ -177,6 +210,10 @@ function toFormState(value: BondingInterface, choices: InterfaceChoice[]): Bondi
     minLinks: value.minLinks,
     primary: value.primary,
     allMembersActive: value.allMembersActive,
+    disableFlowControl: value.disableFlowControl,
+    disableLinkDetect: value.disableLinkDetect,
+    arpMonitorInterval: value.arpMonitorInterval,
+    arpMonitorTargetsText: value.arpMonitorTargets.join(", "),
     mac: value.mac,
     systemMac: value.systemMac,
     systemPriority: value.systemPriority,
@@ -216,6 +253,10 @@ function buildBondingOperations(candidate: BondingCandidate, current: BondingInt
     minLinks: "",
     primary: "",
     allMembersActive: false,
+    disableFlowControl: false,
+    disableLinkDetect: false,
+    arpMonitorInterval: "",
+    arpMonitorTargets: [],
     mac: "",
     systemMac: "",
     systemPriority: "",
@@ -248,6 +289,37 @@ function buildBondingOperations(candidate: BondingCandidate, current: BondingInt
         ? `set ${base} all-members-active`
         : `delete ${base} all-members-active`,
     );
+  }
+
+  if (candidate.disableFlowControl !== currentSafe.disableFlowControl) {
+    operations.push(
+      candidate.disableFlowControl
+        ? `set ${base} disable-flow-control`
+        : `delete ${base} disable-flow-control`,
+    );
+  }
+
+  if (candidate.disableLinkDetect !== currentSafe.disableLinkDetect) {
+    operations.push(
+      candidate.disableLinkDetect
+        ? `set ${base} disable-link-detect`
+        : `delete ${base} disable-link-detect`,
+    );
+  }
+
+  syncScalar(
+    operations,
+    base,
+    "arp-monitor interval",
+    candidate.arpMonitorInterval,
+    currentSafe.arpMonitorInterval,
+  );
+  const arpMonitorTargetChanges = listDifference(currentSafe.arpMonitorTargets, candidate.arpMonitorTargets);
+  for (const target of arpMonitorTargetChanges.toDelete) {
+    operations.push(`delete ${base} arp-monitor target ${quoteCliValue(target)}`);
+  }
+  for (const target of arpMonitorTargetChanges.toAdd) {
+    operations.push(`set ${base} arp-monitor target ${quoteCliValue(target)}`);
   }
 
   if (candidate.disable !== currentSafe.disable) {
@@ -372,6 +444,16 @@ export default function BondingInterfacesPage() {
     if (candidate.systemPriority && !/^\d+$/.test(candidate.systemPriority)) {
       setError("System priority must be a whole number.");
       return;
+    }
+    if (candidate.arpMonitorInterval && !/^\d+$/.test(candidate.arpMonitorInterval)) {
+      setError("ARP monitor interval must be a whole number.");
+      return;
+    }
+    for (const target of candidate.arpMonitorTargets) {
+      if (!isValidIpToken(target)) {
+        setError(`ARP monitor target '${target}' must be an IPv4 or IPv6 address.`);
+        return;
+      }
     }
 
     const current = bonds.find((bond) => bond.name === candidate.name) || null;
@@ -794,6 +876,43 @@ export default function BondingInterfacesPage() {
                   />
                   Disable interface
                 </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.disableFlowControl}
+                    onCheckedChange={(checked) => setForm((prev) => ({ ...prev, disableFlowControl: Boolean(checked) }))}
+                    disabled={saving}
+                  />
+                  Disable flow control
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.disableLinkDetect}
+                    onCheckedChange={(checked) => setForm((prev) => ({ ...prev, disableLinkDetect: Boolean(checked) }))}
+                    disabled={saving}
+                  />
+                  Disable link detect
+                </label>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>ARP Monitor Interval (seconds)</Label>
+                  <Input
+                    value={form.arpMonitorInterval}
+                    onChange={(event) => setForm((prev) => ({ ...prev, arpMonitorInterval: event.target.value }))}
+                    placeholder="1"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>ARP Monitor Targets (comma or newline separated)</Label>
+                  <Input
+                    value={form.arpMonitorTargetsText}
+                    onChange={(event) => setForm((prev) => ({ ...prev, arpMonitorTargetsText: event.target.value }))}
+                    placeholder="192.0.2.1, 192.0.2.2"
+                    disabled={saving}
+                  />
+                </div>
               </div>
 
               <div className="pt-2">
@@ -818,4 +937,3 @@ export default function BondingInterfacesPage() {
     </AppLayout>
   );
 }
-
