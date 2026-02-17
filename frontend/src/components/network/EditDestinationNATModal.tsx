@@ -351,6 +351,9 @@ export function EditDestinationNATModal({ open, onOpenChange, rule, onSuccess }:
 
       if (description.trim()) {
         config.description = description.trim();
+      } else if (rule.description) {
+        config.description = "";
+        config.delete_description = true;
       }
 
       // Source - handle both setting new values and deleting cleared values
@@ -428,6 +431,8 @@ export function EditDestinationNATModal({ open, onOpenChange, rule, onSuccess }:
         config.inbound_interface_type = "group";
         config.inbound_interface_value = inboundInterfaceGroup;
         config.inbound_interface_invert = inboundInterfaceInvert;
+      } else if (rule.inbound_interface && Object.keys(rule.inbound_interface).length > 0) {
+        config.delete_inbound_interface = true;
       }
 
       // Protocol (don't send "all" - VyOS treats no protocol as all protocols)
@@ -441,23 +446,40 @@ export function EditDestinationNATModal({ open, onOpenChange, rule, onSuccess }:
       // Packet type
       if (packetType) {
         config.packet_type = packetType;
+      } else if (rule.packet_type) {
+        config.delete_packet_type = true;
       }
 
       // Translation
       if (translationAddress.trim()) {
         config.translation_address = translationAddress.trim();
+      } else if (rule.translation?.address) {
+        config.delete_translation_address = true;
       }
       if (translationPort.trim()) {
         config.translation_port = translationPort.trim();
+      } else if (rule.translation?.port) {
+        config.delete_translation_port = true;
       }
 
       // Load balance
       if (loadBalancingEnabled) {
         if (loadBalanceHash) {
           config.load_balance_hash = loadBalanceHash;
+        } else if (rule.load_balance?.hash) {
+          config.delete_load_balance_hash = true;
         }
         if (loadBalanceBackend.trim()) {
           config.load_balance_backend = loadBalanceBackend.trim();
+        } else if ((rule.load_balance?.backend || []).length > 0) {
+          config.delete_load_balance_backend = true;
+        }
+      } else if (rule.load_balance) {
+        if (rule.load_balance.hash) {
+          config.delete_load_balance_hash = true;
+        }
+        if ((rule.load_balance.backend || []).length > 0) {
+          config.delete_load_balance_backend = true;
         }
       }
 

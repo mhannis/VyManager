@@ -363,6 +363,9 @@ export function EditSourceNATModal({ open, onOpenChange, rule, onSuccess }: Edit
 
       if (description.trim()) {
         config.description = description.trim();
+      } else if (rule.description) {
+        config.description = "";
+        config.delete_description = true;
       }
 
       // Source - handle both setting new values and deleting cleared values
@@ -440,6 +443,8 @@ export function EditSourceNATModal({ open, onOpenChange, rule, onSuccess }: Edit
         config.outbound_interface_type = "group";
         config.outbound_interface_value = outboundInterfaceGroup;
         config.outbound_interface_invert = outboundInterfaceInvert;
+      } else if (rule.outbound_interface && Object.keys(rule.outbound_interface).length > 0) {
+        config.delete_outbound_interface = true;
       }
 
       // Protocol (don't send "all" - VyOS treats no protocol as all protocols)
@@ -453,6 +458,8 @@ export function EditSourceNATModal({ open, onOpenChange, rule, onSuccess }: Edit
       // Packet type
       if (packetType) {
         config.packet_type = packetType;
+      } else if (rule.packet_type) {
+        config.delete_packet_type = true;
       }
 
       // Translation
@@ -461,15 +468,28 @@ export function EditSourceNATModal({ open, onOpenChange, rule, onSuccess }: Edit
         config.translation_address = "masquerade";
       } else if (translationAddress.trim()) {
         config.translation_address = translationAddress.trim();
+      } else if (rule.translation?.address && rule.translation.address !== "masquerade") {
+        config.delete_translation_address = true;
       }
 
       // Load balance
       if (loadBalancingEnabled) {
         if (loadBalanceHash) {
           config.load_balance_hash = loadBalanceHash;
+        } else if (rule.load_balance?.hash) {
+          config.delete_load_balance_hash = true;
         }
         if (loadBalanceBackend.trim()) {
           config.load_balance_backend = loadBalanceBackend.trim();
+        } else if ((rule.load_balance?.backend || []).length > 0) {
+          config.delete_load_balance_backend = true;
+        }
+      } else if (rule.load_balance) {
+        if (rule.load_balance.hash) {
+          config.delete_load_balance_hash = true;
+        }
+        if ((rule.load_balance.backend || []).length > 0) {
+          config.delete_load_balance_backend = true;
         }
       }
 

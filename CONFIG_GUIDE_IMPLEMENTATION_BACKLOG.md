@@ -83,7 +83,7 @@ Unlike `CONFIG_COVERAGE_MATRIX.*`, this file is option-level and UX-level (full 
 - `LB-03` (`verify`): Validation of route/failover behavior with multi-uplink fixtures.
 
 ### NAT (`nat/*`)
-- `NAT-01` (`partial`): NAT44 advanced option parity (rule actions, flags, edge options).
+- `NAT-01` (`verify`): NAT44 parity hardened for reliable CRUD/update workflows (field-clear delete semantics for source/destination/static edits, static rule update op-name parity, and static reorder builder parity). Pending live verification.
 - `NAT-02` (`partial`): NAT64 parity completion.
 - `NAT-03` (`partial`): NAT66/NPTv6 parity completion.
 - `NAT-04` (`partial`): CGNAT parity completion.

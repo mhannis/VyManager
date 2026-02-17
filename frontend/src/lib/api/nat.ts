@@ -491,6 +491,12 @@ class NATService {
       delete_destination_address?: boolean;
       delete_destination_port?: boolean;
       delete_destination_group?: boolean;
+      delete_description?: boolean;
+      delete_outbound_interface?: boolean;
+      delete_packet_type?: boolean;
+      delete_translation_address?: boolean;
+      delete_load_balance_hash?: boolean;
+      delete_load_balance_backend?: boolean;
     }
   ): Promise<VyOSResponse> {
     // Build operations just like createSourceRule
@@ -502,6 +508,8 @@ class NATService {
     if (config.description !== undefined) {
       if (config.description) {
         operations.push({ op: "set_source_rule_description", value: config.description });
+      } else if (config.delete_description) {
+        operations.push({ op: "delete_source_rule_description" });
       }
     }
 
@@ -556,7 +564,10 @@ class NATService {
     }
 
     // Outbound interface
-    if (config.outbound_interface_type && config.outbound_interface_value) {
+    if (config.delete_outbound_interface) {
+      operations.push({ op: "delete_source_rule_outbound_interface_name" });
+      operations.push({ op: "delete_source_rule_outbound_interface_group" });
+    } else if (config.outbound_interface_type && config.outbound_interface_value) {
       let interfaceValue = config.outbound_interface_value;
       if (config.outbound_interface_invert) {
         interfaceValue = `!${interfaceValue}`;
@@ -577,32 +588,40 @@ class NATService {
     }
 
     // Packet type
-    if (config.packet_type) {
+    if (config.delete_packet_type) {
+      operations.push({ op: "delete_source_rule_packet_type" });
+    } else if (config.packet_type) {
       operations.push({ op: "set_source_rule_packet_type", value: config.packet_type });
     }
 
     // Translation
-    if (config.translation_address) {
+    if (config.delete_translation_address) {
+      operations.push({ op: "delete_source_rule_translation_address" });
+    } else if (config.translation_address) {
       operations.push({ op: "set_source_rule_translation_address", value: config.translation_address });
     }
 
     // Load balance
-    if (config.load_balance_hash) {
+    if (config.delete_load_balance_hash) {
+      operations.push({ op: "delete_source_rule_load_balance_hash" });
+    } else if (config.load_balance_hash) {
       operations.push({ op: "set_source_rule_load_balance_hash", value: config.load_balance_hash });
     }
-    if (config.load_balance_backend) {
+    if (config.delete_load_balance_backend) {
+      operations.push({ op: "delete_source_rule_load_balance_backend" });
+    } else if (config.load_balance_backend) {
       operations.push({ op: "set_source_rule_load_balance_backend", value: config.load_balance_backend });
     }
 
     // Flags
-    if (config.disable) {
-      operations.push({ op: "set_source_rule_disable" });
+    if (config.disable !== undefined) {
+      operations.push({ op: config.disable ? "set_source_rule_disable" : "delete_source_rule_disable" });
     }
-    if (config.exclude) {
-      operations.push({ op: "set_source_rule_exclude" });
+    if (config.exclude !== undefined) {
+      operations.push({ op: config.exclude ? "set_source_rule_exclude" : "delete_source_rule_exclude" });
     }
-    if (config.log) {
-      operations.push({ op: "set_source_rule_log" });
+    if (config.log !== undefined) {
+      operations.push({ op: config.log ? "set_source_rule_log" : "delete_source_rule_log" });
     }
 
     const result = await this.batchConfigure({
@@ -654,6 +673,13 @@ class NATService {
       delete_destination_address?: boolean;
       delete_destination_port?: boolean;
       delete_destination_group?: boolean;
+      delete_description?: boolean;
+      delete_inbound_interface?: boolean;
+      delete_packet_type?: boolean;
+      delete_translation_address?: boolean;
+      delete_translation_port?: boolean;
+      delete_load_balance_hash?: boolean;
+      delete_load_balance_backend?: boolean;
     }
   ): Promise<VyOSResponse> {
     // Build operations just like createDestinationRule
@@ -665,6 +691,8 @@ class NATService {
     if (config.description !== undefined) {
       if (config.description) {
         operations.push({ op: "set_destination_rule_description", value: config.description });
+      } else if (config.delete_description) {
+        operations.push({ op: "delete_destination_rule_description" });
       }
     }
 
@@ -719,7 +747,10 @@ class NATService {
     }
 
     // Inbound interface
-    if (config.inbound_interface_type && config.inbound_interface_value) {
+    if (config.delete_inbound_interface) {
+      operations.push({ op: "delete_destination_rule_inbound_interface_name" });
+      operations.push({ op: "delete_destination_rule_inbound_interface_group" });
+    } else if (config.inbound_interface_type && config.inbound_interface_value) {
       let interfaceValue = config.inbound_interface_value;
       if (config.inbound_interface_invert) {
         interfaceValue = `!${interfaceValue}`;
@@ -740,35 +771,49 @@ class NATService {
     }
 
     // Packet type
-    if (config.packet_type) {
+    if (config.delete_packet_type) {
+      operations.push({ op: "delete_destination_rule_packet_type" });
+    } else if (config.packet_type) {
       operations.push({ op: "set_destination_rule_packet_type", value: config.packet_type });
     }
 
     // Translation
-    if (config.translation_address) {
+    if (config.delete_translation_address) {
+      operations.push({ op: "delete_destination_rule_translation_address" });
+    } else if (config.translation_address) {
       operations.push({ op: "set_destination_rule_translation_address", value: config.translation_address });
     }
-    if (config.translation_port) {
+    if (config.delete_translation_port) {
+      operations.push({ op: "delete_destination_rule_translation_port" });
+    } else if (config.translation_port) {
       operations.push({ op: "set_destination_rule_translation_port", value: config.translation_port });
     }
 
     // Load balance
-    if (config.load_balance_hash) {
+    if (config.delete_load_balance_hash) {
+      operations.push({ op: "delete_destination_rule_load_balance_hash" });
+    } else if (config.load_balance_hash) {
       operations.push({ op: "set_destination_rule_load_balance_hash", value: config.load_balance_hash });
     }
-    if (config.load_balance_backend) {
+    if (config.delete_load_balance_backend) {
+      operations.push({ op: "delete_destination_rule_load_balance_backend" });
+    } else if (config.load_balance_backend) {
       operations.push({ op: "set_destination_rule_load_balance_backend", value: config.load_balance_backend });
     }
 
     // Flags
-    if (config.disable) {
-      operations.push({ op: "set_destination_rule_disable" });
+    if (config.disable !== undefined) {
+      operations.push({
+        op: config.disable ? "set_destination_rule_disable" : "delete_destination_rule_disable",
+      });
     }
-    if (config.exclude) {
-      operations.push({ op: "set_destination_rule_exclude" });
+    if (config.exclude !== undefined) {
+      operations.push({
+        op: config.exclude ? "set_destination_rule_exclude" : "delete_destination_rule_exclude",
+      });
     }
-    if (config.log) {
-      operations.push({ op: "set_destination_rule_log" });
+    if (config.log !== undefined) {
+      operations.push({ op: config.log ? "set_destination_rule_log" : "delete_destination_rule_log" });
     }
 
     const result = await this.batchConfigure({
@@ -795,6 +840,10 @@ class NATService {
       destination_address?: string;
       inbound_interface?: string;
       translation_address?: string;
+      delete_description?: boolean;
+      delete_destination_address?: boolean;
+      delete_inbound_interface?: boolean;
+      delete_translation_address?: boolean;
     }
   ): Promise<VyOSResponse> {
     const operations: NATBatchOperation[] = [];
@@ -803,24 +852,32 @@ class NATService {
     if (config.description !== undefined) {
       if (config.description) {
         operations.push({ op: "set_static_rule_description", value: config.description });
+      } else if (config.delete_description) {
+        operations.push({ op: "delete_static_rule_description" });
       }
     }
 
     // Destination address
-    if (config.destination_address) {
-      operations.push({ op: "set_static_rule_destination", value: config.destination_address });
+    if (config.delete_destination_address) {
+      operations.push({ op: "delete_static_rule_destination_address" });
+    } else if (config.destination_address) {
+      operations.push({ op: "set_static_rule_destination_address", value: config.destination_address });
     }
 
     // Inbound interface
-    if (config.inbound_interface !== undefined) {
+    if (config.delete_inbound_interface) {
+      operations.push({ op: "delete_static_rule_inbound_interface" });
+    } else if (config.inbound_interface !== undefined) {
       if (config.inbound_interface) {
         operations.push({ op: "set_static_rule_inbound_interface", value: config.inbound_interface });
       }
     }
 
     // Translation address
-    if (config.translation_address) {
-      operations.push({ op: "set_static_rule_translation", value: config.translation_address });
+    if (config.delete_translation_address) {
+      operations.push({ op: "delete_static_rule_translation_address" });
+    } else if (config.translation_address) {
+      operations.push({ op: "set_static_rule_translation_address", value: config.translation_address });
     }
 
     const result = await this.batchConfigure({

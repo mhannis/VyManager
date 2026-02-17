@@ -214,8 +214,8 @@
     {
       "id": "NAT-01",
       "domain": "nat",
-      "status": "partial",
-      "title": "NAT44 advanced parity"
+      "status": "verify",
+      "title": "NAT44 parity hardened for reliable CRUD/update workflows (field-clear delete semantics for source/destination/static edits, static update op-name parity, and static reorder builder parity); pending live verification"
     },
     {
       "id": "NAT-02",

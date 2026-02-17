@@ -46,12 +46,22 @@ export function EditStaticNATModal({ open, onOpenChange, rule, onSuccess }: Edit
   // Translation
   const [translationAddress, setTranslationAddress] = useState("");
 
+  // Original values for clear/delete handling
+  const [originalDescription, setOriginalDescription] = useState("");
+  const [originalDestinationAddress, setOriginalDestinationAddress] = useState("");
+  const [originalInboundInterfaceName, setOriginalInboundInterfaceName] = useState("");
+  const [originalTranslationAddress, setOriginalTranslationAddress] = useState("");
+
   // Reset all form fields to defaults
   const resetForm = () => {
     setDescription("");
     setDestinationAddress("");
     setInboundInterfaceName("");
     setTranslationAddress("");
+    setOriginalDescription("");
+    setOriginalDestinationAddress("");
+    setOriginalInboundInterfaceName("");
+    setOriginalTranslationAddress("");
     setError(null);
   };
 
@@ -73,21 +83,26 @@ export function EditStaticNATModal({ open, onOpenChange, rule, onSuccess }: Edit
 
   const populateForm = (rule: StaticNATRule) => {
     // Description
-    setDescription(rule.description || "");
+    const currentDescription = rule.description || "";
+    setDescription(currentDescription);
+    setOriginalDescription(currentDescription);
 
     // Destination
     if (rule.destination?.address) {
       setDestinationAddress(rule.destination.address);
+      setOriginalDestinationAddress(rule.destination.address);
     }
 
     // Inbound interface
     if (rule.inbound_interface) {
       setInboundInterfaceName(rule.inbound_interface);
+      setOriginalInboundInterfaceName(rule.inbound_interface);
     }
 
     // Translation
     if (rule.translation?.address) {
       setTranslationAddress(rule.translation.address);
+      setOriginalTranslationAddress(rule.translation.address);
     }
   };
 
@@ -178,21 +193,30 @@ export function EditStaticNATModal({ open, onOpenChange, rule, onSuccess }: Edit
 
       if (description.trim()) {
         config.description = description.trim();
+      } else if (originalDescription) {
+        config.description = "";
+        config.delete_description = true;
       }
 
       // Destination
       if (destinationAddress.trim()) {
         config.destination_address = destinationAddress.trim();
+      } else if (originalDestinationAddress) {
+        config.delete_destination_address = true;
       }
 
       // Inbound interface
       if (inboundInterfaceName) {
         config.inbound_interface = inboundInterfaceName;
+      } else if (originalInboundInterfaceName) {
+        config.delete_inbound_interface = true;
       }
 
       // Translation
       if (translationAddress.trim()) {
         config.translation_address = translationAddress.trim();
+      } else if (originalTranslationAddress) {
+        config.delete_translation_address = true;
       }
 
       // Update the rule
